@@ -14,6 +14,17 @@ describe("Computer result text", () => {
     expect(html).toContain('href="https://example.com/proof"');
     expect(html).toContain('rel="noopener noreferrer nofollow"');
   });
+  it("renders a Bot's heading and adjacent intake bullets as separate readable blocks", () => {
+    const html = renderToStaticMarkup(
+      <TaskResultText>
+        {"Draft only — nothing was booked.\n\n**Owner intake — Sam QA**\n- Request: home inspection\n- Status: unconfirmed"}
+      </TaskResultText>,
+    );
+    expect(html).toContain("<strong>Owner intake — Sam QA</strong>");
+    expect(html).toContain("<ul><li>Request: home inspection</li><li>Status: unconfirmed</li></ul>");
+    expect(html).not.toContain("**Owner intake");
+    expect(html).not.toContain("- Request:");
+  });
   it.each([
     {
       report: "1. Answer Calls.\n\n2. Follow Up by Email.\n\n3. Research in the Browser.",

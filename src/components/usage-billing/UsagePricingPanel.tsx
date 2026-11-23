@@ -463,8 +463,8 @@ export default function UsagePricingPanel({
         ))}
       </dl>
       <p className="text-center text-xs text-muted-foreground">
-        No rollover. Limit alerts at 50%, 80%, and 100%. SMS and outbound require sender approval
-        and recipient permission. Registration fees may apply.
+        No rollover. Limit alerts at 50%, 80%, and 100%. Standard US texting registration is
+        included; SMS and outbound calls still require approval and recipient permission.
       </p>
     </div>
   );

@@ -55,34 +55,48 @@ function inline(text: string): ReactNode[] {
 export default function TaskResultText({ children }: { children: string }) {
   return (
     <div className="wl-task-result-text">
-      {readableBlocks(children).map((block, index) => {
+      {readableBlocks(children).flatMap((block, index) => {
         const lines = block.split("\n");
-        if (lines.every((line) => /^\s*[-*]\s+/.test(line)))
+        const segments: Array<{ kind: "text" | "ul" | "ol"; lines: string[] }> = [];
+        for (const line of lines) {
+          const kind = /^\s*[-*]\s+/.test(line)
+            ? "ul"
+            : /^\s*\d+[.)]\s+/.test(line)
+              ? "ol"
+              : "text";
+          const previous = segments[segments.length - 1];
+          if (previous?.kind === kind) previous.lines.push(line);
+          else segments.push({ kind, lines: [line] });
+        }
+        return segments.map((segment, segmentIndex) => {
+          const key = `${index}-${segmentIndex}`;
+          if (segment.kind === "ul")
+            return (
+              <ul key={key}>
+                {segment.lines.map((line, n) => (
+                  <li key={n}>{inline(line.replace(/^\s*[-*]\s+/, ""))}</li>
+                ))}
+              </ul>
+            );
+          if (segment.kind === "ol")
+            return (
+              <ol key={key} start={Number.parseInt(segment.lines[0]!, 10)}>
+                {segment.lines.map((line, n) => (
+                  <li key={n}>{inline(line.replace(/^\s*\d+[.)]\s+/, ""))}</li>
+                ))}
+              </ol>
+            );
           return (
-            <ul key={index}>
-              {lines.map((line, n) => (
-                <li key={n}>{inline(line.replace(/^\s*[-*]\s+/, ""))}</li>
+            <p key={key}>
+              {segment.lines.map((line, n) => (
+                <span key={n}>
+                  {n > 0 ? <br /> : null}
+                  {inline(line.replace(/^#{1,6}\s+/, ""))}
+                </span>
               ))}
-            </ul>
+            </p>
           );
-        if (lines.every((line) => /^\s*\d+[.)]\s+/.test(line)))
-          return (
-            <ol key={index} start={Number.parseInt(lines[0]!, 10)}>
-              {lines.map((line, n) => (
-                <li key={n}>{inline(line.replace(/^\s*\d+[.)]\s+/, ""))}</li>
-              ))}
-            </ol>
-          );
-        return (
-          <p key={index}>
-            {lines.map((line, n) => (
-              <span key={n}>
-                {n > 0 ? <br /> : null}
-                {inline(line.replace(/^#{1,6}\s+/, ""))}
-              </span>
-            ))}
-          </p>
-        );
+        });
       })}
     </div>
   );

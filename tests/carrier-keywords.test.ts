@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesCarrierKeyword } from "../src/lib/carrier-keywords";
+import { matchesCarrierKeyword, matchesSmsRevocationRequest } from "../src/lib/carrier-keywords";
 
 const OPT_OUT = new Set(["stop", "stopall", "unsubscribe", "cancel", "end", "quit", "opt out"]);
 const OPT_IN = new Set(["start", "unstop", "yes", "opt in"]);
@@ -39,5 +39,46 @@ describe("matchesCarrierKeyword", () => {
     expect(matchesCarrierKeyword(norm("what are your hours?"), OPT_OUT)).toBe(false);
     expect(matchesCarrierKeyword(norm(""), OPT_OUT)).toBe(false);
     expect(matchesCarrierKeyword(norm("!!!"), OPT_OUT)).toBe(false);
+  });
+});
+
+describe("clear requests to stop SMS", () => {
+  it.each([
+    "Please stop texting me.",
+    "Don't contact me again",
+    "Do not message me anymore!",
+    "Remove me from your text list",
+    "No more messages please",
+    "I don’t want any more texts",
+    "Please opt me out",
+    "Please take me off your list",
+    "Remove my number from your list",
+    "Please don't send me any more texts",
+    "Stop sending me messages",
+    "Please stop sending me text messages.",
+    "Please do not send me text messages",
+    "No more text messages please",
+    "I do not want to receive SMS",
+    "I don't want to hear from you again",
+    "Please unsubscribe",
+  ])("recognizes %j", (body) => {
+    expect(matchesSmsRevocationRequest(body)).toBe(true);
+  });
+
+  it.each([
+    "Can you stop by tomorrow?",
+    "Please don't stop the updates",
+    "Don't text me the price, call me",
+    "I don't want more information on prices",
+    "Yes please, Tuesday works",
+    "Help me reschedule",
+    "Cancel my appointment",
+    "End the call",
+    "Stop by tomorrow",
+    "Quit the appointment process",
+    "I don't want texts about this appointment, call me",
+    "Text messages about tomorrow's appointment are okay",
+  ])("leaves an ordinary reply in the inbox: %j", (body) => {
+    expect(matchesSmsRevocationRequest(body)).toBe(false);
   });
 });

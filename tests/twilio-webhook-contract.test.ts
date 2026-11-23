@@ -60,7 +60,7 @@ describe("Twilio webhook XML contract", () => {
     const route = read("src/routes/twilio-webhook-base.ts");
     const wrapper = read("src/routes/twilio-webhook.ts");
 
-    expect(route).toContain("OPT_OUT_KEYWORDS");
+    expect(route).toContain("matchesSmsRevocationRequest(trimmed)");
     expect(route).toContain("OPT_IN_KEYWORDS");
     expect(route).toContain("HELP_KEYWORDS");
     expect(route).toContain("You have been unsubscribed");

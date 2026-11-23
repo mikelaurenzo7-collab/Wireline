@@ -129,8 +129,7 @@ describe("Twilio webhook privacy hardening", () => {
     expect(consentInsert).toBeGreaterThan(dncInsert);
     expect(consentInsert).toBeGreaterThan(dncDelete);
     expect(route).toContain("twilio_message_sid");
-    expect(route).toContain("LEGACY_OPT_OUT_KEYWORDS");
-    expect(route).toContain("matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)");
+    expect(route).toContain("matchesSmsRevocationRequest(bodyKeyword)");
   });
 
   it("serializes START and STOP state changes for the same tenant and phone", () => {

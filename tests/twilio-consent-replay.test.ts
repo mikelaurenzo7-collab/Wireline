@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   clear: vi.fn(),
   record: vi.fn(),
   evidence: vi.fn(),
+  next: vi.fn(),
   allowed: true,
 }));
 
@@ -114,7 +115,7 @@ async function deliver(body: string, sid: string, advanced = false, from = "+131
       },
     } as never,
     response as never,
-    vi.fn(),
+    h.next,
   );
   return result;
 }
@@ -260,6 +261,22 @@ describe("keywords Twilio already answers", () => {
     expect(reply.body).toContain("<Message>You have been unsubscribed");
   });
 
+  it.each(["Please stop texting me.", "Please stop sending me text messages."])(
+    "records the free-text opt-out %s before confirming it",
+    async (body) => {
+      const reply = await deliver(body, "SM-natural-stop");
+      expect(reply.status).toBe(200);
+      expect(reply.body).toContain("<Message>You have been unsubscribed");
+      expect(h.writes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ reason: "opt-out", source: "sms_opt_out" }),
+          expect.objectContaining({ event: "sms_opt_out", state: "opted_out" }),
+        ]),
+      );
+      expect(h.evidence).toHaveBeenCalledOnce();
+    },
+  );
+
   it("asks Twilio to redeliver an unrecorded STOP it has already confirmed", async () => {
     h.failTransaction = true;
     h.record.mockResolvedValueOnce(false);
@@ -302,6 +319,19 @@ describe("code review findings on keyword handling", () => {
 });
 
 describe("a plain Yes is a customer reply, not a consent grant", () => {
+  it.each(["Cancel my appointment", "End the call", "Stop by tomorrow"])(
+    "preserves the service request %s instead of revoking consent",
+    async (body) => {
+      await expect(deliver(body, `SM-service-${body}`)).resolves.toEqual({
+        status: 200,
+        body: "",
+      });
+      expect(h.next).toHaveBeenCalledOnce();
+      expect(h.writes).toEqual([]);
+      expect(h.record).not.toHaveBeenCalled();
+    },
+  );
+
   it.each(["Yes", "yes", "START", "unstop"])(
     "stores %s as an ordinary text when the number is not opted out",
     async (body) => {

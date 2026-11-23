@@ -7,9 +7,9 @@ import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
   matchesCarrierKeyword,
+  matchesSmsRevocationRequest,
   SMS_HELP_KEYWORDS,
   SMS_OPT_IN_KEYWORDS,
-  SMS_OPT_OUT_KEYWORDS,
   twilioAnswersKeyword,
 } from "../lib/carrier-keywords";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
@@ -27,7 +27,6 @@ import tollfreeWebhookRouter from "./twilio-tollfree-webhook";
 
 const router = Router();
 // One source of truth: src/lib/carrier-keywords.ts.
-const LEGACY_OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;
 const LEGACY_OPT_IN_KEYWORDS = SMS_OPT_IN_KEYWORDS;
 const LEGACY_HELP_KEYWORDS = SMS_HELP_KEYWORDS;
 
@@ -129,7 +128,7 @@ function resolveConsentControl(
   if (optOutType === "START") return { control: "start", legacy: false };
   if (optOutType === "HELP") return { control: "help", legacy: false };
   if (optOutType) return { control: null, legacy: false };
-  if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)) {
+  if (matchesSmsRevocationRequest(bodyKeyword)) {
     return { control: "stop", legacy: true };
   }
   // Exact only. A legacy opt-in is a consent GRANT written to the TCPA ledger.
