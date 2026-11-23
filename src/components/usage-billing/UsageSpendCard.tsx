@@ -224,7 +224,7 @@ export default function UsageSpendCard({
             {plan ? (
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 ${plan.monthlyUsd}/month includes ${plan.includedWorkUsd} of work shared across
-                calls, SMS, email and Computer. Your allowance resets monthly without rollover.
+                calls, texts, email and Computer. Your allowance resets monthly without rollover.
                 Extra work stays within a monthly limit you set (default $
                 {USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax. Applicable tax is added separately.
               </p>
@@ -240,9 +240,10 @@ export default function UsageSpendCard({
           </div>
           {plan ? (
             <p className="text-sm">
-              {plan.includedNumbers} {plan.includedNumbers === 1 ? "Number" : "Numbers"} +{" "}
+              Includes {plan.includedNumbers}{" "}
+              {plan.includedNumbers === 1 ? "phone number" : "phone numbers"} and{" "}
               {plan.includedEmailAddresses}{" "}
-              {plan.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"} Included
+              {plan.includedEmailAddresses === 1 ? "email address" : "email addresses"}.
             </p>
           ) : null}
           <div className="grid gap-2 sm:grid-cols-2">

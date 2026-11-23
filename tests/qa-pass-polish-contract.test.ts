@@ -28,4 +28,16 @@ describe("QA pass polish", () => {
       '{ to: "/features", label: "Features" }',
     );
   });
+
+  it("writes the billing offer in sentence case with the product's word for texts", () => {
+    const card = read("src/components/usage-billing/UsageSpendCard.tsx");
+    expect(card).toContain("calls, texts, email and Computer.");
+    expect(card).toContain("Includes {plan.includedNumbers}");
+    expect(card).not.toContain('Email Addresses"} Included');
+  });
+
+  it("keeps the home hero badge on one line at phone widths", () => {
+    const home = read("src/components/marketing/WireAgentLanding.tsx");
+    expect(home).toContain('<span className="sm:hidden">Voice, Inbox &amp; Computer</span>');
+  });
 });
