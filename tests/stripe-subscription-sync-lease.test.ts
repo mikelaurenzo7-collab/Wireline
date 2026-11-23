@@ -5,7 +5,10 @@ import {
   acquireDistributedLease,
   resetDistributedLeasesForTests,
 } from "../src/lib/distributed-lease";
-import { withStripeSubscriptionSyncLease } from "../src/lib/stripe-subscription-sync-lease";
+import {
+  isBillingSyncInProgress,
+  withStripeSubscriptionSyncLease,
+} from "../src/lib/stripe-subscription-sync-lease";
 
 function deferred() {
   let resolve!: () => void;
@@ -39,9 +42,13 @@ describe("Stripe synchronization lease boundaries", () => {
     await entered.promise;
     try {
       const blockedWork = vi.fn();
-      await expect(withStripeSubscriptionSyncLease("cus_one", blockedWork)).rejects.toMatchObject({
-        status: 503,
-      });
+      const held = await withStripeSubscriptionSyncLease("cus_one", blockedWork).catch(
+        (error: unknown) => error,
+      );
+      // A held lease is a named, retryable outcome the webhook answers with 409.
+      expect(held).toMatchObject({ status: 503, code: "BILLING_SYNC_IN_PROGRESS" });
+      expect(isBillingSyncInProgress(held)).toBe(true);
+      expect(isBillingSyncInProgress(new Error("other"))).toBe(false);
       expect(blockedWork).not.toHaveBeenCalled();
       await expect(
         withStripeSubscriptionSyncLease("cus_two", async () => "independent"),

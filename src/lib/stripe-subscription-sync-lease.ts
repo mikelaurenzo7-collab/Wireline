@@ -2,6 +2,13 @@ import { AppError } from "./api-error";
 import { acquireDistributedLease } from "./distributed-lease";
 import { log } from "./server-context";
 
+/** Another request holds this billing lease; the caller should retry shortly. */
+export const BILLING_SYNC_IN_PROGRESS = "BILLING_SYNC_IN_PROGRESS";
+
+export function isBillingSyncInProgress(error: unknown): boolean {
+  return error instanceof AppError && error.code === BILLING_SYNC_IN_PROGRESS;
+}
+
 // Stripe requests can wait for its network timeout and retries. Keep a long
 // crash horizon, renew while reading, and refuse subsequent writes after loss.
 const SYNC_LEASE_MS = 15 * 60_000;
@@ -30,10 +37,15 @@ async function withBillingSyncLease<T>(
   const acquiredAt = Date.now();
   const decision = await acquireDistributedLease(key, SYNC_LEASE_MS);
   if (decision.status !== "acquired") {
+    if (decision.status === "held") {
+      throw new AppError(
+        503,
+        BILLING_SYNC_IN_PROGRESS,
+        "This billing update is already running. Please retry.",
+      );
+    }
     throw AppError.serviceUnavailable(
-      decision.status === "held"
-        ? "This billing update is already running. Please retry."
-        : "Billing synchronization is temporarily unavailable. Please retry.",
+      "Billing synchronization is temporarily unavailable. Please retry.",
     );
   }
 
