@@ -45,7 +45,9 @@ describe("phone-number area-code catalog", () => {
     expect(catalog).not.toContain("getTwilioClient");
 
     const picker = read("src/components/PhoneNumberPicker.tsx");
-    expect(picker).toContain('authFetch("/api/phone-numbers/area-codes")');
+    expect(picker).toContain(
+      'authFetch("/api/phone-numbers/area-codes", { suppressTrialGateEvent: true })',
+    );
     expect(picker).toContain("area_codes?: AreaCode[]");
     expect(picker).toContain("code: string;");
     expect(picker).toContain("city: string;");
