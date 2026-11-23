@@ -173,7 +173,7 @@ async function syntheticFrame(page: Page) {
 const computerPanel = (page: Page) =>
   page.getByRole("complementary", { name: "Browser", exact: true });
 const botSetup = (page: Page) => page.getByRole("region", { name: "Bot setup", exact: true });
-const computerMode = (page: Page) => page.getByRole("button", { name: "Browser task", exact: true });
+const computerMode = (page: Page) => page.getByRole("button", { name: "Task", exact: true });
 const configureTab = (page: Page, name: string) =>
   page
     .getByRole("tablist", { name: "Bot setup sections", exact: true })
@@ -373,7 +373,7 @@ for (const width of [700, 1206]) {
     await expect(suggestions).toHaveCount(0);
     await input.fill("Keep this unsent instruction while I change views.");
 
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     const workDock = workConversation(page).locator("..");
     await expect(workDock).toHaveClass(/wl-studio-composer/);
     await expect(workDock.getByText("Supervised web work", { exact: true })).toHaveCount(0);
@@ -381,7 +381,7 @@ for (const width of [700, 1206]) {
       "background-color",
       sendBackground,
     );
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
 
     if (width < 1180) {
@@ -909,7 +909,7 @@ test.describe("wide screens", () => {
       .getByRole("button", { name: "Close browser", exact: true })
       .click();
     await expect(conversation(page, "Sales Bot")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Browser task", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
@@ -980,7 +980,7 @@ test.describe("wide screens", () => {
     await expect(workConversation(page)).toBeVisible();
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     await conversation(page).fill("Keep this unsent instruction.");
     await panel.getByRole("button", { name: "Close browser", exact: true }).click();
     await page.getByRole("button", { name: "Rehearse", exact: true }).click();
@@ -1577,7 +1577,7 @@ for (const width of [1440, 390]) {
     };
     const fixture = await mockWorkspace(page, [older], await syntheticFrame(page));
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-    await expect(page.getByRole("button", { name: "Browser task", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
       { timeout: 20_000 },
@@ -1739,7 +1739,7 @@ test("phone Studio keeps the composer compact while reading task history", async
   ]);
   await page.goto(`/studio?agent=${bots[0].id}`);
   const log = page.getByRole("log", { name: "Conversation", exact: true });
-  const browserTool = page.getByRole("button", { name: "Browser task", exact: true });
+  const browserTool = page.getByRole("button", { name: "Task", exact: true });
   const handsFree = page.getByRole("button", { name: "Hands-free", exact: true });
   const send = page.getByRole("button", { name: "Send", exact: true });
   const dock = page.getByRole("navigation", { name: "Workspace navigation" });

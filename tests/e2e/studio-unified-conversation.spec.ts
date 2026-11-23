@@ -182,13 +182,13 @@ for (const width of [390, 1440]) {
     await expect(page.getByRole("group", { name: "Conversation mode" })).toHaveCount(0);
     await expect(page.locator(".wl-studio-chat__composer textarea")).toHaveCount(1);
     await message.fill("Keep my message draft.");
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     const task = page.getByRole("textbox", { name: "Task for Front Desk", exact: true });
     expect(await inputNode!.evaluate((node) => node.isConnected)).toBe(true);
     await task.fill("Find public opening hours.");
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     await expect(message).toHaveValue("Keep my message draft.");
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     await expect(task).toHaveValue("Find public opening hours.");
     let acceptStart: () => void = () => undefined;
     const startGate = new Promise<void>((resolve) => {
@@ -210,7 +210,7 @@ for (const width of [390, 1440]) {
       await expect(task).toBeVisible();
       await expect(page.getByRole("button", { name: "View browser", exact: true })).toBeVisible();
     }
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     await expect(message).toHaveValue("Keep my message draft.");
     api.setTask("work-task-1", { status: "needs_input", question: "Which city should I search?" });
     await expect(log.getByText("Which city should I search?", { exact: true })).toBeVisible();
@@ -221,7 +221,7 @@ for (const width of [390, 1440]) {
     await answer.fill("Chicago");
     await page.getByRole("button", { name: "Reply to Bot", exact: true }).click();
     await expect.poll(() => api.replies).toEqual([{ message: "Chicago" }]);
-    await page.getByRole("button", { name: "Browser task", exact: true }).click();
+    await page.getByRole("button", { name: "Task", exact: true }).click();
     await expect(message).toHaveValue("Keep my message draft.");
     await page.getByRole("button", { name: "Stop task", exact: true }).click();
     await expect.poll(() => api.stops).toEqual(["work-task-1"]);

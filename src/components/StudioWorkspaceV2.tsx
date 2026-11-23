@@ -646,7 +646,7 @@ function StudioWorkspaceContent() {
         computer.listFailed ? (
           <StatusNotice
             tone="warning"
-            title="Browser task history could not load"
+            title="Task history could not load"
             action={
               <Button size="sm" variant="secondary" onClick={() => void computer.loadTasks()}>
                 Retry

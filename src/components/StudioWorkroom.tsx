@@ -587,7 +587,7 @@ const StudioWorkroom = forwardRef<
       onClick={() => void clearConversation()}
       className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-35"
       aria-label="Clear conversation"
-      title="Clear chat messages. Browser task history is kept."
+      title="Clear chat messages. Task history is kept."
     >
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </button>
@@ -822,7 +822,7 @@ const StudioWorkroom = forwardRef<
                       }}
                     >
                       <Monitor size={16} aria-hidden="true" />
-                      Browser task
+                      Task
                       {taskComposer.taskMode ? <X size={14} aria-hidden="true" /> : null}
                     </Button>
                     {taskComposer.taskMode && !computerViewOpen ? (

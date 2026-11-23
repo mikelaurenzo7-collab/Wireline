@@ -567,11 +567,11 @@ test("legacy customer commands stay in voice rehearsal without editing the Bot o
   expect(sessions).toEqual([]);
   await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(page).not.toHaveURL(/command(?:Nonce)?=/);
-  await page.getByRole("button", { name: "Browser task", exact: true }).click();
+  await page.getByRole("button", { name: "Task", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Task for Front Desk", exact: true })).toHaveValue(
     "",
   );
-  await page.getByRole("button", { name: "Browser task", exact: true }).click();
+  await page.getByRole("button", { name: "Task", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveValue(
     "",
   );

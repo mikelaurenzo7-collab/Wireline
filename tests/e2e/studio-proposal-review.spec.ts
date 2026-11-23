@@ -219,7 +219,7 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
   await mockWorkspace(page);
   await page.goto(`/studio?agent=${bots[1].id}`);
 
-  await page.getByRole("button", { name: "Browser task", exact: true }).click();
+  await page.getByRole("button", { name: "Task", exact: true }).click();
   await page.getByRole("button", { name: "View browser", exact: true }).click();
   await expect(page).toHaveURL(
     (url) =>
@@ -291,7 +291,7 @@ test("mobile Computer and the separate Bot setup preserve a task draft", async (
     await draft.evaluate((element) => element.getBoundingClientRect().height),
   ).toBeLessThanOrEqual(54);
   await draft.fill("Keep this unsent task while I inspect my Bot.");
-  const computerButton = page.getByRole("button", { name: "Browser task", exact: true });
+  const computerButton = page.getByRole("button", { name: "Task", exact: true });
   await expect(computerButton).toHaveCount(1);
   await expect(computerButton).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "View browser", exact: true }).click();
