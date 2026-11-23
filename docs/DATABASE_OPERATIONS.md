@@ -169,6 +169,20 @@ Promoting `demo` or `test` to `production` additionally requires `--confirm-prod
 
 The preflight is intentionally non-destructive. It returns only blocker codes, counts, and remediation guidance; it never prints provider identifiers or customer contacts. Resolve each category through its supported cleanup or reconciliation path and rerun the command. Do not make the account look clean by rewriting entitlement provenance, clearing identifiers before provider release, or relabeling fixture rows.
 
+## Real-database test lane
+
+`npm run test:db` runs `tests/db/**/*.db.test.ts` against a disposable local Postgres instead of mocks: tenant isolation under `wireline_server` and the `app.current_user_id` GUC, concurrent preference-envelope writers through the app's own pool and `tenantStore`, and DNC idempotency under concurrent inserts. The default suite excludes `tests/db/**`.
+
+Start any local Postgres 16 (for example `docker run -p 55432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:16`, or `initdb` plus `pg_ctl` as a non-root user), create an empty database, then run:
+
+```bash
+TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/wireline_test npm run test:db
+```
+
+`scripts/prepare-test-database.mjs` refuses any host other than localhost, removes `DATABASE_URL` from the push environment, creates the roles production policies name, pushes the Drizzle schema, then applies `tests/db/fixtures/production-security.sql`. Pass `--fresh` to it to drop and recreate `public` first. The fixture mirrors production as of its header date: row security on every table, the 110 policies, `wireline_server` table and sequence grants, and the unique indexes the Drizzle schema does not declare. Refresh it with the read-only queries in `scripts/db/export-security-fixture.sql` whenever production policies, grants or unique indexes change.
+
+Known drift, found by building this lane: 30 of production's 64 unique indexes are not declared in `src/db/schema.ts` (several appear there only as raw `sql` strings, which `drizzle-kit` ignores). Production has them, and code relies on them: `ON CONFLICT (user_id, phone)` for DNC, the inbound-SMS and consent replay dedupes by Twilio message SID. A database rebuilt from the Drizzle schema alone would silently lose those guarantees. Do not repair this with `db:generate` against the current snapshot, which would emit migrations recreating indexes that already exist; declaring them needs a reviewed snapshot change verified against the live catalog.
+
 ## Read-only pool contamination recovery
 
 When writes fail with `cannot execute ... in a read-only transaction` but the primary reports `default_transaction_read_only=off` and `pg_is_in_recovery()=false`:

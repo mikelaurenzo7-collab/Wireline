@@ -173,6 +173,10 @@ const UNREGISTERED_LOCAL =
   "This line isn't approved by US carriers for texting yet, so the text wasn't sent. Add your business details in Lines under Texting Registration; texting turns on once carriers approve it.";
 const PENDING_LOCAL =
   "This line's texting approval is still in review, so the text wasn't sent. You can send it again once it's approved.";
+const REGISTERING_LOCAL =
+  "This line's texting registration has started but isn't approved yet, so the text wasn't sent. Texting turns on once carriers approve it, usually within a few days to two weeks.";
+const REJECTED_LOCAL =
+  "This line's texting registration wasn't approved, so the text wasn't sent. Contact support to fix and resubmit it.";
 const UNVERIFIED_TOLL_FREE =
   "This toll-free line isn't approved for texting yet, so the text wasn't sent. Texting turns on when its verification is approved.";
 const PENDING_TOLL_FREE =
@@ -250,13 +254,32 @@ export function classifySmsSender(
       reason: PENDING_LOCAL,
     };
   }
-  if (statuses.every((status) => FAILED_CAMPAIGN_STATUSES.has(status))) {
-    // No pool, campaign-less pools, or only failed campaigns.
+  if (pooled.length === 0) {
+    // On the account but in no Messaging Service: registration never started.
     return {
       status: "unregistered",
       kind,
       code: "SMS_SENDER_UNREGISTERED",
       reason: UNREGISTERED_LOCAL,
+    };
+  }
+  if (statuses.length === 0) {
+    // In a Messaging Service that has no campaign yet. carrier:register
+    // attaches the line before the brand is vetted and the campaign exists,
+    // so this is registration in progress, not a missing submission.
+    return {
+      status: "unregistered",
+      kind,
+      code: "SMS_SENDER_REGISTRATION_PENDING",
+      reason: REGISTERING_LOCAL,
+    };
+  }
+  if (statuses.every((status) => FAILED_CAMPAIGN_STATUSES.has(status))) {
+    return {
+      status: "unregistered",
+      kind,
+      code: "SMS_SENDER_UNREGISTERED",
+      reason: REJECTED_LOCAL,
     };
   }
   return { status: "unknown", kind, reason: "The A2P campaign state is unfamiliar." };

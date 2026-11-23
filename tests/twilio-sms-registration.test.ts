@@ -99,13 +99,17 @@ describe("SMS sender registration", () => {
       messagingServiceSid: "MGapproved",
       coversMissedCalls: false,
     });
+    // In a Messaging Service with no campaign yet: carrier:register attaches
+    // the line before the campaign exists, so this is registration underway.
     expect(classifySmsSender(LOCAL_POOLED_NO_CAMPAIGN, snapshot)).toMatchObject({
       status: "unregistered",
-      code: "SMS_SENDER_UNREGISTERED",
+      code: "SMS_SENDER_REGISTRATION_PENDING",
+      reason: expect.stringContaining("registration has started"),
     });
     expect(classifySmsSender(LOCAL_UNPOOLED, snapshot)).toMatchObject({
       status: "unregistered",
       code: "SMS_SENDER_UNREGISTERED",
+      reason: expect.stringContaining("Add your business details"),
     });
     expect(classifySmsSender(LOCAL_PENDING, snapshot)).toMatchObject({
       status: "unregistered",
@@ -184,6 +188,26 @@ describe("SMS sender registration", () => {
     await expect(
       resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: failing.client, nowMs: 3_000 }),
     ).resolves.toMatchObject({ status: "unknown" });
+  });
+
+  it("tells an owner whose campaign failed to contact support, not to add details again", () => {
+    const failed = "+13125550105";
+    const snapshot = {
+      readAtMs: 0,
+      numberSids: new Map([[failed, "PNfailed"]]),
+      pools: new Map([
+        [
+          failed,
+          [{ serviceSid: "MGfailed", campaignStatuses: ["FAILED"], coversMissedCalls: false }],
+        ],
+      ]),
+      tollFree: new Map(),
+    };
+    expect(classifySmsSender(failed, snapshot as never)).toMatchObject({
+      status: "unregistered",
+      code: "SMS_SENDER_UNREGISTERED",
+      reason: expect.stringContaining("wasn't approved"),
+    });
   });
 
   it("treats a line the snapshot never saw as unknown, never as unregistered", async () => {
