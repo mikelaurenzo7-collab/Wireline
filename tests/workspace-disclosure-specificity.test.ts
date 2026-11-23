@@ -5,6 +5,16 @@ import { describe, expect, it } from "vitest";
 const css = readFileSync(resolve(process.cwd(), "src/styles/workspace-shell.css"), "utf8");
 
 describe("workspace disclosure baseline", () => {
+  it("keeps the baseline in the components layer, below Tailwind utilities", () => {
+    // Unlayered CSS beats every cascade layer at any specificity; Tailwind v4
+    // utilities live in @layer utilities, so the baseline must be layered.
+    const layerStart = css.indexOf("@layer components {");
+    expect(layerStart).toBeGreaterThan(-1);
+    expect(css.indexOf(":where(.wl-workspace-shell) details > summary {")).toBeGreaterThan(
+      layerStart,
+    );
+  });
+
   it("lets component utilities win over the shell's summary baseline", () => {
     // (0,0,2): above Tailwind preflight's `summary` (0,0,1), below any utility (0,1,0).
     expect(css).toContain(":where(.wl-workspace-shell) details > summary {");
