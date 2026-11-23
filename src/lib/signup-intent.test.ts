@@ -3,6 +3,7 @@ import {
   activationBillingHref,
   billingIntervalFromIntent,
   captureSignupIntentFromLocation,
+  getStoredSignupIntent,
   mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
@@ -182,7 +183,13 @@ describe("signup-intent", () => {
       preferredPlanId: "usage",
       preferredUsageTier: "standard",
       preferredBillingInterval: "month",
+      // Shown on the form, but not a choice: the post-signup redirect skips it.
+      planIsDefault: true,
     });
+    // A plan the visitor picks clears the default marker.
+    expect(
+      mergeSignupIntent(getStoredSignupIntent(), parseSignupIntent("?plan=usage&tier=lite")),
+    ).not.toHaveProperty("planIsDefault");
     Object.defineProperty(globalThis, "window", { configurable: true, value: previous });
   });
 });
