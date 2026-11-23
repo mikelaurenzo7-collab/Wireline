@@ -288,3 +288,28 @@ describe("phone number picker recovery", () => {
     expect(button("(312) 555-0120").props.disabled).toBe(false);
   });
 });
+
+describe("opening the picker before email verification", () => {
+  it("explains the gate inline instead of opening the global blocking dialog", async () => {
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith("/area-codes")) return json({ area_codes: [] });
+      if (url.endsWith("/available"))
+        return json(
+          {
+            error: "Verify your email to continue. Check your inbox for a link from BotBound.",
+            code: "EMAIL_UNVERIFIED",
+          },
+          402,
+        );
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    await mount();
+    for (const call of h.fetch.mock.calls) {
+      expect(call[1]).toMatchObject({ suppressTrialGateEvent: true });
+    }
+    const [alert] = alerts();
+    expect(alert).toContain("Verify your email to choose a number");
+    expect(alert).toContain("Check your inbox for a link from BotBound.");
+    expect(alert).not.toContain("Number inventory unavailable");
+  });
+});

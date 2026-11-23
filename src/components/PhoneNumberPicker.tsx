@@ -45,6 +45,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   const [inventoryUnavailable, setInventoryUnavailable] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [capacityReached, setCapacityReached] = useState(false);
+  const [emailUnverified, setEmailUnverified] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchAreaCode, setSearchAreaCode] = useState("");
   const [previewNumbers, setPreviewNumbers] = useState<Set<string>>(new Set());
@@ -56,10 +57,14 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
     setInventoryError(null);
     setInventoryUnavailable(false);
     setCapacityReached(false);
+    setEmailUnverified(false);
     try {
+      // Opening the picker is not a request to buy anything. Its own alert
+      // explains a gate inline, so a 402 here must not throw the global
+      // blocking dialog over the page; claiming a number still does.
       const [availableResponse, areaCodesResponse] = await Promise.all([
-        authFetch("/api/phone-numbers/available"),
-        authFetch("/api/phone-numbers/area-codes"),
+        authFetch("/api/phone-numbers/available", { suppressTrialGateEvent: true }),
+        authFetch("/api/phone-numbers/area-codes", { suppressTrialGateEvent: true }),
       ]);
       const [availableResult, areaCodesResult] = await Promise.all([
         readApiJson<{ available?: AvailableNumber[] }>(availableResponse),
@@ -67,6 +72,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       ]);
       if (availableResult.ok === false) {
         setCapacityReached(availableResult.code === "PHONE_CAPACITY_REACHED");
+        setEmailUnverified(availableResult.code === "EMAIL_UNVERIFIED");
         throw new Error(availableResult.error);
       }
       setAvailable(availableResult.data.available || []);
@@ -206,7 +212,11 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-[var(--wireline-color-status-warning)]" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">
-                {capacityReached ? "All included lines are in use" : "Number inventory unavailable"}
+                {capacityReached
+                  ? "All included lines are in use"
+                  : emailUnverified
+                    ? "Verify your email to choose a number"
+                    : "Number inventory unavailable"}
               </p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">{inventoryError}</p>
               {!capacityReached && (
@@ -230,7 +240,9 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           {/* Available pool */}
           {available.length > 0 ? (
             <div>
-              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-2">Available now ({available.length})</p>
+              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-2">
+                Available now ({available.length})
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {available.map((n) => (
                   <motion.button
@@ -282,7 +294,9 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
 
           {/* Area-code search */}
           <div className="rounded-md border border-border bg-muted p-4 space-y-3">
-            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Search by area code</p>
+            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+              Search by area code
+            </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
