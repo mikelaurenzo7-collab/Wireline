@@ -214,7 +214,9 @@ export default function WireAgentLanding() {
           <div className="landing-prestige__hero-badge">
             <BotBoundMark className="landing-prestige__hero-mark" />
             <span className="landing-prestige__hero-badge-copy">
-              Autonomous Voice, Inbox &amp; Cloud Computer
+              {/* The full line wraps into a cramped two-line pill on phones. */}
+              <span className="sm:hidden">Voice, Inbox &amp; Computer</span>
+              <span className="hidden sm:inline">Autonomous Voice, Inbox &amp; Cloud Computer</span>
             </span>
           </div>
 

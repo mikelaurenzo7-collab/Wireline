@@ -227,7 +227,7 @@ test("an unavailable saved plan can be replaced with the only offered tier", asy
   await offer.getByText("Plus", { exact: true }).click();
   await expect(plan).toBeChecked();
   await expect(offer.getByText("$49/month includes $36 of work", { exact: false })).toBeVisible();
-  await expect(offer.getByText("2 Numbers + 2 Email Addresses Included")).toBeVisible();
+  await expect(offer.getByText("Includes 2 phone numbers and 2 email addresses.")).toBeVisible();
   await review.click();
   await expect
     .poll(() => purchases)
