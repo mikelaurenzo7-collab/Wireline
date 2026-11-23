@@ -28,6 +28,8 @@ export default defineConfig({
       "**/node_modules/**",
       "**/dist/**",
       "tests/e2e/**/*.spec.ts",
+      // The real-database lane runs on its own: npm run test:db.
+      "tests/db/**",
       "**/.worktrees/**",
       "tmp/**",
       ".tmp/**",
