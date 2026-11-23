@@ -310,6 +310,21 @@ describe("opening the picker before email verification", () => {
     const [alert] = alerts();
     expect(alert).toContain("Verify your email to choose a number");
     expect(alert).toContain("Check your inbox for a link from BotBound.");
+    expect(alert).toContain("Resend Verification Email");
     expect(alert).not.toContain("Number inventory unavailable");
+  });
+
+  it("offers Choose Plan inline when the account needs a plan for a number", async () => {
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith("/area-codes")) return json({ area_codes: [] });
+      if (url.endsWith("/available"))
+        return json({ error: "Choose a plan to add a phone number.", code: "PLAN_REQUIRED" }, 402);
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    await mount();
+    const [alert] = alerts();
+    expect(alert).toContain("Choose a plan to add a number");
+    expect(alert).toContain("Choose Plan");
+    expect(alert).not.toContain("Resend Verification Email");
   });
 });

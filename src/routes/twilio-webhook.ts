@@ -225,7 +225,18 @@ async function persistConsentControl(input: {
           ),
         )
         .limit(1);
-      if (!smsOptOut && !(await isDncFailsafeBlocked(input.userId, input.customerNumber))) {
+      // If the emergency STOP marker cannot be read (Redis outage), treat the
+      // word as an ordinary reply: it writes no consent, so it can never
+      // resubscribe anyone, and the customer's text still reaches the inbox.
+      const failsafeBlocked = smsOptOut
+        ? true
+        : await isDncFailsafeBlocked(input.userId, input.customerNumber).catch((error) => {
+            log.warn("DNC failsafe unreadable; storing START-type word as a reply", {
+              error: getErrorMessage(error),
+            });
+            return false;
+          });
+      if (!smsOptOut && !failsafeBlocked) {
         await persistInboundSmsEvidence(tx, {
           userId: input.userId,
           agentId: input.agentId,
@@ -330,6 +341,14 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
   const destination = await lookupMessagingDestination(String(req.body?.To || ""));
   const userId = destination?.userId ?? null;
   const phoneRaw = String(req.body?.From || "");
+  // Twilio answers its default keywords itself only on SMS. WhatsApp senders
+  // get no automatic reply, so the application must confirm those itself.
+  // (Matching is whole-body: "Stop." is not a Twilio keyword, so the
+  // application's own confirmation is the one the customer receives.)
+  const twilioAnswered =
+    !/^whatsapp:/i.test(phoneRaw) &&
+    !/^whatsapp:/i.test(String(req.body?.To || "")) &&
+    twilioAnswersKeyword(body);
   const customerNumber = sanitizePhone(phoneRaw.replace(/^whatsapp:/i, ""));
   const messageSid = String(req.body?.MessageSid || req.body?.SmsSid || "").trim();
   if (!userId || !destination || !customerNumber) return res.status(200).send(emptyTwiml());
@@ -408,12 +427,16 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         // Twilio has already blocked this number, so a text from us would fail
         // with 21610. A failed record must still reach Twilio as a 503 so it
         // redelivers the webhook, unless the emergency marker holds the STOP.
-        if (legacy && !twilioAnswersKeyword(body)) {
+        if (legacy && !twilioAnswered) {
           return res.status(200).send(productionReply(optOutRetryTwiml()));
         }
         return res.status(failsafeStored ? 200 : 503).send(emptyTwiml());
       }
       if (control === "start") {
+        // Twilio has already told the customer they are resubscribed; a
+        // "please reply START again" text would contradict it. Ask Twilio to
+        // redeliver the webhook so the record catches up instead.
+        if (legacy && twilioAnswered) return res.status(503).send(emptyTwiml());
         return res.status(200).send(legacy ? productionReply(optInRetryTwiml()) : emptyTwiml());
       }
       return res.status(503).send(emptyTwiml());
@@ -423,7 +446,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
     // Advanced Opt-Out and Twilio's default keyword handling have already sent
     // their own confirmation. A second one would either bounce (STOP, blocked
     // number, error 21610 on every unsubscribe) or arrive as a duplicate (START).
-    if (!legacy || twilioAnswersKeyword(body)) return res.status(200).send(emptyTwiml());
+    if (!legacy || twilioAnswered) return res.status(200).send(emptyTwiml());
     const confirmation =
       control === "stop"
         ? optOutConfirmationTwiml()

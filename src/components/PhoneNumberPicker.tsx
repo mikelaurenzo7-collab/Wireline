@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Phone, MapPin, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
@@ -46,6 +47,11 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [capacityReached, setCapacityReached] = useState(false);
   const [emailUnverified, setEmailUnverified] = useState(false);
+  // Any other 402: the account needs a plan before it can hold a number.
+  const [planRequired, setPlanRequired] = useState(false);
+  const [verificationResend, setVerificationResend] = useState<
+    "idle" | "sending" | "sent" | "failed"
+  >("idle");
   const [searching, setSearching] = useState(false);
   const [searchAreaCode, setSearchAreaCode] = useState("");
   const [previewNumbers, setPreviewNumbers] = useState<Set<string>>(new Set());
@@ -58,6 +64,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
     setInventoryUnavailable(false);
     setCapacityReached(false);
     setEmailUnverified(false);
+    setPlanRequired(false);
     try {
       // Opening the picker is not a request to buy anything. Its own alert
       // explains a gate inline, so a 402 here must not throw the global
@@ -73,6 +80,9 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       if (availableResult.ok === false) {
         setCapacityReached(availableResult.code === "PHONE_CAPACITY_REACHED");
         setEmailUnverified(availableResult.code === "EMAIL_UNVERIFIED");
+        setPlanRequired(
+          availableResult.status === 402 && availableResult.code !== "EMAIL_UNVERIFIED",
+        );
         throw new Error(availableResult.error);
       }
       setAvailable(availableResult.data.available || []);
@@ -91,6 +101,18 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   useEffect(() => {
     refresh();
   }, []);
+
+  // The global gate dialog is suppressed for this background load, so the
+  // inline alert must carry the action that dialog would have offered.
+  const resendVerification = async () => {
+    setVerificationResend("sending");
+    try {
+      const response = await authFetch("/api/auth/resend-verification", { method: "POST" });
+      setVerificationResend(response.ok ? "sent" : "failed");
+    } catch {
+      setVerificationResend("failed");
+    }
+  };
 
   const claim = async (phoneNumber: string) => {
     setClaiming(phoneNumber);
@@ -216,9 +238,39 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                   ? "All included lines are in use"
                   : emailUnverified
                     ? "Verify your email to choose a number"
-                    : "Number inventory unavailable"}
+                    : planRequired
+                      ? "Choose a plan to add a number"
+                      : "Number inventory unavailable"}
               </p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">{inventoryError}</p>
+              {emailUnverified ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <ShadButton
+                    type="button"
+                    size="sm"
+                    disableAnimations
+                    disabled={verificationResend === "sending" || verificationResend === "sent"}
+                    onClick={() => void resendVerification()}
+                  >
+                    {verificationResend === "sent"
+                      ? "Verification Email Sent"
+                      : "Resend Verification Email"}
+                  </ShadButton>
+                  {verificationResend === "failed" ? (
+                    <span role="status" className="text-xs text-muted-foreground">
+                      Could not send it right now. Try again shortly.
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+              {planRequired ? (
+                <Link
+                  to="/settings/billing"
+                  className="mt-3 inline-flex min-h-9 items-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground wl-focus-ring-halo"
+                >
+                  Choose Plan
+                </Link>
+              ) : null}
               {!capacityReached && (
                 <ShadButton
                   type="button"

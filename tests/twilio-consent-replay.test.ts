@@ -67,7 +67,10 @@ vi.mock("../src/routes/twilio-webhook-base", async () => {
 vi.mock("../src/lib/dnc-failsafe", () => ({
   clearDncFailsafe: h.clear,
   recordDncFailsafe: h.record,
-  isDncFailsafeBlocked: async () => h.failsafe,
+  isDncFailsafeBlocked: async () => {
+    if ((h.failsafe as unknown) === "unreadable") throw new Error("DNC_FAILSAFE_UNAVAILABLE");
+    return h.failsafe;
+  },
 }));
 vi.mock("../src/lib/twilio-webhook-auth", () => ({
   evaluateTwilioWebhookAuth: () => ({ ok: true }),
@@ -86,7 +89,7 @@ import router from "../src/routes/twilio-webhook";
 const layer = router.stack.find((item) => item.route?.path === "/api/twilio-webhook/sms");
 const handler = layer!.route!.stack[0].handle;
 const empty = '<?xml version="1.0" encoding="UTF-8"?><Response/>';
-async function deliver(body: string, sid: string, advanced = false) {
+async function deliver(body: string, sid: string, advanced = false, from = "+13125550102") {
   h.sid = sid;
   const result = { status: 200, body: "" };
   const response = {
@@ -105,8 +108,8 @@ async function deliver(body: string, sid: string, advanced = false) {
       body: {
         Body: body,
         MessageSid: sid,
-        From: "+13125550102",
-        To: "+13125550101",
+        From: from,
+        To: from.startsWith("whatsapp:") ? "whatsapp:+13125550101" : "+13125550101",
         ...(advanced ? { OptOutType: body } : {}),
       },
     } as never,
@@ -263,6 +266,28 @@ describe("keywords Twilio already answers", () => {
     await expect(deliver("STOP", "SM-lost")).resolves.toEqual({ status: 503, body: empty });
     h.record.mockResolvedValueOnce(true);
     await expect(deliver("STOP", "SM-held")).resolves.toEqual({ status: 200, body: empty });
+  });
+});
+
+describe("code review findings on keyword handling", () => {
+  it("confirms a WhatsApp STOP itself, because Twilio answers keywords only on SMS", async () => {
+    const reply = await deliver("STOP", "SM-wa-stop", false, "whatsapp:+13125550102");
+    expect(reply.status).toBe(200);
+    expect(reply.body).toContain("<Message>You have been unsubscribed");
+  });
+
+  it("stores a plain Yes as a reply when the emergency STOP marker is unreadable", async () => {
+    h.failsafe = "unreadable" as never;
+    await expect(deliver("Yes", "SM-redis-down")).resolves.toEqual({ status: 200, body: empty });
+    expect(h.evidence).toHaveBeenCalledOnce();
+    expect(h.writes).toEqual([]);
+    expect(h.clear).not.toHaveBeenCalled();
+  });
+
+  it("asks Twilio to redeliver a failed START it already confirmed, without a contradicting text", async () => {
+    h.optedOut = true;
+    h.failTransaction = true;
+    await expect(deliver("START", "SM-start-lost")).resolves.toEqual({ status: 503, body: empty });
   });
 });
 
