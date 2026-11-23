@@ -157,7 +157,9 @@ export function resolvePostAuthDestination(
       getSignupWedgeRecommendation(currentIntent?.signupWedge)?.templateId ||
       storedIntent?.preferredTemplateId ||
       getSignupWedgeRecommendation(storedIntent?.signupWedge)?.templateId;
-    const plan = intent?.preferredPlanId;
+    // A bare /signup visit fills in a default plan for the form to show; that
+    // is not a choice, so it starts in setup like any other plain sign-up.
+    const plan = intent?.planIsDefault ? undefined : intent?.preferredPlanId;
     // Setup and private rehearsal are free, so a new owner starts by building
     // their Bot. Only a visitor who already picked a paid plan goes to review
     // it first; everyone else meets plans when live work needs one.

@@ -1,5 +1,9 @@
 import { BOT_ROLE_TEMPLATES } from "./bot-product";
-import { isUsageTierId, DEFAULT_PUBLIC_USAGE_TIER, type UsageTierId } from "./usage-billing-catalog";
+import {
+  isUsageTierId,
+  DEFAULT_PUBLIC_USAGE_TIER,
+  type UsageTierId,
+} from "./usage-billing-catalog";
 
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 export const DEFAULT_ACTIVATION_PLAN_ID = "voice-regular";
@@ -126,6 +130,11 @@ export type SignupIntent = {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
+  /**
+   * The plan was filled in for a bare /signup visit so the form has a plan to
+   * show; the visitor did not choose it. Any explicit plan clears this.
+   */
+  planIsDefault?: true;
   capturedAt: string;
 };
 
@@ -302,6 +311,7 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
   if (utmSource) out.utmSource = utmSource;
   if (utmMedium) out.utmMedium = utmMedium;
   if (utmCampaign) out.utmCampaign = utmCampaign;
+  if (intent.planIsDefault === true && out.preferredPlanId) out.planIsDefault = true;
 
   return hasSignupIntent(out) ? out : null;
 }
@@ -411,6 +421,8 @@ export function mergeSignupIntent(
   // A new solution selection replaces an earlier role choice, while an
   // explicit role on the same link still takes precedence over that solution.
   if (next.signupWedge && !next.preferredTemplateId) delete merged.preferredTemplateId;
+  // A plan the visitor picks replaces the bare-signup default.
+  if (next.preferredPlanId && !next.planIsDefault) delete merged.planIsDefault;
   return sanitizeSignupIntent(merged);
 }
 
@@ -435,6 +447,7 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
       preferredPlanId: "usage",
       preferredUsageTier: DEFAULT_PUBLIC_USAGE_TIER,
       preferredBillingInterval: "month",
+      planIsDefault: true,
       capturedAt: new Date().toISOString(),
     });
   }

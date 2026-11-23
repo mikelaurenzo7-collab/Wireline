@@ -248,6 +248,42 @@ describe("post-auth destination", () => {
     },
   );
 
+  it("treats the plan a bare /signup visit fills in as no choice at all", () => {
+    // Production regression: /signup stores a default Starter intent so the
+    // form has a plan to show, and that default sent every sign-up to Billing.
+    localStorage.setItem(
+      SIGNUP_INTENT_STORAGE_KEY,
+      JSON.stringify({
+        preferredPlanId: "usage",
+        preferredUsageTier: "standard",
+        preferredBillingInterval: "month",
+        planIsDefault: true,
+        capturedAt: "2026-11-23T00:00:00Z",
+      }),
+    );
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio?create=1");
+  });
+
+  it("keeps plan review once the visitor actually picks a plan over that default", () => {
+    localStorage.setItem(
+      SIGNUP_INTENT_STORAGE_KEY,
+      JSON.stringify({
+        preferredPlanId: "usage",
+        preferredUsageTier: "standard",
+        preferredBillingInterval: "month",
+        planIsDefault: true,
+        capturedAt: "2026-11-23T00:00:00Z",
+      }),
+    );
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("business", "?plan=usage&tier=lite")).toContain(
+      "&onboarding=1",
+    );
+  });
+
   it("opens free setup after OAuth when an older paid CTA names no current tier", () => {
     // A retired plan slug is not a plan the visitor chose; plans stay one tap
     // away wherever live work needs one.
