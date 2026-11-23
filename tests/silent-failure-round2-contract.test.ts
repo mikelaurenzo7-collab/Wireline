@@ -54,15 +54,15 @@ describe("carrier keyword matching is generous only where over-matching fails sa
     expect(matchesCarrierKeyword(norm("support for my broken unit"), HELP, "exact")).toBe(false);
   });
 
-  it("wires exact matching into both SMS consent paths", () => {
+  it("wires precise opt-outs and exact opt-ins into both SMS consent paths", () => {
     const interceptor = read("src/routes/twilio-webhook.ts");
-    expect(interceptor).toContain("matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)");
+    expect(interceptor).toContain("matchesSmsRevocationRequest(bodyKeyword)");
     expect(interceptor).toContain(
       'matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_IN_KEYWORDS, "exact")',
     );
 
     const base = read("src/routes/twilio-webhook-base.ts");
-    expect(base).toContain("matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS)");
+    expect(base).toContain("matchesSmsRevocationRequest(trimmed)");
     expect(base).toContain('matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS, "exact")');
     expect(base).toContain('matchesCarrierKeyword(trimmed, HELP_KEYWORDS, "exact")');
 

@@ -39,7 +39,6 @@ import {
   matchesSmsRevocationRequest,
   SMS_HELP_KEYWORDS,
   SMS_OPT_IN_KEYWORDS,
-  SMS_OPT_OUT_KEYWORDS,
 } from "../lib/carrier-keywords";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import {
@@ -65,7 +64,6 @@ import {
 const router = Router();
 
 // One source of truth: src/lib/carrier-keywords.ts.
-const OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;
 const OPT_IN_KEYWORDS = SMS_OPT_IN_KEYWORDS;
 const HELP_KEYWORDS = SMS_HELP_KEYWORDS;
 
@@ -213,8 +211,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   const body = (req.body?.Body as string | undefined) || "";
   const messageSid = (req.body?.MessageSid as string | undefined) || "";
   const trimmed = body.trim().toLowerCase();
-  const isOptOut =
-    matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS) || matchesSmsRevocationRequest(trimmed);
+  const isOptOut = matchesSmsRevocationRequest(trimmed);
   const isOptIn = matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS, "exact");
   const isHelp = matchesCarrierKeyword(trimmed, HELP_KEYWORDS, "exact");
 

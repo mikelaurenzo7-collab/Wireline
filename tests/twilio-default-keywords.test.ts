@@ -64,12 +64,9 @@ describe("opt-out vocabulary matches the registered campaign", () => {
 
   it("records every registered opt-out word as Do Not Contact, from one shared list", () => {
     for (const word of registered) expect(SMS_OPT_OUT_KEYWORDS.has(word), word).toBe(true);
-    expect(read("src/routes/twilio-webhook.ts")).toContain(
-      "const LEGACY_OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;",
-    );
-    expect(read("src/routes/twilio-webhook-base.ts")).toContain(
-      "const OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;",
-    );
+    for (const file of ["src/routes/twilio-webhook.ts", "src/routes/twilio-webhook-base.ts"]) {
+      expect(read(file), file).toContain("matchesSmsRevocationRequest(");
+    }
     for (const file of ["src/routes/twilio-webhook.ts", "src/routes/twilio-webhook-base.ts"]) {
       expect(read(file), file).not.toMatch(/OPT_(?:OUT|IN)_KEYWORDS = new Set\(/);
     }
