@@ -7,6 +7,7 @@ import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
   matchesCarrierKeyword,
+  matchesSmsRevocationRequest,
   SMS_HELP_KEYWORDS,
   SMS_OPT_IN_KEYWORDS,
   SMS_OPT_OUT_KEYWORDS,
@@ -129,7 +130,10 @@ function resolveConsentControl(
   if (optOutType === "START") return { control: "start", legacy: false };
   if (optOutType === "HELP") return { control: "help", legacy: false };
   if (optOutType) return { control: null, legacy: false };
-  if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)) {
+  if (
+    matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS) ||
+    matchesSmsRevocationRequest(bodyKeyword)
+  ) {
     return { control: "stop", legacy: true };
   }
   // Exact only. A legacy opt-in is a consent GRANT written to the TCPA ledger.

@@ -65,6 +65,28 @@ export const SMS_OPT_IN_KEYWORDS: ReadonlySet<string> = new Set([
 export const SMS_HELP_KEYWORDS: ReadonlySet<string> = new Set(["help", "info", "support"]);
 
 /**
+ * A customer may ask to stop in ordinary language instead of sending a carrier
+ * keyword. Recognize unambiguous, whole-message requests without treating an
+ * unrelated instruction such as "stop by tomorrow" as a revocation.
+ */
+export function matchesSmsRevocationRequest(body: string): boolean {
+  const normalized = String(body ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, " ");
+  if (matchesCarrierKeyword(normalized, SMS_OPT_OUT_KEYWORDS)) return true;
+
+  const request = normalized.replace(/[.!?]+$/, "").trim();
+  return [
+    /^(?:please |can you |could you |would you )?(?:stop (?:texting|messaging|calling|contacting) me|(?:do not|don't) (?:text|message|call|contact) me)(?: (?:again|anymore|any more|please))?$/,
+    /^(?:please )?(?:remove|take) me (?:off|from) (?:your |the )?(?:text|texting|message|messaging|call|contact) list$/,
+    /^(?:please )?(?:no more|i (?:do not|don't) want (?:any )?more) (?:texts?|messages?|calls?)(?: please)?$/,
+    /^(?:please )?(?:unsubscribe me|opt me out)(?: please)?$/,
+  ].some((pattern) => pattern.test(request));
+}
+
+/**
  * Single-word keywords Twilio answers by itself on long codes, in its own words,
  * before the message reaches our webhook (https://help.twilio.com/articles/223134027).
  * STOP-type words also put the sender on Twilio's block list, so any text we

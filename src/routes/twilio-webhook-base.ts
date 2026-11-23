@@ -36,6 +36,7 @@ import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import {
   matchesCarrierKeyword,
+  matchesSmsRevocationRequest,
   SMS_HELP_KEYWORDS,
   SMS_OPT_IN_KEYWORDS,
   SMS_OPT_OUT_KEYWORDS,
@@ -212,7 +213,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   const body = (req.body?.Body as string | undefined) || "";
   const messageSid = (req.body?.MessageSid as string | undefined) || "";
   const trimmed = body.trim().toLowerCase();
-  const isOptOut = matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS);
+  const isOptOut =
+    matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS) || matchesSmsRevocationRequest(trimmed);
   const isOptIn = matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS, "exact");
   const isHelp = matchesCarrierKeyword(trimmed, HELP_KEYWORDS, "exact");
 
