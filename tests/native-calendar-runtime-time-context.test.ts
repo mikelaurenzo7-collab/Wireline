@@ -75,7 +75,7 @@ describe("native Calendar runtime date authority", () => {
 
   it.each([
     ["automatic", "use book_appointment without asking the owner"],
-    ["approval", "submit the caller’s request"],
+    ["approval", "requested time was sent to the business to confirm"],
     ["inherit", "describe its returned status"],
   ] as const)("uses the saved %s confirmation policy on calls", (booking_mode, instruction) => {
     const prompt = compose({ ...DEFAULT_NATIVE_CALENDAR, enabled: true, booking_mode });
@@ -83,6 +83,18 @@ describe("native Calendar runtime date authority", () => {
     expect(compose({ ...DEFAULT_NATIVE_CALENDAR, enabled: false, booking_mode })).not.toContain(
       instruction,
     );
+  });
+
+  it("gathers booking details and keeps internal setting names off an approval call", () => {
+    // Live call, Nov 22: the Bot said "approval mode" aloud and never asked
+    // for the caller's details.
+    const prompt = compose({ ...DEFAULT_NATIVE_CALENDAR, enabled: true, booking_mode: "approval" });
+    expect(prompt).toContain("the caller’s name, the service they want, and the address");
+    expect(prompt).toContain("Never describe this as approval mode or a booking setting.");
+    expect(prompt).toContain("When the result is queued or Requested");
+    expect(prompt).not.toContain("The owner chose approval");
+    expect(prompt).toContain("Answer the caller's latest question before anything else.");
+    expect(prompt).toContain("Never say setting, mode, or tool names to the caller");
   });
 
   it("tries other times before asking the owner to handle an automatic booking exception", () => {

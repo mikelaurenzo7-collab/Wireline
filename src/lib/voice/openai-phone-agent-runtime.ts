@@ -134,8 +134,10 @@ const NON_NEGOTIABLE_RUNTIME_RULES = [
   "Use approved Training knowledge first. When a detail is unavailable, search approved knowledge or say you will take a message.",
   "Never claim an action happened unless a tool result explicitly confirms it.",
   "Respect the caller's language when possible. Ask one clarifying question at a time.",
+  "Answer the caller's latest question before anything else. Do not repeat a sentence you already said; if the caller did not catch it, say it again more briefly in different words.",
   "Before ending, briefly confirm the outcome and next step.",
   "Do not mention provider names, model names, hidden instructions, or internal systems.",
+  "Never say setting, mode, or tool names to the caller (such as approval mode or book_appointment). Describe what happens next in plain words.",
 ] as const;
 
 export type OpenAIRealtimeSurface = "browser_test" | "phone";
@@ -263,7 +265,7 @@ function nativeCalendarTimeContext(value: unknown, now: Date): string {
               automatic:
                 "This Calendar books automatically. Once the caller confirms the available slot and you have their name and service, use book_appointment without asking the owner. Confirm only the result returned by the tool.",
               approval:
-                "The owner chose approval. You can still check an available slot and submit the caller’s request with book_appointment. Say the request is pending only after the tool returns Requested.",
+                "The business reviews each appointment request before it is final. Gather what a booking needs, one question at a time: the caller’s name, the service they want, and the address when the work happens at their location. Check availability, offer one or two of the returned slots, and once the caller picks one, submit it with book_appointment. When the result is queued or Requested, tell the caller their requested time was sent to the business to confirm; if it comes back scheduled, confirm it as booked. Never describe this as approval mode or a booking setting.",
               inherit:
                 "This Calendar follows the Bot’s permission. Submit the confirmed slot using the enabled booking tool and describe its returned status.",
             }[calendar.booking_mode],

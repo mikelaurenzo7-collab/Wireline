@@ -175,3 +175,37 @@ export class OpenAISipTurnTiming {
     };
   }
 }
+
+/** The `call_logs` latency columns this call's measurements fill. */
+export type CallLatencyColumns = {
+  /** Median caller-stop to the model starting its reply (first token). */
+  ttftMs: number | null;
+  /** Session connect to the Bot's first audio. */
+  ttfAudioMs: number | null;
+  /** Median and slowest-5% caller-stop to the caller hearing the reply. */
+  latencyP50Ms: number | null;
+  latencyP95Ms: number | null;
+};
+
+const LATENCY_COLUMN_CEILING_MS = 600_000;
+
+function latencyColumn(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return null;
+  return Math.min(Math.round(value), LATENCY_COLUMN_CEILING_MS);
+}
+
+/**
+ * Map one call's turn-timing summary onto the persisted latency columns that
+ * Insights and the voice health window read. A call with no measured turn
+ * stores nulls rather than zeros, so it never looks instantaneous.
+ */
+export function callLatencyColumns(
+  summary: ReturnType<OpenAISipTurnTiming["summary"]>,
+): CallLatencyColumns {
+  return {
+    ttftMs: latencyColumn(summary.stoppedToResponseP50Ms),
+    ttfAudioMs: latencyColumn(summary.firstAudioMs),
+    latencyP50Ms: latencyColumn(summary.stoppedToAudioP50Ms),
+    latencyP95Ms: latencyColumn(summary.stoppedToAudioP95Ms),
+  };
+}

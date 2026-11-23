@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  callLatencyColumns,
   OpenAISipTurnTiming,
   XAI_TURN_AUDIO_START_EVENTS,
 } from "../src/lib/voice/openai-sip-turn-timing";
@@ -107,5 +108,45 @@ describe("OpenAI SIP turn timing", () => {
       toolTimeouts: 1,
       toolConfirmationP95Ms: 20_000,
     });
+  });
+
+  it("stores a call's measured latency in the columns Insights reads, and nulls when unmeasured", () => {
+    const timing = new OpenAISipTurnTiming();
+    expect(callLatencyColumns(timing.summary())).toEqual({
+      ttftMs: null,
+      ttfAudioMs: null,
+      latencyP50Ms: null,
+      latencyP95Ms: null,
+    });
+
+    const summary = {
+      ...timing.summary(),
+      firstAudioMs: 1_049.6,
+      stoppedToResponseP50Ms: 412,
+      stoppedToAudioP50Ms: 820,
+      stoppedToAudioP95Ms: 9_000_000,
+    };
+    expect(callLatencyColumns(summary)).toEqual({
+      ttftMs: 412,
+      ttfAudioMs: 1_050,
+      latencyP50Ms: 820,
+      // A stuck turn is capped, not allowed to overflow the integer column.
+      latencyP95Ms: 600_000,
+    });
+  });
+
+  it("writes the latency with the terminal call row, not in a separate best-effort update", () => {
+    const session = readFileSync(
+      resolve(process.cwd(), "src/lib/voice/openai-sip-session.ts"),
+      "utf8",
+    );
+    expect(session).toContain("latency: callLatencyColumns(turnTiming.summary()),");
+    expect(session).toContain("latency: outcome.latency,");
+    const start = session.indexOf("async function persistFinishedCall(");
+    const terminalWrite = session.slice(
+      start,
+      session.indexOf('openaiSipPhase: "terminal"', start),
+    );
+    expect(terminalWrite).toContain("...(input.latency ?? {}),");
   });
 });
