@@ -65,6 +65,7 @@ const OPT_OUT_KEYWORDS = new Set([
   "cancel",
   "end",
   "quit",
+  "revoke",
   "optout",
   "opt-out",
   "opt out",

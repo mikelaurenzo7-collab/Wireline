@@ -457,7 +457,7 @@ describe("signed Twilio SMS reclassification fence", () => {
     );
   });
 
-  async function loadWrapperSmsRouter(allowed: boolean) {
+  async function loadWrapperSmsRouter(allowed: boolean, optedOut = false) {
     const values: unknown[] = [];
     const persistInboundSmsEvidence = vi.fn(async () => undefined);
     const lookupMessagingDestination = vi.fn(async (toNumber: string) => ({
@@ -473,9 +473,15 @@ describe("signed Twilio SMS reclassification fence", () => {
         persistInboundSmsEvidence,
       };
     });
+    const { dncList } = await import("../src/db/schema");
     const tx: any = {
       execute: vi.fn(async () => undefined),
-      select: vi.fn(() => selectChain([])),
+      // Only the SMS opt-out lookup finds a row, and only when the test opted the number out.
+      select: vi.fn(() => ({
+        from: vi.fn((table: unknown) =>
+          selectChain(table === dncList && optedOut ? [{ id: 1n }] : []),
+        ),
+      })),
       insert: vi.fn(() => insertChain(values)),
       delete: vi.fn(() => ({ where: vi.fn(async () => []) })),
     };
@@ -505,6 +511,7 @@ describe("signed Twilio SMS reclassification fence", () => {
     vi.doMock("../src/lib/dnc-failsafe", () => ({
       clearDncFailsafe: vi.fn(async () => true),
       recordDncFailsafe: vi.fn(async () => true),
+      isDncFailsafeBlocked: vi.fn(async () => false),
     }));
     vi.doMock("../src/lib/error-reporter", () => ({ reportError: vi.fn() }));
     vi.doMock("../src/lib/twilio-usage-alert-idempotency", () => ({
@@ -515,7 +522,10 @@ describe("signed Twilio SMS reclassification fence", () => {
   }
 
   it("persists STOP, START, and HELP controls but suppresses every wrapper Message in demo", async () => {
-    const { router, values, persistInboundSmsEvidence, tx } = await loadWrapperSmsRouter(false);
+    const { router, values, persistInboundSmsEvidence, tx } = await loadWrapperSmsRouter(
+      false,
+      true,
+    );
     const path = "/api/twilio-webhook/sms";
 
     for (const [index, body] of ["STOP", "START", "HELP"].entries()) {
@@ -548,33 +558,40 @@ describe("signed Twilio SMS reclassification fence", () => {
     expect(tx.delete).toHaveBeenCalledTimes(1);
   });
 
-  it("preserves every production legacy control confirmation", async () => {
-    const { router } = await loadWrapperSmsRouter(true);
+  it("confirms only the control words Twilio does not answer itself", async () => {
+    const { router } = await loadWrapperSmsRouter(true, true);
     const path = "/api/twilio-webhook/sms";
-    const controls = [
-      ["STOP", "You have been unsubscribed."],
-      ["START", "You have been resubscribed. Welcome back."],
-      ["HELP", "BotBound SMS help:"],
+    // Variants Twilio does not recognise: the application's reply is the only confirmation.
+    const own = [
+      ["opt out", "You have been unsubscribed."],
+      ["opt in", "You have been resubscribed. Welcome back."],
+      ["support", "BotBound SMS help:"],
     ] as const;
+    // Single-word defaults: Twilio has already replied, and a text from us would
+    // fail with error 21610 (STOP) or arrive as a duplicate (START).
+    const twilioOwned = ["STOP", "START", "HELP"] as const;
 
-    for (const [index, [body, confirmation]] of controls.entries()) {
+    const deliver = async (body: string, sid: string) => {
       const { response, captured } = fakeResponse();
       await routeHandler(router, path)(
         {
           path,
-          body: {
-            To: "+12025550140",
-            From: "+12025550141",
-            Body: body,
-            MessageSid: `SM${String(index + 90).padStart(32, "9")}`,
-          },
+          body: { To: "+12025550140", From: "+12025550141", Body: body, MessageSid: sid },
         },
         response,
         vi.fn(),
       );
+      return captured;
+    };
 
+    for (const [index, [body, confirmation]] of own.entries()) {
+      const captured = await deliver(body, `SM${String(index + 90).padStart(32, "9")}`);
       expect(captured.statusCode).toBe(200);
       expect(String(captured.body)).toContain(`<Message>${confirmation}`);
+    }
+    for (const [index, body] of twilioOwned.entries()) {
+      const captured = await deliver(body, `SM${String(index + 70).padStart(32, "7")}`);
+      expect(captured).toEqual({ statusCode: 200, body: EMPTY_TWIML });
     }
   });
 });
