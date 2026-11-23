@@ -171,9 +171,9 @@ async function syntheticFrame(page: Page) {
 }
 
 const computerPanel = (page: Page) =>
-  page.getByRole("complementary", { name: "Computer", exact: true });
+  page.getByRole("complementary", { name: "Browser", exact: true });
 const botSetup = (page: Page) => page.getByRole("region", { name: "Bot setup", exact: true });
-const computerMode = (page: Page) => page.getByRole("button", { name: "Computer", exact: true });
+const computerMode = (page: Page) => page.getByRole("button", { name: "Browser task", exact: true });
 const configureTab = (page: Page, name: string) =>
   page
     .getByRole("tablist", { name: "Bot setup sections", exact: true })
@@ -201,7 +201,7 @@ async function openBrowser(page: Page) {
 }
 
 async function closeBrowser(page: Page) {
-  const close = computerPanel(page).getByRole("button", { name: "Close Computer", exact: true });
+  const close = computerPanel(page).getByRole("button", { name: "Close browser", exact: true });
   if (await close.isVisible()) await close.click();
 }
 
@@ -373,7 +373,7 @@ for (const width of [700, 1206]) {
     await expect(suggestions).toHaveCount(0);
     await input.fill("Keep this unsent instruction while I change views.");
 
-    await page.getByRole("button", { name: "Computer", exact: true }).click();
+    await page.getByRole("button", { name: "Browser task", exact: true }).click();
     const workDock = workConversation(page).locator("..");
     await expect(workDock).toHaveClass(/wl-studio-composer/);
     await expect(workDock.getByText("Supervised web work", { exact: true })).toHaveCount(0);
@@ -381,7 +381,7 @@ for (const width of [700, 1206]) {
       "background-color",
       sendBackground,
     );
-    await page.getByRole("button", { name: "Computer", exact: true }).click();
+    await page.getByRole("button", { name: "Browser task", exact: true }).click();
     await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
 
     if (width < 1180) {
@@ -393,8 +393,8 @@ for (const width of [700, 1206]) {
       await expect(input).toBeFocused();
     } else {
       await page
-        .getByRole("complementary", { name: "Computer", exact: true })
-        .getByRole("button", { name: "Close Computer", exact: true })
+        .getByRole("complementary", { name: "Browser", exact: true })
+        .getByRole("button", { name: "Close browser", exact: true })
         .click();
       await room.getByRole("button", { name: "Rehearse", exact: true }).click();
       await expect(
@@ -905,11 +905,11 @@ test.describe("wide screens", () => {
       "page",
     );
     await page
-      .getByRole("complementary", { name: "Computer", exact: true })
-      .getByRole("button", { name: "Close Computer", exact: true })
+      .getByRole("complementary", { name: "Browser", exact: true })
+      .getByRole("button", { name: "Close browser", exact: true })
       .click();
     await expect(conversation(page, "Sales Bot")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Computer", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Browser task", exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
@@ -972,7 +972,7 @@ test.describe("wide screens", () => {
     await expect(computerPanel(page)).toHaveCount(0);
     await openBrowser(page);
     await expect(
-      computerPanel(page).getByRole("heading", { name: "Computer", exact: true }),
+      computerPanel(page).getByRole("heading", { name: "Browser", exact: true }),
     ).toHaveCount(1);
     await expect(computerPanel(page).getByRole("tab")).toHaveCount(0);
     await expect(computerPanel(page)).toBeVisible();
@@ -980,9 +980,9 @@ test.describe("wide screens", () => {
     await expect(workConversation(page)).toBeVisible();
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Computer", exact: true }).click();
+    await page.getByRole("button", { name: "Browser task", exact: true }).click();
     await conversation(page).fill("Keep this unsent instruction.");
-    await panel.getByRole("button", { name: "Close Computer", exact: true }).click();
+    await panel.getByRole("button", { name: "Close browser", exact: true }).click();
     await page.getByRole("button", { name: "Rehearse", exact: true }).click();
     const rehearsal = page.getByRole("region", { name: "Front Desk voice rehearsal", exact: true });
     await expect(
@@ -1025,7 +1025,7 @@ test.describe("wide screens", () => {
     await expect(computerPanel(page)).toBeVisible({
       timeout: 20_000,
     });
-    await panel.getByRole("button", { name: "Close Computer", exact: true }).click();
+    await panel.getByRole("button", { name: "Close browser", exact: true }).click();
     await expect(computerPanel(page)).toHaveCount(0);
     await expect(page.getByRole("group", { name: "Set Up view" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Rehearse", exact: true })).toBeVisible();
@@ -1162,8 +1162,8 @@ test.describe("wide screens", () => {
     await page.getByRole("button", { name: "Back to Work", exact: true }).click();
     await expect(panel).toBeVisible();
     await expect(panel.getByRole("button", { name: "Expand panel", exact: true })).toBeVisible();
-    await panel.getByRole("button", { name: "Close Computer", exact: true }).focus();
-    await expect(panel.getByRole("button", { name: "Close Computer", exact: true })).toBeFocused();
+    await panel.getByRole("button", { name: "Close browser", exact: true }).focus();
+    await expect(panel.getByRole("button", { name: "Close browser", exact: true })).toBeFocused();
     const enlarged = await geometry();
     expect(enlarged.heights.every((height) => height >= 44)).toBe(true);
     expect(enlarged.outsideHeader).toBe(0);
@@ -1459,7 +1459,7 @@ test.describe("wide screens", () => {
     await page.goto(`/studio?agent=${bots[1].id}&chat=setup`);
     await conversation(page, "Sales Bot").fill("Keep this while the computer opens.");
     await openBrowser(page);
-    await page.getByRole("button", { name: "Close Computer", exact: true }).click();
+    await page.getByRole("button", { name: "Close browser", exact: true }).click();
     await expect(page.getByRole("navigation", { name: "Workspace view" })).toHaveCount(0);
     await openBrowser(page);
     await expect(computerPanel(page)).toBeVisible();
@@ -1577,7 +1577,7 @@ for (const width of [1440, 390]) {
     };
     const fixture = await mockWorkspace(page, [older], await syntheticFrame(page));
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-    await expect(page.getByRole("button", { name: "Computer", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Browser task", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
       { timeout: 20_000 },
@@ -1739,7 +1739,7 @@ test("phone Studio keeps the composer compact while reading task history", async
   ]);
   await page.goto(`/studio?agent=${bots[0].id}`);
   const log = page.getByRole("log", { name: "Conversation", exact: true });
-  const browserTool = page.getByRole("button", { name: "Computer", exact: true });
+  const browserTool = page.getByRole("button", { name: "Browser task", exact: true });
   const handsFree = page.getByRole("button", { name: "Hands-free", exact: true });
   const send = page.getByRole("button", { name: "Send", exact: true });
   const dock = page.getByRole("navigation", { name: "Workspace navigation" });

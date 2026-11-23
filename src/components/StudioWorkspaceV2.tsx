@@ -646,7 +646,7 @@ function StudioWorkspaceContent() {
         computer.listFailed ? (
           <StatusNotice
             tone="warning"
-            title="Computer history could not load"
+            title="Browser task history could not load"
             action={
               <Button size="sm" variant="secondary" onClick={() => void computer.loadTasks()}>
                 Retry
@@ -686,7 +686,7 @@ function StudioWorkspaceContent() {
       <aside
         id="studio-computer-panel"
         className="flex h-full min-h-0 min-w-0 w-full flex-col"
-        aria-label="Computer"
+        aria-label="Browser"
         onKeyDown={(event) => {
           if (
             event.key !== "Escape" ||
@@ -711,7 +711,7 @@ function StudioWorkspaceContent() {
         }}
       >
         <header className="wl-studio-panel-header">
-          <h2 className="text-sm font-semibold">Computer</h2>
+          <h2 className="text-sm font-semibold">Browser</h2>
           <div className="wl-studio-panel-actions">
             {splitWorkspace ? (
               <button
@@ -738,8 +738,8 @@ function StudioWorkspaceContent() {
               type="button"
               onClick={closeComputer}
               className="wl-studio-panel-action wl-focus-ring-halo"
-              aria-label="Close Computer"
-              title="Close Computer"
+              aria-label="Close browser"
+              title="Close browser"
             >
               <X className="size-4" aria-hidden="true" />
             </button>
