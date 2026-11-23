@@ -83,11 +83,18 @@
   color: var(--wireline-color-text-primary);
 }
 
-.wl-workspace-shell details {
+/*
+ * Disclosure baseline for every workspace <details>. The shell scope sits
+ * inside :where() so these rules weigh (0,0,2): enough to beat Tailwind's
+ * preflight `summary { display: list-item }` (0,0,1), never enough to beat a
+ * component's own utilities (0,1,0). At (0,1,2) they silently overrode the
+ * padding, alignment and margins components asked for.
+ */
+:where(.wl-workspace-shell) details {
   border-radius: var(--wireline-radius-md);
 }
 
-.wl-workspace-shell details > summary {
+:where(.wl-workspace-shell) details > summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -105,6 +112,7 @@
     border-color var(--bb-shell-fast);
 }
 
+/* The marker stays hidden at full strength: no component should restore it. */
 .wl-workspace-shell details > summary::-webkit-details-marker,
 .wl-workspace-shell details > summary::marker {
   display: none;
@@ -116,12 +124,13 @@
     border-color: var(--wireline-color-border-strong);
   }
 
-  .wl-workspace-shell details > summary:hover {
+  :where(.wl-workspace-shell) details > summary:hover {
     background-color: var(--bb-shell-hover);
   }
 }
 
-.wl-workspace-shell details[open] > summary {
+/* :where([open]) keeps this at (0,0,2), so it follows the baseline above. */
+:where(.wl-workspace-shell) details:where([open]) > summary {
   margin-bottom: 0.75rem;
   padding-bottom: 0.625rem;
   border-bottom: 1px solid var(--bb-shell-border);
