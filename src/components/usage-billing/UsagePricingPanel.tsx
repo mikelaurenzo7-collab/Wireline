@@ -64,6 +64,20 @@ export interface UsageEstimatorInput {
   extraEmailAddresses?: number;
 }
 
+/**
+ * The month the estimator opens on, so a visitor sees what an allowance
+ * covers instead of $0 of usage: 15 three-minute calls ($11.25), 40 text
+ * segments ($1.60) and 50 emails ($1.00) come to $13.85, inside Starter's
+ * $14 of included work. Every slider still moves freely.
+ */
+export const EXAMPLE_MONTH = {
+  callsPerMonth: 15,
+  avgCallMinutes: 3,
+  emailsPerMonth: 50,
+  computerMinutes: 0,
+  smsSegments: 40,
+} as const;
+
 export function estimateFromSliders(input: UsageEstimatorInput) {
   const plan = usageTier(input.tier);
   return estimateUsageBill(
@@ -164,11 +178,11 @@ export default function UsagePricingPanel({
     ? selectedTier
     : (availableTiers[0] ?? DEFAULT_PUBLIC_USAGE_TIER);
   const plan = usageTier(tier);
-  const [callsPerMonth, setCallsPerMonth] = useState(0);
-  const [avgCallMinutes, setAvgCallMinutes] = useState(3);
-  const [emailsPerMonth, setEmailsPerMonth] = useState(0);
-  const [computerMinutes, setComputerMinutes] = useState(0);
-  const [smsSegments, setSmsSegments] = useState(0);
+  const [callsPerMonth, setCallsPerMonth] = useState<number>(EXAMPLE_MONTH.callsPerMonth);
+  const [avgCallMinutes, setAvgCallMinutes] = useState<number>(EXAMPLE_MONTH.avgCallMinutes);
+  const [emailsPerMonth, setEmailsPerMonth] = useState<number>(EXAMPLE_MONTH.emailsPerMonth);
+  const [computerMinutes, setComputerMinutes] = useState<number>(EXAMPLE_MONTH.computerMinutes);
+  const [smsSegments, setSmsSegments] = useState<number>(EXAMPLE_MONTH.smsSegments);
   const [number, setNumber] = useState(false);
   const [emailAddress, setEmailAddress] = useState(false);
   const estimate = useMemo(
@@ -283,7 +297,8 @@ export default function UsagePricingPanel({
         })}
       </div>
       <p className="text-center text-sm text-muted-foreground">
-        Inbound, Outbound, SMS, Email & Computer. One allowance, any mix. Resets monthly.
+        Calls, texts, email and Computer share one allowance that resets monthly. The estimate
+        starts from an example month; set it to yours.
       </p>
       <article
         aria-label="Monthly estimate"

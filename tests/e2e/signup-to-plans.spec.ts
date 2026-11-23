@@ -4,7 +4,7 @@ import { USAGE_PLAN } from "../../src/lib/plan-catalog";
 const user = { id: "new-plan-owner", email: "plan-owner@example.test" };
 
 for (const selectedPlan of [false, true]) {
-  test(`a fresh ${selectedPlan ? "Lite" : "ordinary"} signup goes directly to plan review`, async ({
+  test(`a fresh ${selectedPlan ? "Lite signup reviews its plan" : "ordinary signup starts free Bot setup"}`, async ({
     page,
   }) => {
     let signedIn = false;
@@ -86,6 +86,14 @@ for (const selectedPlan of [false, true]) {
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     await page.getByLabel("Password", { exact: true }).fill("E2E-Plan-Selection-72!");
     await page.locator('form button[type="submit"]').click();
+
+    if (!selectedPlan) {
+      // Setup and private rehearsal are free: no plan screen first.
+      await expect(page).toHaveURL(/\/studio\?create=1$/);
+      await expect(page.getByRole("dialog", { name: "What Should Your Bot Do?" })).toBeVisible();
+      expect(checkoutRequests).toEqual([]);
+      return;
+    }
 
     await expect(page).toHaveURL(/\/settings\/billing\?.*onboarding=1/);
     await expect(page.getByRole("heading", { name: "Choose a Plan", exact: true })).toBeVisible();

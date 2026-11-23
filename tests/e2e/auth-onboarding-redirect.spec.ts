@@ -25,7 +25,7 @@ test("direct account-entry routes recognize an existing session", async ({ page 
   await expect(page).toHaveURL(/\/studio$/);
 });
 
-test("settings sign-out followed by ordinary signup opens plan review despite a stale redirect", async ({
+test("settings sign-out followed by ordinary signup opens Bot setup despite a stale redirect", async ({
   page,
 }) => {
   await page.route("**/api/**", async (route) => {
@@ -90,8 +90,7 @@ test("settings sign-out followed by ordinary signup opens plan review despite a 
   });
 
   await page.getByRole("button", { name: "Create Account", exact: true }).last().click();
-  await expect(page).toHaveURL(/\/settings\/billing\?plan=usage&.*&onboarding=1$/);
-  await expect(page.getByRole("heading", { name: "Choose a Plan", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/studio\?create=1$/);
   expect(
     await page.evaluate(
       ({ redirectKey, freshKey }) => ({

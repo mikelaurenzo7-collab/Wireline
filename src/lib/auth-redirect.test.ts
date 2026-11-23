@@ -42,13 +42,11 @@ describe("auth-redirect", () => {
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
   });
 
-  it("defaults to Studio for returning users and shows plans once after a fresh signup", () => {
+  it("defaults to Studio for returning users and opens Bot setup once after a fresh signup", () => {
     expect(resolvePostAuthDestination("business", "")).toBe("/studio");
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
-    expect(resolvePostAuthDestination("personal", "")).toBe(
-      "/settings/billing?plan=usage&interval=month&onboarding=1",
-    );
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio?create=1");
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
   });
 
@@ -61,12 +59,12 @@ describe("auth-redirect", () => {
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
 
-  it("starts a fresh signup in plan review and consumes an incidental safe redirect", () => {
+  it("starts a fresh signup in Bot setup and consumes an incidental safe redirect", () => {
     localStorage.setItem(AUTH_REDIRECT_KEY, "/settings");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings%2Fphone")).toBe(
-      "/settings/billing?plan=usage&interval=month&onboarding=1",
+      "/studio?create=1",
     );
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
