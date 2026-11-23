@@ -1,4 +1,5 @@
 import { AppError } from "../lib/api-error";
+import { isBillingSyncInProgress } from "../lib/stripe-subscription-sync-lease";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Stripe events and subscription payloads are vendor-defined JSON. */
 import express, { Request, Response } from "express";
 import { drizzle, log, tenantStore, auditLogger } from "../lib/server-context";
@@ -475,13 +476,26 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
     await completeStripeEventClaim(claim);
     res.json({ received: true });
   } catch (err: any) {
-    log.error("Stripe webhook handler error", { error: getErrorMessage(err) });
+    // Two events for one customer often arrive together (checkout completion
+    // bursts). The second finds the billing lease held: an expected, retried
+    // outcome, not a server fault, so it answers 409 (Stripe retries any
+    // non-2xx) and logs a warning instead of paging as a 500.
+    const contended = isBillingSyncInProgress(err);
+    if (contended) {
+      log.warn("Stripe webhook deferred: a billing update for this customer is running", {
+        error: getErrorMessage(err),
+      });
+    } else log.error("Stripe webhook handler error", { error: getErrorMessage(err) });
     if (claim) {
       try {
         await releaseStripeEventClaim(claim);
       } catch {
         /* best-effort rollback */
       }
+    }
+    if (contended) {
+      res.setHeader("Retry-After", "30");
+      throw new AppError(409, "BILLING_SYNC_IN_PROGRESS", "A billing update is already running.");
     }
     throw AppError.fromHttpStatus(500, "Webhook handler failed");
   }

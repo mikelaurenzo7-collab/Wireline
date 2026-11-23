@@ -48,7 +48,12 @@ export default defineConfig(({ mode }) => {
       // added, restore "hidden" AND upload the maps to the reporter instead of
       // serving them from the CDN.
       sourcemap: false,
-      target: "es2022",
+      // es2022 alone passes class static blocks through untouched (one ships
+      // inside @radix-ui/react-collection), and Safari before 16.4 throws
+      // "SyntaxError: Unexpected token '{'" on them, so the shared chunk fails
+      // and the route crashes (Sentry WIRELINE-BACKEND-S, /knowledge). Naming
+      // Safari 15 makes esbuild lower that syntax for older iPhones.
+      target: ["es2022", "safari15", "ios15"],
       cssTarget: "chrome111",
       chunkSizeWarningLimit: 600,
       rollupOptions: {
