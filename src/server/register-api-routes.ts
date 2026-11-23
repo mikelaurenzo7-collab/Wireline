@@ -49,6 +49,7 @@ import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";
 import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
 import textingRegistrationRouter from "../routes/texting-registration-routes";
+import textingPolicyRouter from "../routes/texting-policy-routes";
 import sharedWorkspaceReadinessRouter from "../routes/shared-workspace-readiness-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
@@ -152,6 +153,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(nativePhoneRoutingRouter);
   app.use(companyIdentityRouter);
   app.use(textingRegistrationRouter);
+  app.use(textingPolicyRouter);
   app.use(sharedWorkspaceReadinessRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);

@@ -3,15 +3,22 @@ import { describe, expect, it, vi } from "vitest";
 import {
   A2P_TRUST_PRODUCT_POLICY_SID,
   SECONDARY_CUSTOMER_PROFILE_POLICY_SID,
+  SOLE_PROPRIETOR_TRUST_PRODUCT_POLICY_SID,
+  STARTER_CUSTOMER_PROFILE_POLICY_SID,
   composeCampaign,
+  composeSoleProprietorCampaign,
   executeRegistration,
+  executeSoleProprietorRegistration,
   planRegistration,
+  planSoleProprietorRegistration,
   resolveStep,
   validateBusinessDetails,
   type CustomerBusinessDetails,
   type RegistrationContext,
   type RegistrationHttp,
   type RegistrationSids,
+  type SoleProprietorContext,
+  type SoleProprietorDetails,
 } from "../src/lib/carrier-registration";
 import { MISSED_CALL_COVERAGE } from "../src/lib/twilio-sms-registration";
 
@@ -43,14 +50,27 @@ const context: RegistrationContext = {
 };
 
 /** A Twilio stand-in that mints SIDs and answers evaluations and the brand gate. */
-function fakeTwilio(options: { brandStatus?: string; evaluation?: string; failOn?: string } = {}) {
+function fakeTwilio(
+  options: {
+    brandStatus?: string;
+    identityStatus?: string;
+    evaluation?: string;
+    failOn?: string;
+  } = {},
+) {
   const calls: Array<{ method: string; url: string; form?: Record<string, string | string[]> }> =
     [];
   let counter = 0;
   const http: RegistrationHttp = async (method, url, form) => {
     calls.push({ method, url, form });
     if (method === "GET")
-      return { status: 200, body: { status: options.brandStatus ?? "APPROVED" } };
+      return {
+        status: 200,
+        body: {
+          status: options.brandStatus ?? "APPROVED",
+          identity_status: options.identityStatus ?? "VERIFIED",
+        },
+      };
     if (options.failOn && url.includes(options.failOn))
       return { status: 400, body: { message: "Invalid parameter" } };
     if (url.endsWith("/Evaluations"))
@@ -225,5 +245,181 @@ describe("customer texting registration", () => {
       allowBillable: false,
     });
     expect(noncompliant).toMatchObject({ ok: false, failedStep: "customerProfileEvaluated" });
+  });
+});
+
+const sole: SoleProprietorDetails = {
+  brandName: "Dana Fixes It",
+  firstName: "Dana",
+  lastName: "Ridge",
+  email: "dana@example.com",
+  mobilePhone: "+12175550111",
+  vertical: "CONSTRUCTION",
+  address: { street: "12 Elm St", city: "Springfield", region: "IL", postalCode: "62704" },
+};
+
+const soleContext: SoleProprietorContext = {
+  accountSid: "ACtest",
+  primaryProfileSid: "BUprimary",
+  phoneNumberSid: "PNline",
+  privacyUrl: "https://botbound.app/texting/token/privacy",
+  termsUrl: "https://botbound.app/texting/token/terms",
+};
+
+describe("Sole Proprietor texting registration", () => {
+  it("plans Twilio's Sole Proprietor flow with the owner's own email on both bundles", () => {
+    const steps = planSoleProprietorRegistration(sole, soleContext);
+    const keys = steps.map((step) => step.key);
+    expect(keys[0]).toBe("customerProfile");
+    expect(keys.indexOf("customerProfileSubmitted")).toBeLessThan(keys.indexOf("trustProduct"));
+    expect(keys.indexOf("trustProductSubmitted")).toBeLessThan(keys.indexOf("brand"));
+    expect(keys.indexOf("brand")).toBeLessThan(keys.indexOf("messagingService"));
+    expect(keys.indexOf("phoneAttached")).toBeLessThan(keys.indexOf("campaign"));
+    expect(keys).not.toContain("businessInfo");
+    expect(keys).not.toContain("messagingProfile");
+
+    const step = (key: keyof RegistrationSids) => steps.find((item) => item.key === key)!;
+    expect(step("customerProfile").form).toMatchObject({
+      Email: "dana@example.com",
+      PolicySid: STARTER_CUSTOMER_PROFILE_POLICY_SID,
+    });
+    expect(step("trustProduct").form).toMatchObject({
+      Email: "dana@example.com",
+      PolicySid: SOLE_PROPRIETOR_TRUST_PRODUCT_POLICY_SID,
+    });
+    expect(JSON.parse(String(step("ownerInfo").form.Attributes))).toEqual({
+      first_name: "Dana",
+      last_name: "Ridge",
+      email: "dana@example.com",
+      phone_number: "+12175550111",
+    });
+    expect(step("ownerInfo").form.Type).toBe("starter_customer_profile_information");
+    expect(JSON.parse(String(step("soleProprietorInfo").form.Attributes))).toEqual({
+      brand_name: "Dana Fixes It",
+      vertical: "CONSTRUCTION",
+      mobile_phone_number: "+12175550111",
+    });
+    expect(step("soleProprietorInfo").form.Type).toBe("sole_proprietor_information");
+    expect(step("primaryProfileAssigned").form.ObjectSid).toBe("BUprimary");
+    expect(step("brand")).toMatchObject({ billable: true });
+    expect(step("brand").form.BrandType).toBe("SOLE_PROPRIETOR");
+    expect(step("brand").form.SkipAutomaticSecVet).toBeUndefined();
+    expect(step("campaign")).toMatchObject({ billable: true });
+    expect(step("campaign").form).toMatchObject({
+      UsAppToPersonUsecase: "SOLE_PROPRIETOR",
+      PrivacyPolicyUrl: soleContext.privacyUrl,
+      TermsAndConditionsUrl: soleContext.termsUrl,
+      HasEmbeddedLinks: "false",
+    });
+    // Twilio waits for an approved, owner-confirmed brand before the Messaging Service.
+    for (const key of ["messagingService", "campaign"] as const) {
+      expect(step(key).gate?.require).toMatchObject({
+        field: "identity_status",
+        ready: ["VERIFIED", "VETTED_VERIFIED"],
+      });
+    }
+  });
+
+  it("describes the same consent flow, linking only when the owner has a website", () => {
+    const plain = composeSoleProprietorCampaign(sole, soleContext);
+    expect(plain.hasEmbeddedLinks).toBe(false);
+    expect(plain.messageFlow).toContain(soleContext.privacyUrl);
+    expect(plain.messageFlow).toContain(soleContext.termsUrl);
+    expect(MISSED_CALL_COVERAGE.test(`${plain.description} ${plain.messageFlow}`)).toBe(true);
+    for (const sample of plain.messageSamples) {
+      expect(sample.startsWith("Dana Fixes It: ")).toBe(true);
+      expect(sample).not.toMatch(/https?:/);
+      expect(sample).toContain("Reply STOP to opt out, HELP for help.");
+    }
+    const linked = composeSoleProprietorCampaign(
+      { ...sole, websiteUrl: "https://danafixes.example" },
+      soleContext,
+    );
+    expect(linked.hasEmbeddedLinks).toBe(true);
+    expect(linked.messageSamples[0]).toContain("https://danafixes.example");
+  });
+
+  it("pauses before the brand fee, then waits for approval and the owner's YES", async () => {
+    const unpaid = await executeSoleProprietorRegistration({
+      details: sole,
+      context: soleContext,
+      done: {},
+      http: fakeTwilio().http,
+      save: async () => undefined,
+      allowBillable: false,
+    });
+    expect(unpaid).toMatchObject({ ok: false, pausedBefore: "brand" });
+    expect(unpaid.done.trustProductSubmitted).toBeTruthy();
+
+    const reviewing = await executeSoleProprietorRegistration({
+      details: sole,
+      context: soleContext,
+      done: unpaid.done,
+      http: fakeTwilio({ brandStatus: "PENDING" }).http,
+      save: async () => undefined,
+      allowBillable: true,
+    });
+    expect(reviewing).toMatchObject({ ok: false, pausedBefore: "messagingService" });
+    expect(reviewing.done.brand).toBeTruthy();
+
+    const unconfirmed = fakeTwilio({ brandStatus: "APPROVED", identityStatus: "UNVERIFIED" });
+    const waiting = await executeSoleProprietorRegistration({
+      details: sole,
+      context: soleContext,
+      done: reviewing.done,
+      http: unconfirmed.http,
+      save: async () => undefined,
+      allowBillable: true,
+    });
+    expect(waiting).toMatchObject({ ok: false, pausedBefore: "messagingService" });
+    const reason = waiting.ok === false ? waiting.reason : "";
+    expect(reason).toContain("reply YES");
+    expect(reason).toContain("ending 0111");
+    expect(reason).toContain("--resend-confirmation");
+    expect(reason).toContain("UNVERIFIED");
+    expect(unconfirmed.calls.some((call) => call.method === "POST")).toBe(false);
+
+    const confirmed = fakeTwilio();
+    const finished = await executeSoleProprietorRegistration({
+      details: sole,
+      context: soleContext,
+      done: waiting.done,
+      http: confirmed.http,
+      save: async () => undefined,
+      allowBillable: true,
+    });
+    expect(finished.ok).toBe(true);
+    const posts = confirmed.calls.filter((call) => call.method === "POST");
+    expect(posts.map((call) => call.url.split("/").slice(-2).join("/"))).toEqual([
+      "v1/Services",
+      expect.stringMatching(/PhoneNumbers$/),
+      "Compliance/Usa2p",
+    ]);
+  });
+
+  it("stops when carriers fail or expire the brand", async () => {
+    const beforeService = planSoleProprietorRegistration(sole, soleContext)
+      .slice(0, -3)
+      .reduce<RegistrationSids>((acc, step) => ({ ...acc, [step.key]: `${step.key}-sid` }), {});
+    for (const brandStatus of ["FAILED", "EXPIRED"]) {
+      const result = await executeSoleProprietorRegistration({
+        details: sole,
+        context: soleContext,
+        done: beforeService,
+        http: fakeTwilio({ brandStatus }).http,
+        save: async () => undefined,
+        allowBillable: true,
+      });
+      expect(result).toMatchObject({ ok: false, failedStep: "messagingService" });
+    }
+  });
+
+  it("refuses a state file from the other flow", () => {
+    expect(() =>
+      planSoleProprietorRegistration(sole, soleContext, { businessInfo: "ITbiz" }),
+    ).toThrow(/different registration flow/);
+    expect(() => planRegistration(details, context, { soleProprietorInfo: "ITsole" })).toThrow(
+      /different registration flow/,
+    );
   });
 });

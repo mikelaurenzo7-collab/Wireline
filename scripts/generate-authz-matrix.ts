@@ -95,6 +95,11 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "CAN-SPAM one-click unsubscribe; token-scoped + rate-limited",
   },
   {
+    pattern: /^\/api\/texting-policy\/:token$/,
+    reason:
+      "Hosted texting privacy/terms for carrier review; HMAC-signed brand-name token, no database read, IP rate-limited",
+  },
+  {
     pattern: /^\/api\/health\/?$/,
     reason: "Public liveness probe; DB ping only, rate-limited",
   },

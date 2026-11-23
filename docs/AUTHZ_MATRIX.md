@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 473
+**Routes scanned:** 474
 **Protected:** 384
-**Public (allowlisted):** 89
+**Public (allowlisted):** 90
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -90,6 +90,7 @@
 | `POST /api/webhooks/resend` | Resend/Svix timestamped HMAC-SHA256 signature + replay window |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
+| `GET /api/texting-policy/:token` | Hosted texting privacy/terms for carrier review; HMAC-signed brand-name token, no database read, IP rate-limited |
 | `POST /api/twilio-webhook/tollfree-verification-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/live-recording-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -542,6 +543,7 @@
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
 | team-routes.ts | GET | `/api/team/workspaces` | inline | — | — | Protected |
 | team-routes.ts | POST | `/api/team/workspaces/:tenantId/select` | inline | — | — | Protected |
+| texting-policy-routes.ts | GET | `/api/texting-policy/:token` | — | — | yes | Public (allowlisted) |
 | texting-registration-routes.ts | GET | `/api/texting-registration` | inline | — | — | Protected |
 | texting-registration-routes.ts | PUT | `/api/texting-registration` | inline | — | — | Protected |
 | texting-registration-routes.ts | DELETE | `/api/texting-registration` | inline | — | — | Protected |

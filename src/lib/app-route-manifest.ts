@@ -1,10 +1,5 @@
 export type AppRouteScope =
-  | "home"
-  | "marketing"
-  | "auth"
-  | "public-capability"
-  | "transition"
-  | "workspace";
+  "home" | "marketing" | "auth" | "public-capability" | "transition" | "workspace";
 
 export type AppRouteFamily = {
   path: `/${string}` | "/";
@@ -49,14 +44,8 @@ export const APP_ROUTE_FAMILIES: readonly AppRouteFamily[] = [
     "/not-found",
     "/404",
   ]),
-  ...branch("marketing", ["/blog", "/for", "/solutions", "/use-cases", "/trust"]),
-  ...exact("auth", [
-    "/get-started",
-    "/login",
-    "/reset",
-    "/reset-password",
-    "/oauth-complete",
-  ]),
+  ...branch("marketing", ["/blog", "/for", "/solutions", "/use-cases", "/trust", "/texting"]),
+  ...exact("auth", ["/get-started", "/login", "/reset", "/reset-password", "/oauth-complete"]),
   ...branch("auth", ["/signin", "/signup", "/auth"]),
   ...exact("public-capability", ["/voice-permission"]),
   ...exact("transition", ["/accept-invite", "/onboarding", "/billing"]),
