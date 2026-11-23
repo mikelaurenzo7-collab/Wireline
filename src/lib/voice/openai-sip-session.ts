@@ -55,7 +55,12 @@ import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
 import type { InboundFallbackDrill, OpenAIInboundLeg } from "./openai-inbound-token";
 import { composeInboundOpening } from "./inbound-opening";
 import { inboundSourceId, redirectInboundCallToOpenAI } from "./inbound-bridge";
-import { OpenAISipTurnTiming, XAI_TURN_AUDIO_START_EVENTS } from "./openai-sip-turn-timing";
+import {
+  callLatencyColumns,
+  OpenAISipTurnTiming,
+  XAI_TURN_AUDIO_START_EVENTS,
+  type CallLatencyColumns,
+} from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
 import { adoptOutboundPlacementSipFunding } from "./outbound-placement-funding";
@@ -212,6 +217,8 @@ type RealtimeSessionOutcome = {
   openingPlaybackConfirmed: boolean;
   actualOpeningTranscript: string;
   providerHangupRequired?: boolean;
+  /** Measured turn latency; absent when the session never started. */
+  latency?: CallLatencyColumns;
 };
 
 export type OpenAITranscriptLine = {
@@ -1442,6 +1449,7 @@ async function persistFinishedCall(input: {
   actualOpeningTranscript: string;
   providerHangupRequired?: boolean;
   claim?: OpenAISipCallClaim;
+  latency?: CallLatencyColumns;
 }) {
   let durationSeconds = input.connectedAt
     ? Math.max(0, Math.round(((input.endedAt ?? Date.now()) - input.connectedAt) / 1_000))
@@ -1482,6 +1490,9 @@ async function persistFinishedCall(input: {
         pipelineError: input.pipelineError,
         toolCallsTotal: input.toolCallsTotal,
         toolCallsFailed: input.toolCallsFailed,
+        // Measured on this call's sideband (openai-sip-turn-timing.ts); read
+        // by Insights latency and the voice health window.
+        ...(input.latency ?? {}),
         // Workflow escalations can persist a successful task/notification
         // before the SIP session finishes. Merge rather than clobbering that
         // durable outcome with the session-local REFER result.
@@ -3194,6 +3205,7 @@ async function runRealtimeSession(
     openingPlaybackConfirmed,
     actualOpeningTranscript: actualOpeningTranscript.trim(),
     providerHangupRequired,
+    latency: callLatencyColumns(turnTiming.summary()),
   };
 }
 
@@ -3422,6 +3434,7 @@ export async function runOpenAISipCallSession(
           actualOpeningTranscript: outcome.actualOpeningTranscript,
           providerHangupRequired: outcome.providerHangupRequired || ownerFence.signal.aborted,
           claim,
+          latency: outcome.latency,
         });
         terminalPersistedByOwner = true;
       } finally {
