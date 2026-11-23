@@ -5,7 +5,13 @@ import * as schema from "../db/schema";
 import { loadSmsHelpIdentity, smsHelpReplyText } from "../lib/sms-help-reply";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { matchesCarrierKeyword, twilioAnswersKeyword } from "../lib/carrier-keywords";
+import {
+  matchesCarrierKeyword,
+  SMS_HELP_KEYWORDS,
+  SMS_OPT_IN_KEYWORDS,
+  SMS_OPT_OUT_KEYWORDS,
+  twilioAnswersKeyword,
+} from "../lib/carrier-keywords";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { clearDncFailsafe, isDncFailsafeBlocked, recordDncFailsafe } from "../lib/dnc-failsafe";
 import { reportError } from "../lib/error-reporter";
@@ -20,20 +26,10 @@ import { lookupMessagingDestination, persistInboundSmsEvidence } from "./twilio-
 import tollfreeWebhookRouter from "./twilio-tollfree-webhook";
 
 const router = Router();
-const LEGACY_OPT_OUT_KEYWORDS = new Set([
-  "stop",
-  "stopall",
-  "unsubscribe",
-  "cancel",
-  "end",
-  "quit",
-  "revoke",
-  "optout",
-  "opt-out",
-  "opt out",
-]);
-const LEGACY_OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "opt in"]);
-const LEGACY_HELP_KEYWORDS = new Set(["help", "info", "support"]);
+// One source of truth: src/lib/carrier-keywords.ts.
+const LEGACY_OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;
+const LEGACY_OPT_IN_KEYWORDS = SMS_OPT_IN_KEYWORDS;
+const LEGACY_HELP_KEYWORDS = SMS_HELP_KEYWORDS;
 
 type ConsentControl = "stop" | "start" | "help";
 
