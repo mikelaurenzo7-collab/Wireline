@@ -16,6 +16,11 @@ import {
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { isIntentionalCaptureAbort } from "./lib/visual-capture-diagnostics.mjs";
 import {
+  applyCaptureTheme,
+  THEME_STORAGE_KEY,
+  visualCaptureTheme,
+} from "./lib/visual-capture-theme.mjs";
+import {
   assertCleanCheckout,
   resolveSourceCommit,
   verifyRemoteSourceCommit,
@@ -32,6 +37,7 @@ const outputRoot = path.resolve(
   process.env.WIRELINE_VISUAL_OUTPUT_DIR || "artifacts/visual-qa-prod",
 );
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+const captureTheme = visualCaptureTheme();
 const outputDir = path.join(outputRoot, timestamp);
 const qaEmail = process.env.WIRELINE_VISUAL_EMAIL?.trim();
 const qaPassword = process.env.WIRELINE_VISUAL_PASSWORD;
@@ -422,6 +428,10 @@ async function createContext(browser, viewport, storageState) {
       // Private contexts may block storage.
     }
   });
+  await context.addInitScript(applyCaptureTheme, {
+    theme: captureTheme,
+    storageKey: THEME_STORAGE_KEY,
+  });
   return context;
 }
 
@@ -562,6 +572,7 @@ const routeCount =
 const manifest = {
   baseUrl,
   outputDir,
+  theme: captureTheme,
   artifactDirectory: timestamp,
   sourceCommit,
   expectedCommit,
