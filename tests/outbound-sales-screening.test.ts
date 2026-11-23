@@ -155,7 +155,7 @@ describe("one-off and bulk sales screening", () => {
     expect(isFederalDncListed).not.toHaveBeenCalled();
   });
 
-  it("does not let a client callback purpose skip the one-call-per-day limit or grant consent", async () => {
+  it("does not let a client callback purpose grant consent", async () => {
     const screening = screenedDirectOutboundCall("callback");
     expect(screening.isRequestedCallback).toBe(false);
     expect(screening.hasExpressWrittenConsent).toBe(false);
@@ -192,27 +192,16 @@ describe("one-off and bulk sales screening", () => {
       hasExpressWrittenConsent: screening.hasExpressWrittenConsent,
       isRequestedCallback: screening.isRequestedCallback,
       lastCalledAt: new Date(),
+      manualCallPurpose: screening.callPurpose,
     });
-    expect(recent.allowed).toBe(false);
-    if (!recent.allowed) expect(recent.reason).toBe("self_recent_call_scheduled");
-    expect(evaluateOutboundConsent).not.toHaveBeenCalled();
-
-    const open = await evaluateOutboundDialGate({
-      userId: "tenant-1",
-      phone: "+13125550100",
-      isMarketingCall: screening.isMarketingCall,
-      requireFederalDncScreening: screening.requireFederalDncScreening,
-      hasExpressWrittenConsent: screening.hasExpressWrittenConsent,
-      isRequestedCallback: screening.isRequestedCallback,
-    });
-    expect(open.allowed).toBe(true);
+    expect(recent.allowed).toBe(true);
     expect(evaluateOutboundConsent).toHaveBeenCalledWith(
       expect.objectContaining({ has_express_written_consent: false, is_marketing_call: false }),
     );
   });
 });
 
-describe("manual service retries and callbacks", () => {
+describe("owner-reviewed non-sales repeat calls", () => {
   const priorCall = (status: string, matches = true) => ({
     id: 1n,
     callId: "carrier-one",
@@ -226,41 +215,33 @@ describe("manual service retries and callbacks", () => {
 
   afterEach(() => vi.resetModules());
 
-  it.each([
-    ["appointment_service", "busy", true, true],
-    ["appointment_service", "no-answer", true, true],
-    ["existing_customer", "completed", true, false],
-    ["callback", "completed", true, true],
-    ["callback", "ringing", true, false],
-    ["appointment_service", "busy", false, false],
-    [undefined, "busy", true, false],
-  ] satisfies Array<[OutboundPurpose | undefined, string, boolean, boolean]>)(
-    "handles %s with carrier outcome %s and receipt match %s",
-    async (manualCallPurpose, outcome, matches, allowed) => {
-      const { evaluateOutboundDialGate } = await loadGate([[priorCall(outcome, matches)]]);
+  it.each(["personal", "appointment_service", "existing_customer", "returning_contact", "callback"] as OutboundPurpose[])(
+    "allows a second reviewed %s call after a completed attempt",
+    async (manualCallPurpose) => {
+      const { evaluateOutboundDialGate } = await loadGate([[priorCall("completed")]]);
       const result = await evaluateOutboundDialGate({
         userId: "tenant-1",
         phone: "+13125550100",
         isMarketingCall: false,
         manualCallPurpose,
+        lastCalledAt: new Date(),
       });
-      expect(result.allowed).toBe(allowed);
-      if (!result.allowed) expect(result.reason).toBe("skipped_duplicate");
+      expect(result.allowed).toBe(true);
     },
   );
 
-  it("permits one service retry and still enforces an opt-out for a requested callback", async () => {
+  it("keeps the repeat limit for automated calls and an opt-out for reviewed calls", async () => {
     const { evaluateOutboundDialGate } = await loadGate([
-      [priorCall("busy"), { ...priorCall("no-answer"), id: 2n }],
+      [priorCall("completed")],
     ]);
     const request = { userId: "tenant-1", phone: "+13125550100", isMarketingCall: false };
     expect(
-      await evaluateOutboundDialGate({ ...request, manualCallPurpose: "appointment_service" }),
+      await evaluateOutboundDialGate(request),
     ).toMatchObject({ allowed: false, reason: "skipped_duplicate" });
 
     const optedOut = await loadGate([[priorCall("completed")]], true);
     expect(
-      await optedOut.evaluateOutboundDialGate({ ...request, manualCallPurpose: "callback" }),
+      await optedOut.evaluateOutboundDialGate({ ...request, manualCallPurpose: "personal" }),
     ).toMatchObject({ allowed: false, reason: "blocked_internal_dnc" });
   });
 });
