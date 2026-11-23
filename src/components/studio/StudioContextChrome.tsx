@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
 import BotMark from "../BotMark";
+import { useAgents } from "../../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
 import { canOfferAnotherBot } from "../../lib/bot-roster-policy";
@@ -27,6 +28,7 @@ export default function StudioContextChrome() {
   const readyLabel = activeAgent ? agentReadinessLabel(activeAgent, phoneLookupDegraded) : null;
   const optionLabels = useMemo(() => buildAgentOptionLabels(agents), [agents]);
   const language = customerAgentLanguage();
+  const { degraded: rosterDegraded, loading: rosterLoading } = useAgents();
 
   function selectAgent(agentId: string) {
     setSearchParams(
@@ -43,6 +45,14 @@ export default function StudioContextChrome() {
       { replace: true },
     );
   }
+
+  // With no Bot yet, the page's only job is the Create Your Bot card. A
+  // header row holding just a tiny "Workspace" label and a divider read as
+  // unfinished chrome, so keep only the page heading for assistive tech.
+  // An unreachable or still-loading roster is not an empty one: keep the
+  // header then, so it never pops in for an owner who does have Bots.
+  const knownEmpty = agents.length === 0 && !rosterDegraded && !rosterLoading;
+  if (knownEmpty) return <h1 className="sr-only">{language.plural}</h1>;
 
   return (
     <header className="wl-studio-context shrink-0" aria-label={`${language.singular} context`}>
