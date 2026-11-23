@@ -79,6 +79,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 const VoicePermissionPage = lazy(() => import("./pages/VoicePermissionPage"));
 const SmsConsentPage = lazy(() => import("./pages/SmsConsentPage"));
+const TextingPolicyPage = lazy(() => import("./pages/TextingPolicyPage"));
 const SolutionsPage = lazy(() =>
   import("./pages/SolutionsPage").then((module) =>
     withVisualQaPage(module, "solutions", (location) =>
@@ -205,6 +206,8 @@ function AppRouter() {
         <Route path="/legal" element={<PreservingRedirect to="/terms" />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/sms-consent" element={<SmsConsentPage />} />
+        <Route path="/texting/:token/privacy" element={<TextingPolicyPage document="privacy" />} />
+        <Route path="/texting/:token/terms" element={<TextingPolicyPage document="terms" />} />
         <Route path="/docs" element={<PreservingRedirect to="/developers" />} />
         <Route path="/developers" element={<Developers />} />
         <Route path="/signin/*" element={<AuthPortalRoute />} />

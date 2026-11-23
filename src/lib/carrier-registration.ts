@@ -11,6 +11,10 @@
  * default; execution persists every created SID before the next step so a rerun
  * resumes instead of paying twice.
  *
+ * A business without an EIN takes the Sole Proprietor flow instead
+ * (`planSoleProprietorRegistration`), with the same resumable, dry-run,
+ * pay-only-when-confirmed execution.
+ *
  * No database state is required: the send path reads registration from Twilio
  * (`twilio-sms-registration.ts`). Once the line is in this business's
  * Messaging Service and the campaign is VERIFIED, texts send through it.
@@ -148,9 +152,17 @@ export function validateBusinessDetails(details: CustomerBusinessDetails): strin
  * The Campaign Registry, then one campaign with exactly one number.
  *
  * Source: https://www.twilio.com/docs/messaging/compliance/a2p-10dlc/onboarding-isv-api-sole-prop-new
- * (read 2026-11-22 through Twilio's documentation search). The verification
+ * (read 2026-11-23 through Twilio's documentation search). The verification
  * mobile must be the owner's own phone, never a Twilio or other CPaaS number,
- * and TCR allows each mobile at most three Sole Proprietor brands.
+ * and TCR allows each mobile at most three Sole Proprietor brands. Both
+ * bundles carry the owner's own email (Twilio validates it, and TCR allows
+ * one address on at most ten brands), never BotBound's ISV address.
+ *
+ * Fees: $4.50 brand, then $15 campaign vetting and $2 a month. Carriers text
+ * the owner from 915-278-2000 once the brand is APPROVED; replying YES within
+ * 24 hours turns `identity_status` VERIFIED, and only then may the Messaging
+ * Service and campaign be created. A missed reply needs a fresh text
+ * (`SmsOtp`), and TCR may expire a brand still unverified after 30 days.
  */
 export const STARTER_CUSTOMER_PROFILE_POLICY_SID = "RN806dd6cd175f314e1f96a9727ee271f4";
 export const SOLE_PROPRIETOR_TRUST_PRODUCT_POLICY_SID = "RN670d5d2e282a6130ae063b234b6019c8";
@@ -255,6 +267,36 @@ export function composeCampaign(details: CustomerBusinessDetails): ComposedCampa
   };
 }
 
+/**
+ * The Sole Proprietor campaign: the same consent flow, named for the owner's
+ * brand. Without a website the first sample carries no link, and the policy
+ * URLs are the pages BotBound hosts for the brand (`texting-policy-link.ts`).
+ */
+export function composeSoleProprietorCampaign(
+  details: SoleProprietorDetails,
+  policy: { privacyUrl: string; termsUrl: string },
+): Omit<ComposedCampaign, "usecase" | "hasEmbeddedLinks"> & {
+  usecase: "SOLE_PROPRIETOR";
+  hasEmbeddedLinks: boolean;
+} {
+  const brand = details.brandName.trim();
+  const website = details.websiteUrl?.trim() || "";
+  return {
+    description: `${brand} is a sole proprietor that uses this local number for non-promotional customer-care and appointment follow-up texts its own callers request. During a call with the ${brand} AI assistant, which identifies itself as AI when it answers, the caller asks for a text, and the assistant confirms the number and asks permission before sending. When a caller's call is missed, ${brand} may send that caller one text offering help.`,
+    messageFlow: `During a phone call with the ${brand} AI assistant, which identifies itself as AI when it answers, a caller asks to receive information or an appointment confirmation by text. The assistant confirms the destination number and asks: "May ${brand} text the details to this number? Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help." A text is sent only after the caller agrees. When a caller's call is missed, ${brand} may send that one caller a single reply offering help, with opt-out instructions; it never texts numbers that did not call. Consent is not a condition of purchase and is never shared. Privacy policy: ${policy.privacyUrl} Terms: ${policy.termsUrl}`,
+    messageSamples: [
+      website
+        ? `${brand}: Here are the details you asked for on your call: ${website} Reply STOP to opt out, HELP for help.`
+        : `${brand}: Here are the details you asked for on your call. Reply here with any questions. Reply STOP to opt out, HELP for help.`,
+      `${brand}: Your appointment is confirmed for Tuesday at 9:00 a.m. Reply STOP to opt out, HELP for help.`,
+      `${brand}: Sorry we missed your call. Reply here or call back anytime and we'll help. Reply STOP to opt out, HELP for help.`,
+    ],
+    usecase: "SOLE_PROPRIETOR",
+    hasEmbeddedLinks: Boolean(website),
+    hasEmbeddedPhone: false,
+  };
+}
+
 /** SIDs created so far. A present SID means that step already ran and is never repeated. */
 export type RegistrationSids = Partial<{
   customerProfile: string;
@@ -265,12 +307,18 @@ export type RegistrationSids = Partial<{
   address: string;
   supportingDocument: string;
   supportingDocumentAssigned: string;
+  /** Sole Proprietor only: the owner on the Starter Customer Profile. */
+  ownerInfo: string;
+  ownerInfoAssigned: string;
   primaryProfileAssigned: string;
   customerProfileEvaluated: string;
   customerProfileSubmitted: string;
   trustProduct: string;
   messagingProfile: string;
   messagingProfileAssigned: string;
+  /** Sole Proprietor only: brand name, vertical and verification mobile. */
+  soleProprietorInfo: string;
+  soleProprietorInfoAssigned: string;
   trustProductProfileAssigned: string;
   trustProductEvaluated: string;
   trustProductSubmitted: string;
@@ -298,6 +346,8 @@ export type RegistrationGate = {
   /** Status values that stop the run as a failure needing correction. */
   failed: readonly string[];
   waiting: string;
+  /** A second field that must also be ready, such as a Sole Proprietor brand's `identity_status`. */
+  require?: { field: string; ready: readonly string[]; waiting: string };
 };
 
 export type RegistrationStep = {
@@ -318,12 +368,42 @@ const TRUSTHUB = "https://trusthub.twilio.com/v1";
 const MESSAGING = "https://messaging.twilio.com/v1";
 const ref = (key: keyof RegistrationSids) => `{{sid:${key}}}`;
 
+const BUSINESS_ONLY_KEYS: readonly (keyof RegistrationSids)[] = [
+  "businessInfo",
+  "businessInfoAssigned",
+  "representative",
+  "representativeAssigned",
+  "messagingProfile",
+  "messagingProfileAssigned",
+];
+const SOLE_PROPRIETOR_ONLY_KEYS: readonly (keyof RegistrationSids)[] = [
+  "ownerInfo",
+  "ownerInfoAssigned",
+  "soleProprietorInfo",
+  "soleProprietorInfoAssigned",
+];
+
+/** A state file from the other flow would attach the wrong bundles; refuse it outright. */
+function assertStateFlow(
+  done: RegistrationSids,
+  foreign: readonly (keyof RegistrationSids)[],
+  flow: string,
+) {
+  const mixed = foreign.filter((key) => done[key]);
+  if (mixed.length) {
+    throw new Error(
+      `This state file belongs to a different registration flow (it has ${mixed.join(", ")}); use a new state file for the ${flow} flow.`,
+    );
+  }
+}
+
 /** The full ordered plan, minus the steps whose SIDs already exist. */
 export function planRegistration(
   details: CustomerBusinessDetails,
   context: RegistrationContext,
   done: RegistrationSids = {},
 ): RegistrationStep[] {
+  assertStateFlow(done, SOLE_PROPRIETOR_ONLY_KEYS, "business");
   const name = details.legalName.trim();
   const campaign = composeCampaign(details);
   const rep = details.representative;
@@ -555,6 +635,235 @@ export function planRegistration(
   return steps.filter((step) => !done[step.key]);
 }
 
+export type SoleProprietorContext = Omit<RegistrationContext, "isvNotificationEmail"> & {
+  /** Texting privacy policy and terms for the brand, usually the pages BotBound hosts. */
+  privacyUrl: string;
+  termsUrl: string;
+};
+
+/**
+ * Twilio's Sole Proprietor ISV flow, in order, minus finished steps: Starter
+ * Customer Profile, Sole Proprietor TrustProduct, SOLE_PROPRIETOR brand, then
+ * (once the owner has confirmed by text) the Messaging Service, the line and
+ * the campaign.
+ */
+export function planSoleProprietorRegistration(
+  details: SoleProprietorDetails,
+  context: SoleProprietorContext,
+  done: RegistrationSids = {},
+): RegistrationStep[] {
+  assertStateFlow(done, BUSINESS_ONLY_KEYS, "Sole Proprietor");
+  const owner = `${details.firstName.trim()} ${details.lastName.trim()}`;
+  const email = details.email.trim();
+  const brand = details.brandName.trim();
+  const campaign = composeSoleProprietorCampaign(details, context);
+  const verified: RegistrationGate = {
+    url: `${MESSAGING}/a2p/BrandRegistrations/${ref("brand")}`,
+    ready: ["APPROVED"],
+    failed: ["FAILED", "SUSPENDED", "EXPIRED", "DELETED"],
+    waiting: "Waiting for carriers to approve the brand. Rerun this command to continue.",
+    require: {
+      field: "identity_status",
+      ready: ["VERIFIED", "VETTED_VERIFIED"],
+      waiting: `Waiting for ${details.firstName.trim()} to reply YES to the carrier text from 915-278-2000 on the mobile ending ${details.mobilePhone.slice(-4)}. That text expires after 24 hours; rerun with --resend-confirmation to send a fresh one.`,
+    },
+  };
+  const steps: RegistrationStep[] = [
+    {
+      key: "customerProfile",
+      label: "Create the owner's Starter Customer Profile",
+      method: "POST",
+      url: `${TRUSTHUB}/CustomerProfiles`,
+      form: {
+        FriendlyName: `${owner} Starter Customer Profile`,
+        Email: email,
+        PolicySid: STARTER_CUSTOMER_PROFILE_POLICY_SID,
+      },
+    },
+    {
+      key: "ownerInfo",
+      label: "Record the owner's contact details",
+      method: "POST",
+      url: `${TRUSTHUB}/EndUsers`,
+      form: {
+        FriendlyName: `${owner} Starter Profile Information`,
+        Type: "starter_customer_profile_information",
+        Attributes: JSON.stringify({
+          first_name: details.firstName.trim(),
+          last_name: details.lastName.trim(),
+          email,
+          phone_number: details.mobilePhone.trim(),
+        }),
+      },
+    },
+    {
+      key: "ownerInfoAssigned",
+      label: "Attach the owner's details to the profile",
+      method: "POST",
+      url: `${TRUSTHUB}/CustomerProfiles/${ref("customerProfile")}/EntityAssignments`,
+      form: { ObjectSid: ref("ownerInfo") },
+    },
+    {
+      key: "address",
+      label: "Record the owner's address",
+      method: "POST",
+      url: `https://api.twilio.com/2010-04-01/Accounts/${context.accountSid}/Addresses.json`,
+      form: {
+        CustomerName: owner,
+        Street: details.address.street.trim(),
+        City: details.address.city.trim(),
+        Region: details.address.region.trim(),
+        PostalCode: details.address.postalCode.trim(),
+        IsoCountry: "US",
+      },
+    },
+    {
+      key: "supportingDocument",
+      label: "Record the address as a supporting document",
+      method: "POST",
+      url: `${TRUSTHUB}/SupportingDocuments`,
+      form: {
+        FriendlyName: `${owner} Address`,
+        Type: "customer_profile_address",
+        Attributes: JSON.stringify({ address_sids: ref("address") }),
+      },
+    },
+    {
+      key: "supportingDocumentAssigned",
+      label: "Attach the address to the profile",
+      method: "POST",
+      url: `${TRUSTHUB}/CustomerProfiles/${ref("customerProfile")}/EntityAssignments`,
+      form: { ObjectSid: ref("supportingDocument") },
+    },
+    {
+      key: "primaryProfileAssigned",
+      label: "Link BotBound's primary profile as the ISV",
+      method: "POST",
+      url: `${TRUSTHUB}/CustomerProfiles/${ref("customerProfile")}/EntityAssignments`,
+      form: { ObjectSid: context.primaryProfileSid },
+    },
+    {
+      key: "customerProfileEvaluated",
+      label: "Check the profile against Twilio's policy",
+      method: "POST",
+      url: `${TRUSTHUB}/CustomerProfiles/${ref("customerProfile")}/Evaluations`,
+      form: { PolicySid: STARTER_CUSTOMER_PROFILE_POLICY_SID },
+    },
+    {
+      key: "customerProfileSubmitted",
+      label: "Submit the profile for review",
+      method: "POST",
+      url: `${TRUSTHUB}/CustomerProfiles/${ref("customerProfile")}`,
+      form: { Status: "pending-review" },
+    },
+    {
+      key: "trustProduct",
+      label: "Create the Sole Proprietor TrustProduct",
+      method: "POST",
+      url: `${TRUSTHUB}/TrustProducts`,
+      form: {
+        FriendlyName: `${owner} Sole Proprietor A2P Trust Bundle`,
+        Email: email,
+        PolicySid: SOLE_PROPRIETOR_TRUST_PRODUCT_POLICY_SID,
+      },
+    },
+    {
+      key: "soleProprietorInfo",
+      label: "Record the brand name, kind of work and verification mobile",
+      method: "POST",
+      url: `${TRUSTHUB}/EndUsers`,
+      form: {
+        FriendlyName: `${owner} Sole Proprietor Information`,
+        Type: "sole_proprietor_information",
+        Attributes: JSON.stringify({
+          brand_name: brand,
+          vertical: details.vertical,
+          mobile_phone_number: details.mobilePhone.trim(),
+        }),
+      },
+    },
+    {
+      key: "soleProprietorInfoAssigned",
+      label: "Attach the brand details to the TrustProduct",
+      method: "POST",
+      url: `${TRUSTHUB}/TrustProducts/${ref("trustProduct")}/EntityAssignments`,
+      form: { ObjectSid: ref("soleProprietorInfo") },
+    },
+    {
+      key: "trustProductProfileAssigned",
+      label: "Attach the Starter profile to the TrustProduct",
+      method: "POST",
+      url: `${TRUSTHUB}/TrustProducts/${ref("trustProduct")}/EntityAssignments`,
+      form: { ObjectSid: ref("customerProfile") },
+    },
+    {
+      key: "trustProductEvaluated",
+      label: "Check the TrustProduct against Twilio's policy",
+      method: "POST",
+      url: `${TRUSTHUB}/TrustProducts/${ref("trustProduct")}/Evaluations`,
+      form: { PolicySid: SOLE_PROPRIETOR_TRUST_PRODUCT_POLICY_SID },
+    },
+    {
+      key: "trustProductSubmitted",
+      label: "Submit the TrustProduct for review",
+      method: "POST",
+      url: `${TRUSTHUB}/TrustProducts/${ref("trustProduct")}`,
+      form: { Status: "pending-review" },
+    },
+    {
+      key: "brand",
+      label: "Register the Sole Proprietor brand ($4.50); carriers then text the owner to confirm",
+      method: "POST",
+      url: `${MESSAGING}/a2p/BrandRegistrations`,
+      form: {
+        CustomerProfileBundleSid: ref("customerProfile"),
+        A2PProfileBundleSid: ref("trustProduct"),
+        BrandType: "SOLE_PROPRIETOR",
+      },
+      billable: true,
+    },
+    {
+      key: "messagingService",
+      label: "Create the owner's Messaging Service",
+      method: "POST",
+      url: `${MESSAGING}/Services`,
+      form: { FriendlyName: `${brand} texting`, UseInboundWebhookOnNumber: "true" },
+      // Twilio's walkthrough waits for an approved, verified brand before this step.
+      gate: verified,
+    },
+    {
+      key: "phoneAttached",
+      label:
+        "Add the owner's line to its Messaging Service (a Sole Proprietor campaign holds one number)",
+      method: "POST",
+      url: `${MESSAGING}/Services/${ref("messagingService")}/PhoneNumbers`,
+      form: { PhoneNumberSid: context.phoneNumberSid },
+    },
+    {
+      key: "campaign",
+      label: "Register the campaign ($15 vetting, then $2 a month)",
+      method: "POST",
+      url: `${MESSAGING}/Services/${ref("messagingService")}/Compliance/Usa2p`,
+      form: {
+        BrandRegistrationSid: ref("brand"),
+        Description: campaign.description,
+        MessageFlow: campaign.messageFlow,
+        MessageSamples: [...campaign.messageSamples],
+        UsAppToPersonUsecase: campaign.usecase,
+        HasEmbeddedLinks: String(campaign.hasEmbeddedLinks),
+        HasEmbeddedPhone: String(campaign.hasEmbeddedPhone),
+        PrivacyPolicyUrl: context.privacyUrl,
+        TermsAndConditionsUrl: context.termsUrl,
+        AgeGated: "false",
+        DirectLending: "false",
+      },
+      billable: true,
+      gate: verified,
+    },
+  ];
+  return steps.filter((step) => !done[step.key]);
+}
+
 /** Replace `{{sid:key}}` placeholders; a missing earlier SID is a hard stop, never a blank. */
 export function resolveStep(step: RegistrationStep, done: RegistrationSids): RegistrationStep {
   const fill = (value: string) =>
@@ -587,22 +896,44 @@ export type ExecutionResult =
   | { ok: false; done: RegistrationSids; failedStep: keyof RegistrationSids; reason: string }
   | { ok: false; done: RegistrationSids; pausedBefore: keyof RegistrationSids; reason: string };
 
-/**
- * Run the remaining steps in order, persisting each SID before the next. An
- * evaluation that is not "compliant" stops the run with Twilio's reasons.
- * Billable steps run only when `allowBillable` is set.
- */
-export async function executeRegistration(input: {
-  details: CustomerBusinessDetails;
-  context: RegistrationContext;
+type ExecutionIo = {
   done: RegistrationSids;
   http: RegistrationHttp;
   save: (done: RegistrationSids) => Promise<void>;
   allowBillable: boolean;
   pace?: () => Promise<void>;
-}): Promise<ExecutionResult> {
+};
+
+/** Run the business (EIN) flow. See `executeRegistrationSteps`. */
+export function executeRegistration(
+  input: ExecutionIo & { details: CustomerBusinessDetails; context: RegistrationContext },
+): Promise<ExecutionResult> {
+  return executeRegistrationSteps({
+    ...input,
+    plan: (done) => planRegistration(input.details, input.context, done),
+  });
+}
+
+/** Run the Sole Proprietor flow. See `executeRegistrationSteps`. */
+export function executeSoleProprietorRegistration(
+  input: ExecutionIo & { details: SoleProprietorDetails; context: SoleProprietorContext },
+): Promise<ExecutionResult> {
+  return executeRegistrationSteps({
+    ...input,
+    plan: (done) => planSoleProprietorRegistration(input.details, input.context, done),
+  });
+}
+
+/**
+ * Run the remaining steps in order, persisting each SID before the next. An
+ * evaluation that is not "compliant" stops the run with Twilio's reasons.
+ * Billable steps run only when `allowBillable` is set.
+ */
+export async function executeRegistrationSteps(
+  input: ExecutionIo & { plan: (done: RegistrationSids) => RegistrationStep[] },
+): Promise<ExecutionResult> {
   const done: RegistrationSids = { ...input.done };
-  for (const planned of planRegistration(input.details, input.context, done)) {
+  for (const planned of input.plan(done)) {
     if (planned.billable && !input.allowBillable) {
       return {
         ok: false,
@@ -626,6 +957,16 @@ export async function executeRegistration(input: {
           done,
           pausedBefore: step.key,
           reason: `${step.gate.waiting} Current status: ${status || `HTTP ${gate.status}`}.`,
+        };
+      }
+      const also = step.gate.require;
+      const value = also ? String(gate.body[also.field] || "").toUpperCase() : "";
+      if (also && !also.ready.includes(value)) {
+        return {
+          ok: false,
+          done,
+          pausedBefore: step.key,
+          reason: `${also.waiting} Current ${also.field}: ${value || "unknown"}.`,
         };
       }
     }

@@ -297,6 +297,8 @@ async function startServer() {
   app.get("*", (req, res) => {
     const normalizedPath = req.path.replace(/\/+$/, "") || "/";
     if (!isKnownSpaRoute(normalizedPath)) res.status(404);
+    // Per-business texting policy pages (signed links) are for carrier review, not search.
+    if (normalizedPath.startsWith("/texting/")) res.setHeader("X-Robots-Tag", "noindex, nofollow");
     const shellPath = prerenderedShells.get(normalizedPath) ?? indexHtml;
     if (res.statusCode !== 404) {
       res.type("html").sendFile(shellPath);
