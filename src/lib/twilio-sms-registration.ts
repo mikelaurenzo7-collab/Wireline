@@ -227,6 +227,11 @@ export function classifySmsSender(
     return { status: "unknown", kind, reason: "The toll-free verification state is unfamiliar." };
   }
 
+  // A line the snapshot never saw (bought after the read, or past the list
+  // limit) is unknown, not unregistered: an unfamiliar read never blocks.
+  if (pooled.length === 0 && !snapshot.numberSids.has(e164)) {
+    return { status: "unknown", kind, reason: "The line was not found on the carrier account." };
+  }
   const verified = pooled.find((service) => service.campaignStatuses.includes("VERIFIED"));
   if (verified) {
     return {
@@ -256,6 +261,13 @@ export function classifySmsSender(
   }
   return { status: "unknown", kind, reason: "The A2P campaign state is unfamiliar." };
 }
+
+/**
+ * A refusal from a snapshot at least this old is re-checked against a fresh
+ * read, bounding a wrongful block of a newly attached line to one minute
+ * without re-reading the account on every send from an unregistered line.
+ */
+const REFUSAL_RECHECK_MS = 60_000;
 
 let cachedSnapshot: SmsRegistrationSnapshot | null = null;
 let inflight: Promise<SmsRegistrationSnapshot> | null = null;
@@ -314,9 +326,19 @@ export async function resolveSmsSenderRegistration(
   if (!isRegistrationClient(client)) {
     return { status: "unknown", kind, reason: "Carrier registration could not be read." };
   }
-  const snapshot = await currentSnapshot(client, options.nowMs ?? Date.now());
+  const nowMs = options.nowMs ?? Date.now();
+  const snapshot = await currentSnapshot(client, nowMs);
   if (!snapshot) {
     return { status: "unknown", kind, reason: "Carrier registration could not be read." };
   }
-  return classifySmsSender(e164, snapshot);
+  const verdict = classifySmsSender(e164, snapshot);
+  // Refusing is the only verdict that stops a send, so a refusal from an aging
+  // cached read is re-checked: a line attached to a verified service after the
+  // snapshot was taken would otherwise be blocked until the cache expires.
+  if (verdict.status === "unregistered" && nowMs - snapshot.readAtMs >= REFUSAL_RECHECK_MS) {
+    cachedSnapshot = null;
+    const fresh = await currentSnapshot(client, nowMs);
+    if (fresh) return classifySmsSender(e164, fresh);
+  }
+  return verdict;
 }

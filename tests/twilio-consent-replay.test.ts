@@ -284,10 +284,20 @@ describe("code review findings on keyword handling", () => {
     expect(h.clear).not.toHaveBeenCalled();
   });
 
-  it("asks Twilio to redeliver a failed START it already confirmed, without a contradicting text", async () => {
+  it("asks Twilio to redeliver a START whose transaction saved nothing", async () => {
     h.optedOut = true;
     h.failTransaction = true;
     await expect(deliver("START", "SM-start-lost")).resolves.toEqual({ status: 503, body: empty });
+  });
+
+  it("asks for a fresh START when the opt-in saved but its marker clear failed", async () => {
+    // A redelivery would be a duplicate that may not clear markers, so the
+    // customer must send a new START (new MessageSid) to finish the opt-in.
+    h.optedOut = true;
+    h.failClear = true;
+    const reply = await deliver("START", "SM-start-clear-failed");
+    expect(reply.status).toBe(200);
+    expect(reply.body).toContain("Please reply START again");
   });
 });
 
