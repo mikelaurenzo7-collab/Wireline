@@ -78,4 +78,14 @@ describe("QA pass polish", () => {
     expect(page).toContain('to="/pricing"');
     expect(page).toContain("{cfg.trustLine}");
   });
+
+  it("shows no empty header row above Create Your Bot when there are no Bots", () => {
+    const chrome = read("src/components/studio/StudioContextChrome.tsx");
+    expect(chrome).toContain(
+      "const knownEmpty = agents.length === 0 && !rosterDegraded && !rosterLoading;",
+    );
+    expect(chrome).toContain(
+      'if (knownEmpty) return <h1 className="sr-only">{language.plural}</h1>;',
+    );
+  });
 });
