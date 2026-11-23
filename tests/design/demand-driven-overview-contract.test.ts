@@ -47,7 +47,7 @@ describe("demand-driven authenticated experience", () => {
 
   it("keeps Inbox and Insights as independent canonical read surfaces", () => {
     expect(inbox).toContain('label: "Email"');
-    expect(inbox).toContain('{ id: "sms", label: "SMS" }');
+    expect(inbox).toContain('{ id: "sms", label: "Texts" }');
     expect(inbox).toContain("WorkspaceControlBand");
     expect(activity).toContain("WorkspaceControlBand");
     expect(activity).toContain('aria-label="Insights view"');

@@ -29,7 +29,7 @@ type MailboxAccount = {
 
 const inboxTabs: Array<{ id: InboxTabId; label: string }> = [
   { id: "email", label: "Email" },
-  { id: "sms", label: "SMS" },
+  { id: "sms", label: "Texts" },
   { id: "approvals", label: "Approvals" },
 ];
 

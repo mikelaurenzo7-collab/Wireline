@@ -7,7 +7,7 @@ import { BotBoundWordmark } from "../brand/BotBoundBrand";
 import { OPEN_PRIVACY_CHOICES_EVENT } from "../../lib/privacy-choices";
 
 const PRODUCT_LINKS = [
-  { to: "/features", label: "Product" },
+  { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
 ] as const;
 
