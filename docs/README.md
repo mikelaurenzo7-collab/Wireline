@@ -97,7 +97,6 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | [LAUNCH_READINESS.md](../LAUNCH_READINESS.md)                                                   | Executive launch readiness scorecard, domain verification status, and decision gates.                          |
 | [ENVIRONMENT_VARIABLES_MATRIX.md](./launch/ENVIRONMENT_VARIABLES_MATRIX.md)                     | Complete production secret/public environment matrix across all 10 services with safety rules.                                                  |
-| [FLAWLESS_LAUNCH_ROADMAP.md](./launch/FLAWLESS_LAUNCH_ROADMAP.md)                               | Prioritized remediation tasks, operational requirements, and pre-launch verification checks.                                                    |
 
 ## Operating and release runbooks
 
