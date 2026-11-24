@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { matchesCarrierKeyword } from "../src/lib/carrier-keywords";
+import { isPlainLanguageOptOut, matchesCarrierKeyword } from "../src/lib/carrier-keywords";
 
 const OPT_OUT = new Set(["stop", "stopall", "unsubscribe", "cancel", "end", "quit", "opt out"]);
 const OPT_IN = new Set(["start", "unstop", "yes", "opt in"]);
@@ -39,5 +40,40 @@ describe("matchesCarrierKeyword", () => {
     expect(matchesCarrierKeyword(norm("what are your hours?"), OPT_OUT)).toBe(false);
     expect(matchesCarrierKeyword(norm(""), OPT_OUT)).toBe(false);
     expect(matchesCarrierKeyword(norm("!!!"), OPT_OUT)).toBe(false);
+  });
+});
+
+describe("plain-language opt-outs (FCC: any reasonable means, since April 2025)", () => {
+  it.each([
+    "please stop texting me",
+    "Can you stop sending these?",
+    "don't text me again",
+    "Do not contact this number",
+    "remove me from your list",
+    "Take my number off your list",
+    "no more texts please",
+    "how do I opt out",
+    "I want to unsubscribe",
+    "leave me alone",
+    "Don’t message me",
+  ])("treats %j as an opt-out", (body) => {
+    expect(isPlainLanguageOptOut(body.trim().toLowerCase())).toBe(true);
+  });
+
+  it.each([
+    "can you stop by tuesday?",
+    "please call me back",
+    "yes, text me the address",
+    "don't stop the appointment",
+    "remove the old filter please",
+    "what time do you open?",
+  ])("leaves an ordinary reply %j alone", (body) => {
+    expect(isPlainLanguageOptOut(body.trim().toLowerCase())).toBe(false);
+  });
+
+  it("is checked next to the keyword match on both SMS webhook routes", () => {
+    const read = (path: string) => readFileSync(path, "utf8");
+    expect(read("src/routes/twilio-webhook.ts")).toContain("isPlainLanguageOptOut(bodyKeyword)");
+    expect(read("src/routes/twilio-webhook-base.ts")).toContain("isPlainLanguageOptOut(trimmed)");
   });
 });

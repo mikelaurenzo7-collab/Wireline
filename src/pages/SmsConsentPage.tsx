@@ -76,8 +76,9 @@ export default function SmsConsentPage() {
             and are not liable for delayed or undelivered messages.
           </p>
           <p className="leading-7 text-muted-foreground">
-            Mobile contact information and SMS opt in records are not sold or shared with third
-            parties for their marketing.
+            No mobile information will be shared with third parties or affiliates for marketing or
+            promotional purposes. Mobile contact information and SMS opt in records are not sold or
+            shared with any third party.
           </p>
         </section>
 

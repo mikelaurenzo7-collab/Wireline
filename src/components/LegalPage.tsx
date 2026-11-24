@@ -241,8 +241,9 @@ export function TermsOfService() {
           fees.
         </p>
         <p>
-          Mobile contact information and SMS opt in records are not sold or shared with third
-          parties for their marketing. Carriers are not liable for delayed or undelivered messages.
+          No mobile information will be shared with third parties or affiliates for marketing or
+          promotional purposes. Mobile contact information and SMS opt in records are not sold or
+          shared with any third party. Carriers are not liable for delayed or undelivered messages.
           See our{" "}
           <Link to="/privacy" className="text-brand underline hover:text-brand/80">
             Privacy Policy
