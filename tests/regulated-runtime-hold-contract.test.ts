@@ -7,17 +7,35 @@ import {
   RUNTIME_REVIEW_REQUIRED_GREETING,
   RUNTIME_REVIEW_REQUIRED_RESPONSE,
 } from "../src/lib/runtime-template-personality";
-import { TEMPLATE_OVERLAYS } from "../src/lib/template-overlays";
 
 const source = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
+/**
+ * BotBound no longer generates role templates, so these fixtures stand in for
+ * what regulated Bot rows actually persist. The hold now reads the saved
+ * personality rather than a role column, so the saved text is the contract.
+ */
+const SAVED_MEDICAL_SCHEDULING = [
+  "You handle appointment requests for the practice.",
+  "## TEMPLATE SPECIALTY: Medical Office Scheduling",
+  "Confirm the requested time and read back the appointment.",
+].join("\n\n");
+
+const SAVED_ORDINARY_SPECIALTY = [
+  "You answer questions about the business.",
+  "## TEMPLATE SPECIALTY: Tier 1 Support",
+  "Answer from the knowledge base and escalate anything unresolved.",
+].join("\n\n");
+
+const SAVED_COLLECTIONS_ROLE =
+  "This collections role is review-required until BotBound approves the account configuration.";
+
 describe("regulated runtime hold", () => {
-  it("recognizes regulated template provenance and the generic collections role", () => {
-    expect(isSavedRuntimeReviewRequired(TEMPLATE_OVERLAYS["scheduler-medical"], "scheduler")).toBe(
-      true,
-    );
-    expect(isSavedRuntimeReviewRequired("ordinary personality", "collections")).toBe(true);
-    expect(isSavedRuntimeReviewRequired("ordinary personality", "customer_service")).toBe(false);
+  it("recognizes regulated template provenance and the saved collections role", () => {
+    expect(isSavedRuntimeReviewRequired(SAVED_MEDICAL_SCHEDULING)).toBe(true);
+    expect(isSavedRuntimeReviewRequired(SAVED_COLLECTIONS_ROLE)).toBe(true);
+    expect(isSavedRuntimeReviewRequired("ordinary personality")).toBe(false);
+    expect(isSavedRuntimeReviewRequired(SAVED_ORDINARY_SPECIALTY)).toBe(false);
   });
 
   it("uses neutral copy that does not solicit regulated data", () => {
@@ -29,8 +47,8 @@ describe("regulated runtime hold", () => {
   });
 
   it("prevents Training, web, and mobile writes from erasing regulated provenance", () => {
-    const medical = TEMPLATE_OVERLAYS["scheduler-medical"];
-    const ordinary = TEMPLATE_OVERLAYS["support-tier1"];
+    const medical = SAVED_MEDICAL_SCHEDULING;
+    const ordinary = SAVED_ORDINARY_SPECIALTY;
 
     expect(removesRegulatedTemplateProvenance(medical, ordinary)).toBe(true);
     expect(removesRegulatedTemplateProvenance(medical, medical)).toBe(false);

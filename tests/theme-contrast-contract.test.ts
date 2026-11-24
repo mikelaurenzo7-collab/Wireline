@@ -259,7 +259,7 @@ describe("BotBound appearance contrast", () => {
       "src/components/IntakeKeysManager.tsx",
       "src/components/WebhooksManager.tsx",
       "src/components/TrialGateModal.tsx",
-      "src/components/AgentTemplates.tsx",
+      "src/components/CreateAgentDialog.tsx",
       "src/components/admin/AuditActivityPanel.tsx",
       "src/components/admin/TeamPanel.tsx",
       "src/components/recipes/forms/ObjectionDrillForm.tsx",

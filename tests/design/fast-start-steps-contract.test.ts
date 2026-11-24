@@ -39,7 +39,6 @@ describe("Fast Start brief-first flow contract", () => {
 
   it("creates a technical agent record but emits one-workspace Bot product semantics", () => {
     expect(create).toContain('authFetch("/api/agents"');
-    expect(create).toContain("TECHNICAL_ROLE_BY_TEMPLATE");
     expect(create).toContain('workspace_model: "one_workspace"');
     expect(create).toContain('object: "bot"');
     expect(create).not.toMatch(/setPosture|rolesForPosture/);

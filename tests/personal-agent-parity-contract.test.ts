@@ -2,8 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  PERSONAL_DEFAULT_TEMPLATE_ID,
-  PERSONAL_FAST_START_ROLE,
   resolveCreateEnabledTools,
   resolveCreatePersonality,
 } from "../src/lib/agent-create-defaults";
@@ -19,24 +17,19 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("unified Bot workspace compatibility", () => {
   it("preserves rich personal defaults without splitting the product", () => {
-    expect(PERSONAL_FAST_START_ROLE).toBe("personal_assistant");
-    expect(PERSONAL_DEFAULT_TEMPLATE_ID).toBe("personal-concierge");
-    const personality = resolveCreatePersonality({
-      role: PERSONAL_FAST_START_ROLE,
-      isBusinessAgent: false,
-      agentName: "Sarah",
-    });
-    expect(personality).toContain("elite personal assistant");
-    expect(personality).toContain("You represent your principal");
-    const tools = resolveCreateEnabledTools("personal_assistant", false);
+    const personality = resolveCreatePersonality({ isBusinessAgent: false, agentName: "Sarah" });
+    expect(personality).toContain("## PERSONAL POSTURE");
+    expect(personality).toContain("one principal in their personal life, not a business");
+    expect(personality).not.toContain("Sarah");
+    const tools = resolveCreateEnabledTools(false);
     expect(tools.length).toBeGreaterThan(0);
     for (const tool of tools) expect(BUSINESS_TOOL_NAMES.has(tool)).toBe(false);
   });
 
   it("keeps explicit tool selections authoritative", () => {
     const selected = ["send_email", "book_appointment"] as const;
-    expect(resolveAgentTools("sales", selected)).toEqual(selected);
-    expect(resolveAgentTools("sales", null)).toEqual(getDefaultAgentTools());
+    expect(resolveAgentTools(selected)).toEqual(selected);
+    expect(resolveAgentTools(null)).toEqual(getDefaultAgentTools());
   });
 
   it("resolves both legacy profile flags to the same customer-facing Bot language", () => {
@@ -87,6 +80,8 @@ describe("unified Bot workspace compatibility", () => {
     expect(team?.checkoutAvailability).toBe("legacy_only");
     expect(read("src/lib/plan-catalog.ts")).toContain('id: "team"');
     expect(read("src/pages/Pricing.tsx")).not.toContain("Starter Plus");
-    expect(read("src/components/usage-billing/UsagePricingPanel.tsx")).not.toContain("Starter Plus");
+    expect(read("src/components/usage-billing/UsagePricingPanel.tsx")).not.toContain(
+      "Starter Plus",
+    );
   });
 });

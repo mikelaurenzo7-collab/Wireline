@@ -73,7 +73,7 @@ describe("vendor live-research and voice posture", () => {
     expect(permissions).toContain("JSON.stringify({ enabled_tools: enabled })");
     expect(agentRoutes).toContain('"/api/agents/:id/tools"');
     expect(studio).toMatch(/<AgentToolPermissions\s+agentId=\{agentId\}/);
-    expect(runtimeTools).toContain("resolveAgentTools(role, enabledTools)");
+    expect(runtimeTools).toContain("resolveAgentTools(enabledTools)");
   });
 
   it("keeps alternate voice providers off the tenant PSTN assistant path", () => {

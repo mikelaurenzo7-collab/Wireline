@@ -13,11 +13,7 @@ import {
   filterToolsByTenantConnections,
   UNSCOPED_PLATFORM_LIVE_TOOL_NAMES,
 } from "../src/lib/tenant-integration-connections";
-import {
-  AGENT_TOOL_CATALOG,
-  AGENT_TOOL_NAME_VALUES,
-  ROLE_TOOL_SETS,
-} from "../src/lib/agent-capabilities";
+import { AGENT_TOOL_CATALOG, AGENT_TOOL_NAME_VALUES } from "../src/lib/agent-capabilities";
 import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
 import {
   CALLER_LINKED_LIVE_WRITE_TOOL_NAMES,
@@ -51,22 +47,11 @@ describe("agent tool lists stay in sync", () => {
     expect(AGENT_TOOL_CATALOG.length).toBe(catalog.size);
   });
 
-  it("grants knowledge retrieval to every role by default", () => {
-    const withoutKnowledge = Object.entries(ROLE_TOOL_SETS)
-      .filter(([, tools]) => !tools.includes("search_knowledge_base"))
-      .map(([role]) => role);
-
-    expect(withoutKnowledge).toEqual([]);
-  });
-
   it("carries knowledge retrieval through the create path", () => {
     for (const isBusinessAgent of [true, false]) {
-      for (const role of Object.keys(ROLE_TOOL_SETS)) {
-        expect(
-          resolveCreateEnabledTools(role, isBusinessAgent),
-          `${role}/${isBusinessAgent}`,
-        ).toContain("search_knowledge_base");
-      }
+      expect(resolveCreateEnabledTools(isBusinessAgent), String(isBusinessAgent)).toContain(
+        "search_knowledge_base",
+      );
     }
   });
 });

@@ -68,9 +68,12 @@ describe("agent runtime performance and action integrity", () => {
     expect(workflow).toContain("do not promise a response time");
   });
 
-  it("starts new agents focused and preserves explicit selections at runtime", () => {
-    expect(createDefaults).toContain("getRoleToolSet(runtimeRole(role, isBusinessAgent))");
-    expect(createDefaults).not.toContain("getDefaultAgentTools()");
+  it("starts new Bots with the full allowed catalog and preserves explicit selections", () => {
+    // One Bot: creation no longer narrows the toolbox by role. It starts with
+    // everything the account may hold, minus device actions and, for a personal
+    // account, the business-only tools.
+    expect(createDefaults).toContain("getDefaultAgentTools()");
+    expect(createDefaults).toContain("CREATE_PATH_DEVICE_ACTIONS.has(tool)");
     expect(createDefaults).toContain("BUSINESS_TOOL_NAMES.has(tool)");
     expect(capabilities).toContain("return [...tools]");
     expect(capabilities).toContain("explicit enabled_tools array is the");

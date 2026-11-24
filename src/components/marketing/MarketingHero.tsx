@@ -19,6 +19,14 @@ type HeroMetric = {
 
 type MarketingHeroProps = {
   title: ReactNode;
+  /**
+   * One supporting line under the headline. Optional, because a hero with a
+   * strong enough headline does not need one, and because an earlier pass
+   * removed the prop entirely to stop pages restating the headline in a
+   * quieter voice. The restated-subhead problem is a copy problem; forbidding
+   * the element only guaranteed the pitch could never carry a second beat.
+   */
+  description?: ReactNode;
   primaryAction?: HeroAction;
   secondaryAction?: HeroAction;
   metrics?: readonly HeroMetric[];
@@ -35,6 +43,7 @@ function isExternalHref(href: string): boolean {
 
 export default function MarketingHero({
   title,
+  description,
   primaryAction,
   secondaryAction,
   metrics = [],
@@ -87,11 +96,17 @@ export default function MarketingHero({
               "marketing-hero__title mx-auto text-balance font-[var(--wireline-font-family-display)] text-foreground",
               "mt-0",
               isHomeHero &&
-                "max-w-[19ch] text-[clamp(2.2rem,3.9vw,3.6rem)] leading-[1] tracking-[-.04em]",
+                "max-w-[28ch] text-[clamp(2.2rem,3.9vw,3.6rem)] leading-[1] tracking-[-.04em]",
             )}
           >
             {title}
           </h1>
+
+          {description ? (
+            <p className="marketing-hero__description mx-auto mt-5 max-w-[46ch] text-pretty text-[17px] text-muted-foreground sm:text-[18px]">
+              {description}
+            </p>
+          ) : null}
 
           {actions.length ? (
             <div className="marketing-hero__actions mt-9">

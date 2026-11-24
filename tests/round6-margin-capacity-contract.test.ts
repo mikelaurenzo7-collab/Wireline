@@ -132,7 +132,7 @@ describe("round-6 workplace-chat tool classification", () => {
   });
 
   it("strips both workplace-chat tools from a personal create", () => {
-    const personalTools = resolveCreateEnabledTools("personal_assistant", false);
+    const personalTools = resolveCreateEnabledTools(false);
     expect(personalTools).not.toContain("send_slack_notification");
     expect(personalTools).not.toContain("send_teams_message");
     expect(personalTools).toContain("book_appointment");

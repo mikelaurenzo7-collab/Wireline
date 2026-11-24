@@ -106,7 +106,6 @@ export type OpenAILiveInstructionAgent = {
   id: string;
   userId: string;
   name: string;
-  role: string | null;
   firstMessage: string | null;
   personalityVibe: string | null;
   systemPromptOverride: string | null;
@@ -161,15 +160,13 @@ export function normalizeLiveVoiceProfile(value: unknown): WirelineLiveVoiceProf
     : null;
 }
 
-function resolveLiveVoiceProfile(role: string | null, stored: unknown): WirelineLiveVoiceProfile {
-  const explicit = normalizeLiveVoiceProfile(stored);
-  if (explicit) return explicit;
-  const normalizedRole = String(role || "").toLowerCase();
-  if (/sales|business development|outbound/.test(normalizedRole)) return "bright";
-  if (/support|care|success|concierge/.test(normalizedRole)) return "warm";
-  if (/reception|front desk|scheduler/.test(normalizedRole)) return "clear";
-  if (/collections|qualification|screening/.test(normalizedRole)) return "direct";
-  return "balanced";
+/**
+ * One Bot has no role to infer a voice from, so the saved profile is the only
+ * input. Everything else is the neutral default the Account Holder can change
+ * in Studio.
+ */
+function resolveLiveVoiceProfile(stored: unknown): WirelineLiveVoiceProfile {
+  return normalizeLiveVoiceProfile(stored) || "balanced";
 }
 
 function storedProfile(value: unknown): unknown {
@@ -187,14 +184,13 @@ export function resolveOpenAILiveVoiceSelection(input: {
   voiceProvider?: unknown;
   voiceId?: unknown;
   phoneVoiceId?: unknown;
-  role: string | null;
   businessVariables: unknown;
 }): {
   profile: WirelineLiveVoiceProfile;
   voice: OpenAIRealtimeVoice;
   source: "agent_voice_id" | "profile_fallback";
 } {
-  const profile = resolveLiveVoiceProfile(input.role, storedProfile(input.businessVariables));
+  const profile = resolveLiveVoiceProfile(storedProfile(input.businessVariables));
   const primaryVoice = String(input.voiceProvider || "")
     .trim()
     .toLowerCase();
@@ -227,8 +223,8 @@ export function composeOpenAILiveInstructions(
     businessVariables: agent.businessVariables,
   });
   const runtimeTemplate = internalPolicy ? null : resolveRuntimeTemplatePersonality(personality);
-  const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, agent.role);
-  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, agent.role);
+  const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, personality);
+  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, personality);
   const customInstructions =
     internalPolicy || runtimeReviewRequired ? "" : trimLine(agent.systemPromptOverride, 8_000);
   const identity = runtimeReviewRequired
@@ -237,11 +233,7 @@ export function composeOpenAILiveInstructions(
         "Do not collect, repeat, infer, or discuss customer, patient, account, balance, insurance, identity, or payment details.",
         "Explain the review hold briefly and direct the caller only to a verified general contact channel.",
       ].join("\n")
-    : [
-        `You are ${agent.name}.`,
-        `Your role is ${agent.role || "Bot"}.`,
-        ...NON_NEGOTIABLE_RUNTIME_RULES,
-      ].join("\n");
+    : [`You are ${agent.name}.`, ...NON_NEGOTIABLE_RUNTIME_RULES].join("\n");
   const compliance = [
     agent.complianceMode && agent.complianceMode !== "none"
       ? `Compliance mode: ${agent.complianceMode}.`
@@ -307,7 +299,6 @@ async function loadAgentRuntime(agentId: string, userId: string) {
           id: schema.agents.id,
           userId: schema.agents.userId,
           name: schema.agents.name,
-          role: schema.agents.role,
           firstMessage: schema.agents.firstMessage,
           personalityVibe: schema.agents.personalityVibe,
           systemPromptOverride: schema.agents.systemPromptOverride,

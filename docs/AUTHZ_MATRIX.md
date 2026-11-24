@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 444
-**Protected:** 363
+**Routes scanned:** 442
+**Protected:** 361
 **Public (allowlisted):** 81
 **Violations:** 0
 
@@ -131,7 +131,6 @@
 | agent-routes-v2.ts | PATCH | `/api/agents/:id/mark` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agents/:id/permission` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents/:id/tools` | inline | — | — | Protected |
-| agent-routes-v2.ts | GET | `/api/agents/roles` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/train/extract` | inline | — | — | Protected |
 | agent-test-routes.ts | POST | `/api/agents/:id/test/stream` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/apply-change` | inline | — | — | Protected |
@@ -362,7 +361,6 @@
 | mobile-routes.ts | GET | `/api/mobile/agents/:id/config` | inline | — | — | Protected |
 | mobile-routes.ts | POST | `/api/mobile/agents/:id/config/manual` | inline | — | — | Protected |
 | mobile-routes.ts | POST | `/api/mobile/agents/:id/tools` | inline | — | — | Protected |
-| mobile-routes.ts | GET | `/api/mobile/agents/roles` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/calls/:callId/detail` | inline | — | — | Protected |
 | mobile-routes.ts | POST | `/api/mobile/calls/:callId/handoff` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/calls/active` | inline | — | — | Protected |

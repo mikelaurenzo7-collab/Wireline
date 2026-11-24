@@ -44,7 +44,7 @@ describe("one Bot, one line roster policy", () => {
     expect(canOfferAnotherLine({ lineCount: 1, botCount: 2 })).toBe(true);
   });
 
-  it("wires the policy into Studio, the rail, the palette, Templates, Lines and Settings", () => {
+  it("wires the policy into Studio, the rail, the palette, Lines and Settings", () => {
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("shouldOpenExistingBot({");
     expect(read("src/components/WorkspaceShell.tsx")).toContain(
       "canOfferAnotherBot(agents.length)",
@@ -53,7 +53,6 @@ describe("one Bot, one line roster policy", () => {
       "canOfferAnotherBot(agents.length)",
     );
     expect(read("src/components/CommandBar.tsx")).toContain('command.id !== "create-bot"');
-    expect(read("src/pages/TemplatesPage.tsx")).toContain("canOfferAnotherBot(agents.length)");
     expect(read("src/components/PhoneSetupPanel.tsx")).toContain("canOfferAnotherLine({");
     expect(read("src/pages/SettingsPage.tsx")).toContain("ANOTHER_BOT_HREF");
   });

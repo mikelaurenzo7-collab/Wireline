@@ -12,7 +12,6 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 const AUTHENTICATED_SURFACE_GLOBS = [
   "src/pages/SettingsPage.tsx",
   "src/pages/EmailPage.tsx",
-  "src/pages/TemplatesPage.tsx",
   "src/pages/ClientAppsPage.tsx",
   "src/pages/ConnectionsPage.tsx",
   "src/components/WorkspaceShell.tsx",
@@ -146,7 +145,6 @@ describe("BotBound design vision", () => {
     const shellStyles = read(WIRELINE_DESIGN_VISION.shell.styleOwner);
 
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
-    expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
     expect(existsSync("src/hooks/useLivePresence.ts")).toBe(false);
     expect(existsSync("src/pages/OverviewPage.tsx")).toBe(false);
