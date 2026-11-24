@@ -126,14 +126,12 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
 });
 
 describe("round-6 workplace-chat tool classification", () => {
-  it("treats Teams as a business tool, exactly like Slack", () => {
-    expect(BUSINESS_TOOL_NAMES.has("send_slack_notification")).toBe(true);
+  it("treats Teams as a business tool", () => {
     expect(BUSINESS_TOOL_NAMES.has("send_teams_message")).toBe(true);
   });
 
-  it("strips both workplace-chat tools from a personal create", () => {
+  it("strips workplace chat from a personal create", () => {
     const personalTools = resolveCreateEnabledTools(false);
-    expect(personalTools).not.toContain("send_slack_notification");
     expect(personalTools).not.toContain("send_teams_message");
     expect(personalTools).toContain("book_appointment");
   });

@@ -11,7 +11,6 @@ const h = vi.hoisted(() => ({
   liveAllowed: vi.fn(),
   insert: vi.fn(),
   webhook: vi.fn(),
-  slack: vi.fn(),
   win: vi.fn(),
   tradePortalMirror: vi.fn(),
 }));
@@ -31,7 +30,6 @@ vi.mock("../src/lib/account-environment-policy", () => ({
   assertExternalEntityActionAllowed: vi.fn(),
 }));
 vi.mock("../src/lib/webhook-helpers", () => ({ dispatchWebhook: h.webhook }));
-vi.mock("../src/lib/slack-service", () => ({ postAgentNotification: h.slack }));
 vi.mock("../src/lib/notifications", () => ({
   NotificationService: class {
     sendWinAlert = h.win;
@@ -132,7 +130,6 @@ describe("native Calendar live tools", () => {
     h.book.mockResolvedValueOnce({ ...appointment, created: false });
     await handleCalendarToolCall("book_appointment", args, context);
     expect(h.webhook).toHaveBeenCalledOnce();
-    expect(h.slack).toHaveBeenCalledOnce();
     await vi.waitFor(() => expect(h.win).toHaveBeenCalledOnce());
     expect(h.webhook).toHaveBeenCalledWith(
       "tenant-1",
@@ -151,7 +148,6 @@ describe("native Calendar live tools", () => {
     expect(result!.result).toContain("pending owner approval and is not confirmed");
     expect(result!.result).not.toContain("Appointment booked");
     expect(h.webhook).not.toHaveBeenCalled();
-    expect(h.slack).not.toHaveBeenCalled();
     expect(h.win).not.toHaveBeenCalled();
   });
 
@@ -171,7 +167,6 @@ describe("native Calendar live tools", () => {
       expect(result!.result).toMatch(/^Appointment booked for/);
       expect(result!.result).toContain("10:30");
       expect(h.webhook).not.toHaveBeenCalled();
-      expect(h.slack).not.toHaveBeenCalled();
       expect(h.win).not.toHaveBeenCalled();
     },
   );
@@ -229,7 +224,6 @@ describe("native Calendar live tools", () => {
 
   it("keeps confirmed booking success when optional notifications fail", async () => {
     h.webhook.mockRejectedValueOnce(new Error("Destination unavailable"));
-    h.slack.mockRejectedValueOnce(new Error("Destination unavailable"));
     h.win.mockRejectedValueOnce(new Error("Destination unavailable"));
     const result = await handleCalendarToolCall("book_appointment", args, context);
     expect(result!.result).toMatch(/^Appointment booked for/);
@@ -263,7 +257,6 @@ describe("native Calendar live tools", () => {
       expect(enforceAgentToolResultTruth("book_appointment", result!)).toEqual(result);
       expect(h.insert).not.toHaveBeenCalled();
       expect(h.webhook).not.toHaveBeenCalled();
-      expect(h.slack).not.toHaveBeenCalled();
       expect(h.win).not.toHaveBeenCalled();
       if (failure.startsWith("native")) expect(h.externalBook).not.toHaveBeenCalled();
       else expect(h.book).not.toHaveBeenCalled();

@@ -19,7 +19,6 @@ import {
   getNativeCalendarAvailability,
   getNativeCalendarConfiguration,
 } from "../native-calendar";
-import { postAgentNotification as slackPostAgentNotification } from "../slack-service";
 import {
   assertExternalEntityActionAllowed,
   assertLiveExternalActionAllowed,
@@ -88,13 +87,6 @@ function notifyBookedAppointment(
         customer_name: booking.customerName,
         service_type: booking.serviceType,
       }),
-    ),
-    Promise.resolve().then(() =>
-      slackPostAgentNotification(
-        agent.user_id,
-        `Appointment booked: ${booking.title}\n${booking.displayTime}`,
-        { agentName: agentVoiceName, caller: booking.customerName, outcome: "booked" },
-      ),
     ),
     Promise.resolve().then(async () => {
       const { NotificationService } = await import("../notifications");

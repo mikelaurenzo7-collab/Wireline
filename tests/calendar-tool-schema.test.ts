@@ -46,7 +46,7 @@ describe("calendar execution boundaries", () => {
 
   it("maps action-engine names to canonical agent tools and blocks platform DocuSign automation", () => {
     expect(actionEngine).toContain('schedule_calendar: "book_appointment"');
-    expect(actionEngine).toContain('notify_slack: "send_slack_notification"');
+    expect(actionEngine).not.toContain("notify_slack");
     expect(actionEngine).toContain("Automated contract sending is disabled");
   });
 });

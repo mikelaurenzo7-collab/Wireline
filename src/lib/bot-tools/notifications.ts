@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { sendTeamsMessage, logToExcel } from "../microsoft-graph-service";
-import { postAgentNotification as slackPostAgentNotification } from "../slack-service";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
 
@@ -10,43 +9,6 @@ export async function handleNotificationToolCall(
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
   const { agent, agentVoiceName, message, payload, toolCallId } = context;
-
-  // Notification Handlers
-  if (fn === "send_slack_notification") {
-    try {
-      const { message: slackMsg, outcome: slackOutcome, urgency } = args || {};
-      if (!agent?.user_id) {
-        return {
-          toolCallId,
-          result:
-            "That action isn't available on this line right now. Help the caller another way.",
-        };
-      }
-      await assertLiveExternalActionAllowed(agent.user_id, "vapi_slack_notification");
-      const callerNumber =
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-      const callId = (payload.call as { id?: string } | undefined)?.id;
-      const sent = await slackPostAgentNotification(agent.user_id, String(slackMsg || ""), {
-        agentName: agentVoiceName,
-        caller: callerNumber,
-        outcome: slackOutcome ? String(slackOutcome) : undefined,
-        urgency: urgency === "high" ? "high" : "normal",
-        callId: callId ? String(callId) : undefined,
-      });
-      return {
-        toolCallId,
-        result: sent
-          ? "Done, I've notified the team."
-          : "The team notification channel isn't set up yet. I've noted it though.",
-      };
-    } catch {
-      return {
-        toolCallId,
-        result: "I wasn't able to notify the team right now, but I've noted what happened.",
-      };
-    }
-  }
 
   if (fn === "send_teams_message") {
     try {

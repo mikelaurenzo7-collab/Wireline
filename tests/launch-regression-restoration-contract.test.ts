@@ -85,9 +85,14 @@ describe("restored launch regression guards", () => {
     expect(applyPlanToolUnlocks(selected, "enterprise")).toEqual(selected);
     expect(resolveAgentTools(selected)).toEqual(selected);
     expect(resolveAgentTools(null)).toEqual(getDefaultAgentTools());
+    expect(resolveAgentTools(["send_email", "crm_search_contacts"])).toEqual(["send_email"]);
+    expect(resolveAgentTools(["crm_search_contacts"])).toEqual([]);
+    expect(resolveAgentTools(["send_email", "crm_search_contacts"])).not.toEqual(
+      getDefaultAgentTools(),
+    );
 
     // A personal account still never gets the business-only channels.
-    for (const businessOnly of ["send_slack_notification", "send_teams_message", "send_contract"]) {
+    for (const businessOnly of ["send_teams_message", "send_contract"]) {
       expect(personalTools).not.toContain(businessOnly);
     }
   });

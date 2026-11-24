@@ -28,14 +28,21 @@ Public research survived: `gemini_ground` lives in `src/lib/bot-tools/research.t
 and still resolves for Bots that already store the tool name.
 
 **What `src/routes/oauth/` still holds.** Google, Google Sheets, Microsoft,
-Microsoft Graph, Slack, X, Yahoo, and Zoom, plus `index.ts` and `status.ts`.
+and Microsoft Graph, plus `index.ts` and `status.ts`. Yahoo sign-in stays at
+`/api/auth/yahoo/*`. Slack, X, Zoom, and Yahoo Mail are deleted. No account had
+a Slack, X, Zoom, or Yahoo Mail grant.
 
-**What the connections card still offers.** Slack, X, Zoom, Microsoft Teams,
-Microsoft Excel, and Google Sheets.
+**What the connections card still offers.** Microsoft Teams, Microsoft Excel,
+and Google Sheets.
+
+**Saved tool lists.** A stored `enabled_tools` array keeps every name that is
+still in the catalog and drops the rest. One retired name does not replace the
+list with the full catalog. A missing list still does.
 
 **Beta ledger disposition.** Meta Lead Ads is gone, so its beta flag is resolved
-by deletion rather than by validation. Zoom, Microsoft Teams, Excel, and Google
-Sheets still carry beta flags in `src/components/CrmConnectionCard.tsx`.
+by deletion rather than by validation. Zoom is gone the same way. Microsoft
+Teams, Excel, and Google Sheets still carry beta flags in
+`src/components/CrmConnectionCard.tsx`.
 
 **Role templates are gone.** One Bot holds the whole toolbox it is allowed to
 hold, so there is no per-role connector subset left for a connector to key off.

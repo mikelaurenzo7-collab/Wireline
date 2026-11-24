@@ -93,8 +93,6 @@ describe("agent action editor loading", () => {
     async (saved) => {
       const blocked = [
         "send_contract",
-        "list_x_ad_campaigns",
-        "get_x_ad_campaign_stats",
         ...UNVERIFIED_LIVE_TOOL_NAMES,
         "route_to_business_unit",
         "trigger_enterprise_webhook",
@@ -105,7 +103,7 @@ describe("agent action editor loading", () => {
             url.startsWith("/api/agent-config/")
               ? { enabledTools: saved ? blocked : [] }
               : url === "/api/oauth/crm/status"
-                ? { x: { connected: true } }
+                ? { microsoft_teams: { connected: true, configured: true } }
                 : { accounts: [] },
           ),
         ),
@@ -115,20 +113,20 @@ describe("agent action editor loading", () => {
       await flush();
       const editorText = textOf(render());
       expect(editorText).not.toContain("DocuSign");
-      expect(editorText).not.toContain("X ad campaign");
-      expect(editorText).toContain("Post on X");
+      expect(editorText).toContain("Notify team via Microsoft Teams");
       for (const entry of AGENT_TOOL_CATALOG.filter((tool) => blocked.includes(tool.name))) {
         expect(editorText).not.toContain(entry.label);
       }
-      elements(render()).find((node) => node.props["aria-label"] === "Enable all X actions")!.props
-        .onClick!();
+      elements(render()).find(
+        (node) => node.props["aria-label"] === "Enable all Microsoft Teams actions",
+      )!.props.onClick!();
       elements(render()).find(
         (node) => node.type === "button" && textOf(node).includes("Save Actions"),
       )!.props.onClick!();
       const submitted = JSON.parse(
         h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
       ).enabled_tools;
-      expect(submitted).toContain("post_x_tweet");
+      expect(submitted).toContain("send_teams_message");
       for (const tool of blocked) expect(submitted.includes(tool)).toBe(saved);
       await flush();
     },
@@ -138,12 +136,15 @@ describe("agent action editor loading", () => {
     const props = {
       accentColor: "neutral",
       connected: true,
-      enabledTools: ["list_x_ad_campaigns"] as const,
+      enabledTools: ["send_teams_message"] as const,
     };
     for (const compact of [true, false]) {
-      const xPanel = IntegrationCapabilityPanel({ ...props, integration: "x", compact });
-      expect(textOf(xPanel)).toContain("Publishes a tweet");
-      expect(textOf(xPanel)).not.toContain("campaign");
+      const teamsPanel = IntegrationCapabilityPanel({
+        ...props,
+        integration: "microsoft_teams",
+        compact,
+      });
+      expect(textOf(teamsPanel)).toContain("Microsoft Teams");
       expect(IntegrationCapabilityPanel({ ...props, integration: "docusign", compact })).toBeNull();
     }
   });
@@ -163,7 +164,9 @@ describe("agent action editor loading", () => {
     await flush();
     expect(textOf(render())).toContain("SMS");
     expect(textOf(render())).not.toContain("WhatsApp");
-    actionElements().find((node) => node.type === "input")!.props.onChange!();
+    actionElements()
+      .filter((node) => node.type === "input")
+      .find((node) => !node.props.checked)!.props.onChange!();
     elements(render()).find(
       (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!.props.onClick!();
@@ -229,7 +232,9 @@ describe("agent action editor loading", () => {
     const save = editor.find(
       (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!;
-    const enableGroup = editor.find((node) => node.props["aria-label"] === "Enable all X actions")!;
+    const enableGroup = editor.find(
+      (node) => node.props["aria-label"] === "Enable all Messaging actions",
+    )!;
     save.props.onClick!();
     const submitted = JSON.parse(
       h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
@@ -275,15 +280,15 @@ describe("agent action editor loading", () => {
       elements(render()).find((node) => node.type === "details" && textOf(node).includes(label))!;
     const selected = (label: string) =>
       elements(group(label)).filter((node) => node.type === "input" && node.props.checked);
-    elements(render()).find((node) => node.props["aria-label"] === "Enable all X actions")!.props
-      .onClick!();
-    expect(selected("X")).toHaveLength(6);
+    elements(render()).find((node) => node.props["aria-label"] === "Enable all Messaging actions")!
+      .props.onClick!();
+    expect(selected("Messaging")).toHaveLength(2);
     expect(selected("Platform Actions")).toHaveLength(0);
-    expect(selected("Slack")).toHaveLength(0);
+    expect(selected("Microsoft Teams")).toHaveLength(0);
     elements(group("Platform Actions")).find((node) => node.type === "input")!.props.onChange!();
-    elements(render()).find((node) => node.props["aria-label"] === "Disable all X actions")!.props
-      .onClick!();
-    expect(selected("X")).toHaveLength(0);
+    elements(render()).find((node) => node.props["aria-label"] === "Disable all Messaging actions")!
+      .props.onClick!();
+    expect(selected("Messaging")).toHaveLength(0);
     expect(selected("Platform Actions")).toHaveLength(1);
   });
 

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const blockedPolicy = {
@@ -73,31 +74,13 @@ describe("demo tenant external actions stop before providers", () => {
     expect(supervise).not.toHaveBeenCalled();
   }, 60_000);
 
-  it("does not call Slack or Zoom when the workspace is demo-classified", async () => {
-    const fetchSpy = vi.fn();
-    const fetchWithTimeout = vi.fn();
-    const select = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
-    vi.doMock("../src/lib/account-environment-policy", () => ({
-      liveExternalActionPolicyForUser: vi.fn().mockResolvedValue(blockedPolicy),
-    }));
-    vi.doMock("../src/lib/server-context", () => ({
-      drizzle: { select },
-      log: quietLog,
-      fetchWithTimeout,
-    }));
-
-    const { postAgentNotification } = await import("../src/lib/slack-service");
-    const { createMeeting } = await import("../src/lib/zoom-service");
-    await expect(postAgentNotification("demo-user", "A customer needs help")).resolves.toBe(false);
-    await expect(
-      createMeeting("demo-user", { topic: "Demo", startTime: new Date().toISOString() }),
-    ).resolves.toBeNull();
-
-    expect(select).not.toHaveBeenCalled();
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(fetchWithTimeout).not.toHaveBeenCalled();
-  }, 60_000);
+  it("does not keep Slack or Zoom provider clients", () => {
+    const notifications = readFileSync("src/lib/bot-tools/notifications.ts", "utf8");
+    const workflow = readFileSync("src/lib/bot-tools/workflow.ts", "utf8");
+    expect(notifications).not.toContain("slack-service");
+    expect(workflow).not.toContain("zoom-service");
+    expect(notifications).toContain("assertLiveExternalActionAllowed");
+  });
 
   it("keeps fixture email and SMS targets inert in a production-classified tenant", async () => {
     const supervise = vi.fn();

@@ -12,7 +12,7 @@ Re-checked on November 24, 2026 against `main` `b35b578`. Public `https://botbou
 ## Phase 0 — consolidate
 - [ ] Confirm who owns the 13 production-classed accounts. Counts are still 131 test, 13 production, and 5 demo. The 13 production accounts use 7 email domains, so they are not yet shown to be one owner.
 - [x] Legacy CRM and commerce routers, services, catalog tools, and dispatch are removed in #1518 and serving on the API.
-- [ ] Keep every Google Workspace and Microsoft Office connector. That decision is made: Gmail, Calendar, Drive, Sheets, Outlook mail and calendar, Teams, and Excel stay. Slack, X, Zoom, and Yahoo mail are the only remaining deletion candidates, and Yahoo sign-in stays either way.
+- [x] Keep every Google Workspace and Microsoft Office connector. Gmail, Calendar, Drive, Sheets, Outlook mail and calendar, Teams, and Excel stay. Slack, X, Zoom, and Yahoo Mail are removed. Yahoo sign-in stays. A stored tool list that still names a retired tool keeps its remaining tools instead of opening into the full catalog.
 - [ ] Preserve disconnect, revoke, historical receipts, account deletion, and audit until dependent data is shown to be absent. `wireline_crm_connections` has 0 rows. One Microsoft mail grant and one Microsoft calendar grant remain. Google grants are 0. The outward MCP server has 3 registered clients and 0 tokens.
 - [ ] Only after deployed readers and writers are gone, review one append-only migration that drops legacy connections, agent teams, agent team members, and call queues. The team tables are empty. No destructive migration before approval.
 - [ ] Declare the missing unique indexes and the migration-only tables in Drizzle, checked against the live catalog.

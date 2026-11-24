@@ -65,10 +65,9 @@ describe("OAuth provider identity integrity", () => {
     expect(state).not.toContain("browser-binding-value");
   });
 
-  it("verifies Yahoo identity before sign-in or mailbox attachment", () => {
+  it("verifies Yahoo identity before sign-in", () => {
     const binding = read("src/routes/auth-oauth-browser-binding.ts");
     const signIn = read("src/routes/auth-oauth-routes.ts");
-    const mailbox = read("src/routes/oauth/yahoo.ts");
 
     expect(binding).toContain('provider === "yahoo" ? createYahooOidcNonce() : undefined');
     expect(binding).toContain('authorizationUrl.searchParams.set("nonce", oidcNonce)');
@@ -79,12 +78,6 @@ describe("OAuth provider identity integrity", () => {
     expect(signIn).toContain("verifyYahooIdToken(tokenJson.id_token");
     expect(signIn).toContain("nonce: vs.pkceVerifier");
     expect(signIn).not.toContain('fetch("https://api.login.yahoo.com/openid/v1/userinfo"');
-
-    expect(mailbox).toContain("const nonce = createYahooOidcNonce()");
-    expect(mailbox).toContain("pkceVerifier: nonce");
-    expect(mailbox).toContain("verifyYahooIdToken(tokens.id_token");
-    expect(mailbox).toContain('res.set("Cache-Control", "no-store, max-age=0")');
-    expect(mailbox).not.toContain('fetch("https://api.login.yahoo.com/openid/v1/userinfo"');
   });
 
   it("creates OAuth users and activation state atomically under email conflicts", () => {

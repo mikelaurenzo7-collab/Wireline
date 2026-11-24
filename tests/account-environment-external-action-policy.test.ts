@@ -201,7 +201,6 @@ describe("account-environment live external-action policy", () => {
     const calendar = source("src/lib/bot-tools/calendar.ts");
     const workflow = source("src/lib/bot-tools/workflow.ts");
     const notifications = source("src/lib/bot-tools/notifications.ts");
-    const slack = source("src/lib/slack-service.ts");
     const linkHandlers = source("src/lib/agent-link-tool-handlers.ts");
     const marketing = source("src/routes/marketing-runtime-routes.ts");
     const outboundCall = fromMarker(
@@ -222,10 +221,8 @@ describe("account-environment live external-action policy", () => {
     expect(workflow).toContain("warmTransferExternalActionBlock(");
     expect(workflow).toContain("const postNotificationBlock = await");
     expect(workflow).toContain("const finalExternalActionBlock = await");
-    expect(notifications).toContain('"vapi_slack_notification"');
-    expect(slack.indexOf("tenantSlackAllowed(userId")).toBeLessThan(
-      slack.indexOf("const token = await getToken(userId)"),
-    );
+    expect(notifications).toContain('"vapi_teams_notification"');
+    expect(notifications).not.toContain("slack-service");
     expect(outboundCall.indexOf("assertExternalEntityActionAllowed")).toBeLessThan(
       outboundCall.indexOf("runTenantProviderWorkWithDeletionFence"),
     );

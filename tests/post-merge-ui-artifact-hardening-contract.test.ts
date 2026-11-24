@@ -34,7 +34,7 @@ describe("post-merge UI and artifact hardening", () => {
       "RESEND_API_KEY",
       "GOOGLE_CLIENT_ID",
       "MICROSOFT_CLIENT_ID",
-      "SLACK_CLIENT_ID",
+      "YAHOO_CLIENT_ID",
       "DOCUSIGN_ACCOUNT_ID",
       "SENTRY_DSN",
       "VITE_SUPABASE_URL",

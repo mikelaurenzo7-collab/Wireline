@@ -19,16 +19,6 @@ export const AGENT_TOOL_NAME_VALUES = [
   "leave_voicemail",
   "schedule_callback",
   "capture_customer_profile",
-  "send_slack_notification",
-  "post_x_tweet",
-  "reply_to_x_tweet",
-  "like_x_tweet",
-  "repost_x_tweet",
-  "send_x_dm",
-  "list_x_mentions",
-  "list_x_ad_campaigns",
-  "get_x_ad_campaign_stats",
-  "generate_zoom_link",
   "send_contract",
   "gemini_ground",
   "send_teams_message",
@@ -69,21 +59,13 @@ export function isAgentToolConfigurable(name: AgentToolName): boolean {
 }
 
 export type ToolIntegration =
-  | "twilio"
-  | "calendar"
-  | "slack"
-  | "x"
-  | "zoom"
-  | "docusign"
-  | "microsoft_teams"
-  | "microsoft_excel"
-  | "google_sheets";
+  "twilio" | "calendar" | "docusign" | "microsoft_teams" | "microsoft_excel" | "google_sheets";
 
 export interface AgentToolCatalogEntry {
   name: AgentToolName;
   label: string;
   description: string;
-  group: "core" | "calendar" | "messaging" | "team" | "meetings" | "device";
+  group: "core" | "calendar" | "messaging" | "team" | "device";
   integration?: ToolIntegration;
 }
 
@@ -212,79 +194,6 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "messaging",
     integration: "twilio",
   },
-  // Team
-  {
-    name: "send_slack_notification",
-    label: "Notify team via Slack",
-    description: "Slack alert.",
-    group: "team",
-    integration: "slack",
-  },
-  {
-    name: "post_x_tweet",
-    label: "Post on X",
-    description:
-      "Publishes a tweet to the Account Holder's connected X account (max 280 characters).",
-    group: "messaging",
-    integration: "x",
-  },
-  {
-    name: "reply_to_x_tweet",
-    label: "Reply on X",
-    description: "Posts a public reply to a specific tweet ID from the connected X account.",
-    group: "messaging",
-    integration: "x",
-  },
-  {
-    name: "like_x_tweet",
-    label: "Like on X",
-    description: "Likes a tweet by ID using the connected X account.",
-    group: "messaging",
-    integration: "x",
-  },
-  {
-    name: "repost_x_tweet",
-    label: "Repost on X",
-    description: "Reposts (retweets) a tweet by ID from the connected X account.",
-    group: "messaging",
-    integration: "x",
-  },
-  {
-    name: "send_x_dm",
-    label: "Send X DM",
-    description: "Sends a direct message on X to a user ID or @username.",
-    group: "messaging",
-    integration: "x",
-  },
-  {
-    name: "list_x_mentions",
-    label: "List X mentions",
-    description: "Fetches recent @mentions for the connected X account to triage replies.",
-    group: "messaging",
-    integration: "x",
-  },
-  {
-    name: "list_x_ad_campaigns",
-    label: "List X ad campaigns",
-    description: "Lists active X Ads campaigns (platform Ads API credentials required).",
-    group: "messaging",
-    integration: "x",
-  },
-  {
-    name: "get_x_ad_campaign_stats",
-    label: "X ad campaign stats",
-    description: "Returns impressions, clicks, and spend for an X Ads campaign ID.",
-    group: "messaging",
-    integration: "x",
-  },
-  // Meetings
-  {
-    name: "generate_zoom_link",
-    label: "Generate Zoom link",
-    description: "Creates a Zoom meeting and attaches the join URL to calendar events.",
-    group: "meetings",
-    integration: "zoom",
-  },
   // Action Engine
   {
     name: "send_contract",
@@ -412,6 +321,24 @@ export function normalizeEnabledTools(value: unknown): AgentToolName[] | null {
   return next;
 }
 
+/**
+ * Read a stored selection. Retired names are dropped and the saved remainder
+ * stays explicit, including when every stored name has left the catalog.
+ * A missing value or a non-array is not a selection.
+ */
+export function resolveStoredEnabledTools(value: unknown): AgentToolName[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const seen = new Set<AgentToolName>();
+  const next: AgentToolName[] = [];
+  for (const item of value) {
+    if (!isAgentToolName(item) || seen.has(item)) continue;
+    seen.add(item);
+    next.push(item);
+  }
+  return next;
+}
+
 /** Full integration toolbox available when an agent has no explicit selection. */
 export function getDefaultAgentTools(): AgentToolName[] {
   return [...AGENT_TOOL_NAME_VALUES];
@@ -419,12 +346,12 @@ export function getDefaultAgentTools(): AgentToolName[] {
 
 /**
  * Resolve which tools an agent may use. An explicit enabled_tools array is the
- * authoritative active set. Legacy agents without a saved selection retain the
- * full catalog so this policy change does not silently remove existing behavior.
+ * authoritative active set, after retired names are ignored. A missing value
+ * retains the full catalog. One unrecognized name must not do that.
  */
 export function resolveAgentTools(enabledTools?: unknown): AgentToolName[] {
-  const normalized = normalizeEnabledTools(enabledTools);
-  return normalized !== null ? normalized : getDefaultAgentTools();
+  const stored = resolveStoredEnabledTools(enabledTools);
+  return stored !== null ? stored : getDefaultAgentTools();
 }
 
 /** Stable compatibility set for capabilities excluded from lightweight roles.
@@ -436,12 +363,7 @@ export const BUSINESS_TOOL_NAMES = new Set<AgentToolName>([
   "log_payment_promise",
   "capture_customer_profile",
   "add_to_dnc",
-  "send_slack_notification",
-  // Teams is the same class of workplace-chat tool as Slack. Keeping both in
-  // this set preserves the same capability defaults for existing records.
   "send_teams_message",
-  "list_x_ad_campaigns",
-  "get_x_ad_campaign_stats",
   "send_contract",
   "log_to_excel",
   "log_to_google_sheets",

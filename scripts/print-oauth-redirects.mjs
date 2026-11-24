@@ -46,9 +46,6 @@ const integrationCallbacks = [
   ["Square", "/api/ecommerce/oauth/callback"],
   ["Microsoft Teams", "/api/oauth/microsoft_teams/callback"],
   ["Microsoft Excel", "/api/oauth/microsoft_excel/callback"],
-  ["Slack", "/api/oauth/slack/callback"],
-  ["X", "/api/oauth/x/callback"],
-  ["Zoom", "/api/oauth/zoom/callback"],
 ];
 
 function printGroup(title, callbacks) {

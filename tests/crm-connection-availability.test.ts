@@ -14,9 +14,6 @@ describe("CRM connection availability", () => {
     const statusRoute = readFileSync(resolve(process.cwd(), "src/routes/oauth/status.ts"), "utf8");
 
     for (const [provider, resolver] of [
-      ["slack", "slackOAuthConfigured()"],
-      ["x", "xOAuthConfigured()"],
-      ["zoom", "zoomOAuthConfigured()"],
       ["microsoft_teams", "microsoftGraphConfigured()"],
       ["microsoft_excel", "microsoftGraphConfigured()"],
       ["google_sheets", "googleSheetsConfigured()"],

@@ -46,6 +46,7 @@ import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/live
 import {
   isAgentToolName,
   normalizeEnabledTools,
+  resolveStoredEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
@@ -407,7 +408,7 @@ router.get(
         : null;
       res.json({
         archetype: record?.archetype || DEFAULT_BOT_ARCHETYPE,
-        enabledTools: normalizeEnabledTools(record?.enabledTools),
+        enabledTools: resolveStoredEnabledTools(record?.enabledTools),
         personality: personalities[0]?.content || "",
         directives,
         knowledge,

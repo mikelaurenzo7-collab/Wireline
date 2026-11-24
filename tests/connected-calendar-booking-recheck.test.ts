@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const h = vi.hoisted(() => ({ zoom: vi.fn(), fetch: vi.fn(), googleList: vi.fn() }));
+const h = vi.hoisted(() => ({ fetch: vi.fn(), googleList: vi.fn() }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
     select: () => ({
@@ -25,7 +25,6 @@ vi.mock("../src/lib/google-apis", () => ({
   googleApis: async () => ({ calendar: () => ({ events: { list: h.googleList } }) }),
 }));
 vi.mock("../src/lib/secret-vault", () => ({ encryptSecret: vi.fn(), decryptSecret: vi.fn() }));
-vi.mock("../src/lib/zoom-service", () => ({ createMeeting: h.zoom }));
 vi.mock("../src/lib/icloud-mail", () => ({ fetchIcloudInbox: vi.fn(), sendIcloudMail: vi.fn() }));
 vi.mock("../src/lib/agentmail-mail", () => ({
   fetchAgentMailInbox: vi.fn(),
@@ -52,7 +51,6 @@ const params = {
 };
 beforeEach(() => {
   vi.restoreAllMocks();
-  h.zoom.mockReset().mockResolvedValue(null);
   h.fetch.mockReset();
   h.googleList.mockReset();
 });
@@ -77,7 +75,6 @@ describe("connected calendar availability privacy and failure honesty", () => {
         "Failed to check calendar availability.",
       );
       expect(await instance.bookAppointment(params)).toBe(false);
-      expect(h.zoom).not.toHaveBeenCalled();
     },
   );
 
@@ -181,7 +178,6 @@ describe("connected calendar booking conflict recheck", () => {
     const s = service();
     s.microsoft.mockResolvedValue(["Busy"]);
     expect(await s.instance.bookAppointment(params)).toBe(false);
-    expect(h.zoom).not.toHaveBeenCalled();
     expect(s.create).not.toHaveBeenCalled();
   });
 
@@ -190,7 +186,6 @@ describe("connected calendar booking conflict recheck", () => {
     s.google.mockRejectedValue(new Error("Provider unavailable"));
     expect(await s.instance.bookAppointment(params)).toBe(false);
     expect(await s.instance.bookAppointment({ ...params, endTime: params.startTime })).toBe(false);
-    expect(h.zoom).not.toHaveBeenCalled();
     expect(s.create).not.toHaveBeenCalled();
   });
 });

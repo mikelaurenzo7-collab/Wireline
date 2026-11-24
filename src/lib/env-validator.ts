@@ -69,21 +69,6 @@ export const OAUTH_CREDENTIAL_PAIRS = [
     identifierEnv: "YAHOO_CLIENT_ID",
     secretEnv: "YAHOO_CLIENT_SECRET",
   },
-  {
-    provider: "Slack",
-    identifierEnv: "SLACK_CLIENT_ID",
-    secretEnv: "SLACK_CLIENT_SECRET",
-  },
-  {
-    provider: "X",
-    identifierEnv: "X_CLIENT_ID",
-    secretEnv: "X_CLIENT_SECRET",
-  },
-  {
-    provider: "Zoom",
-    identifierEnv: "ZOOM_CLIENT_ID",
-    secretEnv: "ZOOM_CLIENT_SECRET",
-  },
 ] as const;
 
 export const ENV_REGISTRY: EnvVarConfig[] = [
@@ -421,48 +406,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "oauth",
     required: false,
     description: "Yahoo account sign-in OAuth client secret",
-    validate: nonEmpty,
-  },
-  {
-    name: "SLACK_CLIENT_ID",
-    group: "oauth",
-    required: false,
-    description: "Slack OAuth app client ID",
-    validate: nonEmpty,
-  },
-  {
-    name: "SLACK_CLIENT_SECRET",
-    group: "oauth",
-    required: false,
-    description: "Slack OAuth app client secret",
-    validate: nonEmpty,
-  },
-  {
-    name: "X_CLIENT_ID",
-    group: "oauth",
-    required: false,
-    description: "X OAuth 2.0 client ID",
-    validate: nonEmpty,
-  },
-  {
-    name: "X_CLIENT_SECRET",
-    group: "oauth",
-    required: false,
-    description: "X OAuth 2.0 client secret",
-    validate: nonEmpty,
-  },
-  {
-    name: "ZOOM_CLIENT_ID",
-    group: "oauth",
-    required: false,
-    description: "Zoom OAuth app client ID",
-    validate: nonEmpty,
-  },
-  {
-    name: "ZOOM_CLIENT_SECRET",
-    group: "oauth",
-    required: false,
-    description: "Zoom OAuth app client secret",
     validate: nonEmpty,
   },
   {

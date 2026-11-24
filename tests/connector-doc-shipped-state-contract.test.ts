@@ -25,6 +25,10 @@ const RETIRED_PROVIDERS = [
   "shopify",
   "square",
   "meta-webhook",
+  "slack",
+  "x",
+  "zoom",
+  "yahoo",
 ] as const;
 
 function shippedSection(doc: string): string {

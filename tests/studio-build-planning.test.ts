@@ -157,15 +157,9 @@ describe("reviewable Studio Build plans", () => {
   it("canonicalizes boolean proposals to match the confirmed save receipt", () => {
     expect(
       normalizePlan({
-        config_changes: [
-          { field: "email_auto_respond", value: " TRUE " },
-          { field: "auto_zoom_link", value: "False" },
-        ],
+        config_changes: [{ field: "email_auto_respond", value: " TRUE " }],
       }).changes.map(({ field, value }) => ({ field, value })),
-    ).toEqual([
-      { field: "email_auto_respond", value: "true" },
-      { field: "auto_zoom_link", value: "false" },
-    ]);
+    ).toEqual([{ field: "email_auto_respond", value: "true" }]);
   });
 
   it("does not claim an approval exists after malformed proposals are discarded", () => {

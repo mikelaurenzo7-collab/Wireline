@@ -6,7 +6,6 @@ import {
   loadPlatformIntegrationFlags,
   type PlatformIntegrationFlags,
 } from "./platform-integration-flags";
-import { X_ENGAGEMENT_TOOL_NAMES } from "./x-service";
 import { getNativeCalendarConfiguration } from "./native-calendar";
 import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
 import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "./platform-live-tool-exclusions";
@@ -14,12 +13,9 @@ import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "./platform-live-tool-exclusio
 export { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "./platform-live-tool-exclusions";
 
 export interface TenantIntegrationConnections {
-  slack: boolean;
-  x: boolean;
   microsoft_teams: boolean;
   microsoft_excel: boolean;
   google_sheets: boolean;
-  zoom: boolean;
   /** Google Calendar OAuth (calendarAccounts). */
   google_calendar: boolean;
   /** Microsoft 365 Calendar OAuth. */
@@ -33,8 +29,6 @@ export interface TenantIntegrationConnections {
   /** Microsoft Outlook mail OAuth. */
   microsoft_mail: boolean;
 }
-
-const X_ENGAGEMENT_SET = new Set<string>(X_ENGAGEMENT_TOOL_NAMES);
 
 /** Active connection rows for a tenant — used to gate voice tool schemas. */
 export async function loadTenantIntegrationConnections(
@@ -66,12 +60,9 @@ export async function loadTenantIntegrationConnections(
   const mailProviders = new Set(emailRows.map((r) => (r.provider || "google").toLowerCase()));
 
   return {
-    slack: providers.has("slack"),
-    x: providers.has("x"),
     microsoft_teams: providers.has("microsoft_teams"),
     microsoft_excel: providers.has("microsoft_excel"),
     google_sheets: providers.has("google_sheets"),
-    zoom: providers.has("zoom"),
     google_calendar: calendarProviders.has("google"),
     microsoft_calendar: calendarProviders.has("microsoft") || calendarProviders.has("microsoft365"),
     native_calendar: nativeCalendar.settings.enabled,
@@ -89,12 +80,9 @@ export function filterToolsByTenantConnections(
   return toolNames.filter((name) => {
     if (UNVERIFIED_LIVE_TOOL_NAMES.has(name)) return false;
     if (UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(name)) return false;
-    if (name === "send_slack_notification") return conn.slack;
-    if (X_ENGAGEMENT_SET.has(name)) return conn.x;
     if (name === "send_teams_message") return conn.microsoft_teams;
     if (name === "log_to_excel") return conn.microsoft_excel;
     if (name === "log_to_google_sheets") return conn.google_sheets;
-    if (name === "generate_zoom_link") return conn.zoom;
     if (name === "check_calendar_availability" || name === "book_appointment") {
       if (conn.native_calendar_configured) return Boolean(conn.native_calendar);
       return Boolean(conn.native_calendar || conn.google_calendar || conn.microsoft_calendar);

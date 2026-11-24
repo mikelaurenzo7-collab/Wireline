@@ -11,15 +11,9 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
     expect(helper).toContain("export async function revokeCrmProviderTokens");
     expect(helper).toContain("export async function revokeAllOAuthGrantsForUser");
     expect(helper).toContain("oauth2.googleapis.com/revoke");
-    expect(helper).toContain("slack.com/api/auth.revoke");
+    expect(helper).not.toContain("slack.com/api/auth.revoke");
 
-    for (const file of [
-      "src/lib/google-sheets-service.ts",
-      "src/lib/slack-service.ts",
-      "src/lib/zoom-service.ts",
-      "src/lib/x-service.ts",
-      "src/lib/microsoft-graph-service.ts",
-    ]) {
+    for (const file of ["src/lib/google-sheets-service.ts", "src/lib/microsoft-graph-service.ts"]) {
       expect(read(file)).toContain("revokeCrmProviderTokens");
     }
   });
@@ -34,9 +28,9 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
     expect(worker).toContain("oauth_revoked: release.oauthRevoked");
   });
 
-  it("revokes mailbox tokens on email and Yahoo disconnect", () => {
+  it("revokes mailbox tokens on email disconnect and keeps Yahoo sign-in", () => {
     expect(read("src/routes/email-routes.ts")).toContain("revokeMailboxAccountTokens");
-    expect(read("src/routes/oauth/yahoo.ts")).toContain("revokeMailboxAccountTokens");
+    expect(read("src/routes/auth-oauth-routes.ts")).toContain('"/api/auth/yahoo/callback"');
   });
 
   it("fingerprints portal products so plan-switch choices stay current", () => {

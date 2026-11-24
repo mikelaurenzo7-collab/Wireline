@@ -15,7 +15,6 @@ describe("action-engine surface", () => {
       "schedule_calendar",
       "create_internal_task",
       "send_contract",
-      "notify_slack",
     ]);
     expect(source).not.toContain("create_payment_link");
     expect(source).not.toContain("send_invoice");

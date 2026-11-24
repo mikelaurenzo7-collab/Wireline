@@ -39,12 +39,9 @@ const CLOUD_COMPUTER_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
 ]);
 
 export const NO_TENANT_INTEGRATIONS: TenantIntegrationConnections = {
-  slack: false,
-  x: false,
   microsoft_teams: false,
   microsoft_excel: false,
   google_sheets: false,
-  zoom: false,
   google_calendar: false,
   microsoft_calendar: false,
   native_calendar: false,

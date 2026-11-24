@@ -130,10 +130,7 @@ describe("agent tool execution authorization", () => {
         "send_text_message",
         "lookup_phone_number",
         "book_appointment",
-        "send_slack_notification",
         "log_to_google_sheets",
-        "list_x_ad_campaigns",
-        "get_x_ad_campaign_stats",
         "send_contract",
       ],
       { twilioMessaging: false, twilioLookup: false, channels: ["email"] },
@@ -200,18 +197,17 @@ describe("agent tool execution authorization", () => {
     const allConnected = Object.fromEntries(
       Object.keys(NO_TENANT_INTEGRATIONS).map((key) => [key, true]),
     ) as typeof NO_TENANT_INTEGRATIONS;
-    const filtered = filterToolsByTenantConnections(
-      ["list_x_ad_campaigns", "get_x_ad_campaign_stats", "send_contract"],
-      allConnected,
-      { docusign: true, gemini: true, perplexity: true, liveResearch: true },
-    );
+    const filtered = filterToolsByTenantConnections(["send_contract"], allConnected, {
+      docusign: true,
+      gemini: true,
+      perplexity: true,
+      liveResearch: true,
+    });
     expect(filtered).toEqual([]);
   });
 
   it("keeps the platform-owned deny set explicit and reviewable", () => {
-    expect([...UNSCOPED_PLATFORM_LIVE_TOOL_NAMES].sort()).toEqual(
-      ["get_x_ad_campaign_stats", "list_x_ad_campaigns", "send_contract"].sort(),
-    );
+    expect([...UNSCOPED_PLATFORM_LIVE_TOOL_NAMES].sort()).toEqual(["send_contract"]);
   });
 
   it("keeps explicit empty selections empty instead of expanding the catalog", () => {

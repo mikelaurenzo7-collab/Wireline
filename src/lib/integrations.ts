@@ -5,7 +5,6 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
-import { createMeeting as createZoomMeeting } from "./zoom-service";
 import { fetchIcloudInbox, findIcloudReplyThreading, sendIcloudMail } from "./icloud-mail";
 import { fetchAgentMailInbox, findAgentMailReplyThreading, sendAgentMail } from "./agentmail-mail";
 import {
@@ -263,40 +262,9 @@ export class IntegrationService {
             if (!busy || busy.length > 0) return false;
           }
 
-          // Check if the agent has auto_zoom_link enabled.
-          let zoomUrl: string | undefined;
-          if (params.agentId) {
-            const [agent] = await drizzle
-              .select({ autoZoomLink: schema.agents.autoZoomLink })
-              .from(schema.agents)
-              .where(
-                and(eq(schema.agents.id, params.agentId), eq(schema.agents.userId, this.userId)),
-              )
-              .limit(1);
-
-            if (agent?.autoZoomLink) {
-              providerWorkStarted = true;
-              const meeting = await createZoomMeeting(this.userId, {
-                topic: params.title,
-                startTime: params.startTime,
-                duration: Math.round(
-                  (new Date(params.endTime).getTime() - new Date(params.startTime).getTime()) /
-                    60_000,
-                ),
-              });
-              if (meeting) {
-                zoomUrl = meeting.join_url;
-              }
-            }
-          }
-
           const bookingParams = {
             ...params,
-            description: zoomUrl
-              ? `${params.description}\n\nZoom Meeting: ${zoomUrl}`
-              : params.description,
-            location: zoomUrl || undefined,
-            generateMeetLink: !zoomUrl,
+            generateMeetLink: true,
           };
 
           // Pick the first account as the primary for booking.

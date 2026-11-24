@@ -36,34 +36,6 @@ const ROUTES: OAuthRouteContract[] = [
     authorization: "new URLSearchParams({",
     exchange: 'fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token"',
   },
-  {
-    file: "yahoo.ts",
-    start: '"/api/oauth/yahoo/url"',
-    callback: '"/api/oauth/yahoo/callback"',
-    authorization: "new URLSearchParams({",
-    exchange: 'fetch("https://api.login.yahoo.com/oauth2/get_token"',
-  },
-  {
-    file: "slack.ts",
-    start: '"/api/oauth/slack/url"',
-    callback: '"/api/oauth/slack/callback"',
-    authorization: "getSlackAuthUrl(",
-    exchange: "exchangeSlackCode(code, redirectUri)",
-  },
-  {
-    file: "x.ts",
-    start: '"/api/oauth/x/url"',
-    callback: '"/api/oauth/x/callback"',
-    authorization: "getXAuthUrl(",
-    exchange: "exchangeXCode(code, redirectUri, vs.pkceVerifier)",
-  },
-  {
-    file: "zoom.ts",
-    start: '"/api/oauth/zoom/url"',
-    callback: '"/api/oauth/zoom/callback"',
-    authorization: "getZoomAuthUrl(",
-    exchange: "exchangeZoomCode(code, redirectUri)",
-  },
 ];
 
 function afterMarker(contents: string, marker: string): string {

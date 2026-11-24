@@ -14,7 +14,6 @@ const agentmailWebhook = readFileSync("src/lib/agentmail-webhook.ts", "utf8");
 const agentmailWebhookRoutes = readFileSync("src/routes/agentmail-webhook-routes.ts", "utf8");
 const google = readFileSync("src/routes/oauth/google.ts", "utf8");
 const microsoft = readFileSync("src/routes/oauth/microsoft.ts", "utf8");
-const yahoo = readFileSync("src/routes/oauth/yahoo.ts", "utf8");
 const icloud = readFileSync("src/routes/icloud-mail-routes.ts", "utf8");
 const agentmail = readFileSync("src/routes/agentmail-routes.ts", "utf8");
 const dailyBrief = readFileSync("src/routes/daily-brief-routes.ts", "utf8");
@@ -23,15 +22,16 @@ const androidAsk = readFileSync(
   "utf8",
 );
 
-const mailboxRoutes = [google, microsoft, yahoo, icloud, agentmail];
+const mailboxRoutes = [google, microsoft, icloud, agentmail];
 
 describe("mailbox ownership hardening", () => {
   it("keeps unfinished Yahoo Mail transport fail-closed without weakening Yahoo sign-in", () => {
-    expect(yahoo).toContain("YAHOO_MAIL_CONNECTION_AVAILABLE = false");
-    expect(yahoo).toContain("Yahoo sign-in is available");
+    const signIn = readFileSync("src/routes/auth-oauth-routes.ts", "utf8");
+    expect(signIn).toContain('"/api/auth/yahoo/callback"');
     expect(integrations).toContain(
       "Yahoo Mail send refused because XOAUTH2 transport is not implemented",
     );
+    expect(integrations).toContain("Yahoo inbox refresh is not available yet.");
   });
 
   it("uses an atomic conflict predicate and never updates mailbox ownership", () => {
@@ -137,7 +137,6 @@ describe("mailbox ownership hardening", () => {
     expect(google).toContain("Google token response omitted access_token.");
     expect(microsoft).toContain("Microsoft token response omitted access_token.");
     expect(microsoft).toContain("Microsoft profile request failed");
-    expect(yahoo).toContain("no access_token in Yahoo response");
   });
 });
 

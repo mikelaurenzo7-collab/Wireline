@@ -21,13 +21,9 @@ import { liveExternalActionPolicyForUser } from "./account-environment-policy";
  *      via sendManagerAlert. Fires whenever the SMS sub-handler is
  *      called WITHOUT an explicit override.
  *
- *   3. SLACK — always fired (per-agent slack_channel_id if set, else
- *      the tenant's Slack OAuth integration, else the legacy
- *      SLACK_MANAGEMENT_WEBHOOK env). Slack works in parallel to SMS.
- *
- *   4. EMAIL (new channel) — if agent.escalation_email is set, an
- *      email lands in that inbox via Resend. Lets SMBs who prefer
- *      email get the same alert without an SMS plan.
+ *   3. EMAIL — if agent.escalation_email is set, an email lands in
+ *      that inbox via Resend. Lets SMBs who prefer email get the same
+ *      alert without an SMS plan.
  *
  * Failures in any channel are isolated (Promise.allSettled). One down
  * channel never blocks the others.
@@ -40,7 +36,8 @@ export class NotificationService {
   ) {}
 
   /**
-   * Positive call outcome — Slack (normal) only; no urgent SMS unless Account Holder opted in elsewhere.
+   * Positive call outcome. Team chat delivery was removed with Slack, so this
+   * records the event without sending a provider message.
    */
   async sendWinAlert(params: {
     title: string;
@@ -58,19 +55,7 @@ export class NotificationService {
       });
       return;
     }
-    log.info("Sending win alert", { userId: this.userId, ...params });
-    try {
-      const { postAgentNotification } = await import("./slack-service");
-      await postAgentNotification(this.userId, `${params.title}: ${params.message}`, {
-        urgency: "normal",
-        callId: params.callId,
-        agentName: params.agentName,
-        caller: params.caller,
-        outcome: params.outcome ?? "booked",
-      });
-    } catch (err) {
-      log.error("Win Slack notification failed", { error: getErrorMessage(err) });
-    }
+    log.info("Win alert recorded", { userId: this.userId, ...params });
   }
 
   /**
@@ -99,7 +84,6 @@ export class NotificationService {
     const overrides = await this.loadAgentOverrides();
 
     await Promise.allSettled([
-      this.sendToSlack(params),
       this.sendViaSMS(params, overrides.phone),
       this.sendViaEmail(params, overrides.email),
     ]);
@@ -134,52 +118,6 @@ export class NotificationService {
         error: getErrorMessage(err),
       });
       return { phone: null, email: null };
-    }
-  }
-
-  private async sendToSlack(params: {
-    title: string;
-    message: string;
-    callId?: string;
-  }): Promise<void> {
-    try {
-      const { postAgentNotification } = await import("./slack-service");
-      const ok = await postAgentNotification(this.userId, params.title + ": " + params.message, {
-        urgency: "high",
-        callId: params.callId,
-      });
-      if (ok) return;
-    } catch (err) {
-      log.error("Slack OAuth notification failed", { error: getErrorMessage(err) });
-    }
-
-    const webhookUrl = process.env.SLACK_MANAGEMENT_WEBHOOK;
-    if (!webhookUrl) return;
-
-    try {
-      await fetch(webhookUrl, {
-        method: "POST",
-        signal: AbortSignal.timeout(10_000),
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: `🚨 *URGENT ALERT: ${params.title}*\n${params.message}\nCall ID: ${params.callId || "N/A"}`,
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: `*🚨 URGENT ALERT: ${params.title}*\n${params.message}`,
-              },
-            },
-            {
-              type: "context",
-              elements: [{ type: "mrkdwn", text: `*Call ID:* ${params.callId || "N/A"}` }],
-            },
-          ],
-        }),
-      });
-    } catch (err) {
-      log.error("Slack notification failed", { error: getErrorMessage(err) });
     }
   }
 

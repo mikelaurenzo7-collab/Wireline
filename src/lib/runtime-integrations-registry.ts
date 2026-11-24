@@ -169,14 +169,6 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ),
     validate: resendWebhookSecretConfigured,
   },
-  item("slack", "Slack", "Team alerts and escalations.", "actions", false, [
-    "SLACK_CLIENT_ID",
-    "SLACK_CLIENT_SECRET",
-  ]),
-  item("zoom", "Zoom", "Meeting links for bookings.", "actions", false, [
-    "ZOOM_CLIENT_ID",
-    "ZOOM_CLIENT_SECRET",
-  ]),
   item(
     "docusign",
     "DocuSign",
@@ -186,24 +178,6 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ["DOCUSIGN_ACCOUNT_ID"],
     "DOCUSIGN_JWT_TOKEN can replace DOCUSIGN_ACCESS_TOKEN.",
     [["DOCUSIGN_ACCESS_TOKEN", "DOCUSIGN_JWT_TOKEN"]],
-  ),
-  item("x", "X", "Approved social engagement and reporting.", "actions", false, [
-    "X_CLIENT_ID",
-    "X_CLIENT_SECRET",
-  ]),
-  item(
-    "x-ads",
-    "X Ads API",
-    "Campaign listing and performance stats for social attribution.",
-    "actions",
-    false,
-    [
-      "X_API_KEY",
-      "X_API_SECRET",
-      "X_ADS_ACCESS_TOKEN",
-      "X_ADS_ACCESS_TOKEN_SECRET",
-      "X_ADS_ACCOUNT_ID",
-    ],
   ),
   item("upstash", "Upstash Redis", "Distributed rate limits and spend controls.", "infra", true, [
     "UPSTASH_REDIS_REST_URL",

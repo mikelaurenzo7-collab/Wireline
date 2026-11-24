@@ -70,10 +70,6 @@ vi.mock("../src/lib/crm-service", () => ({ CRMService: class {} }));
 vi.mock("../src/lib/nav-counts-invalidate", () => ({ touchNavCounts: vi.fn() }));
 vi.mock("../src/lib/outbound-dial-gate", () => ({ evaluateOutboundDialGate: vi.fn() }));
 vi.mock("../src/lib/apollo-service", () => ({ searchLeads: vi.fn() }));
-vi.mock("../src/lib/slack-service", () => ({
-  postAgentNotification: vi.fn(),
-  getDefaultChannel: vi.fn(),
-}));
 vi.mock("../src/lib/webhook-helpers", () => ({ dispatchWebhook: vi.fn() }));
 vi.mock("../src/lib/background-work", () => ({ runInBackground: vi.fn() }));
 vi.mock("../src/lib/twilio-service", () => ({ sendTenantMessage: vi.fn() }));

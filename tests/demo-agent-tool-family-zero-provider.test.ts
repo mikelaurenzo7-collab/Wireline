@@ -5,36 +5,15 @@ const environment = vi.hoisted(() => ({
 }));
 
 const providers = vi.hoisted(() => ({
-  postXTweet: vi.fn(),
-  replyToXTweet: vi.fn(),
-  likeXTweet: vi.fn(),
-  repostXTweet: vi.fn(),
-  sendXDirectMessage: vi.fn(),
-  listXMentions: vi.fn(),
-  listXAdCampaigns: vi.fn(),
-  getXAdCampaignStats: vi.fn(),
   notifyDeviceAction: vi.fn(),
 }));
 
 vi.mock("../src/lib/account-environment-policy", () => environment);
-vi.mock("../src/lib/x-service", () => ({
-  postXTweet: providers.postXTweet,
-  replyToXTweet: providers.replyToXTweet,
-  likeXTweet: providers.likeXTweet,
-  repostXTweet: providers.repostXTweet,
-  sendXDirectMessage: providers.sendXDirectMessage,
-  listXMentions: providers.listXMentions,
-}));
-vi.mock("../src/lib/x-ads-service", () => ({
-  listXAdCampaigns: providers.listXAdCampaigns,
-  getXAdCampaignStats: providers.getXAdCampaignStats,
-}));
 vi.mock("../src/lib/mobile-push", () => ({
   notifyDeviceAction: providers.notifyDeviceAction,
 }));
 
 import { handleDeviceToolCall } from "../src/lib/bot-tools/device";
-import { handleXToolCall } from "../src/lib/bot-tools/x";
 import type { ToolCallContext } from "../src/lib/agent-tool-types";
 
 const context = {
@@ -59,14 +38,13 @@ describe("demo/test agent-tool provider families", () => {
     );
   });
 
-  it.each(["demo", "missing"])("blocks X and device providers for a %s tenant", async () => {
+  it.each(["demo", "missing"])("blocks device providers for a %s tenant", async () => {
     const results = await Promise.all([
-      handleXToolCall("post_x_tweet", { text: "demo" }, context),
       handleDeviceToolCall("navigate_to", { destination: "Demo Street" }, context),
     ]);
 
     expect(results.every((result) => result?.result.includes("disabled"))).toBe(true);
-    expect(environment.assertLiveExternalActionAllowed).toHaveBeenCalledTimes(2);
+    expect(environment.assertLiveExternalActionAllowed).toHaveBeenCalledTimes(1);
     for (const provider of allProviderSpies()) expect(provider).not.toHaveBeenCalled();
   });
 });

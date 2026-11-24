@@ -25,7 +25,6 @@ import {
 } from "./approved-text-confirmations";
 import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
-import { postAgentNotification, getDefaultChannel } from "./slack-service";
 import { ClientCommunicationBlockedError, superviseClientCommunication } from "./ai-supervisor";
 import { dispatchWebhook } from "./webhook-helpers";
 import { runInBackground } from "./background-work";
@@ -69,14 +68,12 @@ const ACTION_TOOL_REQUIREMENTS: Readonly<Record<string, AgentToolName>> = {
   schedule_calendar: "book_appointment",
   create_internal_task: "create_followup_task",
   send_contract: "send_contract",
-  notify_slack: "send_slack_notification",
 };
 
 const AUTONOMOUS_LIVE_EXTERNAL_ACTIONS = new Set([
   "send_email",
   "send_text_message",
   "schedule_calendar",
-  "notify_slack",
 ]);
 
 type ResolvedActionPolicy = {
@@ -430,8 +427,6 @@ async function executeAutonomousAction(
         error:
           "Automated contract sending is disabled until a tenant-owned DocuSign account and template registry are connected.",
       };
-    case "notify_slack":
-      return handleNotifySlack(userId, action);
     default:
       return { success: false, error: `Unsupported action type: ${action.type}` };
   }
@@ -453,8 +448,6 @@ async function queueDraftAction(
       return handleCreateInternalTask(userId, action, context);
     case "send_contract":
       return queueSideEffectAction(userId, action, context, "send_contract", "manual");
-    case "notify_slack":
-      return queueSideEffectAction(userId, action, context, "notify_slack", "slack");
     default:
       return { success: false, error: `Unsupported action type: ${action.type}` };
   }
@@ -737,15 +730,4 @@ async function queueSideEffectAction(
   });
   await touchNavCounts(userId);
   return { success: true, queued: true };
-}
-
-async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {
-  const channel = await getDefaultChannel(userId);
-  if (!channel) return { success: false, error: "No Slack channel is configured." };
-  const sent = await postAgentNotification(
-    userId,
-    action.payload.message || action.reasoning || "BotBound action requires review.",
-    { outcome: action.reasoning || undefined },
-  );
-  return sent ? { success: true } : { success: false, error: "Slack notification failed." };
 }

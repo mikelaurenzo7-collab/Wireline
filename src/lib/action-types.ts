@@ -6,7 +6,6 @@ export const ActionTypeSchema = z.enum([
   "schedule_calendar",
   "create_internal_task",
   "send_contract",
-  "notify_slack",
 ]);
 
 export type ActionType = z.infer<typeof ActionTypeSchema>;

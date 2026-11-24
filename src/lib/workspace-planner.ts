@@ -53,9 +53,7 @@ export type WorkspaceFieldKey =
   | "archetype"
   | "timezone"
   | "email_auto_respond"
-  | "slack_channel_id"
   | "name"
-  | "auto_zoom_link"
   | "autonomy_level"
   | "operating_rule";
 
@@ -74,9 +72,7 @@ interface FieldSpec {
     | "archetype"
     | "timezone"
     | "emailAutoRespond"
-    | "slackChannelId"
     | "name"
-    | "autoZoomLink"
     | "autonomyLevel"
     | null;
   label: string;
@@ -153,23 +149,11 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
     kind: "boolean",
     maxLen: 5,
   },
-  slack_channel_id: {
-    column: "slackChannelId",
-    label: "Slack channel ID",
-    kind: "text",
-    maxLen: 50,
-  },
   name: {
     column: "name",
     label: "Agent name",
     kind: "text",
     maxLen: 100,
-  },
-  auto_zoom_link: {
-    column: "autoZoomLink",
-    label: "Auto-generate Zoom links",
-    kind: "boolean",
-    maxLen: 5,
   },
   autonomy_level: {
     column: "autonomyLevel",
@@ -262,8 +246,6 @@ export interface PlanWorkspaceInput {
     websiteUrl?: string | null;
     timezone?: string | null;
     emailAutoRespond?: boolean | null;
-    slackChannelId?: string | null;
-    autoZoomLink?: boolean | null;
     autonomyLevel?: string | null;
   };
   recentCalls: Array<{

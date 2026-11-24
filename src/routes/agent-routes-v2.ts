@@ -44,6 +44,7 @@ import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/live
 import {
   isAgentToolName,
   normalizeEnabledTools,
+  resolveStoredEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import {
@@ -843,7 +844,7 @@ router.get(
       archetype: record?.archetype || DEFAULT_BOT_ARCHETYPE,
       flowConfig: record?.flowConfig || null,
       playbook: readStoredAgentPlaybook(record?.playbook),
-      enabledTools: normalizeEnabledTools(record?.enabledTools),
+      enabledTools: resolveStoredEnabledTools(record?.enabledTools),
       runtime: {
         provider: record?.llmProvider || null,
         model: record?.llmModel || null,

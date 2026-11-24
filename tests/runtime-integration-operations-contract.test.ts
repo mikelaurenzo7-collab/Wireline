@@ -31,7 +31,6 @@ describe("runtime integration operations", () => {
         "resend",
         "resend-feedback",
         "docusign",
-        "x-ads",
         "chatgpt-mcp",
         "secret-vault",
         "pwned-passwords",
@@ -174,7 +173,9 @@ describe("runtime integration operations", () => {
     expect(buyerTierForIntegration("microsoft-365")).toBe("supported");
     expect(buyerTierForIntegration("twilio")).toBe("supported");
     expect(buyerTierForIntegration("docusign")).toBe("beta");
-    expect(buyerTierForIntegration("x-ads")).toBe("beta");
-    expect(buyerTierForIntegration("yahoo")).toBe("beta");
+    expect(buyerTierForIntegration("x-ads")).toBe("internal");
+    expect(buyerTierForIntegration("yahoo")).toBe("internal");
+    expect(buyerTierForIntegration("slack")).toBe("internal");
+    expect(buyerTierForIntegration("zoom")).toBe("internal");
   });
 });

@@ -133,15 +133,6 @@ const teamsTarget = {
 };
 const providers = [
   {
-    name: "Slack",
-    key: "slack" as const,
-    label: "Default Slack channel",
-    load: "/api/oauth/slack/channels",
-    save: "/api/oauth/slack/default-channel",
-    old: "C-OLD",
-    next: "C-NEW",
-  },
-  {
     name: "Teams",
     key: "microsoft_teams" as const,
     label: "Default Teams team and channel",
@@ -152,7 +143,6 @@ const providers = [
   },
 ];
 const status = {
-  slack: { connected: true, configured: true, default_channel_id: "C-OLD" },
   microsoft_teams: {
     connected: true,
     configured: true,
@@ -160,24 +150,11 @@ const status = {
     channel_id: "19:old@thread.tacv2",
   },
 };
-let serverStatus: Record<"slack" | "microsoft_teams", IntegrationStatus>;
+let serverStatus: Record<"microsoft_teams", IntegrationStatus>;
 function defaultFetch(url: string, options?: RequestInit) {
   if (url === "/api/oauth/crm/status") return Promise.resolve(response(serverStatus));
-  if (url === providers[0].load)
-    return Promise.resolve(
-      response({
-        channels: [
-          { id: "C-OLD", name: "General" },
-          { id: "C-NEW", name: "Bookings" },
-        ],
-      }),
-    );
-  if (url === providers[1].load) return Promise.resolve(response({ channels: [teamsTarget] }));
+  if (url === providers[0].load) return Promise.resolve(response({ channels: [teamsTarget] }));
   if (url === providers[0].save) {
-    const body = JSON.parse(String(options?.body));
-    serverStatus.slack = { ...serverStatus.slack, default_channel_id: body.channel_id };
-  }
-  if (url === providers[1].save) {
     serverStatus.microsoft_teams = {
       ...serverStatus.microsoft_teams,
       ...JSON.parse(String(options?.body)),
@@ -213,10 +190,10 @@ afterEach(() => {
 describe("notification channel recovery", () => {
   it("preserves the complete Teams channel ID and labels when saving a selection", async () => {
     await mount();
-    await select(providers[1].label).props.onValueChange!(providers[1].next);
-    const request = h.fetch.mock.calls.find(([url]) => url === providers[1].save);
+    await select(providers[0].label).props.onValueChange!(providers[0].next);
+    const request = h.fetch.mock.calls.find(([url]) => url === providers[0].save);
     expect(JSON.parse(request![1].body)).toEqual(teamsTarget);
-    expect(select(providers[1].label).props.value).toBe(providers[1].next);
+    expect(select(providers[0].label).props.value).toBe(providers[0].next);
   });
 
   it("keeps the confirmed selection and prevents another save until the request completes", async () => {
@@ -232,9 +209,9 @@ describe("notification channel recovery", () => {
     const pending = select(providers[0].label).props.onValueChange!(providers[0].next);
     expect(select(providers[0].label).props.value).toBe(providers[0].old);
     expect(select(providers[0].label).props.disabled).toBe(true);
-    await select(providers[1].label).props.onValueChange!(providers[1].next);
-    expect(h.fetch.mock.calls.filter(([url]) => url === providers[1].save)).toHaveLength(0);
-    serverStatus.slack.default_channel_id = providers[0].next;
+    await select(providers[0].label).props.onValueChange!(providers[0].next);
+    expect(h.fetch.mock.calls.filter(([url]) => url === providers[0].save)).toHaveLength(1);
+    serverStatus.microsoft_teams = { ...serverStatus.microsoft_teams, ...teamsTarget };
     finish(response({ ok: true }));
     await pending;
     expect(select(providers[0].label).props.value).toBe(providers[0].next);
@@ -325,7 +302,7 @@ describe("notification channel recovery", () => {
     );
     await select(providers[0].label).props.onValueChange!(providers[0].next);
     expect(select(providers[0].label).props.value).toBe(providers[0].old);
-    expect(text(render())).toContain("Could not save the Slack channel. Try again.");
+    expect(text(render())).toContain("Could not save the Teams channel. Try again.");
   });
 
   it.each(["HTTP", "network", "missing provider"])(
@@ -343,13 +320,13 @@ describe("notification channel recovery", () => {
       expect(select(providers[0].label).props.value).toBe(providers[0].old);
       expect(select(providers[0].label).props.disabled).toBe(false);
       expect(text(render())).toContain(
-        "Could not confirm the Slack channel. Refresh to check its status.",
+        "Could not confirm the Teams channel. Refresh to check its status.",
       );
       h.fetch.mockImplementation(defaultFetch);
       button("Refresh integration status").props.onClick!();
       await settle();
       expect(select(providers[0].label).props.value).toBe(providers[0].next);
-      expect(text(render())).not.toContain("Could not confirm the Slack channel.");
+      expect(text(render())).not.toContain("Could not confirm the Teams channel.");
     },
   );
 
@@ -390,9 +367,7 @@ describe("notification channel recovery", () => {
         : defaultFetch(url),
     );
     await mount();
-    expect(text(render())).toContain("Could not load Slack channels.");
     expect(text(render())).toContain("Could not load Teams channels.");
-    expect(button("Retry Slack Channels")).toBeDefined();
     expect(button("Retry Teams Channels")).toBeDefined();
   });
 

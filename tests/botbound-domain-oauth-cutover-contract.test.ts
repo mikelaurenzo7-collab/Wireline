@@ -9,9 +9,6 @@ const STATIC_INTEGRATION_CALLBACKS = {
   "src/routes/oauth/google.ts": "/api/oauth/google/callback",
   "src/routes/oauth/google-sheets.ts": "/api/oauth/google_sheets/callback",
   "src/routes/oauth/microsoft.ts": "/api/oauth/microsoft/callback",
-  "src/routes/oauth/slack.ts": "/api/oauth/slack/callback",
-  "src/routes/oauth/x.ts": "/api/oauth/x/callback",
-  "src/routes/oauth/zoom.ts": "/api/oauth/zoom/callback",
 } as const;
 
 const SIGN_IN_CALLBACKS = [
@@ -102,12 +99,14 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(inventory).not.toContain("VITE_PUBLIC_SITE_URL");
   });
 
-  it("keeps Yahoo sign-in live while excluding the unfinished mailbox callback", () => {
-    const yahoo = read("src/routes/oauth/yahoo.ts");
+  it("keeps Yahoo sign-in live and does not register a Yahoo Mail callback", () => {
+    const signIn = read("src/routes/auth-oauth-routes.ts");
     const inventory = read("scripts/print-oauth-redirects.mjs");
-    expect(yahoo).toContain("YAHOO_MAIL_CONNECTION_AVAILABLE = false");
-    expect(yahoo).toContain("Yahoo Mail connection is not available");
+    expect(signIn).toContain('"/api/auth/yahoo/callback"');
     expect(inventory).toContain('["Yahoo sign-in", "/api/auth/yahoo/callback"]');
     expect(inventory).not.toContain('["Yahoo", "/api/oauth/yahoo/callback"]');
+    expect(inventory).not.toContain("/api/oauth/slack/callback");
+    expect(inventory).not.toContain("/api/oauth/x/callback");
+    expect(inventory).not.toContain("/api/oauth/zoom/callback");
   });
 });
