@@ -54,13 +54,44 @@ describe("TCPA calling hours", () => {
     expect(decision.allowed).toBe(true);
   });
 
-  it("blocks a Texas number at 8am Central because El Paso is 7am Mountain", () => {
-    // 2026-07-22 13:30 UTC = 08:30 Central = 07:30 Mountain (MDT).
-    const decision = resolveCallingHoursForPhone("+12145550100", new Date("2026-07-22T13:30:00Z"));
+  it("blocks a Texas number at 9:30am Central because El Paso is 8:30am Mountain (Texas starts at 9)", () => {
+    // 2026-07-22 (Wednesday) 14:30 UTC = 09:30 Central = 08:30 Mountain (MDT).
+    const decision = resolveCallingHoursForPhone("+12145550100", new Date("2026-07-22T14:30:00Z"));
     expect(decision.state).toBe("TX");
     expect(decision.allowed).toBe(false);
     expect(decision.timeZone).toBe("America/Denver");
-    expect(decision.localHour).toBe(7);
+    expect(decision.localHour).toBe(8);
+    expect(decision.startHour).toBe(9);
+  });
+
+  it("blocks Texas at 8:30am Central on a weekday, where a Missouri number is allowed", () => {
+    const at = new Date("2026-07-22T13:30:00Z"); // 08:30 Central
+    expect(resolveCallingHoursForPhone("+13145550100", at)).toMatchObject({
+      state: "MO",
+      allowed: true,
+    });
+    expect(resolveCallingHoursForPhone("+12145550100", at)).toMatchObject({
+      state: "TX",
+      allowed: false,
+    });
+    // 15:30 UTC = 10:30 Central, 09:30 Mountain: open in both Texas zones.
+    expect(
+      resolveCallingHoursForPhone("+12145550100", new Date("2026-07-22T15:30:00Z")).allowed,
+    ).toBe(true);
+  });
+
+  it("holds Texas calls until noon local on Sunday", () => {
+    // 2026-07-26 is a Sunday. 16:30 UTC = 11:30 Central, 10:30 Mountain.
+    const morning = resolveCallingHoursForPhone("+12145550100", new Date("2026-07-26T16:30:00Z"));
+    expect(morning).toMatchObject({ state: "TX", allowed: false, startHour: 12 });
+    // 18:30 UTC = 13:30 Central, 12:30 Mountain.
+    expect(
+      resolveCallingHoursForPhone("+12145550100", new Date("2026-07-26T18:30:00Z")).allowed,
+    ).toBe(true);
+    // Sunday rules are Texas only: a Missouri number is open at 10:30 Central.
+    expect(
+      resolveCallingHoursForPhone("+13145550100", new Date("2026-07-26T15:30:00Z")).allowed,
+    ).toBe(true);
   });
 
   it("blocks a Tennessee number at 8:30pm Central because East Tennessee is past 8pm Eastern", () => {

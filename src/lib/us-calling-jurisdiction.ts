@@ -1,7 +1,7 @@
 /**
  * United States locations for reviewed calling.
  * BotBound's default window is 8am–8pm recipient local time, stricter than the
- * federal 9pm cutoff. Illinois still starts at 9am. The recipient's signed
+ * federal 9pm cutoff. Illinois and Texas start at 9am, Texas at noon on Sunday. The recipient's signed
  * time zone must be one the state actually uses.
  */
 
@@ -9,7 +9,9 @@ export const FEDERAL_CALLING_HOUR_START = 8;
 /** Exclusive. Last legal hour is 19 (7pm–7:59pm). 8pm local is outside the window. */
 export const FEDERAL_CALLING_HOUR_END = 20;
 
-const STATE_CALLING_HOUR_START: Readonly<Record<string, number>> = { IL: 9 };
+// Texas Bus. & Com. Code 301.051 (texts too since SB 140, Sept. 1, 2025): 9 a.m. to 9 p.m., noon on Sunday.
+const STATE_CALLING_HOUR_START: Readonly<Record<string, number>> = { IL: 9, TX: 9 };
+const STATE_SUNDAY_CALLING_HOUR_START: Readonly<Record<string, number>> = { TX: 12 };
 
 const US_CALLING_STATES = [
   ["AL", "Alabama", "America/Chicago"],
@@ -102,7 +104,11 @@ export function usCallingStateName(code: string): string {
   return STATE_NAMES.get(code) || code;
 }
 
-export function callingHourStart(state: string | null | undefined): number {
+/** First permitted hour for a state; `localWeekday` (0 = Sunday, recipient's time) applies Sunday rules. */
+export function callingHourStart(state: string | null | undefined, localWeekday?: number): number {
+  if (state && localWeekday === 0 && STATE_SUNDAY_CALLING_HOUR_START[state]) {
+    return STATE_SUNDAY_CALLING_HOUR_START[state];
+  }
   return (state && STATE_CALLING_HOUR_START[state]) || FEDERAL_CALLING_HOUR_START;
 }
 

@@ -98,7 +98,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will Customers Know They Are Talking to a Bot?",
-        a: 'BotBound Bots use the company identity, disclosure language, and jurisdiction rules you configure, for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
+        a: "Yes. Every call opens with an AI disclosure in your business name, for example \"Hi, I'm Sarah, and I'm an AI assistant with Premier HVAC.\" If you turn on recording, the Bot says that too. Disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.",
       },
       {
         q: "What Happens If the Bot Does Not Know the Answer?",
@@ -327,7 +327,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "How Does My Bot Answer Calls?",
-        a: "Create your Bot, add the information it can share, and rehearse its greeting and answers. Activate a Calls plan and choose a number for people to reach it. Review the conversation and captured requests in your workspace.",
+        a: "Create your Bot, add the information it can share, and rehearse its greeting and answers. Choose a plan and a number for people to reach it. Review the conversation and captured requests in your workspace.",
       },
       {
         q: "Can I Use the Same Bot for My Business?",
@@ -399,7 +399,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Does It Compare with a 24/7 Answering Service?",
-        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Calls plans include voice minutes, and extra usage is billed at the listed rates.",
+        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Every plan includes a BotBound number, and calls and texts are billed at the listed usage rates.",
       },
     ],
   },
@@ -463,21 +463,21 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   sales: {
     slug: "sales",
-    metaTitle: "Sales Bots for Prospecting and Follow Up | BotBound",
+    metaTitle: "Sales Bots for Lead Follow Up | BotBound",
     metaDescription:
-      "Find prospects, qualify leads, and follow up on deals with calls, SMS, email, and a Computer. No CRM required.",
+      "Answer new inquiries, qualify leads, and follow up on deals with calls, SMS, email, and a Computer. No CRM required.",
     eyebrow: "For Sales",
     headline: "Keep Every Deal Moving",
     pains: [
       {
         icon: "Phone",
-        title: "Prospect and Qualify",
-        body: "Research prospects, start approved outbound conversations, and capture what each lead needs.",
+        title: "Answer and Qualify",
+        body: "Answer new inquiries, ask your qualification questions, and capture what each lead needs.",
       },
       {
         icon: "Clock",
         title: "Follow Up to Close",
-        body: "Answer objections from your Knowledge and follow up by call, SMS, or email. Keep the next step visible.",
+        body: "Answer objections from your Knowledge and follow up by call, SMS, or email with people who asked to hear from you. Keep the next step visible.",
       },
       {
         icon: "Calendar",

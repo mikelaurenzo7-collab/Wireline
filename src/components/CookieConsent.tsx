@@ -286,7 +286,7 @@ export default function CookieConsent() {
             <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <h2 className="sr-only">Privacy Choices</h2>
               <p className="wl-balance break-words text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-12 sm:pr-0">
-                Analytics are off by default.{" "}
+                Advertising measurement is off by default.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline font-medium"
