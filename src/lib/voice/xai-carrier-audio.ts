@@ -74,6 +74,7 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
       if (played) {
         pendingMarks.delete(frame.mark.name);
         for (const key of played) playback.delete(key);
+        if (!pendingMarks.size && !hasAudio) queuedUntil = Date.now();
         openingPlayed = true;
         clearTimeout(openingTimeout);
         model.emit("message", Buffer.from(JSON.stringify({ type: "output_audio_buffer.stopped" })));
@@ -98,6 +99,8 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
       return;
     }
     if (!event) return;
+    if (typeof event.response_id === "string" && interruptedResponses.has(event.response_id)) return;
+    if (typeof event.response?.id === "string" && interruptedResponses.has(event.response.id)) return;
     if (event.type === "session.updated") configured = true;
     if (
       (event.type === "response.output_audio.delta" || event.type === "response.audio.delta") &&
@@ -105,7 +108,6 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
       event.delta
     ) {
       const responseId = typeof event.response_id === "string" ? event.response_id : "";
-      if (interruptedResponses.has(responseId)) return;
       hasAudio = true;
       const duration = Buffer.from(event.delta, "base64").length / 8;
       const start = Math.max(Date.now(), queuedUntil);
