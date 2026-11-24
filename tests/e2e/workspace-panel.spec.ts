@@ -293,6 +293,11 @@ test("mobile identity details and browser controls return to the same Bot conver
   await openBrowser(page);
   await expect(page).toHaveURL(/panel=computer/);
   await closeBrowser(page);
+  const viewBrowser = page.getByRole("button", { name: "View browser", exact: true });
+  await expect(viewBrowser).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(computerPanel(page)).toBeVisible();
+  await closeBrowser(page);
   await computerMode(page).click();
   await expect(conversation(page)).toHaveValue("Keep this mobile draft");
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption(bots[1].id);

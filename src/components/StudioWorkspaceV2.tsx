@@ -164,6 +164,7 @@ function StudioWorkspaceContent() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const setupTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const panelExpandRef = useRef<HTMLButtonElement | null>(null);
+  const browserOpenerId = useRef("");
   const returnFocus = useRef<{ view: "setup" | "computer"; id: string } | null>(null);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   // Explicit Computer links reopen the pane even after a saved collapse.
@@ -268,7 +269,10 @@ function StudioWorkspaceContent() {
     const target = returnFocus.current;
     if (!target) return;
     if (target.view === "setup" ? inspectorOpen : panelOpen || mobileBrowserOpen) return;
-    document.getElementById(target.id)?.focus({ preventScroll: true });
+    const opener = document.getElementById(target.id);
+    const fallback =
+      target.view === "computer" ? document.getElementById("studio-panel-toggle") : null;
+    (opener ?? fallback)?.focus({ preventScroll: true });
     returnFocus.current = null;
   }, [inspectorOpen, mobileBrowserOpen, panelOpen]);
 
@@ -378,7 +382,8 @@ function StudioWorkspaceContent() {
   }, [setParams]);
 
   const closeComputer = useCallback(() => {
-    returnFocus.current = { view: "computer", id: "studio-panel-toggle" };
+    returnFocus.current = { view: "computer", id: browserOpenerId.current };
+    browserOpenerId.current = "";
     setPanelExpanded(false);
     if (splitWorkspace) setPanelCollapsed(true);
     setParams(
@@ -429,18 +434,22 @@ function StudioWorkspaceContent() {
 
   const rehearsalVisible = workroomMode === "test";
 
-  const showBrowser = useCallback(() => {
-    if (splitWorkspace) setPanelCollapsed(false);
-    setParams(
-      (current) => {
-        const next = clearStudioInspectorSectionParams(current);
-        next.set("panel", "computer");
-        next.delete("focus");
-        return next;
-      },
-      { replace: true },
-    );
-  }, [setPanelCollapsed, setParams, splitWorkspace]);
+  const showBrowser = useCallback(
+    (openerId = "") => {
+      browserOpenerId.current = openerId;
+      if (splitWorkspace) setPanelCollapsed(false);
+      setParams(
+        (current) => {
+          const next = clearStudioInspectorSectionParams(current);
+          next.set("panel", "computer");
+          next.delete("focus");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setPanelCollapsed, setParams, splitWorkspace],
+  );
 
   useEffect(() => {
     if (!rehearsalFocusRequest) return;
@@ -628,9 +637,9 @@ function StudioWorkspaceContent() {
                   }
                 : undefined
             }
-            onShowBrowser={() => {
+            onShowBrowser={(openerId) => {
               computer.setSelectedId(task.id);
-              showBrowser();
+              showBrowser(openerId);
             }}
           />
         ),

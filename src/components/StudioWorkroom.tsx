@@ -165,7 +165,7 @@ const StudioWorkroom = forwardRef<
     onRequestBrowserTask: () => void;
     onActivateComputer?: () => void;
     onRequestMessage: () => void;
-    onShowBrowser: () => void;
+    onShowBrowser: (openerId: string) => void;
     timelineNotice?: ReactNode;
   }
 >(function StudioWorkroom(
@@ -827,11 +827,12 @@ const StudioWorkroom = forwardRef<
                     </Button>
                     {taskComposer.taskMode && !computerViewOpen ? (
                       <Button
+                        id="studio-view-browser"
                         type="button"
                         size="sm"
                         variant="ghost"
                         className="min-h-11"
-                        onClick={onShowBrowser}
+                        onClick={(event) => onShowBrowser(event.currentTarget.id)}
                       >
                         View browser
                       </Button>

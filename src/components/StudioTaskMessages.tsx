@@ -25,7 +25,7 @@ export default function StudioTaskMessages({
   agentId: string;
   agentName: string;
   markKey?: BotMarkKey | null;
-  onShowBrowser: () => void;
+  onShowBrowser: (openerId: string) => void;
   onReply?: () => void;
 }) {
   const activityLabel = taskActivityLabel(selected);
@@ -98,7 +98,13 @@ export default function StudioTaskMessages({
                 Reply to task
               </Button>
             ) : null}
-            <Button type="button" size="sm" variant="secondary" onClick={onShowBrowser}>
+            <Button
+              id={`studio-task-browser-${selected.id}`}
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={(event) => onShowBrowser(event.currentTarget.id)}
+            >
               <Globe aria-hidden="true" />
               {selected.ownerControl ? "Open browser" : "Use browser controls"}
             </Button>
