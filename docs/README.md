@@ -12,6 +12,7 @@ Repository workflow: [repo conventions](./REPO_CONVENTIONS.md).
 
 - [BotBound design master plan](./design/master-plan.md): current work queue, retained design rules, and unresolved acceptance gates.
 - [Connector plan](./CONNECTORS.md): proposed integration priorities and operational boundaries.
+- [AI-native roadmap](./AI_NATIVE_ROADMAP.md): phased implementation plan, People, helpers, gateway and release gates.
 
 ## Product surfaces
 

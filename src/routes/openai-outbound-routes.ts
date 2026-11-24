@@ -37,7 +37,7 @@ import {
 } from "../lib/voice/realtime-sip-target";
 import { trackVoiceMinutes } from "../lib/voice-usage";
 import { liveRecordingDialAttributes } from "../lib/voice/live-call-recording";
-import { clonedCallTwiml } from "../lib/voice/cloned-call-routing";
+import { carrierMediaTwiml, clonedCallTwiml } from "../lib/voice/cloned-call-routing";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "../lib/voice-call-identity";
 import {
   handleFundedOutboundCarrierEvent,
@@ -525,6 +525,12 @@ router.post(
         callerId: decision.callerId,
         token,
       });
+      // The recipient already answered the PSTN parent. A second Dial to xAI
+      // would play carrier ringback while the voice worker admits the call.
+      if (sip.provider === "xai") {
+        res.status(200).send(carrierMediaTwiml({ token, direction: "outbound", nativeXai: true }));
+        return;
+      }
       res.status(200).send(
         bridgeTwiml({
           callerId: decision.callerId,

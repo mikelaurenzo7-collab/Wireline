@@ -19,7 +19,7 @@ function attestedRow(san: string | null) {
   };
 }
 
-async function loadGate(selectRows: unknown[][], optedOut = false) {
+async function loadGate(selectRows: unknown[][], optedOut = false, inHours = true, knownState = true) {
   vi.resetModules();
   let calls = 0;
   const limit = async () => selectRows[calls++] ?? [];
@@ -44,7 +44,7 @@ async function loadGate(selectRows: unknown[][], optedOut = false) {
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   }));
   vi.doMock("../src/lib/tcpa-calling-hours", () => ({
-    resolveCallingHoursForPhone: () => ({ allowed: true, timeZone: "America/Chicago" }),
+    resolveCallingHoursForPhone: () => ({ allowed: inHours, state: knownState ? "FL" : null, inferred: knownState, timeZone: "America/New_York", startHour: 8, endHour: 20 }),
   }));
   vi.doMock("../src/lib/federal-dnc-service", () => ({
     assertFederalDncForMarketing,
@@ -243,6 +243,52 @@ describe("owner-reviewed non-sales repeat calls", () => {
     expect(
       await optedOut.evaluateOutboundDialGate({ ...request, manualCallPurpose: "personal" }),
     ).toMatchObject({ allowed: false, reason: "blocked_internal_dnc" });
+  });
+});
+
+describe("explicit after-hours service calling", () => {
+  afterEach(() => vi.resetModules());
+  const request = {
+    userId: "tenant-1",
+    phone: "+15615550100",
+    isMarketingCall: false,
+    manualCallPurpose: "appointment_service" as const,
+    afterHoursServiceConfirmed: true,
+    audit: { channel: "call" as const, attested: true, confirmations: { nonsales: true } },
+  };
+  it("allows explicitly authorized reviewed service", async () => {
+    const gate = await loadGate([], false, false);
+    expect(await gate.evaluateOutboundDialGate(request)).toMatchObject({ allowed: true });
+  });
+  it("allows explicitly authorized personal coordination", async () => {
+    const gate = await loadGate([], false, false);
+    expect(await gate.evaluateOutboundDialGate({ ...request, manualCallPurpose: "personal" })).toMatchObject({ allowed: true });
+  });
+  it("retains restrictions for unconfirmed, automated, SMS and marketing calls", async () => {
+    for (const patch of [
+      { afterHoursServiceConfirmed: false },
+      { manualCallPurpose: undefined },
+      { audit: { ...request.audit, channel: "sms" as const } },
+      { manualCallPurpose: "personal" as const, afterHoursServiceConfirmed: false },
+      { audit: { ...request.audit, attested: false } },
+      { audit: { ...request.audit, confirmations: { nonsales: false } } },
+      { isMarketingCall: true, salesScreening: "one_off" as const },
+    ]) {
+      const gate = await loadGate([[], []], false, false);
+      expect(await gate.evaluateOutboundDialGate({ ...request, ...patch })).toMatchObject({
+        allowed: false, reason: "outside_permitted_calling_hours",
+      });
+    }
+  });
+  it("retains opt-out and unknown-jurisdiction restrictions", async () => {
+    const blocked = await loadGate([], true, false);
+    expect(await blocked.evaluateOutboundDialGate(request)).toMatchObject({
+      allowed: false, reason: "blocked_internal_dnc",
+    });
+    const unknown = await loadGate([], false, false, false);
+    expect(await unknown.evaluateOutboundDialGate(request)).toMatchObject({
+      allowed: false, reason: "outside_permitted_calling_hours",
+    });
   });
 });
 
