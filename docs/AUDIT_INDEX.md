@@ -10,6 +10,8 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 ## Current launch and quality evidence
 
+[October 29 historical cutover roadmap](./launch/FLAWLESS_LAUNCH_ROADMAP.md) is retained as historical evidence only, not a release or creative-quality mandate.
+
 | Evidence | Scope |
 | --- | --- |
 | [2026-10-30 spring-cleaning](./audits/2026-10-30-spring-cleaning.md) | Exact-source October 30 cleanup baseline, verified fixes, production observations, and remaining launch/visual gates. |
