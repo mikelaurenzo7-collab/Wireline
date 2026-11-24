@@ -52,6 +52,7 @@ const dialSchema = z.object({
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
   permissionConfirmed: z.boolean().optional(),
   nonsalesConfirmed: z.boolean().optional(),
+  afterHoursServiceConfirmed: z.boolean().optional(),
   customerSince: z.string().max(40).optional(),
   salesAttestationConfirmed: z.boolean().optional(),
   requestKey: callRequestKeySchema,
@@ -299,6 +300,11 @@ router.post(
           (!prepared || effectiveCallPurpose !== "callback")
             ? effectiveCallPurpose
             : undefined,
+        afterHoursServiceConfirmed:
+          !prepared &&
+          screening.requestedCallPurpose === effectiveCallPurpose &&
+          !manual.contentWarning &&
+          req.body.afterHoursServiceConfirmed === true,
         metadata: { has_express_written_consent: false },
         audit: manual.audit,
       });
