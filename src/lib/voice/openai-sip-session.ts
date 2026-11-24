@@ -2666,7 +2666,6 @@ async function runRealtimeSession(
     }
     if (
       provider === "xai" &&
-      !isXaiCarrier &&
       awaitingExactOpeningPlayback &&
       type === "response.created"
     ) {
@@ -2674,7 +2673,7 @@ async function runRealtimeSession(
       // the first response after the opening's own proves it was heard.
       const responseId = String(asRecord(event.response).id || "");
       if (!xaiOpeningResponseId) xaiOpeningResponseId = responseId || "opening";
-      else if (responseId !== xaiOpeningResponseId && finishExactOpeningIfNeeded(true)) return;
+      else if (!isXaiCarrier && responseId !== xaiOpeningResponseId && finishExactOpeningIfNeeded(true)) return;
     }
     if (type === "input_audio_buffer.speech_started" || type === "input_audio_buffer.committed") {
       // xAI drops caller audio while the opening plays, so speech cannot cut
@@ -2808,13 +2807,16 @@ async function runRealtimeSession(
   const resumeAfterVoiceSwap = () => {
     if (assistantAudioHeard) return;
     if (xaiForcedOpening && awaitingExactOpeningPlayback) {
-      if (xaiOpeningResponseId || isXaiCarrier) return;
+      if (xaiOpeningResponseId) return;
       sendJson(ws, xaiForceMessage(xaiForcedOpening));
-      if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
-      xaiOpeningPlaybackTimer = setTimeout(() => {
-        xaiOpeningPlaybackTimer = null;
-        finishExactOpeningIfNeeded(true);
-      }, xaiForcedMessagePlaybackMs(xaiForcedOpening));
+      // Direct carrier sessions must confirm the actual Twilio playback mark.
+      if (!isXaiCarrier) {
+        if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
+        xaiOpeningPlaybackTimer = setTimeout(() => {
+          xaiOpeningPlaybackTimer = null;
+          finishExactOpeningIfNeeded(true);
+        }, xaiForcedMessagePlaybackMs(xaiForcedOpening));
+      }
     } else if (!xaiForcedOpening && activeResponseIds.size === 0) {
       sendJson(ws, { type: "response.create" });
     }
