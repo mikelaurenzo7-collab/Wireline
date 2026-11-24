@@ -65,6 +65,14 @@ export async function clonedCallTwiml(input: {
     catalogCalls: catalogCallsConfigured(),
   });
   if (!engine) return null;
+  return carrierMediaTwiml(input);
+}
+
+export function carrierMediaTwiml(input: {
+  token: string;
+  direction: "inbound" | "outbound";
+  nativeXai?: boolean;
+}): string {
   const url = new URL(CLONED_MEDIA_PATH, clonedMediaOrigin());
   url.protocol = "wss:";
   return (
@@ -75,6 +83,8 @@ export async function clonedCallTwiml(input: {
     xml(input.token) +
     '"/><Parameter name="direction" value="' +
     input.direction +
-    '"/></Stream></Connect><Hangup/></Response>'
+    '"/>' +
+    (input.nativeXai ? '<Parameter name="engine" value="xai"/>' : "") +
+    "</Stream></Connect><Hangup/></Response>"
   );
 }

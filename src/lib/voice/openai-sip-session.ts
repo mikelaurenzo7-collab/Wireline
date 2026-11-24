@@ -1,6 +1,10 @@
 import WebSocket from "ws";
 import { mediaCallSid } from "./cloned-media-config";
-import { controlMediaCall, createClonedMediaSession } from "./elevenlabs-media-bridge";
+import {
+  controlMediaCall,
+  createClonedMediaSession,
+  createXaiCarrierSession,
+} from "./elevenlabs-media-bridge";
 import type { ElevenLabsMediaSession } from "./elevenlabs-media-session";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
@@ -1996,8 +2000,10 @@ async function runRealtimeSession(
       cloneId: runtime.customVoice?.cloneId ?? null,
       stockVoice: standInStockVoice,
     });
-  let voiceKind: "custom" | "stock" =
-    customVoiceId || mediaCallSid(input.callId) ? "custom" : "stock";
+  const isXaiCarrier = provider === "xai" && Boolean(mediaCallSid(input.callId));
+  const isSynthesizedMedia = provider === "openai" && Boolean(mediaCallSid(input.callId));
+  const initialVoiceKind = customVoiceId || isSynthesizedMedia ? "custom" : "stock";
+  let voiceKind: "custom" | "stock" = initialVoiceKind;
   let clonePlaybackRecorded = false;
   let customVoiceFallback: "provider_error" | "latency" | "drill" | null = null;
   let slowCustomVoiceReplies = 0;
@@ -2008,7 +2014,11 @@ async function runRealtimeSession(
   let pendingStockVoice: string | null = null;
   // The full xAI session as sent at open, so a voice swap re-sends the
   // complete session (instructions, tools, keyterms) with only the voice changed.
-  let xaiSessionOptions: { instructions: string; keyterms: string[] } | null = null;
+  let xaiSessionOptions: {
+    instructions: string;
+    keyterms: string[];
+    carrierAudio: boolean;
+  } | null = null;
   // Set when an xAI failure on an inbound call should move the caller to
   // OpenAI Realtime on the same call instead of ending it.
   let xaiFailoverReason: string | null = null;
@@ -2074,7 +2084,7 @@ async function runRealtimeSession(
       endedReason,
     );
 
-  const mediaSession = mediaCallSid(input.callId)
+  const mediaSession = isSynthesizedMedia
     ? createClonedMediaSession({
         callId: input.callId,
         userId: input.userId,
@@ -2083,7 +2093,7 @@ async function runRealtimeSession(
       })
     : null;
   const ws =
-    mediaSession ??
+    (isXaiCarrier ? createXaiCarrierSession(input.callId, apiKey) : mediaSession) ??
     new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
       headers: { Authorization: `Bearer ${apiKey}` },
       // xAI's Dial gives up after XAI_CONNECT_TIMEOUT_SECONDS and fails over,
@@ -2654,12 +2664,16 @@ async function runRealtimeSession(
       requestToolContinuationWhenReady();
       return;
     }
-    if (provider === "xai" && awaitingExactOpeningPlayback && type === "response.created") {
+    if (
+      provider === "xai" &&
+      awaitingExactOpeningPlayback &&
+      type === "response.created"
+    ) {
       // xAI starts no model turn until a non-interruptible line has played, so
       // the first response after the opening's own proves it was heard.
       const responseId = String(asRecord(event.response).id || "");
       if (!xaiOpeningResponseId) xaiOpeningResponseId = responseId || "opening";
-      else if (responseId !== xaiOpeningResponseId && finishExactOpeningIfNeeded(true)) return;
+      else if (!isXaiCarrier && responseId !== xaiOpeningResponseId && finishExactOpeningIfNeeded(true)) return;
     }
     if (type === "input_audio_buffer.speech_started" || type === "input_audio_buffer.committed") {
       // xAI drops caller audio while the opening plays, so speech cannot cut
@@ -2795,11 +2809,14 @@ async function runRealtimeSession(
     if (xaiForcedOpening && awaitingExactOpeningPlayback) {
       if (xaiOpeningResponseId) return;
       sendJson(ws, xaiForceMessage(xaiForcedOpening));
-      if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
-      xaiOpeningPlaybackTimer = setTimeout(() => {
-        xaiOpeningPlaybackTimer = null;
-        finishExactOpeningIfNeeded(true);
-      }, xaiForcedMessagePlaybackMs(xaiForcedOpening));
+      // Direct carrier sessions must confirm the actual Twilio playback mark.
+      if (!isXaiCarrier) {
+        if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
+        xaiOpeningPlaybackTimer = setTimeout(() => {
+          xaiOpeningPlaybackTimer = null;
+          finishExactOpeningIfNeeded(true);
+        }, xaiForcedMessagePlaybackMs(xaiForcedOpening));
+      }
     } else if (!xaiForcedOpening && activeResponseIds.size === 0) {
       sendJson(ws, { type: "response.create" });
     }
@@ -2845,6 +2862,7 @@ async function runRealtimeSession(
         if (provider === "xai") {
           xaiSessionOptions = {
             instructions,
+            carrierAudio: isXaiCarrier,
             keyterms: [runtime.agentName, input.businessName ?? ""],
           };
           sendJson(ws, {
@@ -2883,10 +2901,11 @@ async function runRealtimeSession(
             sendJson(ws, xaiForceMessage(opening));
             // A silent caller produces no later turn; confirm on the slow
             // playback estimate instead (a suspended line hangs up then).
-            xaiOpeningPlaybackTimer = setTimeout(() => {
-              xaiOpeningPlaybackTimer = null;
-              finishExactOpeningIfNeeded(true);
-            }, xaiForcedMessagePlaybackMs(opening));
+            if (!isXaiCarrier)
+              xaiOpeningPlaybackTimer = setTimeout(() => {
+                xaiOpeningPlaybackTimer = null;
+                finishExactOpeningIfNeeded(true);
+              }, xaiForcedMessagePlaybackMs(opening));
           } else {
             sendJson(ws, { type: "response.create" });
           }
@@ -3066,7 +3085,7 @@ async function runRealtimeSession(
             openingPlaybackConfirmed,
             providerEvents: Object.fromEntries(providerEventCounts),
             ...turnTiming.summary(),
-            voiceKind: customVoiceId || mediaCallSid(input.callId) ? "custom" : "stock",
+            voiceKind: initialVoiceKind,
             voiceAtClose: voiceKind,
             customVoiceFallback,
           });

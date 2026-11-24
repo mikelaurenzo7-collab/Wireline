@@ -129,7 +129,12 @@ function asRecord(value: unknown): Record<string, unknown> {
  */
 export function toXAIRealtimeSession(
   openAISession: Record<string, unknown>,
-  options: { instructions?: string; keyterms?: string[]; customVoiceId?: string | null } = {},
+  options: {
+    instructions?: string;
+    keyterms?: string[];
+    customVoiceId?: string | null;
+    carrierAudio?: boolean;
+  } = {},
 ): Record<string, unknown> {
   const audio = asRecord(openAISession.audio);
   const output = asRecord(audio.output);
@@ -148,7 +153,9 @@ export function toXAIRealtimeSession(
     tool_choice: openAISession.tool_choice === "none" ? "none" : "auto",
     turn_detection: { type: "server_vad" },
     audio: {
+      ...(options.carrierAudio ? { output: { format: { type: "audio/pcmu" } } } : {}),
       input: {
+        ...(options.carrierAudio ? { format: { type: "audio/pcmu" } } : {}),
         transcription: {
           model: XAI_GROK_VOICE_TRANSCRIBER,
           ...(keyterms.length ? { keyterms } : {}),
