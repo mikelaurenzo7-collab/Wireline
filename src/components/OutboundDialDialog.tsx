@@ -84,6 +84,7 @@ function DirectOutboundDialDialog({
   } | null>(null);
   const [permissionChecked, setPermissionChecked] = useState(false);
   const [nonsalesChecked, setNonsalesChecked] = useState(false);
+  const [afterHoursConfirmed, setAfterHoursConfirmed] = useState(false);
   const [customerSinceDraft, setCustomerSince] = useState<string | null>(null);
   const [salesAttestationChecked, setSalesAttestationChecked] = useState(false);
 
@@ -97,6 +98,12 @@ function DirectOutboundDialDialog({
   const optedOut = contact?.optedOut === true;
   const customerSince = customerSinceDraft ?? contact?.customerSince?.slice(0, 10) ?? "";
   const [context, setContext] = useState(initialContext);
+  const afterHoursEligible = !preparedCall && !optedOut &&
+    (callPurpose === "appointment_service" || callPurpose === "existing_customer" ||
+      callPurpose === "returning_contact" || callPurpose === "callback");
+  useEffect(() => {
+    setAfterHoursConfirmed(false);
+  }, [phone, callPurpose, agentId, context]);
   const [placing, setPlacing] = useState(false);
   const [placementError, setPlacementError] = useState<string | null>(null);
   const [savedRecovery] = useState(() => {
@@ -141,6 +148,7 @@ function DirectOutboundDialDialog({
     setContactLookup(null);
     setPermissionChecked(false);
     setNonsalesChecked(false);
+    setAfterHoursConfirmed(false);
     setCustomerSince(null);
     setSalesAttestationChecked(false);
     setUncertain(false);
@@ -305,6 +313,7 @@ function DirectOutboundDialDialog({
         callPurpose,
         permissionConfirmed: showPermission && permissionChecked,
         nonsalesConfirmed: showNonsales && nonsalesChecked,
+        afterHoursServiceConfirmed: afterHoursEligible && afterHoursConfirmed,
         customerSince: callPurpose === "existing_customer" ? customerSince : undefined,
         salesAttestationConfirmed: salesAttestationChecked,
       };
@@ -568,6 +577,14 @@ function DirectOutboundDialDialog({
                 permissionLabel={OUTBOUND_CONSENT_LABEL}
                 channel="call"
               />
+              {afterHoursEligible ? (
+                <label className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <input type="checkbox" className="mt-1" checked={afterHoursConfirmed}
+                    disabled={placing || uncertain}
+                    onChange={(event) => setAfterHoursConfirmed(event.target.checked)} />
+                  <span>Allow an after-hours service call. I confirm the recipient has agreed to be contacted at this time, this is not a sales call, and applicable rules permit it.</span>
+                </label>
+              ) : null}
               {optedOut ? (
                 <p className="text-sm text-foreground" role="status">
                   {INTERNAL_DNC_MESSAGE}
