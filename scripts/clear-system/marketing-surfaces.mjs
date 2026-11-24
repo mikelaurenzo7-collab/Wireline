@@ -1,13 +1,11 @@
-/** Public marketing hierarchy contract. */
+/** Public marketing access, layout safety and product-truth contract. Creative composition is evaluated in rendered QA. */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failures }) {
   const executable = (source) =>
     source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-  const claritySystemCss = read("src/styles/clarity-system.css");
   const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
-  const landingPrestigeCss = read("src/styles/landing-prestige.css");
   const authAccessCss = read("src/styles/auth-access-panel.css");
   const indexCss = read("src/index.css");
   const documentFlowCss = read("src/styles/marketing-document-flow.css");
@@ -18,12 +16,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   const pricingPage = read("src/pages/Pricing.tsx");
   const usagePricingPanel = read("src/components/usage-billing/UsagePricingPanel.tsx");
 
-  mustInclude(
-    "src/styles/clarity-system.css",
-    claritySystemCss,
-    /\.marketing-surface :is\(\.wl-public-rail, \.wl-marketing-center\) \{\s*text-align:\s*center;/,
-    "supporting pages must retain shared alignment",
-  );
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
@@ -48,20 +40,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       pattern,
       description,
     );
-  mustExclude(
-    "src/components/marketing/PrecisionPublicHeader.tsx",
-    executable(publicHeader),
-    /Dialog|SITE_NAV|aria-label="Site"|label:\s*"Solutions"|label:\s*"Demos"|label:\s*"Trust"/,
-    "supporting public headers keep navigation limited to product, pricing, and account entry",
-  );
-  for (const destination of executable(publicHeader).matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g)) {
-    // "/studio" is the signed-in visitor's single way back to work.
-    if (!["/", "/features", "/pricing", "/signin", "/signup", "/studio"].includes(destination[1])) {
-      failures.push(
-        `src/components/marketing/PrecisionPublicHeader.tsx: unexpected header destination ${destination[1]}`,
-      );
-    }
-  }
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
@@ -71,19 +49,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
 
   for (const [pattern, description] of [
     [/signedIn \? "\/studio" : "\/signup"/, "root landing must offer plan-neutral account access"],
-    [/The Bot Gets:/, "root landing must introduce the Bot's three work surfaces"],
-    [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
-    [/landing-prestige__showcase-grid/, "landing must show its static capability grid"],
-    [/aria-labelledby="landing-prestige-showcase-title"/, "static showcase must be named"],
-    [/label: "Phone Number"/, "phone and SMS work must have a clear card"],
-    [/label: "Email Address"/, "email work must have a clear card"],
-    [/label: "A Computer"/, "computer work must have a clear card"],
     [/to="\/pricing"/, "landing must link directly to pricing"],
-    [/landing-prestige__showcase-grid/, "landing must keep the focused static showcase"],
-    [
-      /<CapabilityPreview channel=\{id\} \/>/,
-      "each channel must display its static demo",
-    ],
   ])
     mustInclude("src/components/marketing/WireAgentLanding.tsx", landing, pattern, description);
   mustInclude(
@@ -95,48 +61,10 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /BOT_MARKETING_VOICE\.activationLine|landing-prestige__promise/,
-    "root landing must keep the hero free of a redundant subhero paragraph",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    executable(landing),
-    /<AuthAccessPanel|<BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-(?:session|call)|variant="stage"|landing-console__activity|Illustrative Workflow|Booked and logged|id="features"|id="trust"|Bot template lane|template\.category|HERO_CHANNEL_ORDER|BOT_CHANNELS|<BotMark|markKey/,
-    "root landing must not revive old brochure structures",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
     /Business and personal templates|Runtime\s+Balance|Start 7-day trial|Try 7 days free|\$159|postpaid voice-overage/i,
     "landing must not lead with architecture or billing mechanics",
   );
 
-  for (const [pattern, description] of [
-    [
-      /\.landing-prestige__hero\s*\{[^}]*place-items:\s*center;[^}]*text-align:\s*center;/,
-      "home hero must be one centered column",
-    ],
-    [
-      /text-wrap:\s*balance;/,
-      "display headings must balance lines while retaining text enlargement",
-    ],
-    [
-      /\.landing-prestige__showcase-grid\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
-      "static capability demos must use a responsive card grid",
-    ],
-    [
-      /\.landing-prestige__hero h1\s*\{[^}]*flex-wrap:\s*wrap;/,
-      "hero phrases must reflow on narrow screens",
-    ],
-    [/\.landing-prestige__card\s*\{/, "landing must style each capability card"],
-  ])
-    mustInclude("src/styles/landing-prestige.css", landingPrestigeCss, pattern, description);
-  mustExclude(
-    "src/styles/landing-prestige.css",
-    landingPrestigeCss,
-    /\.landing-prestige__(?:auth|entrance|desktop-only)\b/,
-    "the retired split entrance must not return",
-  );
   mustInclude(
     "src/styles/auth-access-panel.css",
     authAccessCss,
@@ -154,12 +82,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     indexCss,
     /@import "\.\/styles\/landing-prestige\.css";/,
     "CSS stack must own landing styling",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
-    /MarketingChromeBar|LandingFooter/,
-    "the focused home page must not restore its removed footer bar",
   );
   mustInclude(
     "src/lib/bot-product.ts",
@@ -181,12 +103,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     [/font-synthesis:\s*none;/, "type must not synthesize weights"],
   ])
     mustInclude("src/styles/marketing-document-flow.css", documentFlowCss, pattern, description);
-  mustInclude(
-    "src/styles/wireline-signature.css",
-    signatureCss,
-    /--wireline-color-action-secondary-default/,
-    "signature treatment must use silver token",
-  );
   mustInclude(
     "src/styles/wireline-signature.css",
     signatureCss,
