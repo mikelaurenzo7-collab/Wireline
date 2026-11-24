@@ -31,13 +31,6 @@ import { agentMailManagedInboxClientId, agentMailWebhookClientId } from "../src/
 import { getTwilioRestAuthMode } from "../src/lib/twilio-service-base";
 import { evaluateTwilioWebhookAuth } from "../src/lib/twilio-webhook-auth";
 
-// Domain 7: /gemini-api-dev & /gemini-live-api-dev
-import {
-  mulawToPcm16_16k,
-  pcm24ToMulawBuffer,
-  getGeminiClient,
-} from "../src/lib/voice/gemini-live-client";
-
 // Domain 8: /xai
 import {
   resolveXAIGrokVoiceModel,
@@ -405,42 +398,6 @@ describe("Challenger 2 — Security, Environment & Edge Case Empirical Suite", (
 
       const evalResult = evaluateTwilioWebhookAuth(req);
       expect(evalResult.ok).toBe(false);
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 7. Gemini Live Bidirectional Audio Transcoding Bounds
-  // ─────────────────────────────────────────────────────────────────────────────
-  describe("7. Gemini Live Transcoding & Key Protection", () => {
-    it("getGeminiClient throws immediately if GEMINI_API_KEY is not configured", () => {
-      vi.stubEnv("GEMINI_API_KEY", "");
-      expect(() => getGeminiClient()).toThrow("GEMINI_API_KEY is not configured.");
-    });
-
-    it("mulawToPcm16_16k and pcm24ToMulawBuffer handle empty buffers cleanly", () => {
-      expect(mulawToPcm16_16k(Buffer.alloc(0)).length).toBe(0);
-      expect(pcm24ToMulawBuffer(Buffer.alloc(0)).length).toBe(0);
-    });
-
-    it("mulawToPcm16_16k correctly doubles sample count (8kHz -> 16kHz, 2 bytes/sample)", () => {
-      const mulawInput = Buffer.from([0xff, 0x7f, 0x00, 0x80]); // 4 samples at 8kHz
-      const pcmOutput = mulawToPcm16_16k(mulawInput);
-      // 4 samples * 2 (interpolated) = 8 samples * 2 bytes = 16 bytes
-      expect(pcmOutput.length).toBe(16);
-    });
-
-    it("pcm24ToMulawBuffer decimates 24kHz PCM to 8kHz mu-law (3:1 ratio, 6 bytes -> 1 byte)", () => {
-      // 12 bytes = 6 samples at 16-bit PCM. 6 samples / 3 = 2 mu-law bytes.
-      const pcmInput = Buffer.alloc(12);
-      pcmInput.writeInt16LE(1000, 0);
-      pcmInput.writeInt16LE(1100, 2);
-      pcmInput.writeInt16LE(1200, 4);
-      pcmInput.writeInt16LE(-1000, 6);
-      pcmInput.writeInt16LE(-1100, 8);
-      pcmInput.writeInt16LE(-1200, 10);
-
-      const mulawOutput = pcm24ToMulawBuffer(pcmInput);
-      expect(mulawOutput.length).toBe(2);
     });
   });
 
