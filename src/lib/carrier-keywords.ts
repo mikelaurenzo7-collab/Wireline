@@ -112,7 +112,7 @@ export function twilioAnswersKeyword(body: string): boolean {
  */
 const PLAIN_LANGUAGE_OPT_OUT: readonly RegExp[] = [
   /^(?:please\s+)?stop(?:\s+please)?$/,
-  /^(?:please\s+)?(?:stop|quit|cease)\s+(?:texting|messaging|sending|contacting|calling|spamming)\s+(?:me|us|this number)(?:\s+(?:again|anymore|please))?$/,
+  /^(?:please\s+|(?:can|could|would) you(?: please)?\s+)?(?:stop|quit|cease)\s+(?:texting|messaging|sending|contacting|calling|spamming)\s+(?:me|us|this number)(?:\s+(?:again|anymore|please|now|right now|immediately|from now on))?$/,
   /^(?:please\s+|can you\s+|could you\s+)?(?:stop|quit|cease)\s+(?:sending|receiving)\s+(?:me\s+)?(?:these|the|all|my|your)?\s*(?:texts?|text messages?|messages?|sms|notifications)?(?:\s+please)?$/,
   /^(?:please\s+)?(?:stop|cancel|end|quit)\s+(?:the|these|all|my|your)?\s*(?:texts?|text messages?|messages?|sms|notifications)(?:\s+please)?$/,
   /^(?:stop|cancel|end|quit)\s*[-,:]\s*no more\s+(?:texts?|messages?|sms)$/,
@@ -135,5 +135,23 @@ export function isPlainLanguageOptOut(trimmedLower: string): boolean {
     .replace(/\s+/g, " ")
     .replace(/[.!?]+$/, "")
     .trim();
-  return PLAIN_LANGUAGE_OPT_OUT.some((pattern) => pattern.test(text));
+  const matches = (candidate: string) =>
+    PLAIN_LANGUAGE_OPT_OUT.some((pattern) => pattern.test(candidate));
+  if (matches(text)) return true;
+
+  // A polite sign-off does not change a complete revocation into a request.
+  const withoutThanks = text
+    .replace(/(?:[,;]\s*|\s+)(?:thanks|thank you)(?:\s+very much)?$/, "")
+    .trim();
+  if (matches(withoutThanks)) return true;
+
+  // Keep the anchored intent check, but also honor a complete opening
+  // revocation followed by a separate statement or a different contact
+  // channel. Do not treat an isolated "stop" fragment as a complete clause.
+  const firstClause = text.match(/^([^.!?;,]+)(?:[.!;]\s+|,\s+(?=(?:please\s+)?(?:call|email)\s+me\b))/)?.[1]?.trim();
+  return Boolean(
+    firstClause &&
+      !/^(?:please\s+)?stop(?:\s+please)?$/.test(firstClause) &&
+      matches(firstClause),
+  );
 }

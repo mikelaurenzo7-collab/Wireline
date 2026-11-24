@@ -65,13 +65,20 @@ describe("plain-language opt-outs (FCC: any reasonable means, since April 2025)"
     "Take my number off your list",
     "no more texts please",
     "I want to unsubscribe",
-    "I want to unsubscribe",
     "leave me alone",
     "Don’t message me",
     "Please stop",
     "Please do not send me text messages",
     "I don't want to receive SMS",
     "Stop receiving messages",
+    "Please stop texting me, thanks",
+    "Stop texting me. I never signed up",
+    "Can you stop texting me?",
+    "Could you please stop messaging me?",
+    "Please stop calling me right now",
+    "Don't text me; call me instead",
+    "Don't text me, call me instead",
+    "Please unsubscribe me, thank you",
   ])("treats %j as an opt-out", (body) => {
     expect(isPlainLanguageOptOut(body.trim().toLowerCase())).toBe(true);
   });
@@ -89,6 +96,14 @@ describe("plain-language opt-outs (FCC: any reasonable means, since April 2025)"
     "I don't want texts about this appointment, call me",
     "remove the old filter please",
     "what time do you open?",
+    "Cancel my appointment. Thanks",
+    "Don't text me the price. Call me",
+    "I don't want to stop receiving texts. Thanks",
+    "Please call me. Thanks",
+    "Stop by Tuesday. Thanks",
+    "Don't text me about this appointment, call me",
+    "Stop. By Tuesday, please",
+    "How do I opt out? Thanks",
   ])("leaves an ordinary reply %j alone", (body) => {
     expect(isPlainLanguageOptOut(body.trim().toLowerCase())).toBe(false);
   });
