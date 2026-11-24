@@ -148,8 +148,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
     createDialog,
-    /role="group" aria-label="Role starters"[\s\S]*ROLE_PRESET_KEYS\.map\([\s\S]*templateForKey\(key\)/,
-    "create flow must expose shared role starters",
+    /role="group" aria-label="Starting briefs"[\s\S]*STARTER_KEYS\.map\([\s\S]*templateForKey\(key\)/,
+    "create flow must offer first-job briefs for the same Bot",
   );
   mustInclude(
     "src/components/CreateAgentDialog.tsx",

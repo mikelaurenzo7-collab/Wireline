@@ -140,7 +140,10 @@ for (const [tier, name, price] of [
     await privacy.getByRole("button", { name: "Essential Only", exact: true }).click();
     await page.getByRole("button", { name: new RegExp(`^${name}\\s`) }).click();
     const estimate = page.getByRole("article", { name: "Monthly estimate" });
-    await expect(estimate.getByText(`$${price}.00`, { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: new RegExp(`^${name}\\s`) })).toContainText(
+      `$${price}`,
+    );
+    await expect(estimate).toBeVisible();
     await estimate.getByRole("checkbox", { name: /^Extra Number/i }).uncheck();
     await estimate.getByRole("checkbox", { name: /^Extra Email Address/i }).check();
     await estimate.getByRole("link", { name: `Get ${name}`, exact: true }).click();

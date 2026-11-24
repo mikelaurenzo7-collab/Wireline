@@ -4,7 +4,7 @@
 
 ## Current direction
 
-BotBound owns the Bot identity, People record, communication channels, Computer runtime, approvals and billing. All external tools enter through a reviewed Connector Gateway. Native adapters and vetted remote MCP servers are permitted; arbitrary MCP endpoints or unrestricted tool surfaces are not. Google Workspace and Microsoft 365 adapters come first; Slack may return as a new write-first connector. Legacy provider paths are retired in tested stages after verifying account ownership, grants and dependencies. Preserve history, revocation and deletion coverage; destructive schema changes require reviewed promotion after deployed code no longer depends on them.
+BotBound owns the Bot identity, communication channels, Computer runtime, approvals and billing; People is the planned customer record. New external tools will enter through a reviewed Connector Gateway. Native adapters and vetted remote MCP servers are permitted; arbitrary MCP endpoints or unrestricted tool surfaces are not. Google Workspace and Microsoft 365 adapters come first. The owner chose on November 24 to retain the existing Slack, X, Zoom, Google Sheets, Microsoft Teams, Excel and Yahoo mail paths; their current wiring is not gateway implementation or proof of provider readiness. Preserve history, revocation and deletion coverage; destructive schema changes require reviewed promotion after deployed code no longer depends on them.
 
 Every invocation uses server-side tenant and Bot authorization, Full / Auto / Ask, environment gates, consent, idempotency, audit and metering. Tokens stay encrypted and inaccessible to models. External results are untrusted data. Dedicated connector OAuth clients and least-privilege scopes are required; restricted Google access remains gated on applicable verification. Carrier and production release restrictions are unchanged. No roadmap item is a claim of availability.
 
@@ -32,6 +32,11 @@ Microsoft Graph, Slack, X, Yahoo, and Zoom, plus `index.ts` and `status.ts`.
 
 **What the connections card still offers.** Slack, X, Zoom, Microsoft Teams,
 Microsoft Excel, and Google Sheets.
+
+**Retention decision.** The owner chose to keep all seven surviving legacy
+paths, including Yahoo mail. The proposed second deletion PR is cancelled.
+`wireline_crm_connections` remains in use and must not be dropped until the
+retained paths have replacement grants and a deployed reader/writer cutover.
 
 **Beta ledger disposition.** Meta Lead Ads is gone, so its beta flag is resolved
 by deletion rather than by validation. Zoom, Microsoft Teams, Excel, and Google

@@ -501,7 +501,9 @@ test("edited approvals require a fresh recipient review if the destination chang
   await page.clock.fastForward(30_000);
   await expect(email).toContainText(emailTo);
   await expect(sms).toContainText(smsTo);
-  await sms.getByRole("checkbox", { name: /permission to contact/i }).check();
+  await sms
+    .getByRole("checkbox", { name: "I have this person's permission to contact them.", exact: true })
+    .check();
   await sms.getByRole("checkbox", { name: /responsible for having permission/i }).check();
   await email.getByRole("button", { name: "Approve", exact: true }).click();
   await sms.getByRole("button", { name: "Approve", exact: true }).click();

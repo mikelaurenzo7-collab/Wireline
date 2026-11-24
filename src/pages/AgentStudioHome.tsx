@@ -30,6 +30,7 @@ export default function AgentStudioHome() {
   );
   const browserBrief = browserCommandBrief(browserContext);
   const [showCreate, setShowCreate] = useState(false);
+  const handledCreateRequest = useRef(false);
   const [postCreateWizard, setPostCreateWizard] = useState<PostCreateWizardPayload | null>(null);
   const wizardBotPresent =
     !degraded && agents.some((agent) => agent.id === postCreateWizard?.agentId);
@@ -41,9 +42,14 @@ export default function AgentStudioHome() {
   const identityBootstrapAgentIds = useRef(new Set<string>());
 
   useEffect(() => {
+    if (params.get("create") !== "1") {
+      handledCreateRequest.current = false;
+      return;
+    }
     // An open dialog owns its own handoff: the roster gains the new Bot before
     // creation navigates, and that must not look like an existing Bot.
-    if (loading || showCreate || params.get("create") !== "1") return;
+    if (loading || showCreate || handledCreateRequest.current) return;
+    handledCreateRequest.current = true;
     // One Bot per business: a create link opens the existing Bot's setup. An
     // unreadable roster keeps the old behavior rather than guessing a count.
     const existing = agents.find((agent) => agent.id === resolvedId) ?? agents[0];
