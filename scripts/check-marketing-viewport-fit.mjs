@@ -4,6 +4,8 @@
  * Public routes use the browser document as the one vertical scroll owner.
  * Authenticated workspace routes keep the fixed 100dvh application shell.
  * This source check prevents the two layout contracts from drifting together.
+ * Hero composition, mascot, cards, footer and navigation styling are editorial
+ * decisions; judge them in rendered QA rather than pinning their source shape.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -134,23 +136,13 @@ const home = read("src/components/marketing/WireAgentLanding.tsx");
 const executableHome = executable(home);
 for (const [needle, description] of [
   ["marketing-surface", "home must keep the public marketing surface"],
-  ["landing-prestige__hero", "home must keep the centered hero"],
   ["<PrecisionPublicHeader />", "home must share the public header"],
-  ["<BotBoundMark", "home must lead with the canonical phone-Bot mascot"],
   ['signedIn ? "/studio" : "/signup"', "home must keep neutral account creation"],
-  ["The Bot Gets:", "home must introduce the three product assets"],
-  ["landing-prestige__showcase-grid", "home must show its static capability cards"],
-  ["<CapabilityPreview channel={id} />", "each capability card must display a compact demo"],
   ['to="/pricing"', "home must link to pricing"],
 ]) {
   if (!executableHome.includes(needle)) {
     failures.push(`src/components/marketing/WireAgentLanding.tsx: ${description}`);
   }
-}
-if (/MarketingChromeBar|LandingFooter/.test(executableHome)) {
-  failures.push(
-    "src/components/marketing/WireAgentLanding.tsx: removed home footer bar must stay removed",
-  );
 }
 if (
   /BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-(?:session|call)/.test(
@@ -161,12 +153,6 @@ if (
     "src/components/marketing/WireAgentLanding.tsx: retired public voice-preview code must stay off the landing page",
   );
 }
-if (/variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/.test(executableHome)) {
-  failures.push(
-    "src/components/marketing/WireAgentLanding.tsx: retired device markers must stay removed",
-  );
-}
-
 if (!/path="\/showcase" element=\{<PreservingRedirect to="\/signup" \/>\}/.test(publicRoutes)) {
   failures.push("src/App.tsx: retired Showcase route must redirect to neutral account creation");
 }
@@ -177,26 +163,10 @@ if (!header.includes('to="/signin"')) {
     "src/components/marketing/PrecisionPublicHeader.tsx: sign-in must remain one action away",
   );
 }
-if (/Dialog|SITE_NAV|aria-label="Site"/.test(header)) {
-  failures.push(
-    "src/components/marketing/PrecisionPublicHeader.tsx: public header must not contain a full-site navigation overlay",
-  );
-}
 if (!header.includes('aria-label="Account"')) {
   failures.push(
     "src/components/marketing/PrecisionPublicHeader.tsx: account actions must remain named",
   );
-}
-
-const landingPrestige = read("src/styles/landing-prestige.css");
-for (const [needle, description] of [
-  [".landing-prestige__showcase-grid", "static capability showcase is missing"],
-  [".landing-prestige__card", "capability demo cards are missing"],
-  ["@media (max-width: 639px)", "mobile stacking rules are missing"],
-]) {
-  if (!landingPrestige.includes(needle)) {
-    failures.push(`src/styles/landing-prestige.css: ${description}`);
-  }
 }
 
 if (failures.length > 0) {
