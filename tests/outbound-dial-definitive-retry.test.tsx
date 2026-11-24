@@ -299,7 +299,7 @@ describe("direct outbound definitive-refusal retry", () => {
     postOutcomes.push(response(403));
     await settle();
     const picker = nodes.find((node) => node.type === OutboundPurposePicker);
-    (picker!.props as { onPurpose: (purpose: "personal") => void }).onPurpose("personal");
+    (picker!.props as unknown as { onPurpose: (purpose: "personal") => void }).onPurpose("personal");
     await settle();
     confirmContact();
     await settle();
