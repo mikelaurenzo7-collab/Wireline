@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "./atoms/Dialog";
 import { Button } from "./atoms";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
@@ -99,7 +100,7 @@ function DirectOutboundDialDialog({
   const customerSince = customerSinceDraft ?? contact?.customerSince?.slice(0, 10) ?? "";
   const [context, setContext] = useState(initialContext);
   const afterHoursEligible = !preparedCall && !optedOut &&
-    (callPurpose === "appointment_service" || callPurpose === "existing_customer" ||
+    (callPurpose === "personal" || callPurpose === "appointment_service" || callPurpose === "existing_customer" ||
       callPurpose === "returning_contact" || callPurpose === "callback");
   useEffect(() => {
     setAfterHoursConfirmed(false);
@@ -286,6 +287,8 @@ function DirectOutboundDialDialog({
   const showSalesAttestation = !optedOut && salesCall && contact?.salesAttestationRecorded !== true;
   const contentWarning = salesCall ? null : salesContentWarning(context);
   const canPlace =
+    !loading &&
+    !phoneLookupDegraded &&
     !placing &&
     !uncertain &&
     !recoveryError &&
@@ -298,6 +301,21 @@ function DirectOutboundDialDialog({
     (!showNonsales || nonsalesChecked) &&
     (!showSalesAttestation || salesAttestationChecked) &&
     (callPurpose !== "existing_customer" || customerSince.length > 0);
+
+  const blockedReason = placing ? "Placing your call." :
+    uncertain ? "Resolve the previous call in History before placing another." :
+    recoveryError ? "Check the previous call status before continuing." :
+    loading ? "Loading your Bots." :
+    phoneLookupDegraded ? "Could not verify the connected number." :
+    !selectedReady || !resolvedAgentId ? "Select a Bot with a connected number." :
+    !phone ? "Enter a valid phone number." :
+    optedOut ? INTERNAL_DNC_MESSAGE :
+    preparedCall && Date.parse(preparedCall.expires_at) <= Date.now() ? "This proposal expired." :
+    showPermission && !permissionChecked ? "Confirm that you have the recipient's permission." :
+    showNonsales && !nonsalesChecked ? "Confirm that this is not a sales call." :
+    showSalesAttestation && !salesAttestationChecked ? "Confirm the sales calling requirements." :
+    callPurpose === "existing_customer" && !customerSince ? "Enter the approximate last purchase or service date." :
+    null;
 
   const placeCall = async () => {
     if (!canPlace || !phone || placingRef.current) return;
@@ -577,14 +595,6 @@ function DirectOutboundDialDialog({
                 permissionLabel={OUTBOUND_CONSENT_LABEL}
                 channel="call"
               />
-              {afterHoursEligible ? (
-                <label className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <input type="checkbox" className="mt-1" checked={afterHoursConfirmed}
-                    disabled={placing || uncertain}
-                    onChange={(event) => setAfterHoursConfirmed(event.target.checked)} />
-                  <span>Allow an after-hours service call. I confirm the recipient has agreed to be contacted at this time, this is not a sales call, and applicable rules permit it.</span>
-                </label>
-              ) : null}
               {optedOut ? (
                 <p className="text-sm text-foreground" role="status">
                   {INTERNAL_DNC_MESSAGE}
@@ -616,6 +626,14 @@ function DirectOutboundDialDialog({
                 />
               </label>
 
+              {afterHoursEligible ? (
+                <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
+                  <Checkbox className="mt-0.5" checked={afterHoursConfirmed}
+                    disabled={placing || uncertain || !!contentWarning}
+                    onChange={(event) => setAfterHoursConfirmed(event.target.checked)} />
+                  <span>The recipient has agreed to be contacted after hours for this non-sales call, and applicable rules permit it.</span>
+                </label>
+              ) : null}
               {preparedCall && Date.parse(preparedCall.expires_at) <= Date.now() ? (
                 <p role="alert" className="text-sm text-destructive">
                   This proposal expired. Prepare a new call from your connected app.
@@ -664,6 +682,9 @@ function DirectOutboundDialDialog({
           ) : null}
         </div>
 
+        {!canPlace && blockedReason && !placing && !uncertain ? (
+          <p id="outbound-dial-blocked-reason" role="status" className="shrink-0 border-t border-border px-6 py-2 text-sm text-foreground">{blockedReason}</p>
+        ) : null}
         <DialogFooter className="shrink-0 gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4 sm:gap-0">
           <Button type="button" variant="secondary" onClick={onClose} disabled={placing}>
             {uncertain ? "Close" : "Cancel"}
@@ -687,7 +708,8 @@ function DirectOutboundDialDialog({
               </Link>
             </Button>
           ) : (
-            <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}>
+            <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}
+              aria-describedby={!canPlace && blockedReason && !placing && !uncertain ? "outbound-dial-blocked-reason" : undefined}>
               {placing ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
