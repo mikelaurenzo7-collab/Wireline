@@ -23,9 +23,9 @@ describe("Challenger 3 — Empirical Pipeline Invariant Tests", () => {
       // BOTBOUND_FULL_AUDIT_REPORT.md must be indexed in AUDIT_INDEX.md
       expect(auditContent).toContain("BOTBOUND_FULL_AUDIT_REPORT.md");
 
-      // ENVIRONMENT_VARIABLES_MATRIX.md and FLAWLESS_LAUNCH_ROADMAP.md must be in README.md
+      // The environment matrix is current; the October 29 cutover roadmap is historical.
       expect(canonicalContent).toContain("ENVIRONMENT_VARIABLES_MATRIX.md");
-      expect(canonicalContent).toContain("FLAWLESS_LAUNCH_ROADMAP.md");
+      expect(auditContent).toContain("FLAWLESS_LAUNCH_ROADMAP.md");
     });
 
     it("verifies no launch document is dual-indexed across both indexes", () => {
