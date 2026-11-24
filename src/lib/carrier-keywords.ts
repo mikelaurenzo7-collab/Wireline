@@ -101,3 +101,26 @@ export function twilioAnswersKeyword(body: string): boolean {
       .toLowerCase(),
   );
 }
+
+/**
+ * Plain-language opt-outs. Since April 11, 2025 the FCC requires honoring a
+ * revocation made by "any reasonable means", and its examples include texts
+ * such as "stop texting me" or "leave me alone" that carry no keyword first.
+ * These phrases are specific to messaging so ordinary replies ("stop by on
+ * Tuesday", "please call me back") are untouched. Over-matching fails safe:
+ * the person stops receiving texts and can reply START.
+ */
+const PLAIN_LANGUAGE_OPT_OUT: readonly RegExp[] = [
+  /\b(?:stop|quit|cease)\s+(?:texting|messaging|sending|contacting|calling|spamming)\b/,
+  /\b(?:don'?t|do not|never)\s+(?:text|message|contact|call)\s+(?:me|us|this number|my number)\b/,
+  /\b(?:remove|delete|take)\s+(?:me|my number|this number)\s+(?:off|from)\b/,
+  /\bno\s+more\s+(?:texts|text messages|messages)\b/,
+  /\b(?:unsubscribe|opt\s*-?\s*out)\b/,
+  /\bleave\s+me\s+alone\b/,
+];
+
+/** True for a plain-language opt-out request; callers check the carrier keywords first. */
+export function isPlainLanguageOptOut(trimmedLower: string): boolean {
+  const text = trimmedLower.replace(/[’‘]/g, "'").replace(/\s+/g, " ");
+  return PLAIN_LANGUAGE_OPT_OUT.some((pattern) => pattern.test(text));
+}

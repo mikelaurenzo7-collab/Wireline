@@ -170,8 +170,15 @@ describe("double-pass launch honesty", () => {
   });
 
   it("keeps carrier messaging disclosures and registration ownership accurate", () => {
-    const terms = read("src/components/LegalPage.tsx");
-    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    // Whitespace-insensitive: JSX text reflows across lines.
+    const flat = (path: string) => read(path).replace(/\s+/g, " ");
+    const terms = flat("src/components/LegalPage.tsx");
+    const privacy = flat("src/components/PrivacyPolicyPage.tsx");
+    const smsConsent = flat("src/pages/SmsConsentPage.tsx");
+    const nonSharing =
+      "No mobile information will be shared with third parties or affiliates for marketing or promotional purposes.";
+    for (const page of [terms, privacy, smsConsent]) expect(page).toContain(nonSharing);
+    expect(privacy).toContain("text messaging opt in data and consent are excluded");
     expect(terms).toContain("Mobile contact information and SMS opt in records are not sold or");
     expect(terms).toContain("Carriers are not liable");
     expect(terms).toContain("You are responsible for accurate");

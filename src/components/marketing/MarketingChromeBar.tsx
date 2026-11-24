@@ -21,6 +21,7 @@ const RESOURCE_LINKS = [
   { to: "/developers", label: "Developers" },
   { to: "/trust", label: "Trust Center" },
   { to: "/support", label: "Support" },
+  { to: "/sms-consent", label: "SMS Consent" },
 ] as const;
 
 /** Always visible in the bar itself. */

@@ -321,8 +321,17 @@ export default function PrivacyPolicyPage() {
               Bot to use it.
             </p>
             <p>
-              Mobile contact information and SMS opt in records are not sold or shared with third
-              parties for their marketing.
+              No mobile information will be shared with third parties or affiliates for marketing or
+              promotional purposes. Mobile contact information and SMS opt in records are not sold
+              or shared with any third party, and text messaging opt in data and consent are
+              excluded from every other kind of sharing described in this policy.
+            </p>
+            <p>
+              How BotBound asks permission to text, and how STOP and HELP work, is described on the{" "}
+              <Link to="/sms-consent" className="text-brand underline hover:text-brand/80">
+                SMS consent page
+              </Link>
+              .
             </p>
           </Section>
 

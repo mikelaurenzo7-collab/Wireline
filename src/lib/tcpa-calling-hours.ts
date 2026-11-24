@@ -2,6 +2,8 @@
  * Calling hours. Federal telemarketing rules allow 8:00 a.m. to 9:00 p.m.
  * local time. BotBound's default is stricter: 8:00 a.m. to 8:00 p.m. recipient
  * local time. The end hour is exclusive, so 8:00 p.m. is already blocked.
+ * Some states start later (Illinois and Texas 9:00 a.m.; Texas noon on Sunday,
+ * judged by the recipient's local weekday).
  *
  * State → timezone is a best-effort NANP mapping. When the destination state
  * cannot be inferred, we use the continental US intersection window
@@ -69,12 +71,17 @@ function localHourInZone(now: Date, timeZone: string): number {
   return Number.isFinite(hour) ? hour : -1;
 }
 
+/** Day of week (0 = Sunday) in the recipient's zone, for Sunday calling rules. */
+function localWeekdayInZone(now: Date, timeZone: string): number {
+  const day = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(now);
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(day);
+}
+
 export function resolveCallingHoursForPhone(
   phone: string | null | undefined,
   now: Date = new Date(),
 ): CallingHoursDecision {
   const state = inferStateFromPhone(phone);
-  const stateStartHour = callingHourStart(state);
 
   // Split-timezone states: the call must be within permitted hours in every
   // zone the state spans (fail-safe intersection). Report the binding zone —
@@ -84,11 +91,13 @@ export function resolveCallingHoursForPhone(
     let allowed = true;
     let bindingZone = spannedZones[0];
     let bindingHour = localHourInZone(now, spannedZones[0]);
+    let bindingStart = callingHourStart(state, localWeekdayInZone(now, spannedZones[0]));
     for (const zone of spannedZones) {
       const hour = localHourInZone(now, zone);
       bindingZone = zone;
       bindingHour = hour;
-      if (!(hour >= stateStartHour && hour < TCPA_CALLING_HOUR_END)) {
+      bindingStart = callingHourStart(state, localWeekdayInZone(now, zone));
+      if (!(hour >= bindingStart && hour < TCPA_CALLING_HOUR_END)) {
         allowed = false;
         break;
       }
@@ -98,7 +107,7 @@ export function resolveCallingHoursForPhone(
       state,
       timeZone: bindingZone,
       localHour: bindingHour,
-      startHour: stateStartHour,
+      startHour: bindingStart,
       endHour: TCPA_CALLING_HOUR_END,
       inferred: true,
     };
@@ -107,7 +116,9 @@ export function resolveCallingHoursForPhone(
   const inferredZone = state ? STATE_PRIMARY_TIMEZONE[state] : null;
   const inferred = Boolean(inferredZone);
   const timeZone = inferredZone || UNKNOWN_DESTINATION_TIMEZONE;
-  const startHour = inferred ? stateStartHour : UNKNOWN_DESTINATION_START_HOUR;
+  const startHour = inferred
+    ? callingHourStart(state, localWeekdayInZone(now, timeZone))
+    : UNKNOWN_DESTINATION_START_HOUR;
   const endHour = inferred ? TCPA_CALLING_HOUR_END : UNKNOWN_DESTINATION_END_HOUR;
   const localHour = localHourInZone(now, timeZone);
   const allowed = localHour >= startHour && localHour < endHour;
@@ -137,7 +148,7 @@ export function resolvePermissionCallingHours(
     isUsCallingState(jurisdiction.recipientState) &&
     isRecipientCallingTimeZone(jurisdiction.recipientState, jurisdiction.timeZone);
   const startHour = supported
-    ? callingHourStart(jurisdiction.recipientState)
+    ? callingHourStart(jurisdiction.recipientState, localWeekdayInZone(now, jurisdiction.timeZone))
     : TCPA_CALLING_HOUR_START;
   const localHour = supported ? localHourInZone(now, jurisdiction.timeZone) : -1;
   return {

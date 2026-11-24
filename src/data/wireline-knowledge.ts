@@ -16,7 +16,7 @@ export const WIRELINE_URL = "https://botbound.app";
 export const WIRELINE_SUPPORT_EMAIL = "support@botbound.app";
 
 export const WIRELINE_ONE_LINER =
-  "BotBound gives your voice Bots a phone number, email address, and Computer to find prospects, start conversations, close deals, and support customers.";
+  "BotBound gives your Bot a phone number, email address, and Computer to answer calls, follow up with people who asked to hear from you, book appointments, and support customers.";
 
 export const WIRELINE_VOICE_STACK =
   "Live calls and private browser rehearsals run on separate BotBound managed voice paths, so a rehearsal cannot take over a customer phone Bot.";
@@ -34,7 +34,7 @@ export const WIRELINE_PLANS = PUBLIC_USAGE_TIERS.map((id) => {
       `Inbound and outbound calls $${USAGE_METERS.call_minutes.tiers[0].unitUsd.toFixed(2)}/minute; US SMS $${USAGE_METERS.sms_segments.tiers[0].unitUsd.toFixed(2)}/sent segment; email $${USAGE_METERS.emails_handled.tiers[0].unitUsd.toFixed(2)}/sent reply; Computer $${USAGE_METERS.computer_minutes.tiers[0].unitUsd.toFixed(2)}/minute`,
       `Extra numbers $${USAGE_ADDONS.number.usdMonthly}/month; extra email addresses $${USAGE_ADDONS.email_address.usdMonthly}/month`,
       "The allowance resets monthly with no rollover. A configurable monthly spending limit controls extra usage.",
-      "SMS and outbound activation require approved senders and recipient permission. Registration fees may apply.",
+      "SMS and outbound activation require approved senders and recipient permission. BotBound covers US carrier registration fees for texting.",
     ],
   };
 });
@@ -75,7 +75,7 @@ export const WIRELINE_FEATURES = [
  * Product-help prompts describe the full offer while preserving activation requirements.
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "BotBound helps businesses research prospects, qualify leads, follow up on deals, answer incoming calls, and book available times. Sales Bots use calls, SMS, email, and Computer work together, with records and owner handoffs. Outbound marketing requires consent rules, federal DNC screening, and provider approval. A Bot must check its account's current activation status before promising or placing a live call or text; a paid plan alone does not clear those requirements.";
+  "BotBound helps businesses answer new inquiries, qualify leads, follow up on deals with people who asked to hear from them, answer incoming calls, and book available times. Sales Bots use calls, SMS, email, and Computer work together, with records and owner handoffs. Outbound marketing requires consent rules, federal DNC screening, and provider approval. A Bot must check its account's current activation status before promising or placing a live call or text; a paid plan alone does not clear those requirements.";
 
 /**
  * Pain -> capability map. When a caller names a problem, the Bot should
