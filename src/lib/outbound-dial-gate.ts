@@ -188,7 +188,8 @@ export async function evaluateOutboundDialGate(opts: {
     opts.audit.attested === true &&
     opts.audit.confirmations?.nonsales === true &&
     opts.afterHoursServiceConfirmed === true &&
-    (opts.manualCallPurpose === "appointment_service" ||
+    (opts.manualCallPurpose === "personal" ||
+      opts.manualCallPurpose === "appointment_service" ||
       opts.manualCallPurpose === "existing_customer" ||
       opts.manualCallPurpose === "returning_contact" ||
       opts.manualCallPurpose === "callback");
