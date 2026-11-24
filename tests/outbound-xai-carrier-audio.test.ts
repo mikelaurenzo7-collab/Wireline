@@ -71,4 +71,61 @@ describe("outbound native xAI carrier audio", () => {
     model.fake.emit("close");
     expect(carrier.fake.close).toHaveBeenCalledOnce();
   });
+
+  it("allows a long buffered opening to finish but still times out an unacknowledged stream", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(0);
+      const carrier = socket(), model = socket(), streamSid = "MZlong";
+      bridgeXaiAudio(carrier.ws, model.ws, streamSid);
+      model.fake.emit("open");
+      model.receive({ type: "session.updated" });
+      model.receive({ type: "response.output_audio.delta", delta: Buffer.alloc(240_000).toString("base64") });
+      model.receive({ type: "response.output_audio.done" });
+      vi.advanceTimersByTime(30_000);
+      expect(model.fake.close).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(20_000);
+      expect(model.fake.close).toHaveBeenCalledWith(1011, "Opening audio unavailable");
+      model.fake.emit("close");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("truncates the unheard portion and ignores echoed clear marks and late audio", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(0);
+      const carrier = socket(), model = socket(), streamSid = "MZbarge";
+      bridgeXaiAudio(carrier.ws, model.ws, streamSid);
+      model.receive({ type: "session.updated" });
+      model.receive({ type: "response.output_audio.delta", delta: "BBBB" });
+      model.receive({ type: "response.output_audio.done" });
+      carrier.receive(carrier.sent().at(-1));
+      const delta = {
+        type: "response.output_audio.delta",
+        response_id: "resp-2",
+        item_id: "item-2",
+        content_index: 0,
+        delta: Buffer.alloc(8_000).toString("base64"),
+      };
+      model.receive(delta);
+      model.receive({ type: "response.output_audio.done", response_id: "resp-2" });
+      const mark = carrier.sent().at(-1);
+      vi.advanceTimersByTime(250);
+      model.receive({ type: "input_audio_buffer.speech_started" });
+      expect(model.sent()).toContainEqual({
+        type: "conversation.item.truncate", item_id: "item-2",
+        content_index: 0, audio_end_ms: 250,
+      });
+      expect(carrier.sent().at(-1)).toEqual({ event: "clear", streamSid });
+      const count = carrier.sent().length;
+      carrier.receive(mark);
+      model.receive(delta);
+      expect(carrier.sent()).toHaveLength(count);
+      model.fake.emit("close");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
