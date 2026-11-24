@@ -284,6 +284,35 @@ afterEach(() => {
 });
 
 describe("direct outbound definitive-refusal retry", () => {
+  it("explains missing permission beside the disabled action and clears it after review", async () => {
+    await settle();
+    expect(button("Place call").props.disabled).toBe(true);
+    expect(nodes.some((node) => node.props.children === "Confirm that you have the recipient's permission.")).toBe(true);
+    expect(posts()).toHaveLength(0);
+    confirmContact();
+    await settle();
+    expect(button("Place call").props.disabled).toBe(false);
+    expect(nodes.some((node) => node.props.children === "Confirm that you have the recipient's permission.")).toBe(false);
+  });
+
+  it("includes fresh after-hours authorization for a reviewed personal call", async () => {
+    postOutcomes.push(response(403));
+    await settle();
+    const picker = nodes.find((node) => node.type === OutboundPurposePicker);
+    (picker!.props as unknown as { onPurpose: (purpose: "personal") => void }).onPurpose("personal");
+    await settle();
+    confirmContact();
+    await settle();
+    const timingLabel = nodes.find((node) => node.props.children === "The recipient has agreed to be contacted after hours for this non-sales call, and applicable rules permit it.");
+    expect(timingLabel).toBeDefined();
+    const timingCheckbox = nodes.find((node) => node.type === "input" && "checked" in node.props);
+    expect(timingCheckbox).toBeDefined();
+    (timingCheckbox!.props.onChange as unknown as (event: { target: { checked: boolean } }) => void)({ target: { checked: true } });
+    await settle();
+    await place();
+    expect(posted(0)).toMatchObject({ callPurpose: "personal", afterHoursServiceConfirmed: true });
+  });
+
   it("does not substitute a personal Bot for a business Bot named by an existing proposal", async () => {
     harness.agents = [
       {
