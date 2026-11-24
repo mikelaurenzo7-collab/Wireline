@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const h = vi.hoisted(() => ({ zoom: vi.fn(), fetch: vi.fn(), googleList: vi.fn() }));
+const h = vi.hoisted(() => ({ fetch: vi.fn(), googleList: vi.fn() }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
     select: () => ({
@@ -25,7 +25,6 @@ vi.mock("../src/lib/google-apis", () => ({
   googleApis: async () => ({ calendar: () => ({ events: { list: h.googleList } }) }),
 }));
 vi.mock("../src/lib/secret-vault", () => ({ encryptSecret: vi.fn(), decryptSecret: vi.fn() }));
-vi.mock("../src/lib/zoom-service", () => ({ createMeeting: h.zoom }));
 vi.mock("../src/lib/icloud-mail", () => ({ fetchIcloudInbox: vi.fn(), sendIcloudMail: vi.fn() }));
 vi.mock("../src/lib/agentmail-mail", () => ({
   fetchAgentMailInbox: vi.fn(),
@@ -52,7 +51,6 @@ const params = {
 };
 beforeEach(() => {
   vi.restoreAllMocks();
-  h.zoom.mockReset().mockResolvedValue(null);
   h.fetch.mockReset();
   h.googleList.mockReset();
 });
@@ -77,7 +75,6 @@ describe("connected calendar availability privacy and failure honesty", () => {
         "Failed to check calendar availability.",
       );
       expect(await instance.bookAppointment(params)).toBe(false);
-      expect(h.zoom).not.toHaveBeenCalled();
     },
   );
 
@@ -177,11 +174,10 @@ describe("connected calendar booking conflict recheck", () => {
     }
   });
 
-  it("does not create a Zoom meeting or event when another connected account is busy", async () => {
+  it("creates no event when another connected account is busy", async () => {
     const s = service();
     s.microsoft.mockResolvedValue(["Busy"]);
     expect(await s.instance.bookAppointment(params)).toBe(false);
-    expect(h.zoom).not.toHaveBeenCalled();
     expect(s.create).not.toHaveBeenCalled();
   });
 
@@ -190,7 +186,28 @@ describe("connected calendar booking conflict recheck", () => {
     s.google.mockRejectedValue(new Error("Provider unavailable"));
     expect(await s.instance.bookAppointment(params)).toBe(false);
     expect(await s.instance.bookAppointment({ ...params, endTime: params.startTime })).toBe(false);
-    expect(h.zoom).not.toHaveBeenCalled();
     expect(s.create).not.toHaveBeenCalled();
+  });
+
+  // Zoom was retired, so the meeting link now comes from the calendar provider
+  // itself. `auto_zoom_link` is the saved switch; the drizzle mock above
+  // returns it enabled.
+  it("asks Graph for a Teams meeting when the Bot is set to add a meeting link", async () => {
+    const instance = new IntegrationService("tenant");
+    const methods = instance as unknown as CalendarMethods;
+    vi.spyOn(methods, "getAccounts").mockResolvedValue([{ provider: "microsoft" }]);
+    vi.spyOn(methods, "getMicrosoftBusySlots").mockResolvedValue([]);
+    vi.spyOn(methods, "getMicrosoftToken").mockResolvedValue("token");
+    h.fetch.mockResolvedValue({ ok: true, json: async () => ({}) });
+
+    expect(await instance.bookAppointment(params)).toBe(true);
+
+    const call = h.fetch.mock.calls.find(([url]: [string]) =>
+      String(url).includes("/me/events"),
+    );
+    expect(call, "no Graph event call").toBeDefined();
+    const body = JSON.parse(String(call![1].body));
+    expect(body.isOnlineMeeting).toBe(true);
+    expect(body.onlineMeetingProvider).toBe("teamsForBusiness");
   });
 });

@@ -38,7 +38,6 @@ vi.mock("../src/lib/secret-vault", () => ({
   encryptSecret: (value: string) => value,
 }));
 vi.mock("../src/lib/google-apis", () => ({ googleApis: vi.fn() }));
-vi.mock("../src/lib/zoom-service", () => ({ createMeeting: vi.fn() }));
 vi.mock("../src/lib/icloud-mail", () => ({
   fetchIcloudInbox: h.fetchInbox,
   sendIcloudMail: h.icloud,

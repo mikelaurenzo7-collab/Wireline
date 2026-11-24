@@ -187,9 +187,7 @@ describe("auth OAuth browser binding contract", () => {
       "microsoft",
       "microsoft-graph",
       "slack",
-      "x",
       "yahoo",
-      "zoom",
     ];
     for (const provider of providers) {
       const route = read(`src/routes/oauth/${provider}.ts`);

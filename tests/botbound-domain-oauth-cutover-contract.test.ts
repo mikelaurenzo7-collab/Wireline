@@ -10,8 +10,6 @@ const STATIC_INTEGRATION_CALLBACKS = {
   "src/routes/oauth/google-sheets.ts": "/api/oauth/google_sheets/callback",
   "src/routes/oauth/microsoft.ts": "/api/oauth/microsoft/callback",
   "src/routes/oauth/slack.ts": "/api/oauth/slack/callback",
-  "src/routes/oauth/x.ts": "/api/oauth/x/callback",
-  "src/routes/oauth/zoom.ts": "/api/oauth/zoom/callback",
 } as const;
 
 const SIGN_IN_CALLBACKS = [

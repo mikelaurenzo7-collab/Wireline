@@ -93,8 +93,6 @@ describe("agent action editor loading", () => {
     async (saved) => {
       const blocked = [
         "send_contract",
-        "list_x_ad_campaigns",
-        "get_x_ad_campaign_stats",
         ...UNVERIFIED_LIVE_TOOL_NAMES,
         "route_to_business_unit",
         "trigger_enterprise_webhook",
@@ -105,7 +103,7 @@ describe("agent action editor loading", () => {
             url.startsWith("/api/agent-config/")
               ? { enabledTools: saved ? blocked : [] }
               : url === "/api/oauth/crm/status"
-                ? { x: { connected: true } }
+                ? { slack: { connected: true } }
                 : { accounts: [] },
           ),
         ),
@@ -115,20 +113,20 @@ describe("agent action editor loading", () => {
       await flush();
       const editorText = textOf(render());
       expect(editorText).not.toContain("DocuSign");
-      expect(editorText).not.toContain("X ad campaign");
-      expect(editorText).toContain("Post on X");
+      expect(editorText).toContain("Notify team via Slack");
       for (const entry of AGENT_TOOL_CATALOG.filter((tool) => blocked.includes(tool.name))) {
         expect(editorText).not.toContain(entry.label);
       }
-      elements(render()).find((node) => node.props["aria-label"] === "Enable all X actions")!.props
-        .onClick!();
+      elements(render())
+        .find((node) => node.props["aria-label"] === "Enable all Slack actions")!
+        .props.onClick!();
       elements(render()).find(
         (node) => node.type === "button" && textOf(node).includes("Save Actions"),
       )!.props.onClick!();
       const submitted = JSON.parse(
         h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
       ).enabled_tools;
-      expect(submitted).toContain("post_x_tweet");
+      expect(submitted).toContain("send_slack_notification");
       for (const tool of blocked) expect(submitted.includes(tool)).toBe(saved);
       await flush();
     },
@@ -138,12 +136,13 @@ describe("agent action editor loading", () => {
     const props = {
       accentColor: "neutral",
       connected: true,
-      enabledTools: ["list_x_ad_campaigns"] as const,
+      enabledTools: ["send_slack_notification", "send_contract"] as const,
     };
     for (const compact of [true, false]) {
-      const xPanel = IntegrationCapabilityPanel({ ...props, integration: "x", compact });
-      expect(textOf(xPanel)).toContain("Publishes a tweet");
-      expect(textOf(xPanel)).not.toContain("campaign");
+      const slackPanel = IntegrationCapabilityPanel({ ...props, integration: "slack", compact });
+      expect(textOf(slackPanel)).toContain("Slack channel");
+      // send_contract is platform-owned, so DocuSign stays unadvertised even
+      // though the Bot has it saved.
       expect(IntegrationCapabilityPanel({ ...props, integration: "docusign", compact })).toBeNull();
     }
   });
@@ -229,7 +228,9 @@ describe("agent action editor loading", () => {
     const save = editor.find(
       (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!;
-    const enableGroup = editor.find((node) => node.props["aria-label"] === "Enable all X actions")!;
+    const enableGroup = editor.find(
+      (node) => node.props["aria-label"] === "Enable all Calendar actions",
+    )!;
     save.props.onClick!();
     const submitted = JSON.parse(
       h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
@@ -275,15 +276,17 @@ describe("agent action editor loading", () => {
       elements(render()).find((node) => node.type === "details" && textOf(node).includes(label))!;
     const selected = (label: string) =>
       elements(group(label)).filter((node) => node.type === "input" && node.props.checked);
-    elements(render()).find((node) => node.props["aria-label"] === "Enable all X actions")!.props
-      .onClick!();
-    expect(selected("X")).toHaveLength(6);
+    elements(render())
+      .find((node) => node.props["aria-label"] === "Enable all Calendar actions")!
+      .props.onClick!();
+    expect(selected("Calendar")).toHaveLength(2);
     expect(selected("Platform Actions")).toHaveLength(0);
     expect(selected("Slack")).toHaveLength(0);
     elements(group("Platform Actions")).find((node) => node.type === "input")!.props.onChange!();
-    elements(render()).find((node) => node.props["aria-label"] === "Disable all X actions")!.props
-      .onClick!();
-    expect(selected("X")).toHaveLength(0);
+    elements(render())
+      .find((node) => node.props["aria-label"] === "Disable all Calendar actions")!
+      .props.onClick!();
+    expect(selected("Calendar")).toHaveLength(0);
     expect(selected("Platform Actions")).toHaveLength(1);
   });
 

@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const zoom = vi.hoisted(() => ({ createMeeting: vi.fn() }));
-vi.mock("../src/lib/zoom-service", () => zoom);
 vi.mock("../src/lib/account-environment-policy", () => ({
   assertLiveExternalActionAllowed: vi.fn().mockResolvedValue(undefined),
   assertExternalEntityActionAllowed: vi.fn().mockResolvedValue(undefined),
@@ -189,35 +187,5 @@ describe("lead lookups on a live call", () => {
 
     expect(result?.result).not.toContain("John");
     expect(select).not.toHaveBeenCalled();
-  });
-});
-
-describe("connector failure results", () => {
-  it.each(["empty", "error"])("does not promise a Zoom follow-up after %s", async (failure) => {
-    if (failure === "error")
-      zoom.createMeeting.mockRejectedValueOnce(new Error("provider unavailable"));
-    else zoom.createMeeting.mockResolvedValueOnce(null);
-    const insert = vi.fn();
-    const result = await handleWorkflowToolCall(
-      "generate_zoom_link",
-      { topic: "Product demo", start_time: "2026-11-04T16:00:00Z" },
-      liveCall(null, { insert }),
-    );
-    expect(zoom.createMeeting).toHaveBeenCalledOnce();
-    expect(result?.result).toContain("Zoom meeting link was not confirmed");
-    expect(result?.result).toContain("No follow-up task was saved");
-    expect(result?.result).toContain("create_followup_task");
-    expect(result?.result).not.toMatch(/will follow up|I'll have/i);
-    expect(insert).not.toHaveBeenCalled();
-  });
-
-  it("retains provider-confirmed Zoom success", async () => {
-    zoom.createMeeting.mockResolvedValueOnce({ join_url: "https://zoom.example/meeting" });
-    const result = await handleWorkflowToolCall(
-      "generate_zoom_link",
-      { topic: "Product demo" },
-      liveCall(null),
-    );
-    expect(result?.result).toBe("Meeting link created: https://zoom.example/meeting");
   });
 });

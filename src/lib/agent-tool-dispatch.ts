@@ -9,7 +9,6 @@ import { handleNotificationToolCall } from "./bot-tools/notifications";
 import { handleResearchToolCall } from "./bot-tools/research";
 import type { ToolCallContext, ToolCallResult } from "./agent-tool-types";
 import { handleWorkflowToolCall } from "./bot-tools/workflow";
-import { handleXToolCall } from "./bot-tools/x";
 import { isAgentToolExecutionAuthorized } from "./agent-tool-authorization";
 import { runIdempotentAgentToolCall } from "./agent-tool-idempotency";
 import { handleNativeVoiceToolCall } from "./agent-tool-native-voice";
@@ -247,7 +246,6 @@ async function dispatchToFirstAvailableHandler(
     handleCalendarToolCall,
     handleResearchToolCall,
     handleNotificationToolCall,
-    handleXToolCall,
     handleWorkflowToolCall,
     handleDeviceToolCall,
   ];

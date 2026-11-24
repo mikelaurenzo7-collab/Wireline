@@ -152,18 +152,6 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
         );
         return r.ok || r.status === 400;
       }
-      case "zoom": {
-        const id = process.env.ZOOM_CLIENT_ID;
-        const secret = process.env.ZOOM_CLIENT_SECRET;
-        if (!id || !secret || !access) return false;
-        const basic = Buffer.from(`${id}:${secret}`).toString("base64");
-        const r = await postForm(
-          "https://zoom.us/oauth/revoke",
-          new URLSearchParams({ token: access }),
-          { Authorization: `Basic ${basic}` },
-        );
-        return r.ok || r.status === 400;
-      }
       case "meta": {
         if (!access) return false;
         const r = await fetchWithTimeout(
@@ -172,22 +160,6 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
           10_000,
         );
         return r.ok || r.status === 400 || r.status === 401;
-      }
-      case "x": {
-        const id = process.env.X_CLIENT_ID;
-        const secret = process.env.X_CLIENT_SECRET;
-        if (!id || !secret) return false;
-        const basic = Buffer.from(`${id}:${secret}`).toString("base64");
-        const r = await postForm(
-          "https://api.twitter.com/2/oauth2/revoke",
-          new URLSearchParams({
-            token: token!,
-            token_type_hint: refresh ? "refresh_token" : "access_token",
-            client_id: id,
-          }),
-          { Authorization: `Basic ${basic}` },
-        );
-        return r.ok || r.status === 400;
       }
       case "shopify": {
         if (!access) return false;

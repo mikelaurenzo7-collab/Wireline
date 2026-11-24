@@ -41,39 +41,6 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       },
     ],
   },
-  x: {
-    integration: "x",
-    label: "X",
-    headline: "Engage on X: post, reply, like, repost, and DM.",
-    orbitHint: "Post, reply, like, DM",
-    connectPath: "/connections",
-    tasks: [
-      {
-        id: "x-post",
-        callerMoment: "Account Holder or Director requests a public brand post",
-        agentAction: "Publishes a tweet to the connected X account (max 280 characters).",
-        tools: ["post_x_tweet"],
-      },
-      {
-        id: "x-reply",
-        callerMoment: "Someone commented or @mentioned the brand",
-        agentAction: "Lists recent mentions, then replies or likes from the connected account.",
-        tools: ["list_x_mentions", "reply_to_x_tweet", "like_x_tweet", "repost_x_tweet"],
-      },
-      {
-        id: "x-dm",
-        callerMoment: "Account Holder wants to DM a prospect or partner on X",
-        agentAction: "Sends a direct message by @username or user ID.",
-        tools: ["send_x_dm"],
-      },
-      {
-        id: "x-ads",
-        callerMoment: "Account Holder asks how paid campaigns are performing",
-        agentAction: "Lists X Ads campaigns and pulls impressions/clicks/spend for a campaign ID.",
-        tools: ["list_x_ad_campaigns", "get_x_ad_campaign_stats"],
-      },
-    ],
-  },
   twilio: {
     integration: "twilio",
     label: "Messaging",
@@ -93,21 +60,6 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
         callerMoment: "New or suspicious number on the line",
         agentAction: "Validates line type and carrier before scheduling callbacks or SMS.",
         tools: ["lookup_phone_number"],
-      },
-    ],
-  },
-  zoom: {
-    integration: "zoom",
-    label: "Zoom",
-    headline: "Demo and discovery calls get a join link without back-and-forth email.",
-    orbitHint: "Meeting links on bookings",
-    connectPath: "/connections",
-    tasks: [
-      {
-        id: "zoom-book",
-        callerMoment: '"Book a video call" / remote appointment',
-        agentAction: "Creates a Zoom meeting and attaches the join URL to the calendar event.",
-        tools: ["generate_zoom_link", "book_appointment"],
       },
     ],
   },
@@ -243,13 +195,11 @@ export const EMAIL_INBOUND_TASKS: readonly IntegrationTask[] = [
 
 const PROVIDER_TOOL_INTEGRATION: Partial<
   Record<
-    "slack" | "x" | "zoom" | "microsoft_teams" | "microsoft_excel" | "google_sheets",
+    "slack" | "microsoft_teams" | "microsoft_excel" | "google_sheets",
     ToolIntegration
   >
 > = {
   slack: "slack",
-  x: "x",
-  zoom: "zoom",
   microsoft_teams: "microsoft_teams",
   microsoft_excel: "microsoft_excel",
   google_sheets: "google_sheets",

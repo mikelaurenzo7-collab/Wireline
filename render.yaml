@@ -340,24 +340,6 @@ projects:
                 sync: false
               - key: AGENTMAIL_DEFAULT_DOMAIN
                 sync: false
-              - key: ZOOM_CLIENT_ID
-                sync: false
-              - key: ZOOM_CLIENT_SECRET
-                sync: false
-              - key: X_CLIENT_ID
-                sync: false
-              - key: X_CLIENT_SECRET
-                sync: false
-              - key: X_API_KEY
-                sync: false
-              - key: X_API_SECRET
-                sync: false
-              - key: X_ADS_ACCOUNT_ID
-                sync: false
-              - key: X_ADS_ACCESS_TOKEN
-                sync: false
-              - key: X_ADS_ACCESS_TOKEN_SECRET
-                sync: false
               - key: SLACK_MANAGEMENT_WEBHOOK
                 sync: false
               - key: SLACK_CLIENT_ID
@@ -669,51 +651,6 @@ projects:
                   name: botbound-api
                   type: web
                   envVarKey: AGENTMAIL_DEFAULT_DOMAIN
-              - key: ZOOM_CLIENT_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: ZOOM_CLIENT_ID
-              - key: ZOOM_CLIENT_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: ZOOM_CLIENT_SECRET
-              - key: X_CLIENT_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: X_CLIENT_ID
-              - key: X_CLIENT_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: X_CLIENT_SECRET
-              - key: X_API_KEY
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: X_API_KEY
-              - key: X_API_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: X_API_SECRET
-              - key: X_ADS_ACCOUNT_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: X_ADS_ACCOUNT_ID
-              - key: X_ADS_ACCESS_TOKEN
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: X_ADS_ACCESS_TOKEN
-              - key: X_ADS_ACCESS_TOKEN_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: X_ADS_ACCESS_TOKEN_SECRET
               - key: SLACK_MANAGEMENT_WEBHOOK
                 fromService:
                   name: botbound-api

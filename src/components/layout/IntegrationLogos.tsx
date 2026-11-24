@@ -64,14 +64,6 @@ const ALL_LOGOS: Record<string, LogoDef> = {
       </svg>
     ),
   },
-  x: {
-    name: "X",
-    svg: (
-      <svg viewBox="0 0 24 24" aria-label="X" width="100%" height="100%">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-      </svg>
-    ),
-  },
   microsoft_teams: {
     name: "Microsoft Teams",
     svg: (
@@ -87,15 +79,6 @@ const ALL_LOGOS: Record<string, LogoDef> = {
         <path d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm0 21.4A9.4 9.4 0 0 1 2.6 12 9.4 9.4 0 0 1 12 2.6 9.4 9.4 0 0 1 21.4 12 9.4 9.4 0 0 1 12 21.4ZM17.5 9.1a2.4 2.4 0 1 1-4.8 0 2.4 2.4 0 0 1 4.8 0Zm0 5.8a2.4 2.4 0 1 1-4.8 0 2.4 2.4 0 0 1 4.8 0Zm-6.2-5.8a2.4 2.4 0 1 1-4.8 0 2.4 2.4 0 0 1 4.8 0Zm0 5.8a2.4 2.4 0 1 1-4.8 0 2.4 2.4 0 0 1 4.8 0Z" />
       </svg>
     ),
-  },
-  zoom: {
-    name: "Zoom",
-    svg: (
-      <svg viewBox="0 0 24 24" aria-label="Zoom" width="100%" height="100%">
-        <path d="M21 7.156l-3.5 2.625V8.5c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h12.5c1.1 0 2-.9 2-2v-1.281l3.5 2.625a.5.5 0 0 0 .5-.4V7.556a.5.5 0 0 0-.5-.4z" />
-      </svg>
-    ),
-    scale: 1.15,
   },
   google_calendar: {
     name: "Google Calendar",

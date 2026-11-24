@@ -18,19 +18,11 @@ const SUPPORTED_IDS = new Set([
   "resend",
   "google-workspace",
   "microsoft-365",
-  "hubspot",
   "slack",
-  "shopify",
 ]);
 
 const BETA_IDS = new Set([
-  "salesforce",
   "docusign",
-  "apollo",
-  "meta",
-  "zoom",
-  "x",
-  "x-ads",
   "yahoo",
 ]);
 

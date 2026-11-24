@@ -35,8 +35,6 @@ export interface IntegrationStatus {
 
 interface IntegrationState {
   slack: IntegrationStatus;
-  x: IntegrationStatus;
-  zoom: IntegrationStatus;
   microsoft_teams: IntegrationStatus;
   microsoft_excel: IntegrationStatus;
   google_sheets: IntegrationStatus;
@@ -135,21 +133,6 @@ const PROVIDERS: {
     color: "purple",
     logo: "SL",
     group: "Team",
-  },
-  {
-    key: "x",
-    label: "X",
-    color: "neutral",
-    logo: "X",
-    group: "Social",
-  },
-  {
-    key: "zoom",
-    label: "Zoom",
-    color: "blue",
-    logo: "ZM",
-    group: "Meetings",
-    beta: true,
   },
   {
     key: "microsoft_teams",

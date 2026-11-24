@@ -54,8 +54,6 @@ describe("launch readiness fine-tune 2026-07-27", () => {
       "microsoft-graph",
       "slack",
       "yahoo",
-      "x",
-      "zoom",
     ];
     for (const name of oauthDir) {
       const src = read(`src/routes/oauth/${name}.ts`);

@@ -16,8 +16,6 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
     for (const file of [
       "src/lib/google-sheets-service.ts",
       "src/lib/slack-service.ts",
-      "src/lib/zoom-service.ts",
-      "src/lib/x-service.ts",
       "src/lib/microsoft-graph-service.ts",
     ]) {
       expect(read(file)).toContain("revokeCrmProviderTokens");

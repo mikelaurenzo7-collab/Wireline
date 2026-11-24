@@ -11,7 +11,5 @@ import type { AgentToolName } from "./agent-capabilities";
  * workflows. Re-enable live use only after the resource is bound to userId.
  */
 export const UNSCOPED_PLATFORM_LIVE_TOOL_NAMES = new Set<AgentToolName>([
-  "list_x_ad_campaigns",
-  "get_x_ad_campaign_stats",
   "send_contract",
 ]);

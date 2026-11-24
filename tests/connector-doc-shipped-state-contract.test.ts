@@ -25,7 +25,26 @@ const RETIRED_PROVIDERS = [
   "shopify",
   "square",
   "meta-webhook",
+  "x",
+  "zoom",
 ] as const;
+
+/**
+ * A provider can also go stale the other way round: the route is deleted but the
+ * doc still lists it as live. Word-boundary patterns, because "x" and "meta"
+ * appear inside ordinary words.
+ */
+const RETIRED_IN_PROSE: readonly (readonly [string, RegExp])[] = [
+  ["Salesforce", /\bSalesforce\b/i],
+  ["HubSpot", /\bHubSpot\b/i],
+  ["Apollo", /\bApollo\b/i],
+  ["Shopify", /\bShopify\b/i],
+  ["Square", /\bSquare\b/i],
+  ["X", /\bX\b/],
+  ["Zoom", /\bZoom\b/i],
+];
+
+const OAUTH_SENTENCE_MARKER = "**What `src/routes/oauth/` still holds.**";
 
 function shippedSection(doc: string): string {
   const start = doc.indexOf(SHIPPED_HEADING);
@@ -56,6 +75,20 @@ describe("connector doc shipped-state", () => {
     for (const provider of RETIRED_PROVIDERS) {
       expect(oauthFiles, `src/routes/oauth/${provider}.ts must stay deleted`).not.toContain(
         provider,
+      );
+    }
+  });
+
+  it("does not list a deleted provider among the live OAuth routes", () => {
+    const start = section.indexOf(OAUTH_SENTENCE_MARKER);
+    expect(start, `${OAUTH_SENTENCE_MARKER} must exist in the shipped section`).toBeGreaterThan(-1);
+    const rest = section.slice(start + OAUTH_SENTENCE_MARKER.length);
+    const end = rest.indexOf("\n\n");
+    const sentence = end < 0 ? rest : rest.slice(0, end);
+
+    for (const [label, pattern] of RETIRED_IN_PROSE) {
+      expect(sentence, `${label} is deleted and must not read as a live route`).not.toMatch(
+        pattern,
       );
     }
   });

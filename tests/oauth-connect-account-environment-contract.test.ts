@@ -50,20 +50,6 @@ const ROUTES: OAuthRouteContract[] = [
     authorization: "getSlackAuthUrl(",
     exchange: "exchangeSlackCode(code, redirectUri)",
   },
-  {
-    file: "x.ts",
-    start: '"/api/oauth/x/url"',
-    callback: '"/api/oauth/x/callback"',
-    authorization: "getXAuthUrl(",
-    exchange: "exchangeXCode(code, redirectUri, vs.pkceVerifier)",
-  },
-  {
-    file: "zoom.ts",
-    start: '"/api/oauth/zoom/url"',
-    callback: '"/api/oauth/zoom/callback"',
-    authorization: "getZoomAuthUrl(",
-    exchange: "exchangeZoomCode(code, redirectUri)",
-  },
 ];
 
 function afterMarker(contents: string, marker: string): string {

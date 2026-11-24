@@ -13,6 +13,12 @@ Every invocation uses server-side tenant and Bot authorization, Full / Auto / As
 This section records what the code now does, so the proposals below read as
 intent rather than as a description of main.
 
+**The keep list, decided November 24, 2026.** The owner's direction is to keep
+Google Workspace and the Google connectors, and to keep Microsoft including
+Excel. Slack stays with them as the team-chat surface. The October 27 plan to
+delete all of those is superseded for those providers; X, Zoom and Yahoo Mail are
+not on the keep list.
+
 **Removed outright, not deprecated.** Salesforce, HubSpot, Apollo, Meta, Shopify,
 and Square are deleted: services, OAuth routes, the Meta webhook, the Salesforce
 integration page, 21 agent tool names, the `crm` and `ecommerce` tool groups,
@@ -24,23 +30,46 @@ lead-hunter module and proactive lead enrichment went with them, along with the
 used any of it, so there is no migration path to preserve and no saved grant to
 disconnect.
 
+X and Zoom are deleted on the same terms: `x-service.ts`, `x-ads-service.ts`,
+`bot-tools/x.ts`, `zoom-service.ts`, both OAuth routes, the eight X tool names and
+`generate_zoom_link`, their registry, env-validator, `.env.example` and
+`render.yaml` entries, their playbooks, their connection-card rows and their
+logos. Nothing replaces the X tools. The Zoom meeting link is replaced by the
+calendar provider's own: a Google booking has always carried a Meet link, and a
+Microsoft booking now carries a Teams meeting, which Graph creates with the event
+and needs no extra scope. The switch for it is still the `auto_zoom_link` column,
+which now means "put a video meeting on this booking"; renaming the column needs a
+migration on the shared database.
+
 Public research survived: `gemini_ground` lives in `src/lib/bot-tools/research.ts`
 and still resolves for Bots that already store the tool name.
 
 **What `src/routes/oauth/` still holds.** Google, Google Sheets, Microsoft,
-Microsoft Graph, Slack, X, Yahoo, and Zoom, plus `index.ts` and `status.ts`.
+Microsoft Graph, Slack, and Yahoo, plus `index.ts` and `status.ts`. Yahoo is
+sign-in plus a mail connector; the mail half is not on the keep list and is the
+next deletion.
 
-**What the connections card still offers.** Slack, X, Zoom, Microsoft Teams,
-Microsoft Excel, and Google Sheets.
+**What the connections card still offers.** Slack, Microsoft Teams, Microsoft
+Excel, and Google Sheets.
 
 **Beta ledger disposition.** Meta Lead Ads is gone, so its beta flag is resolved
-by deletion rather than by validation. Zoom, Microsoft Teams, Excel, and Google
-Sheets still carry beta flags in `src/components/CrmConnectionCard.tsx`.
+by deletion rather than by validation. Microsoft Teams, Excel, and Google Sheets
+still carry beta flags in `src/components/CrmConnectionCard.tsx`.
 
 **Role templates are gone.** One Bot holds the whole toolbox it is allowed to
 hold, so there is no per-role connector subset left for a connector to key off.
 A connector grant is therefore workspace-level by construction, which is the
 shape the Connector Gateway below assumes.
+
+**Leftovers from the earlier deletion.** Retired provider ids were still listed
+as supported or beta in `src/lib/integrations-certification.ts`, and
+`src/lib/oauth-provider-revocation.ts` still carried dead revoke branches. Both
+are cleaned. Retired logos remain in `src/components/layout/IntegrationLogos.tsx`,
+along with references in `IntegrationHealthBanner.tsx`, `integration-health.ts`,
+`EnrichLeadForm.tsx`, `workspace-planner.ts`, `api-validation-base.ts`,
+`preview-spend-policy.ts`, `audit-middleware.ts`, `compliance-checklist-status.ts`
+and `src/constants/navigation.ts`. Those need a consumer check per file, so they
+are a separate pass.
 
 **Not done.** The Connector Gateway itself, the workspace connector catalog and
 policy, and the owner screen for connecting servers. Nothing below describing the
