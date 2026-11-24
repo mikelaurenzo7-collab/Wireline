@@ -41,17 +41,6 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(inbox).not.toContain("tasksRes.ok ? await tasksRes.json() : { tasks: [] }");
   });
 
-  it("hard-throws if the unsafe proactive enrichment base path is ever reached", () => {
-    const base = read("src/lib/job-worker-base.ts");
-    const block = base.slice(
-      base.indexOf('if (job.type === "proactive_lead_enrichment")'),
-      base.indexOf('if (job.type === "autonomous_prospecting")'),
-    );
-    expect(block).toContain("must be handled by the tenant-safe intercept");
-    expect(block).not.toContain("eq(schema.callLogs.customerNumber, p.customerNumber)");
-    expect(block).not.toContain("eq(schema.emailThreads.customerEmail, p.customerNumber)");
-  });
-
   it("claims OAuth state nonces on every integration callback", () => {
     const helpers = read("src/lib/oauth-helpers.ts");
     expect(helpers).toContain("export async function verifyAndClaimOAuthState");
@@ -63,16 +52,10 @@ describe("launch readiness fine-tune 2026-07-27", () => {
       "google-sheets",
       "microsoft",
       "microsoft-graph",
-      "meta",
-      "hubspot",
-      "salesforce",
       "slack",
-      "shopify",
-      "square",
       "yahoo",
       "x",
       "zoom",
-      "apollo",
     ];
     for (const name of oauthDir) {
       const src = read(`src/routes/oauth/${name}.ts`);

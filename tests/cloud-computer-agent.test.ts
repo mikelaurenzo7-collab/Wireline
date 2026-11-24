@@ -104,9 +104,39 @@ function userImages(request: Record<string, unknown>): Item[] {
     .flatMap((item) => (item.content as Item[]).filter((part) => part.type === "input_image"));
 }
 
-const bot = { name: "Repair Desk", role: "front desk", facts: ["We serve Austin."], rules: [] };
+const bot = { name: "Repair Desk", facts: ["We serve Austin."], rules: [] };
 
 describe("OpenAI cloud computer agent loop", () => {
+  /**
+   * The browser specialist is the product's only subagent, and it is deliberate.
+   * A browser task is already asynchronous and multi-step, so delegation costs
+   * no dead air and the depth compounds; a live voice turn is neither, so a
+   * general-purpose helper there would buy latency and tokens on every call for
+   * reasoning the Bot usually did not need.
+   *
+   * It is also the only shape under which a single owner switch stays honest: a
+   * specialist with tools of its own could act where the Bot's own toggles said
+   * no, which is the permission model this product does not have.
+   */
+  it("keeps the browser specialist the only subagent, text-only and capped", () => {
+    expect(CLOUD_COMPUTER_LIMITS.maxSpecialistCalls).toBeGreaterThan(0);
+    expect(CLOUD_COMPUTER_LIMITS.maxSpecialistCalls).toBeLessThanOrEqual(3);
+
+    const prompt = buildSystemPrompt(bot);
+    expect(prompt).toContain("internal text-only specialist");
+    expect(prompt).toContain("It cannot browse or take actions");
+    expect(prompt).toContain("Check its work and verify any factual claims");
+  });
+
+  it("names no role in the browser prompt, because one Bot has none", () => {
+    // `agents.role` is no longer written by any create path, so the retired
+    // interpolation rendered every new Bot as "a assistant Bot" and older ones
+    // as a raw enum value.
+    const prompt = buildSystemPrompt(bot);
+    expect(prompt).toContain(`You are ${bot.name}, a Bot working for a small business`);
+    expect(prompt).not.toMatch(/\ba (assistant|business|front desk|customer_service) Bot\b/);
+  });
+
   it("uses a metered, tool-free internal specialist and returns its result to the same Bot", async () => {
     const { session, calls } = fakeSession({}, "https://example.com/");
     const openai = client([

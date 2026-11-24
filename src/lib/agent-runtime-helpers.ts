@@ -3,7 +3,6 @@ import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,
 } from "./tenant-integration-connections";
-import { DEFAULT_AGENT_ROLE_ID } from "./agent-role-definitions";
 import { getTenantChannelEntitlements } from "./channel-entitlements";
 import { isAgentToolChannelAllowed } from "./agent-tool-channel-policy";
 import { log } from "./server-context";
@@ -183,66 +182,6 @@ export const SENTIMENT_POSITIVE_SIGNALS = [
   "you're the best",
   "makes sense",
 ];
-
-/** Map BotBound persona roles (wireline_sales, etc.) to voice-runtime role keys. */
-const OUTBOUND_VOICE_ROLE_ALIASES: Record<string, string> = {
-  wireline_sales: "sales",
-  wireline_reception: "receptionist",
-  wireline_support: "customer_service",
-  wireline_technical: "technical_support",
-  wireline_onboarding: "scheduler",
-};
-
-export function mapOutboundVoiceRole(role: string | null | undefined): string {
-  if (!role) return DEFAULT_AGENT_ROLE_ID;
-  return OUTBOUND_VOICE_ROLE_ALIASES[role] ?? role.replace(/^wireline_/, "");
-}
-
-export const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
-  sales: "The Closer",
-  lead_qualifier: "The Closer",
-  marketing: "The Closer",
-  customer_service: "The Empath",
-  technical_support: "Support Tech",
-  collections: "The Collector",
-  scheduler: "Receptionist",
-  receptionist: "Receptionist",
-};
-
-export function getArchetypeConfig(archetype: string): { rules: string; temp: number } {
-  switch (archetype) {
-    case "The Closer":
-      return {
-        rules:
-          "You are a consultative closer. Lead with discovery, uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.",
-        temp: 0.7,
-      };
-    case "Support Tech":
-      return {
-        rules:
-          "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush. You summarize your findings before proposing a fix, and you verify the fix worked before closing.",
-        temp: 0.2,
-      };
-    case "The Empath":
-      return {
-        rules:
-          "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always. Hold your own calm, steady voice throughout, do not raise your energy or speed up to match an upset caller; your steadiness is what de-escalates them.",
-        temp: 0.6,
-      };
-    case "The Collector":
-      return {
-        rules:
-          "You are firm, professional, and fully compliant with debt collection regulations. You always verify identity before discussing account details. You present the balance factually, listen to the customer's situation, and offer payment plan options before escalating. You never threaten, never harass, and document every promise made.",
-        temp: 0.3,
-      };
-    default: // Receptionist
-      return {
-        rules:
-          "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.",
-        temp: 0.4,
-      };
-  }
-}
 
 export const AGENT_TOOL_DEFS = {
   search_knowledge_base: {
@@ -743,44 +682,6 @@ export const AGENT_TOOL_DEFS = {
       required: ["topic", "start_time"],
     },
   },
-  crm_search_contacts: {
-    name: "crm_search_contacts",
-    description:
-      "Private CRM contacts require stronger caller verification. This live tool shares no contact details; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  crm_log_call: {
-    name: "crm_log_call",
-    description:
-      "Existing CRM contact logging requires team verification. This live tool makes no CRM change; offer a follow-up task.",
-    parameters: {
-      type: "object",
-      properties: {
-        subject: { type: "string", description: "Brief subject line for the activity." },
-        notes: { type: "string", description: "Call notes / outcome summary." },
-      },
-      required: ["subject"],
-    },
-  },
-  crm_create_opportunity: {
-    name: "crm_create_opportunity",
-    description:
-      "A new CRM opportunity needs team verification. This tool makes no CRM change; offer a follow-up task with the caller's request.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Opportunity / deal name." },
-        contact_id: { type: "string", description: "CRM contact ID to associate." },
-        stage: { type: "string", description: "Pipeline stage." },
-        amount: { type: "number", description: "Estimated deal value." },
-      },
-      required: ["name"],
-    },
-  },
   send_contract: {
     name: "send_contract",
     description:
@@ -798,22 +699,6 @@ export const AGENT_TOOL_DEFS = {
       required: ["recipient_name", "recipient_email"],
     },
   },
-  enrich_lead: {
-    name: "enrich_lead",
-    description:
-      "Enriches a phone number to discover the caller's professional identity (name, title, company) via Apollo.io. Use this at the start of a call if you only have a phone number.",
-    parameters: {
-      type: "object",
-      properties: {
-        phone_number: {
-          type: "string",
-          description:
-            "The phone number to enrich. Leave blank to use the current caller's number.",
-        },
-      },
-      required: [],
-    },
-  },
   gemini_ground: {
     name: "gemini_ground",
     description:
@@ -828,203 +713,6 @@ export const AGENT_TOOL_DEFS = {
         },
       },
       required: ["query"],
-    },
-  },
-  shopify_lookup_order: {
-    name: "shopify_lookup_order",
-    description:
-      "Looks up a Shopify order only when the caller provides both its order number and the matching email on the order. Returns status, tracking, items, and total. Caller ID alone never unlocks details.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_number: {
-          type: "string",
-          description: "The order number, e.g. '1001' or '#1001'. Required with the order email.",
-        },
-        email: {
-          type: "string",
-          description:
-            "The email address on the order, as the caller states it. Required with the order number.",
-        },
-      },
-      required: ["order_number", "email"],
-    },
-  },
-  shopify_check_inventory: {
-    name: "shopify_check_inventory",
-    description:
-      "Searches the Shopify store catalog for a product by name and returns its variants, prices, and live inventory (in-stock) levels. Use when a caller asks if something is in stock or about a price.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Product name or keyword to search for." },
-      },
-      required: ["query"],
-    },
-  },
-  shopify_lookup_customer: {
-    name: "shopify_lookup_customer",
-    description:
-      "A customer profile needs stronger verification than caller ID. This tool shares no profile details; offer a specific order lookup with number and email, or a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  shopify_start_return: {
-    name: "shopify_start_return",
-    description:
-      "A return request needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order and reason.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: {
-          type: "string",
-          description:
-            "The Shopify order ID (numeric). Get this from shopify_lookup_order first if you only have the order number.",
-        },
-        reason: {
-          type: "string",
-          description:
-            "Why the customer wants to return, e.g. 'wrong size', 'item defective', 'arrived late'.",
-        },
-      },
-      required: ["order_id", "reason"],
-    },
-  },
-  shopify_cancel_order: {
-    name: "shopify_cancel_order",
-    description:
-      "A cancellation needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order number.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: {
-          type: "string",
-          description:
-            "The Shopify order ID (numeric). Get this from shopify_lookup_order if you only have the order number.",
-        },
-      },
-      required: ["order_id"],
-    },
-  },
-  shopify_update_address: {
-    name: "shopify_update_address",
-    description:
-      "An address change needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order number and requested address.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: { type: "string", description: "The Shopify order ID (numeric)." },
-        address1: { type: "string", description: "Street address line 1." },
-        address2: { type: "string", description: "Street address line 2 (apt/suite)." },
-        city: { type: "string", description: "City." },
-        province: { type: "string", description: "State / province." },
-        zip: { type: "string", description: "ZIP / postal code." },
-        country: { type: "string", description: "Country." },
-        name: { type: "string", description: "Recipient name." },
-      },
-      required: ["order_id"],
-    },
-  },
-  shopify_create_draft_order: {
-    name: "shopify_create_draft_order",
-    description:
-      "Creates an unpaid Shopify draft from a real catalog variant and returns its invoice link. Use shopify_check_inventory to get the variant ID, then confirm the item and quantity with the caller. Custom titles and prices are not accepted.",
-    parameters: {
-      type: "object",
-      properties: {
-        variant_id: {
-          type: "string",
-          description: "Numeric catalog variant ID from shopify_check_inventory. Required.",
-        },
-        quantity: { type: "number", description: "Whole-number quantity from 1 to 20." },
-        customer_email: { type: "string", description: "Customer email for the invoice." },
-        customer_first_name: { type: "string", description: "Customer first name." },
-        customer_last_name: { type: "string", description: "Customer last name." },
-      },
-      required: ["variant_id", "quantity"],
-    },
-  },
-  shopify_add_order_note: {
-    name: "shopify_add_order_note",
-    description:
-      "An order note needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order number and note.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: { type: "string", description: "Shopify order ID from shopify_lookup_order." },
-        note: { type: "string", description: "Short note for the merchant (plain text)." },
-      },
-      required: ["order_id", "note"],
-    },
-  },
-  square_lookup_order: {
-    name: "square_lookup_order",
-    description:
-      "Private Square order details require stronger caller verification. This live tool shares no order details; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: {
-          type: "string",
-          description: "The Square order ID. Ask the caller for this if they have it.",
-        },
-        email: {
-          type: "string",
-          description:
-            "The customer's email, use to find their most recent order when no order ID is known.",
-        },
-      },
-      required: [],
-    },
-  },
-  square_lookup_customer: {
-    name: "square_lookup_customer",
-    description:
-      "Private Square customer details require stronger caller verification. This live tool shares no profile details; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {
-        email: { type: "string", description: "The customer's email address." },
-        phone: {
-          type: "string",
-          description: "The customer's phone number. Leave blank to use the caller's number.",
-        },
-      },
-      required: [],
-    },
-  },
-  square_check_inventory: {
-    name: "square_check_inventory",
-    description:
-      "Searches the Square item catalog for a product by name and returns its variants, prices, and live inventory levels. Use when a caller asks if something is available or what it costs.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Product name or keyword to search for." },
-      },
-      required: ["query"],
-    },
-  },
-  square_create_payment_link: {
-    name: "square_create_payment_link",
-    description:
-      "Square checkout links require a server-verified catalog price or approved quote. This live tool creates no link; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {
-        title: {
-          type: "string",
-          description: "Name of the product or service the payment is for.",
-        },
-        amount_dollars: {
-          type: "number",
-          description: "Amount to charge in dollars (e.g. 49.99).",
-        },
-      },
-      required: ["title", "amount_dollars"],
     },
   },
   send_teams_message: {
@@ -1203,7 +891,8 @@ export const AGENT_TOOL_DEFS = {
       properties: {
         task_id: {
           type: "string",
-          description: "Optional task_id returned on this call. Defaults to the latest task started on this call.",
+          description:
+            "Optional task_id returned on this call. Defaults to the latest task started on this call.",
         },
       },
     },
@@ -1212,38 +901,20 @@ export const AGENT_TOOL_DEFS = {
 
 export type AgentToolName = keyof typeof AGENT_TOOL_DEFS;
 
-export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
-  sales:
-    "Always assume the sale. If the caller is interested, book a follow-up demo or meeting immediately using book_appointment. Use capture_customer_profile to record budget and timeline before the call ends.",
-  customer_service:
-    "Be helpful and empathetic. Ask the caller to describe the issue without revealing private account history. If the issue is complex or requires private records, create_followup_task for the back-office team. Only use send_text_message after the caller explicitly asks for a text or confirms that channel is okay.",
-  collections:
-    "Remain professional and firm but compliant. You MUST verify the caller's identity before discussing debt details. Use log_payment_promise to record all commitments, this is a legal requirement. If the customer opts out of future contact, use add_to_dnc immediately.",
-  technical_support:
-    "Be methodical. Use caller-provided details and approved knowledge to troubleshoot. If private history is needed or you cannot solve it, use create_support_ticket to escalate to engineering.",
-  scheduler:
-    "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. When send_email is available and the caller requests an email, confirm their email address before sending the booking details. Only say an email was sent after the send tool confirms success. Use send_text_message only if available and the customer asked for a text confirmation. If a requested send tool is unavailable, offer a manual follow-up using create_followup_task when available; claim the request is saved only after that tool confirms creation.",
-  lead_qualifier:
-    "Qualify fast: budget, timeline, authority, need. Use enrich_lead when you have a company or email. Book a demo with book_appointment when qualified; notify the team on Slack or Teams for hot leads.",
-  marketing:
-    "Capture campaign interest and next steps. Use enrich_lead for unknown companies. For existing-record changes or callbacks, create_followup_task for team review. Offer book_appointment for demos or nurture with send_email.",
-};
-
-export function buildRoleToolDefs(role: string, enabledTools?: unknown): object[] {
-  const toolNames = resolveAgentTools(role, enabledTools) as AgentToolName[];
+export function buildAgentToolDefs(enabledTools?: unknown): object[] {
+  const toolNames = resolveAgentTools(enabledTools) as AgentToolName[];
   const tools = toolNames
     .filter((name) => !UNVERIFIED_LIVE_TOOL_NAMES.has(name))
     .map((name) => AGENT_TOOL_DEFS[name])
     .filter(Boolean);
-  if (role === "BotBound Specialist" && isLegacyFounderShowcaseToolSelection(enabledTools)) {
+  if (isLegacyFounderShowcaseToolSelection(enabledTools)) {
     tools.push(AGENT_TOOL_DEFS.create_followup_task);
   }
   return tools;
 }
 
 /** Live tools respect the selected set, available connections and current paid channels. */
-export async function buildRoleToolDefsForTenant(
-  role: string,
+export async function buildAgentToolDefsForTenant(
   enabledTools: unknown,
   userId: string,
   aiTier?: string | null,
@@ -1254,7 +925,7 @@ export async function buildRoleToolDefsForTenant(
   // Connection schemas may be cached, but paid channel authority must be fresh.
   // A downgrade must not keep advertising customer sends from an older cache.
   const [cached, entitlements] = await Promise.all([
-    getCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags),
+    getCachedTenantToolDefs(userId, enabledTools, aiTier, tenantFlags),
     getTenantChannelEntitlements(userId).catch((error: unknown) => {
       log.warn("Agent channel lookup failed; disabling customer send tools", {
         errorClass: error instanceof Error ? error.name : typeof error,
@@ -1262,8 +933,7 @@ export async function buildRoleToolDefsForTenant(
       return { channels: [] };
     }),
   ]);
-  const legacyFounderSpecialist =
-    role === "BotBound Specialist" && isLegacyFounderShowcaseToolSelection(enabledTools);
+  const legacyFounderSpecialist = isLegacyFounderShowcaseToolSelection(enabledTools);
   const allowedTools = (tools: object[]) => {
     const computerTools = [
       AGENT_TOOL_DEFS.start_computer_task,
@@ -1311,7 +981,7 @@ export async function buildRoleToolDefsForTenant(
   };
   if (cached) return allowedTools(cached);
 
-  let resolved = applyPlanToolUnlocks(resolveAgentTools(role, enabledTools), aiTier);
+  let resolved = applyPlanToolUnlocks(resolveAgentTools(enabledTools), aiTier);
   if (!tenantFlags?.twilioMessaging) {
     resolved = resolved.filter((n) => n !== "send_text_message");
   }
@@ -1322,6 +992,6 @@ export async function buildRoleToolDefsForTenant(
   const toolNames = filterToolsByTenantConnections(resolved, conn) as AgentToolName[];
   const tools = toolNames.map((name) => AGENT_TOOL_DEFS[name]).filter(Boolean);
 
-  await setCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags, tools);
+  await setCachedTenantToolDefs(userId, enabledTools, aiTier, tenantFlags, tools);
   return allowedTools(tools);
 }

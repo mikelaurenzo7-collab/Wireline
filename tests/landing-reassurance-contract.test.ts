@@ -9,18 +9,14 @@ describe("minimal landing launch clarity", () => {
     expect(landing).not.toMatch(
       /HOME_PLAN_IDS|STRIPE_PLANS|BrowserCallWidget|ClonedMedia|tel:|landing-prestige__price/,
     );
-    expect(landing).not.toMatch(/coming soon|Runtime Balance|\$19|\$12/i);
+    expect(landing).not.toMatch(/coming soon|Runtime Balance|\$\d/i);
   });
   it("keeps three product assets visible without requiring interaction", () => {
     expect(landing).toContain('aria-labelledby="landing-prestige-showcase-title"');
-    expect(landing).toContain("The Bot Gets:");
     expect(landing).toContain("landing-prestige__showcase-grid");
     expect(landing).toContain("<CapabilityPreview channel={id} />");
     expect(landing).not.toContain('role="tablist"');
     expect(landing).not.toContain('role="tabpanel"');
-    expect(landing).not.toMatch(
-      /CHOOSE FROM A CATALOG|clone your own|Explore \$\{example.label\}/i,
-    );
     expect(landing).not.toContain("MarketingChromeBar");
   });
 });

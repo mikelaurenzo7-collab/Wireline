@@ -8,13 +8,12 @@
  */
 export const PAUSABLE_PROVIDER_SPEND_JOB_TYPES = [
   "post_call_artifact",
+  "sms_auto_reply",
   "scheduled_report",
   "post_call_enrichment",
   "v2a_action_extraction",
   "execute_action",
   "adaptive_optimization",
-  "proactive_lead_enrichment",
-  "autonomous_prospecting",
   "knowledge_from_url",
   "intake_auto_dial",
   "paid_bot_identity_reconcile",

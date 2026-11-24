@@ -25,7 +25,6 @@ import {
   generateScheduledOperatingReport,
   type ScheduledReportJobPayload,
 } from "./scheduled-report-service";
-import { handleProactiveLeadEnrichmentJob } from "./proactive-lead-enrichment-job";
 import { retryPendingOrphanCarrierResources } from "./orphan-carrier-retry";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -78,6 +77,9 @@ const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
   "openai_realtime_hangup",
   PAID_BOT_IDENTITY_JOB_TYPE,
   "account_deletion_billing_reconciliation",
+  // sendTenantMessage owns a provider lease; nesting it under this worker's
+  // transaction-level deletion fence would contend on the same tenant lock.
+  "sms_auto_reply",
 ]);
 
 /** Carrier acceptance predates deletion, so finish its accounting/history
@@ -504,6 +506,13 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
     await handleTwilioMessageReconciliationJob(job);
     return;
   }
+  if (job.type === "sms_auto_reply") {
+    assertLaunchProviderSpendAllowed(job);
+    const { processSmsAutoReplyJob } = await import("./sms-auto-reply");
+    const outcome = await processSmsAutoReplyJob(job);
+    await persistJobResult(job.id, { outcome });
+    return;
+  }
   if (job.type === "twilio_fallback_reconcile") {
     const { reconcileTwilioFallbackJob } = await import("./voice/twilio-fallback-recovery");
     await reconcileTwilioFallbackJob(job);
@@ -536,13 +545,6 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
   }
   if (job.type === "scheduled_report") {
     await handleScheduledReport(job);
-    return;
-  }
-  // Intercept the legacy handler before it can run unscoped phone-only history
-  // reads. The replacement asserts job/payload ownership and enters tenant RLS.
-  if (job.type === "proactive_lead_enrichment") {
-    assertLaunchProviderSpendAllowed(job);
-    await handleProactiveLeadEnrichmentJob(job);
     return;
   }
   // Extend the existing daily integrity janitor rather than creating another

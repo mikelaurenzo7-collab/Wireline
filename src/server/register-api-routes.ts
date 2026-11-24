@@ -71,7 +71,6 @@ import emailUnsubscribeRouter from "../routes/email-unsubscribe-routes";
 import shareableArtifactRouter from "../routes/shareable-artifact-routes";
 import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
 import resendWebhookRouter from "../routes/resend-webhook-routes";
-import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
 import smsOutcomeRouter from "../routes/sms-outcome-routes";
 import smsRouter from "../routes/sms-routes";
@@ -85,7 +84,6 @@ import mobileRouter from "../routes/mobile-routes";
 import activationRouter from "../routes/activation-routes";
 import outboundDialAtomicRouter from "../routes/outbound-dial-atomic-routes";
 import outboundRouter from "../routes/outbound-routes";
-import leadHunterRouter from "../routes/lead-hunter-routes";
 import cadenceRouter from "../routes/cadence-routes";
 import campaignRouter from "../routes/campaign-routes";
 import complianceRouter from "../routes/compliance-routes";
@@ -198,7 +196,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(shareableArtifactRouter);
   app.use(resendWebhookRouter);
   app.use(agentmailWebhookRouter);
-  app.use(metaWebhookRouter);
   app.use(twilioWebhookRouter);
   app.use(smsOutcomeRouter);
   app.use(smsRouter);
@@ -216,7 +213,6 @@ export function registerApiRoutes(app: Express): void {
 
   app.use(outboundDialAtomicRouter);
   app.use(outboundRouter);
-  app.use(leadHunterRouter);
 
   app.use("/api/qa", qaV2Router);
   app.use(cadenceRouter);

@@ -13,10 +13,8 @@ describe("action-engine surface", () => {
       "send_email",
       "send_text_message",
       "schedule_calendar",
-      "update_crm_lead",
       "create_internal_task",
       "send_contract",
-      "prospect_leads",
       "notify_slack",
     ]);
     expect(source).not.toContain("create_payment_link");
@@ -28,8 +26,8 @@ describe("action-engine surface", () => {
     expect(source).toContain("resolveAuthorizedAgentTools");
     expect(source).toContain("sanitizePersistedAgentToolSelection");
     expect(source).toContain("loadTenantIntegrationConnections");
-    expect(source).toContain('update_crm_lead: "crm_log_call"');
-    expect(source).not.toContain('update_crm_lead: "update_lead_status"');
+    expect(source).not.toContain("update_crm_lead");
+    expect(source).not.toContain("prospect_leads");
   });
 
   it("recovers call ownership and downgrades unresolved autonomous work", () => {

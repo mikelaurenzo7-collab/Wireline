@@ -98,10 +98,6 @@ assert(
   position('app.use("/api", billingRouter);') < position("app.use(emailRouter);"),
   "billing routes must retain their historical precedence",
 );
-assert(
-  position("app.use(metaWebhookRouter);") < position("app.use(marketingRuntimeRouter);"),
-  "Meta webhook routes must precede marketing runtime routes",
-);
 assert(routes.includes("app.use(insightsRouter);"), "insights routes must be registered");
 assert(routes.includes("app.use(pipelineRouter);"), "pipeline routes must be registered");
 assert(

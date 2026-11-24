@@ -130,8 +130,8 @@ describe("seller DNC registration state and gate", () => {
   it("prefills the area codes and term an owner needs to subscribe to", () => {
     expect(
       suggestDncAreaCodes({
-        lineNumbers: ["+13125845703"],
-        contactNumbers: ["+15617270142", "561-555-0100", "+13125550101", "+442071234567", ""],
+        lineNumbers: ["+13125550103"],
+        contactNumbers: ["+15615550142", "561-555-0100", "+13125550101", "+442071234567", ""],
       }),
     ).toEqual([
       { code: "561", contacts: 2, ownLine: false },

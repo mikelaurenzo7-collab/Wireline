@@ -17,19 +17,11 @@ const SettingsPage = lazy(() =>
 const AdminSettings = lazy(() =>
   import("../components/AdminSettings").then((module) => withVisualQaPage(module, "admin")),
 );
-const TemplatesPage = lazy(() =>
-  import("../pages/TemplatesPage").then((module) => withVisualQaPage(module, "templates")),
-);
 const KnowledgePage = lazy(() =>
   import("../pages/KnowledgePage").then((module) => withVisualQaPage(module, "knowledge")),
 );
 const ConnectionsPage = lazy(() =>
   import("../pages/ConnectionsPage").then((module) => withVisualQaPage(module, "connections")),
-);
-const SalesforceIntegrationPage = lazy(() =>
-  import("../pages/SalesforceIntegrationPage").then((module) =>
-    withVisualQaPage(module, "salesforce"),
-  ),
 );
 const PhonePage = lazy(() =>
   import("../pages/PhonePage").then((module) => withVisualQaPage(module, "phone")),
@@ -180,11 +172,9 @@ export default function AppRoutes() {
         <Route path="/voice-clone" element={<VoiceToStudioRedirect clone />} />
         {/* The Workspace's canonical route stays /studio so saved links keep working. */}
         <Route path="/workspace" element={<ToStudioRedirect />} />
-        <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 
         <Route path="/connections" element={<ConnectionsPage />} />
-        <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/integrations" element={<PreservingRedirect to="/connections" />} />
         <Route
           path="/call-logs"

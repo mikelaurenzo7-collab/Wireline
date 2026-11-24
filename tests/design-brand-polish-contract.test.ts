@@ -91,16 +91,22 @@ describe("E2E design and BotBound brand polish", () => {
     expect(bodyRule).not.toBe("");
     expect(bodyRule).toContain("text-transform: none");
     expect(bodyRule).toContain("letter-spacing: normal");
-    const dressers = globSync("src/styles/**/*.css", { cwd: root })
-      .map((file) => file.replaceAll("\\", "/"))
-      .filter((file) => withoutComments(source(file)).includes("marketing-hero__description"))
-      .sort();
-    expect(dressers).toEqual([]);
     expect(polish).toContain(".wl-preserve-case");
     expect(hero).not.toContain("uppercase tracking-[.1em]");
-    expect(hero).toContain("max-w-[19ch]");
+    expect(hero).toContain("max-w-[28ch]");
     expect(hero).toContain("leading-[1]");
-    expect(hero).not.toContain("marketing-hero__description");
+    // The hero subhead is body copy, so the shared body rule above is what
+    // governs it. No stylesheet may give it display casing of its own.
+    const displayDressers = globSync("src/styles/**/*.css", { cwd: root })
+      .map((file) => file.replaceAll("\\", "/"))
+      .filter((file) => {
+        const rules = withoutComments(source(file)).match(
+          /\.marketing-hero__description[^{]*\{[^}]*\}/g,
+        );
+        return (rules ?? []).some((rule) => /text-transform:\s*uppercase/.test(rule));
+      })
+      .sort();
+    expect(displayDressers).toEqual([]);
   });
 
   it("loads terminal design refinements after responsive/modal layers in deliberate order", () => {

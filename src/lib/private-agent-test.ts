@@ -127,7 +127,7 @@ export async function loadPrivateAgentTestContext(
   const agent = agentRows[0];
   if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
   const savedPersonality = personalities[0]?.content || "";
-  const reviewRequired = isSavedRuntimeReviewRequired(savedPersonality, agent.role);
+  const reviewRequired = isSavedRuntimeReviewRequired(savedPersonality);
   if (reviewRequired) {
     return {
       agentId: agent.id,

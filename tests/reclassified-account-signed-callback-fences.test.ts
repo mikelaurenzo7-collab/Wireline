@@ -3,48 +3,11 @@ import { resolve } from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { metaTenantExternalIngestAllowed } from "../src/routes/meta-webhook-routes";
 import { tenantWebhookExternalActionsAllowed } from "../src/lib/webhook-helpers";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("reclassified-account signed callback fences", () => {
-  it.each(["demo", "test"] as const)(
-    "stops Meta provider fetch and PII ingest for a %s tenant",
-    async (environment) => {
-      const providerFetch = vi.fn();
-      const persistPii = vi.fn();
-      const allowed = await metaTenantExternalIngestAllowed(
-        "tenant-1",
-        vi.fn().mockResolvedValue({
-          allowed: false,
-          environment,
-          status: 403,
-          code: "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED",
-          message: "Live external actions are disabled.",
-        }),
-      );
-      if (allowed) {
-        await providerFetch();
-        await persistPii();
-      }
-      expect(allowed).toBe(false);
-      expect(providerFetch).not.toHaveBeenCalled();
-      expect(persistPii).not.toHaveBeenCalled();
-    },
-  );
-
-  it("fails Meta ingest closed when tenant classification cannot be read", async () => {
-    const providerFetch = vi.fn();
-    const allowed = await metaTenantExternalIngestAllowed(
-      "tenant-1",
-      vi.fn().mockRejectedValue(new Error("database unavailable")),
-    );
-    if (allowed) await providerFetch();
-    expect(allowed).toBe(false);
-    expect(providerFetch).not.toHaveBeenCalled();
-  });
-
   it("does not deliver queued tenant webhooks after demo/test reclassification", async () => {
     const postWebhook = vi.fn();
     const policy = await tenantWebhookExternalActionsAllowed(
@@ -83,22 +46,6 @@ describe("reclassified-account signed callback fences", () => {
     expect(dispatch.indexOf("tenantWebhookExternalActionsAllowed(userId)")).toBeLessThan(
       dispatch.indexOf(".insert(schema.webhookDeliveries)"),
     );
-  });
-
-  it("gates the signed Meta lead after tenant resolution and before Graph/PII work", () => {
-    const source = read("src/routes/meta-webhook-routes.ts");
-    const post = source.slice(source.indexOf('router.post("/api/webhooks/meta/leads"'));
-    const signature = post.indexOf("verifyMetaSignature(rawBody, sig)");
-    const tenant = post.indexOf("resolveTenantForPage(pageId)");
-    const environment = post.indexOf("metaTenantExternalIngestAllowed(tenant.userId)");
-    const remoteFetch = post.indexOf("fetchMetaLead(leadgenId, tenant.accessToken)");
-    const piiInsert = post.indexOf(".insert(schema.outboundLeads)");
-
-    expect(signature).toBeGreaterThanOrEqual(0);
-    expect(tenant).toBeGreaterThan(signature);
-    expect(environment).toBeGreaterThan(tenant);
-    expect(remoteFetch).toBeGreaterThan(environment);
-    expect(piiInsert).toBeGreaterThan(remoteFetch);
   });
 
   it("hard-hangups reclassified outbound bridge replays before state or TwiML", () => {

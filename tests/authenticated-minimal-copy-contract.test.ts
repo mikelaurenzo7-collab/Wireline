@@ -10,7 +10,6 @@ const workspacePageIntroTags = (source: string) =>
 const AUTHENTICATED_PAGE_INTROS = [
   "src/pages/ClientAppsPage.tsx",
   "src/pages/EmailPage.tsx",
-  "src/pages/TemplatesPage.tsx",
   "src/pages/KnowledgePage.tsx",
   "src/pages/ApprovalsPage.tsx",
 ] as const;

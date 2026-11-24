@@ -22,10 +22,9 @@ vi.mock("../src/lib/tenant-integration-connections", () => ({
 }));
 
 import {
-  buildRoleToolDefs,
-  buildRoleToolDefsForTenant,
+  buildAgentToolDefs,
+  buildAgentToolDefsForTenant,
   AGENT_TOOL_DEFS,
-  ROLE_SPECIFIC_PROTOCOLS,
 } from "../src/lib/agent-runtime-helpers";
 import {
   isAgentToolExecutionAuthorized,
@@ -34,19 +33,9 @@ import {
 } from "../src/lib/agent-tool-authorization";
 
 const selected = ["send_email", "send_text_message", "search_knowledge_base"] as const;
-const privateLiveReads = [
-  "search_leads",
-  "crm_search_contacts",
-  "view_recent_interactions",
-  "square_lookup_order",
-  "square_lookup_customer",
-] as const;
-const callerLinkedLiveWrites = ["update_lead_status", "crm_log_call", "schedule_callback"] as const;
-const unverifiedLiveTools = [
-  ...privateLiveReads,
-  ...callerLinkedLiveWrites,
-  "square_create_payment_link",
-] as const;
+const privateLiveReads = ["search_leads", "view_recent_interactions"] as const;
+const callerLinkedLiveWrites = ["update_lead_status", "schedule_callback"] as const;
+const unverifiedLiveTools = [...privateLiveReads, ...callerLinkedLiveWrites] as const;
 const legacyFounderCsTools = [
   "send_signup_link",
   "send_payment_link",
@@ -91,15 +80,9 @@ beforeEach(() => {
 
 describe("live tool channel entitlements", () => {
   it("gives the exact legacy founder specialist a manual follow-up tool before seed repair", async () => {
-    const local = names(buildRoleToolDefs("BotBound Specialist", legacyFounderCsTools));
+    const local = names(buildAgentToolDefs(legacyFounderCsTools));
     const fresh = names(
-      await buildRoleToolDefsForTenant(
-        "BotBound Specialist",
-        legacyFounderCsTools,
-        "user-pilot",
-        "standard",
-        flags,
-      ),
+      await buildAgentToolDefsForTenant(legacyFounderCsTools, "user-pilot", "standard", flags),
     );
 
     expect(local).toContain("create_followup_task");
@@ -111,13 +94,7 @@ describe("live tool channel entitlements", () => {
   it("adds manual follow-up to a stale cached founder specialist schema", async () => {
     h.cached.mockResolvedValue(legacyFounderCsTools.map((name) => ({ name })));
     const namesFromCache = names(
-      await buildRoleToolDefsForTenant(
-        "BotBound Specialist",
-        legacyFounderCsTools,
-        "user-pilot",
-        "standard",
-        flags,
-      ),
+      await buildAgentToolDefsForTenant(legacyFounderCsTools, "user-pilot", "standard", flags),
     );
 
     expect(namesFromCache).toContain("create_followup_task");
@@ -126,11 +103,9 @@ describe("live tool channel entitlements", () => {
 
   it("omits unverified private reads, writes, and quick pay from a newly built model schema", async () => {
     const persisted = [...unverifiedLiveTools, "search_knowledge_base"];
-    expect(names(buildRoleToolDefs("front_desk", persisted))).toEqual(["search_knowledge_base"]);
+    expect(names(buildAgentToolDefs(persisted))).toEqual(["search_knowledge_base"]);
     expect(
-      names(
-        await buildRoleToolDefsForTenant("front_desk", persisted, "user-pilot", "standard", flags),
-      ),
+      names(await buildAgentToolDefsForTenant(persisted, "user-pilot", "standard", flags)),
     ).toEqual(["search_knowledge_base"]);
   });
 
@@ -138,9 +113,7 @@ describe("live tool channel entitlements", () => {
     const persisted = [...unverifiedLiveTools, "search_knowledge_base"];
     h.cached.mockResolvedValue(persisted.map((name) => ({ name })));
     expect(
-      names(
-        await buildRoleToolDefsForTenant("front_desk", persisted, "user-pilot", "standard", flags),
-      ),
+      names(await buildAgentToolDefsForTenant(persisted, "user-pilot", "standard", flags)),
     ).toEqual(["search_knowledge_base"]);
     expect(h.connections).not.toHaveBeenCalled();
     expect(h.cacheWrite).not.toHaveBeenCalled();
@@ -161,21 +134,9 @@ describe("live tool channel entitlements", () => {
     );
   });
 
-  it("does not instruct the scheduling role to promise an unavailable email", () => {
-    expect(ROLE_SPECIFIC_PROTOCOLS.scheduler).toContain("When send_email is available");
-    expect(ROLE_SPECIFIC_PROTOCOLS.scheduler).toContain("the caller requests an email");
-    expect(ROLE_SPECIFIC_PROTOCOLS.scheduler).toContain("confirm their email address");
-    expect(ROLE_SPECIFIC_PROTOCOLS.scheduler).toContain("after the send tool confirms success");
-    expect(ROLE_SPECIFIC_PROTOCOLS.scheduler).toContain("create_followup_task when available");
-    expect(ROLE_SPECIFIC_PROTOCOLS.scheduler).toContain("only after that tool confirms creation");
-    expect(ROLE_SPECIFIC_PROTOCOLS.scheduler).not.toContain("send the calendar invite immediately");
-  });
-
   it("omits customer email and text from a Calls-only Bot's new schema", async () => {
     expect(
-      names(
-        await buildRoleToolDefsForTenant("front_desk", selected, "user-pilot", "standard", flags),
-      ),
+      names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
     ).toEqual(["search_knowledge_base"]);
     expect(h.entitlements).toHaveBeenCalledWith("user-pilot");
   });
@@ -183,9 +144,7 @@ describe("live tool channel entitlements", () => {
   it("filters stale cached send tools against the current paid channels", async () => {
     h.cached.mockResolvedValue(selected.map((name) => ({ name })));
     expect(
-      names(
-        await buildRoleToolDefsForTenant("front_desk", selected, "user-pilot", "standard", flags),
-      ),
+      names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
     ).toEqual(["search_knowledge_base"]);
     expect(h.connections).not.toHaveBeenCalled();
     expect(h.cacheWrite).not.toHaveBeenCalled();
@@ -194,21 +153,17 @@ describe("live tool channel entitlements", () => {
   it("preserves selected customer email for an eligible Email plan", async () => {
     h.entitlements.mockResolvedValue({ channels: ["email"] });
     expect(
-      names(
-        await buildRoleToolDefsForTenant("front_desk", selected, "user-pilot", "standard", flags),
-      ),
+      names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
     ).toEqual(["send_email", "search_knowledge_base"]);
   });
 
   it("applies paid SMS entitlement in addition to the existing messaging switch", async () => {
     h.entitlements.mockResolvedValue({ channels: ["sms"] });
     expect(
-      names(
-        await buildRoleToolDefsForTenant("front_desk", selected, "user-pilot", "standard", flags),
-      ),
+      names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
     ).toEqual(["send_text_message", "search_knowledge_base"]);
     expect(
-      names(await buildRoleToolDefsForTenant("front_desk", selected, "user-pilot", "standard", {})),
+      names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", {})),
     ).toEqual(["search_knowledge_base"]);
   });
 
@@ -216,9 +171,7 @@ describe("live tool channel entitlements", () => {
     h.cached.mockResolvedValue(selected.map((name) => ({ name })));
     h.entitlements.mockRejectedValue(new Error("Channel verification unavailable"));
     expect(
-      names(
-        await buildRoleToolDefsForTenant("front_desk", selected, "user-pilot", "standard", flags),
-      ),
+      names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
     ).toEqual(["search_knowledge_base"]);
     expect(h.cacheWrite).not.toHaveBeenCalled();
   });
@@ -263,13 +216,13 @@ describe("live tool channel entitlements", () => {
       "stop_computer_task",
     ];
     const fresh = names(
-      await buildRoleToolDefsForTenant("front_desk", selectedComputer, "user-pilot", "standard", flags),
+      await buildAgentToolDefsForTenant(selectedComputer, "user-pilot", "standard", flags),
     );
     expect(fresh.filter((name) => computerNames.includes(name))).toEqual(selectedComputer);
 
     h.cached.mockResolvedValue(computerNames.map((name) => ({ name })));
     const cached = names(
-      await buildRoleToolDefsForTenant("front_desk", selectedComputer, "user-pilot", "standard", flags),
+      await buildAgentToolDefsForTenant(selectedComputer, "user-pilot", "standard", flags),
     );
     expect(cached.filter((name) => computerNames.includes(name))).toEqual(selectedComputer);
   });

@@ -340,30 +340,6 @@ projects:
                 sync: false
               - key: AGENTMAIL_DEFAULT_DOMAIN
                 sync: false
-              - key: HUBSPOT_CLIENT_ID
-                sync: false
-              - key: HUBSPOT_CLIENT_SECRET
-                sync: false
-              - key: SALESFORCE_CLIENT_ID
-                sync: false
-              - key: SALESFORCE_CLIENT_SECRET
-                sync: false
-              - key: APOLLO_API_KEY
-                sync: false
-              - key: APOLLO_CLIENT_ID
-                sync: false
-              - key: APOLLO_CLIENT_SECRET
-                sync: false
-              - key: SHOPIFY_CLIENT_ID
-                sync: false
-              - key: SHOPIFY_CLIENT_SECRET
-                sync: false
-              - key: SHOPIFY_STOREFRONT_ACCESS_TOKEN
-                sync: false
-              - key: SQUARE_APPLICATION_ID
-                sync: false
-              - key: SQUARE_APPLICATION_SECRET
-                sync: false
               - key: ZOOM_CLIENT_ID
                 sync: false
               - key: ZOOM_CLIENT_SECRET
@@ -387,16 +363,6 @@ projects:
               - key: SLACK_CLIENT_ID
                 sync: false
               - key: SLACK_CLIENT_SECRET
-                sync: false
-              - key: META_APP_ID
-                sync: false
-              - key: META_APP_SECRET
-                sync: false
-              - key: META_VERIFY_TOKEN
-                sync: false
-              - key: META_PIXEL_ID
-                sync: false
-              - key: META_CAPI_ACCESS_TOKEN
                 sync: false
               - key: DOCUSIGN_BASE_URI
                 sync: false
@@ -703,66 +669,6 @@ projects:
                   name: botbound-api
                   type: web
                   envVarKey: AGENTMAIL_DEFAULT_DOMAIN
-              - key: HUBSPOT_CLIENT_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: HUBSPOT_CLIENT_ID
-              - key: HUBSPOT_CLIENT_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: HUBSPOT_CLIENT_SECRET
-              - key: SALESFORCE_CLIENT_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: SALESFORCE_CLIENT_ID
-              - key: SALESFORCE_CLIENT_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: SALESFORCE_CLIENT_SECRET
-              - key: APOLLO_API_KEY
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: APOLLO_API_KEY
-              - key: APOLLO_CLIENT_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: APOLLO_CLIENT_ID
-              - key: APOLLO_CLIENT_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: APOLLO_CLIENT_SECRET
-              - key: SHOPIFY_CLIENT_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: SHOPIFY_CLIENT_ID
-              - key: SHOPIFY_CLIENT_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: SHOPIFY_CLIENT_SECRET
-              - key: SHOPIFY_STOREFRONT_ACCESS_TOKEN
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: SHOPIFY_STOREFRONT_ACCESS_TOKEN
-              - key: SQUARE_APPLICATION_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: SQUARE_APPLICATION_ID
-              - key: SQUARE_APPLICATION_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: SQUARE_APPLICATION_SECRET
               - key: ZOOM_CLIENT_ID
                 fromService:
                   name: botbound-api
@@ -823,31 +729,6 @@ projects:
                   name: botbound-api
                   type: web
                   envVarKey: SLACK_CLIENT_SECRET
-              - key: META_APP_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: META_APP_ID
-              - key: META_APP_SECRET
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: META_APP_SECRET
-              - key: META_VERIFY_TOKEN
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: META_VERIFY_TOKEN
-              - key: META_PIXEL_ID
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: META_PIXEL_ID
-              - key: META_CAPI_ACCESS_TOKEN
-                fromService:
-                  name: botbound-api
-                  type: web
-                  envVarKey: META_CAPI_ACCESS_TOKEN
               - key: DOCUSIGN_BASE_URI
                 fromService:
                   name: botbound-api

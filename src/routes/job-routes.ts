@@ -10,7 +10,6 @@ import { getErrorMessage } from "../lib/server-utils";
 import {
   claimJobById,
   completeClaimedJob,
-  enqueue,
   getQueueStats,
   settleClaimedJobError,
 } from "../lib/job-queue";
@@ -20,9 +19,7 @@ import {
   PROVIDER_SPEND_PAUSE_DELAY_MS,
 } from "../lib/provider-spend-job-pause";
 import { assertUrlSafeForServerFetch } from "../lib/webhook-validators";
-import { apolloReadyForUser } from "../lib/apollo-service";
 import { KnowledgeIngestionUnavailableError } from "../lib/ai-brains";
-import { enforceSpendCap } from "../lib/spend-guards";
 import { acquireDistributedLease } from "../lib/distributed-lease";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -71,77 +68,6 @@ router.get(
       if (err instanceof AppError) throw err;
       log.error("GET /api/jobs/stats failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to fetch job stats");
-    }
-  },
-);
-
-router.post(
-  "/prospect",
-  authenticateUser,
-  jobsRateLimit,
-  enforceSpendCap,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const [settings] = await drizzle
-        .select({
-          prospectingEnabled: schema.settings.prospectingEnabled,
-          targetTitles: schema.settings.targetTitles,
-          targetIndustries: schema.settings.targetIndustries,
-          targetStates: schema.settings.targetStates,
-          targetEmployeeRanges: schema.settings.targetEmployeeRanges,
-        })
-        .from(schema.settings)
-        .where(eq(schema.settings.userId, req.user.id))
-        .limit(1);
-
-      if (!settings?.prospectingEnabled) {
-        return res.status(409).json({
-          code: "LEAD_HUNT_DISABLED",
-          error: "Turn on Lead Hunt and save your targeting before finding leads.",
-        });
-      }
-
-      const targetTitles = (settings.targetTitles as string[] | null) || [];
-      if (targetTitles.length === 0) {
-        return res.status(400).json({
-          code: "LEAD_HUNT_TARGETING_REQUIRED",
-          error: "Add at least one target job title before finding leads.",
-        });
-      }
-
-      const apolloReady = await apolloReadyForUser(req.user.id);
-      if (!apolloReady) {
-        return res.status(503).json({
-          code: "APOLLO_NOT_CONNECTED",
-          error: "Connect Apollo before running Lead Hunt.",
-        });
-      }
-
-      const result = await enqueue(drizzle, {
-        userId: req.user.id,
-        type: "autonomous_prospecting",
-        payload: { userId: req.user.id },
-      });
-      if (!result.ok) {
-        throw AppError.fromHttpStatus(500, String(result.error || "Failed to enqueue job"));
-      }
-
-      res.json({
-        ok: true,
-        jobId: result.jobId ?? null,
-        prospectingEnabled: true,
-        apolloReady: true,
-        targeting: {
-          titles: targetTitles,
-          industries: (settings.targetIndustries as string[] | null) || [],
-          states: (settings.targetStates as string[] | null) || [],
-          employeeRanges: (settings.targetEmployeeRanges as string[] | null) || [],
-        },
-      });
-    } catch (err) {
-      if (err instanceof AppError) throw err;
-      log.error("POST /api/jobs/prospect failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Failed to enqueue prospecting job");
     }
   },
 );

@@ -14,17 +14,11 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
     expect(helper).toContain("slack.com/api/auth.revoke");
 
     for (const file of [
-      "src/lib/meta-service.ts",
       "src/lib/google-sheets-service.ts",
       "src/lib/slack-service.ts",
-      "src/lib/hubspot-service.ts",
       "src/lib/zoom-service.ts",
-      "src/lib/salesforce-service.ts",
       "src/lib/x-service.ts",
-      "src/lib/shopify-service.ts",
-      "src/lib/square-service.ts",
       "src/lib/microsoft-graph-service.ts",
-      "src/lib/apollo-service.ts",
     ]) {
       expect(read(file)).toContain("revokeCrmProviderTokens");
     }

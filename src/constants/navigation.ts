@@ -86,7 +86,6 @@ export const MOBILE_MORE_HREF = "__more__" as const;
  * { href: "/phone", label: "Calls" }
  * { href: "/insights", label: "Insights" }
  * { href: "/connections", label: "Connections" }
- * { route: "/templates", parentHref: "/studio" }
  * { route: "/approvals", parentHref: "/inbox" }
  * { route: "/apps", parentHref: "/settings" }
  * { "/apps": "Apps" }
@@ -176,13 +175,6 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     desktop: { group: "manage", order: 5 },
     mobile: { placement: "primary", order: 40 },
     shortcut: { key: "T", hint: "g t" },
-  },
-  {
-    href: "/templates",
-    title: "Templates",
-    eyebrow: "Build",
-    description: "Start from proven Bot behaviors and workflows.",
-    parentHref: "/studio",
   },
   {
     href: "/approvals",

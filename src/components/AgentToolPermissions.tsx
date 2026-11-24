@@ -112,7 +112,7 @@ export default function AgentToolPermissions({
          * Seeding an empty list here would have turned the first save into a
          * silent capability wipe.
          */
-        setEnabled(resolveAgentTools(undefined, config.enabledTools));
+        setEnabled(resolveAgentTools(config.enabledTools));
 
         // Connection posture is presentation only; a failure must not block editing.
         const [crm, health, email, calendar] = await Promise.all([

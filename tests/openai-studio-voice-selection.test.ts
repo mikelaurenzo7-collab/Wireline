@@ -60,7 +60,6 @@ describe("OpenAI Studio voice selection", () => {
         voiceProvider: "openai",
         voiceId,
         phoneVoiceId: null,
-        role: "sales representative",
         businessVariables: { wirelineLiveVoiceProfile: "warm" },
       });
       const phone = resolveOpenAIAgentVoiceSelection({
@@ -77,12 +76,11 @@ describe("OpenAI Studio voice selection", () => {
     },
   );
 
-  it("uses the Bot's valid selected voice instead of its role profile", () => {
+  it("uses the Bot's valid selected voice instead of its saved profile", () => {
     const selection = resolveOpenAILiveVoiceSelection({
       voiceProvider: "openai",
       voiceId: " Shimmer ",
       phoneVoiceId: null,
-      role: "sales representative",
       businessVariables: { wirelineLiveVoiceProfile: "warm" },
     });
 
@@ -94,26 +92,26 @@ describe("OpenAI Studio voice selection", () => {
     expect(selection.voice).toBe(normalizeOpenAIRealtimeVoice("shimmer"));
   });
 
-  it("falls back to the configured or role-derived profile only without a valid selection", () => {
+  it("falls back to the saved profile, then the neutral default, without a valid selection", () => {
     expect(
       resolveOpenAILiveVoiceSelection({
         voiceProvider: "openai",
         voiceId: "retired-provider-voice",
         phoneVoiceId: null,
-        role: "sales representative",
         businessVariables: { wirelineLiveVoiceProfile: "warm" },
       }),
     ).toEqual({ profile: "warm", voice: "marin", source: "profile_fallback" });
 
+    // One Bot has no role to guess a voice from, so an unset profile lands on
+    // the neutral default the Account Holder changes in Studio.
     expect(
       resolveOpenAILiveVoiceSelection({
         voiceProvider: "openai",
         voiceId: null,
         phoneVoiceId: null,
-        role: "sales representative",
         businessVariables: null,
       }),
-    ).toEqual({ profile: "bright", voice: "coral", source: "profile_fallback" });
+    ).toEqual({ profile: "balanced", voice: "verse", source: "profile_fallback" });
   });
 
   it("uses a presenter's persisted OpenAI phone voice for the browser preview too", () => {
@@ -121,7 +119,6 @@ describe("OpenAI Studio voice selection", () => {
       voiceProvider: "presenter",
       voiceId: "presenter-avatar-voice",
       phoneVoiceId: " Cedar ",
-      role: "receptionist",
       businessVariables: { wirelineLiveVoiceProfile: "warm" },
     });
     const phone = resolveOpenAIAgentVoiceSelection({
@@ -141,7 +138,6 @@ describe("OpenAI Studio voice selection", () => {
       voiceProvider: "11labs",
       voiceId: "retired-studio-voice",
       phoneVoiceId: "VERSE",
-      role: "support",
       businessVariables: null,
     };
 

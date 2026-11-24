@@ -9,7 +9,7 @@
 
 .marketing-surface .marketing-hero__title,
 .marketing-surface .wireline-home-hero .marketing-hero__title {
-  max-width: min(100%, 19ch);
+  max-width: min(100%, 28ch);
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.015em;
@@ -24,9 +24,8 @@
   text-transform: none;
 }
 
-/* `.marketing-hero__description` is deliberately absent from this list. Heroes
- * stopped rendering a subhead, and the six rules across three stylesheets that
- * still styled that node were dressing an element the DOM no longer contains. */
+/* The hero subhead is body copy, not display copy: it takes the body family
+ * and natural case like every other supporting line on the surface. */
 .marketing-surface :is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy) {
   font-family: var(--wireline-font-family-body);
   text-transform: none;
@@ -223,7 +222,7 @@
 @media (max-width: 639px) {
   .marketing-surface .wireline-home-hero .marketing-hero__title {
     width: 100%;
-    max-width: 12ch;
+    max-width: 18ch;
     font-size: clamp(2.35rem, 10.8vw, 3.45rem) !important;
     line-height: 1.01;
     letter-spacing: var(--wireline-typography-display-letterSpacing);

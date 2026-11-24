@@ -148,7 +148,6 @@ const TOOLS = [
 
 export type BotContext = {
   name: string;
-  role: string;
   facts: string[];
   memories?: string[];
   rules: string[];
@@ -209,7 +208,7 @@ export function buildSystemPrompt(bot: BotContext): string {
   const facts = bot.facts.slice(0, 20).map((fact) => `- ${clip(fact, 300)}`);
   const rules = bot.rules.slice(0, 20).map((rule) => `- ${clip(rule, 300)}`);
   return [
-    `You are ${clip(bot.name, 80)}, a ${clip(bot.role || "business", 80)} Bot working for a small business on a secure cloud browser. Your owner gives you one task at a time.`,
+    `You are ${clip(bot.name, 80)}, a Bot working for a small business on a secure cloud browser. Your owner gives you one task at a time.`,
     "",
     "How to work",
     "- Before your first action, say one short sentence describing what you are about to do.",

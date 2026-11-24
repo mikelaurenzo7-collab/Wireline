@@ -44,7 +44,6 @@ describe("BotBound workspace information architecture", () => {
       "/studio",
       "/studio/handoff",
       "/computer",
-      "/templates",
       "/knowledge",
       "/inbox",
       "/approvals",
@@ -71,7 +70,6 @@ describe("BotBound workspace information architecture", () => {
         section,
       ).toEqual([section]);
     }
-    expect(desktopNavParentHref("/templates")).toBe("/studio");
     expect(desktopNavParentHref("/computer")).toBe("/studio");
     expect(isNavActive("/computer", "/computer")).toBe(true);
     expect(isNavActive("/computer", "/studio")).toBe(true);
@@ -92,7 +90,6 @@ describe("BotBound workspace information architecture", () => {
     }
     expect(isMobileMoreActive("/knowledge")).toBe(false);
     expect(isMobilePrimaryActive("/knowledge", "/knowledge")).toBe(true);
-    expect(isMobilePrimaryActive("/templates", "/studio")).toBe(true);
     expect(isMobilePrimaryActive("/computer", "/studio")).toBe(true);
     expect(isMobileMoreActive("/computer")).toBe(false);
     expect(isMobileMoreActive("/approvals")).toBe(false);

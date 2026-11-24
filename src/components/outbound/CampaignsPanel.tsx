@@ -14,7 +14,6 @@ import {
   parsePlaybookFromGoal,
   type SalesPlaybookId,
 } from "../../lib/sales-playbooks";
-import { LeadHuntReview } from "./LeadHuntReview";
 import { CAMPAIGN_SALES_BADGE } from "../../lib/outbound-compliance-copy";
 
 type Campaign = {
@@ -255,8 +254,6 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
           {error}
         </div>
       )}
-
-      <LeadHuntReview campaigns={campaigns} agents={agents} onAssigned={() => load(false)} />
 
       {showCreate && (
         <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">

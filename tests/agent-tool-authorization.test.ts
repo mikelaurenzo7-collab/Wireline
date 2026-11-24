@@ -13,11 +13,7 @@ import {
   filterToolsByTenantConnections,
   UNSCOPED_PLATFORM_LIVE_TOOL_NAMES,
 } from "../src/lib/tenant-integration-connections";
-import {
-  AGENT_TOOL_CATALOG,
-  AGENT_TOOL_NAME_VALUES,
-  ROLE_TOOL_SETS,
-} from "../src/lib/agent-capabilities";
+import { AGENT_TOOL_CATALOG, AGENT_TOOL_NAME_VALUES } from "../src/lib/agent-capabilities";
 import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
 import {
   CALLER_LINKED_LIVE_WRITE_TOOL_NAMES,
@@ -25,14 +21,8 @@ import {
   UNVERIFIED_LIVE_TOOL_NAMES,
 } from "../src/lib/unverified-live-tools";
 
-const privateLiveReads = [
-  "search_leads",
-  "crm_search_contacts",
-  "view_recent_interactions",
-  "square_lookup_order",
-  "square_lookup_customer",
-] as const;
-const callerLinkedLiveWrites = ["update_lead_status", "crm_log_call", "schedule_callback"] as const;
+const privateLiveReads = ["search_leads", "view_recent_interactions"] as const;
+const callerLinkedLiveWrites = ["update_lead_status", "schedule_callback"] as const;
 
 /*
  * The tool name union, the UI/create-path catalog, and the per-role defaults
@@ -57,22 +47,11 @@ describe("agent tool lists stay in sync", () => {
     expect(AGENT_TOOL_CATALOG.length).toBe(catalog.size);
   });
 
-  it("grants knowledge retrieval to every role by default", () => {
-    const withoutKnowledge = Object.entries(ROLE_TOOL_SETS)
-      .filter(([, tools]) => !tools.includes("search_knowledge_base"))
-      .map(([role]) => role);
-
-    expect(withoutKnowledge).toEqual([]);
-  });
-
   it("carries knowledge retrieval through the create path", () => {
     for (const isBusinessAgent of [true, false]) {
-      for (const role of Object.keys(ROLE_TOOL_SETS)) {
-        expect(
-          resolveCreateEnabledTools(role, isBusinessAgent),
-          `${role}/${isBusinessAgent}`,
-        ).toContain("search_knowledge_base");
-      }
+      expect(resolveCreateEnabledTools(isBusinessAgent), String(isBusinessAgent)).toContain(
+        "search_knowledge_base",
+      );
     }
   });
 });
@@ -108,7 +87,7 @@ describe("agent tool execution authorization", () => {
       [...callerLinkedLiveWrites].sort(),
     );
     expect([...UNVERIFIED_LIVE_TOOL_NAMES].sort()).toEqual(
-      [...privateLiveReads, ...callerLinkedLiveWrites, "square_create_payment_link"].sort(),
+      [...privateLiveReads, ...callerLinkedLiveWrites].sort(),
     );
     for (const name of callerLinkedLiveWrites) {
       expect(CANONICAL_AGENT_TOOL_NAMES).toContain(name);
@@ -120,20 +99,6 @@ describe("agent tool execution authorization", () => {
     );
     const legacyActive = resolveAuthorizedAgentTools(null, { channels: ["voice"] }, allConnected);
     for (const name of callerLinkedLiveWrites) expect(legacyActive).not.toContain(name);
-  });
-
-  it("keeps Square quick-pay canonical but denies its arbitrary live amount and title", () => {
-    const allConnected = { ...NO_TENANT_INTEGRATIONS, square: true };
-    const selected = sanitizePersistedAgentToolSelection(["square_create_payment_link"]);
-
-    expect(CANONICAL_AGENT_TOOL_NAMES).toContain("square_create_payment_link");
-    expect(selected).toContain("square_create_payment_link");
-    expect(filterToolsByTenantConnections(["square_create_payment_link"], allConnected)).toEqual(
-      [],
-    );
-    expect(resolveAuthorizedAgentTools(selected, { channels: ["voice"] }, allConnected)).toEqual(
-      [],
-    );
   });
 
   it("preserves known selections while dropping stale legacy values", () => {
@@ -166,14 +131,10 @@ describe("agent tool execution authorization", () => {
         "lookup_phone_number",
         "book_appointment",
         "send_slack_notification",
-        "shopify_cancel_order",
         "log_to_google_sheets",
-        "crm_create_contact",
-        "crm_update_deal_stage",
         "list_x_ad_campaigns",
         "get_x_ad_campaign_stats",
         "send_contract",
-        "meta_submit_lead",
       ],
       { twilioMessaging: false, twilioLookup: false, channels: ["email"] },
       NO_TENANT_INTEGRATIONS,
@@ -182,19 +143,18 @@ describe("agent tool execution authorization", () => {
     expect(active).toEqual(["send_email"]);
   });
 
-  it("allows tenant-bound Google Sheets and CRM writes only with the required connections", () => {
+  it("allows tenant-bound Google Sheets writes only with the required connection", () => {
     const connected = {
       ...NO_TENANT_INTEGRATIONS,
       google_sheets: true,
-      hubspot: true,
     };
     expect(
       resolveAuthorizedAgentTools(
-        ["log_to_google_sheets", "crm_create_contact", "crm_update_deal_stage"],
+        ["log_to_google_sheets"],
         { twilioMessaging: false, twilioLookup: false },
         connected,
       ),
-    ).toEqual(["log_to_google_sheets", "crm_create_contact", "crm_update_deal_stage"]);
+    ).toEqual(["log_to_google_sheets"]);
   });
 
   it("allows selected calendar tools with native booking and no external account or email channel", () => {
@@ -241,21 +201,16 @@ describe("agent tool execution authorization", () => {
       Object.keys(NO_TENANT_INTEGRATIONS).map((key) => [key, true]),
     ) as typeof NO_TENANT_INTEGRATIONS;
     const filtered = filterToolsByTenantConnections(
-      ["list_x_ad_campaigns", "get_x_ad_campaign_stats", "send_contract", "meta_submit_lead"],
+      ["list_x_ad_campaigns", "get_x_ad_campaign_stats", "send_contract"],
       allConnected,
-      { apollo: true, docusign: true, gemini: true, perplexity: true, liveResearch: true },
+      { docusign: true, gemini: true, perplexity: true, liveResearch: true },
     );
     expect(filtered).toEqual([]);
   });
 
   it("keeps the platform-owned deny set explicit and reviewable", () => {
     expect([...UNSCOPED_PLATFORM_LIVE_TOOL_NAMES].sort()).toEqual(
-      [
-        "get_x_ad_campaign_stats",
-        "list_x_ad_campaigns",
-        "meta_submit_lead",
-        "send_contract",
-      ].sort(),
+      ["get_x_ad_campaign_stats", "list_x_ad_campaigns", "send_contract"].sort(),
     );
   });
 

@@ -24,7 +24,6 @@ describe("authenticated Bot navigation contract", () => {
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
     expect(navigation).toMatch(/href: "\/insights", label: "Insights"/);
     expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
-    expect(navigation).toContain('route: "/templates", parentHref: "/studio"');
     expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/inbox"]);
     expect(desktopNavParentHref("/knowledge")).toBeNull();
     expect(desktopNavParentHref("/computer")).toBe("/studio");

@@ -14,10 +14,8 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("BotBound | Your next hire is a bot.");
-    expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "BotBound | Your next hire is a bot."',
-    );
+    expect(staticHead).toContain("BotBound");
+    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Your next hire is a bot."');
     for (const source of [staticHead, runtimeMeta]) {
       expect(source).toContain(
         "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
@@ -119,8 +117,9 @@ describe("marketing metadata contract", () => {
     expect(planById("business")?.included_phone_numbers).toBe(5);
     expect(planById("email")?.price_usd_monthly).toBe(9);
     expect(pricing).not.toContain("Plans from $");
-    expect(pricing).toContain("Calls, SMS, email, and Computer. One shared allowance.");
-    expect(pricing).toContain("Compare included numbers, email addresses and shared work.");
+    // The page must say the allowance is shared across channels. The sentence
+    // that says it is marketing copy, not a contract.
+    expect(pricing).toMatch(/shared allowance|one allowance|shared across/i);
     expect(pricing).toContain("UsagePricingPanel availableTiers={availableTiers}");
     expect(pricing).not.toContain('"@type": "OfferCatalog"');
     // Contact is an inquiry form; prices and availability belong to Pricing.

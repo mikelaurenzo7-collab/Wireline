@@ -1,5 +1,55 @@
 # BotBound connections and permissioned automation
 
+> November 23, 2026 direction: see [AI-native roadmap](AI_NATIVE_ROADMAP.md). The October 27 audit is preserved below as historical context, not current implementation policy.
+
+## Current direction
+
+BotBound owns the Bot identity, People record, communication channels, Computer runtime, approvals and billing. All external tools enter through a reviewed Connector Gateway. Native adapters and vetted remote MCP servers are permitted; arbitrary MCP endpoints or unrestricted tool surfaces are not. Google Workspace and Microsoft 365 adapters come first; Slack may return as a new write-first connector. Legacy provider paths are retired in tested stages after verifying account ownership, grants and dependencies. Preserve history, revocation and deletion coverage; destructive schema changes require reviewed promotion after deployed code no longer depends on them.
+
+Every invocation uses server-side tenant and Bot authorization, Full / Auto / Ask, environment gates, consent, idempotency, audit and metering. Tokens stay encrypted and inaccessible to models. External results are untrusted data. Dedicated connector OAuth clients and least-privilege scopes are required; restricted Google access remains gated on applicable verification. Carrier and production release restrictions are unchanged. No roadmap item is a claim of availability.
+
+## Shipped as of November 24, 2026
+
+This section records what the code now does, so the proposals below read as
+intent rather than as a description of main.
+
+**Removed outright, not deprecated.** Salesforce, HubSpot, Apollo, Meta, Shopify,
+and Square are deleted: services, OAuth routes, the Meta webhook, the Salesforce
+integration page, 21 agent tool names, the `crm` and `ecommerce` tool groups,
+`SHOPIFY_TOOL_NAMES` / `SQUARE_TOOL_NAMES`, the tenant-connection gates keyed off
+them, the growth and lead-hunt review panels, and their `.env.example`,
+`render.yaml`, env-validator, and runtime-integration-registry entries. The
+lead-hunter module and proactive lead enrichment went with them, along with the
+`autonomous_prospecting` and `proactive_lead_enrichment` job types. No account
+used any of it, so there is no migration path to preserve and no saved grant to
+disconnect.
+
+Public research survived: `gemini_ground` lives in `src/lib/bot-tools/research.ts`
+and still resolves for Bots that already store the tool name.
+
+**What `src/routes/oauth/` still holds.** Google, Google Sheets, Microsoft,
+Microsoft Graph, Slack, X, Yahoo, and Zoom, plus `index.ts` and `status.ts`.
+
+**What the connections card still offers.** Slack, X, Zoom, Microsoft Teams,
+Microsoft Excel, and Google Sheets.
+
+**Beta ledger disposition.** Meta Lead Ads is gone, so its beta flag is resolved
+by deletion rather than by validation. Zoom, Microsoft Teams, Excel, and Google
+Sheets still carry beta flags in `src/components/CrmConnectionCard.tsx`.
+
+**Role templates are gone.** One Bot holds the whole toolbox it is allowed to
+hold, so there is no per-role connector subset left for a connector to key off.
+A connector grant is therefore workspace-level by construction, which is the
+shape the Connector Gateway below assumes.
+
+**Not done.** The Connector Gateway itself, the workspace connector catalog and
+policy, and the owner screen for connecting servers. Nothing below describing the
+gateway has been built.
+
+## Historical October 27 audit
+
+# BotBound connections and permissioned automation
+
 > **October 27, 2026 direction:** The launch offer starts with incoming calls, requested email, and supervised Computer work. The founder chose to show SMS on the homepage phone card. Keep campaign calling outside launch promotion; capability descriptions and older proposed directions below do not establish provider approval or authorize activation. Product identity should stay compact and useful during live work; the use of pets remains undecided.
 
 

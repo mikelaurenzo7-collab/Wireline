@@ -145,13 +145,13 @@ describe("reviewable Studio Build plans", () => {
         { tool: "send_email", enable: true },
       ],
       integration_jobs: [
-        { tool: "crm_search_contacts", label: "Search private CRM contacts", summary: "Look up" },
-        { tool: "square_send_invoice", label: "Send invoice", summary: "Collect payment" },
-        { tool: "crm_create_contact", label: "Draft contact", summary: "Save a new contact" },
+        { tool: "search_leads", label: "Search private leads", summary: "Look up" },
+        { tool: "send_contract", label: "Send contract", summary: "Collect a signature" },
+        { tool: "log_to_google_sheets", label: "Log the call", summary: "Append a row" },
       ],
     });
     expect(plan.toolToggles.map((toggle) => toggle.tool)).toEqual(["send_email"]);
-    expect(plan.integrationJobs.map((job) => job.tool)).toEqual(["crm_create_contact"]);
+    expect(plan.integrationJobs.map((job) => job.tool)).toEqual(["log_to_google_sheets"]);
   });
 
   it("canonicalizes boolean proposals to match the confirmed save receipt", () => {

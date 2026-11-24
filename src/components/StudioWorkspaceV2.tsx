@@ -535,7 +535,6 @@ function StudioWorkspaceContent() {
       key={active.id}
       agentId={active.id}
       agentName={active.name}
-      agentRole={active.role}
       phoneNumber={active.phone_number}
       onEdit={() => openInspector("setup")}
       onRehearse={startRehearsal}

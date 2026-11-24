@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "../src/lib/api-error";
-import {
-  AGENT_TOOL_CATALOG,
-  AGENT_TOOL_NAME_VALUES,
-  ROLE_TOOL_SETS,
-} from "../src/lib/agent-capabilities";
+import { AGENT_TOOL_CATALOG, AGENT_TOOL_NAME_VALUES } from "../src/lib/agent-capabilities";
+import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
 import { AGENT_TOOL_DEFS } from "../src/lib/agent-runtime-helpers";
 import type { ToolCallContext } from "../src/lib/agent-tool-types";
 import { shouldProxyComputerToBackend } from "../src/lib/cloud-computer/worker-client";
@@ -61,7 +58,7 @@ describe("voice and cloud computer runtime intertwining", () => {
     vi.clearAllMocks();
   });
 
-  it("registers all 4 Cloud Computer tools across AGENT_TOOL_NAME_VALUES, AGENT_TOOL_CATALOG, ROLE_TOOL_SETS, AGENT_TOOL_DEFS, and OPENAI_REALTIME_WIRELINE_TOOLS", () => {
+  it("registers all 4 Cloud Computer tools across AGENT_TOOL_NAME_VALUES, AGENT_TOOL_CATALOG, AGENT_TOOL_DEFS, the create path, and OPENAI_REALTIME_WIRELINE_TOOLS", () => {
     const computerTools = [
       "start_computer_task",
       "check_computer_task",
@@ -74,8 +71,11 @@ describe("voice and cloud computer runtime intertwining", () => {
       expect(AGENT_TOOL_CATALOG.some((entry) => entry.name === toolName)).toBe(true);
       expect(AGENT_TOOL_DEFS[toolName]).toBeDefined();
       expect(OPENAI_REALTIME_WIRELINE_TOOLS.some((entry) => entry.name === toolName)).toBe(true);
-      for (const [role, tools] of Object.entries(ROLE_TOOL_SETS)) {
-        expect(tools, `role ${role} missing ${toolName}`).toContain(toolName);
+      for (const isBusinessAgent of [true, false]) {
+        expect(
+          resolveCreateEnabledTools(isBusinessAgent),
+          `${toolName} missing for isBusinessAgent=${isBusinessAgent}`,
+        ).toContain(toolName);
       }
     }
 
@@ -252,10 +252,7 @@ describe("voice and cloud computer runtime intertwining", () => {
       h.replyToComputerTask.mockResolvedValue(oldTask);
       h.stopComputerTask.mockResolvedValue(oldTask);
       const currentCall = buildContext();
-      for (const args of [
-        { message: "Continue" },
-        { task_id: oldTask.id, message: "Continue" },
-      ]) {
+      for (const args of [{ message: "Continue" }, { task_id: oldTask.id, message: "Continue" }]) {
         const outcome = await dispatchAgentToolCall(tool, args, currentCall);
         expect(outcome.result).toContain("started on this call");
         expect(outcome.result).not.toContain(oldTask.summary);

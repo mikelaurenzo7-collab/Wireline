@@ -52,11 +52,6 @@ interface CarrierSettings {
   twilio_sms_from_number: string;
   twilio_whatsapp_from_number: string;
   twilio_manager_alert_number: string;
-  prospecting_enabled: boolean;
-  target_titles: string[];
-  target_industries: string[];
-  target_states: string[];
-  target_employee_ranges: string[];
   brand_name: string;
   brand_logo_url: string;
   primary_color: string;

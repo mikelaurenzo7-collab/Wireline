@@ -7,7 +7,7 @@ import BotMark from "../BotMark";
 import { Button } from "../atoms";
 import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
 import { agentLineStatus } from "../../lib/agent-readiness";
-import { formatAgentRoleLabel } from "../../lib/product-copy";
+import { DEFAULT_BOT_ARCHETYPE } from "../../lib/agent-constants";
 import { formatPhone } from "../../lib/safe-number";
 
 type Props = {
@@ -37,9 +37,7 @@ export default function StudioBotDetailsPanel({ agent, phoneLookupDegraded, onEm
             <h2 className="wl-preserve-case truncate text-lg font-semibold text-foreground">
               {agent.name}
             </h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {formatAgentRoleLabel(agent.role)}
-            </p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{DEFAULT_BOT_ARCHETYPE}</p>
           </div>
         </header>
         <div className="wl-bot-details-list">

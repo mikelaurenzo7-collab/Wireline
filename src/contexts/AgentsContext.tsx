@@ -15,7 +15,6 @@ export interface WorkspaceAgentSummary {
   id: string;
   name: string;
   mark_key?: BotMarkKey | null;
-  role: string | null;
   channel?: "voice" | "email" | "omnichannel";
   is_business_agent?: boolean;
   phone_number?: string | null;
@@ -54,7 +53,6 @@ function isAgentLike(value: unknown): value is {
   name?: string | null;
   markKey?: string | null;
   mark_key?: string | null;
-  role?: string | null;
   channel?: string | null;
   isBusinessAgent?: boolean | null;
   phone_number?: string | null;
@@ -103,7 +101,6 @@ function parseAgentsPayload(
     id: agent.id,
     name: agent.name || "Untitled agent",
     mark_key: normalizeMarkKey(agent.markKey ?? agent.mark_key),
-    role: agent.role ?? null,
     channel: normalizeChannel(agent.channel),
     is_business_agent:
       typeof agent.isBusinessAgent === "boolean" ? agent.isBusinessAgent : undefined,

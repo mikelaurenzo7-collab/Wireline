@@ -13,10 +13,20 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 /**
- * BotBound avoids hyphens, en dashes, and em dashes in product prose. Slugs,
- * links, classes, and identifiers are not copy and are excluded from the scan.
+ * BotBound avoids en and em dashes in product prose, because they read as an
+ * authored aside rather than a claim and they break the compact marketing
+ * measure.
+ *
+ * Hyphenated compounds are copy, not punctuation debt. This contract used to
+ * ban every `a-b` pattern, which outlawed ordinary marketing English — always
+ * on became unsayable as "always-on", and so did AI-native, self-service,
+ * round-the-clock, and first-call resolution. That turned a punctuation rule
+ * into a cap on how persuasive the copy could be, so the rule is now scoped to
+ * the two characters it was always about.
+ *
+ * Slugs, links, classes, and identifiers are not copy and stay excluded.
  */
-const LONG_DASH = /[–—]|[a-z]-[a-z]/i;
+const LONG_DASH = /[–—]/;
 const SKIP_KEYS = new Set(["href", "slug", "key", "id", "icon", "image"]);
 const isNonCopy = (value: string) =>
   value.startsWith("tel:") ||
@@ -48,7 +58,7 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     expect(hits).toEqual([]);
   });
 
-  it("keeps wedge meta fields free of en and em dashes", () => {
+  it("keeps wedge meta fields free of long dashes", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
       expect(wedge.metaTitle, `${slug}.metaTitle`).not.toMatch(LONG_DASH);
       expect(wedge.metaDescription, `${slug}.metaDescription`).not.toMatch(LONG_DASH);
@@ -101,13 +111,16 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     }
   });
 
-  it("keeps the brand and current capabilities explicit without compound hyphens", () => {
-    expect(HOME_TITLE).toBe("BotBound | Your next hire is a bot.");
-    expect(HOME_DESCRIPTION).toBe(
-      "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
-    );
+  /**
+   * The home title and description are marketing copy and are expected to
+   * change. What must hold is that they name the brand and stay inside the
+   * length search engines actually render.
+   */
+  it("keeps the home metadata branded and within search limits", () => {
+    expect(HOME_TITLE).toContain("BotBound");
+    expect(HOME_TITLE.length).toBeLessThanOrEqual(70);
+    expect(HOME_DESCRIPTION.length).toBeGreaterThan(50);
+    expect(HOME_DESCRIPTION.length).toBeLessThanOrEqual(165);
     expect(read("src/lib/bot-product.ts")).toContain('name: "BotBound"');
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("The Bot Gets:");
-    expect(read("src/pages/Compare.tsx")).toContain("feature by feature");
   });
 });

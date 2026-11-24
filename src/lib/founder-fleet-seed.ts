@@ -9,7 +9,7 @@ import * as schema from "../db/schema";
 import { WIRELINE_PERSONAS } from "./wireline-agent-personas";
 import type { WirelinePersonaId } from "./wireline-agent-escalation";
 import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "./agent-capabilities";
-import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
+import { DEFAULT_BOT_PERSONALITY } from "./agent-constants";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
 import { BRAND_SYSTEM } from "./product-copy";
@@ -299,13 +299,9 @@ function personaTeam(personaId: WirelinePersonaId): FounderFleetTeam {
 }
 
 export function personalityForTemplate(
-  template: Pick<AssistantAgentTemplate, "role" | "systemPrompt">,
+  template: Pick<AssistantAgentTemplate, "systemPrompt">,
 ): string {
-  const key = template.role in ROLE_PERSONALITY_TEMPLATES ? template.role : "customer_service";
-  const roleTemplate =
-    ROLE_PERSONALITY_TEMPLATES[key as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
-    ROLE_PERSONALITY_TEMPLATES.customer_service;
-  const basePrompt = template.systemPrompt?.trim() || roleTemplate;
+  const basePrompt = template.systemPrompt?.trim() || DEFAULT_BOT_PERSONALITY;
   return basePrompt + CHAT_COLLABORATOR_OVERLAY;
 }
 

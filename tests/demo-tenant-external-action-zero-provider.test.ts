@@ -22,29 +22,6 @@ afterEach(() => {
 });
 
 describe("demo tenant external actions stop before providers", () => {
-  it("does not hydrate Apollo credentials or call Apollo for tenant search/enrichment", async () => {
-    const fetchSpy = vi.fn();
-    const fetchWithTimeout = vi.fn();
-    const select = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
-    vi.doMock("../src/lib/account-environment-policy", () => ({
-      liveExternalActionPolicyForUser: vi.fn().mockResolvedValue(blockedPolicy),
-    }));
-    vi.doMock("../src/lib/server-context", () => ({
-      drizzle: { select },
-      log: quietLog,
-      fetchWithTimeout,
-    }));
-
-    const { enrichLead, searchLeads } = await import("../src/lib/apollo-service");
-    await expect(searchLeads({ titles: ["Founder"] }, "demo-user")).resolves.toEqual([]);
-    await expect(enrichLead("+14155552671", "demo-user")).resolves.toBeNull();
-
-    expect(select).not.toHaveBeenCalled();
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(fetchWithTimeout).not.toHaveBeenCalled();
-  });
-
   it("does not call tenant signup/payment email or communication supervision", async () => {
     const signupSend = vi.fn();
     const paymentSend = vi.fn();

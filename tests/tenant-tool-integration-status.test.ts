@@ -15,16 +15,6 @@ describe("tenant tool integration status", () => {
     expect(resolveTenantToolIntegrationStatus("docusign", base)).toBe("missing");
   });
 
-  it("requires a live CRM connection for CRM tools", () => {
-    expect(resolveTenantToolIntegrationStatus("crm", base)).toBe("missing");
-    expect(
-      resolveTenantToolIntegrationStatus("crm", {
-        ...base,
-        oauthStatus: { hubspot: { connected: true } },
-      }),
-    ).toBe("configured");
-  });
-
   it("requires calendar-ready workspace mail for calendar tools", () => {
     expect(resolveTenantToolIntegrationStatus("calendar", base)).toBe("missing");
     expect(

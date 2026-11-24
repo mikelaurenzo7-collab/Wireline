@@ -98,8 +98,6 @@ const h = vi.hoisted(() => {
     brainAvailable: vi.fn(),
     lesson: vi.fn(),
     qaScore: vi.fn(),
-    apolloReady: vi.fn(),
-    searchLeads: vi.fn(),
     enqueue: vi.fn(),
     info: vi.fn(),
   };
@@ -147,10 +145,6 @@ vi.mock("../src/lib/ai-brains", () => ({
   isBrainAvailable: h.brainAvailable,
   synthesizeLesson: h.lesson,
   qaScore: h.qaScore,
-}));
-vi.mock("../src/lib/apollo-service", () => ({
-  apolloReadyForUser: h.apolloReady,
-  searchLeads: h.searchLeads,
 }));
 vi.mock("../src/lib/job-queue", () => ({
   enqueue: h.enqueue,
@@ -214,41 +208,7 @@ describe("job handler tenant ownership", () => {
       objection: 5,
       closing: 5,
     });
-    h.apolloReady.mockResolvedValue(true);
-    h.searchLeads.mockResolvedValue([
-      { first_name: "Test", last_name: "Lead", phone: "+13125550100", apollo_id: "lead-one" },
-    ]);
     h.enqueue.mockResolvedValue({ ok: true });
-  });
-
-  it.each([{ userId: owner }, { user_id: owner }])(
-    "runs Lead Hunt for a claimed or legacy row without relying on payload: %j",
-    async (row) => {
-      await handleJob(claimed("autonomous_prospecting", {}, row));
-      expect(h.apolloReady).toHaveBeenCalledWith(owner);
-      expect(h.searchLeads).toHaveBeenCalledWith(expect.any(Object), owner);
-      expect(h.inserts).toEqual([
-        expect.objectContaining({
-          values: expect.objectContaining({
-            userId: owner,
-            source: "apollo",
-            metadata: expect.objectContaining({ has_express_written_consent: false }),
-          }),
-        }),
-      ]);
-      expect(h.tables.jobs[0].result).toMatchObject({ leadsAdded: 1, reviewPending: 1 });
-    },
-  );
-
-  it.each([
-    claimed("autonomous_prospecting", { userId: other }),
-    claimed("autonomous_prospecting", { userId: owner }, {}),
-    claimed("autonomous_prospecting", {}, { userId: owner, user_id: other }),
-  ])("rejects unsafe Lead Hunt row/payload ownership before Apollo or storage", async (job) => {
-    await expect(handleJob(job)).rejects.toBeInstanceOf(JobOwnerError);
-    expect(h.apolloReady).not.toHaveBeenCalled();
-    expect(h.inserts).toEqual([]);
-    expect(h.reads).toEqual([]);
   });
 
   it.each([{ userId: owner }, { user_id: owner }])(

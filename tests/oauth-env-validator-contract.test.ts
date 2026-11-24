@@ -45,20 +45,6 @@ describe("OAuth environment validation", () => {
     });
   });
 
-  it("keeps Apollo's platform API key separate from its per-tenant OAuth pair", () => {
-    expect(ENV_REGISTRY.find((entry) => entry.name === "APOLLO_API_KEY")).toMatchObject({
-      group: "action_engine",
-      required: false,
-    });
-    expect(OAUTH_CREDENTIAL_PAIRS).toContainEqual(
-      expect.objectContaining({
-        provider: "Apollo",
-        identifierEnv: "APOLLO_CLIENT_ID",
-        secretEnv: "APOLLO_CLIENT_SECRET",
-      }),
-    );
-  });
-
   it("warns outside production when only half of an OAuth pair is configured", () => {
     clearOAuthPairs();
     process.env.VERCEL_ENV = "development";
@@ -89,7 +75,7 @@ describe("OAuth environment validation", () => {
     clearOAuthPairs();
     process.env.VERCEL_ENV = "production";
     process.env.NODE_ENV = "production";
-    process.env.APOLLO_CLIENT_SECRET = "client-secret";
+    process.env.YAHOO_CLIENT_SECRET = "client-secret";
 
     const result = validateEnv();
     expect(result.valid).toBe(false);
@@ -98,10 +84,10 @@ describe("OAuth environment validation", () => {
     );
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        var: "APOLLO_CLIENT_ID",
+        var: "YAHOO_CLIENT_ID",
         group: "oauth",
         message: expect.stringContaining(
-          "configure APOLLO_CLIENT_ID and APOLLO_CLIENT_SECRET together",
+          "configure YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET together",
         ),
       }),
     );

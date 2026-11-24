@@ -182,17 +182,11 @@ describe("auth OAuth browser binding contract", () => {
     // account. Every provider callback resolves the linked user exclusively
     // through the state-initiator/session equality check.
     const providers = [
-      "apollo",
       "google",
       "google-sheets",
-      "hubspot",
-      "meta",
       "microsoft",
       "microsoft-graph",
-      "salesforce",
-      "shopify",
       "slack",
-      "square",
       "x",
       "yahoo",
       "zoom",

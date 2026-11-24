@@ -1,11 +1,12 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, gte, ne } from "drizzle-orm";
+import { eq, and, gte, ne } from "drizzle-orm";
 import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
 import { getDncProvider } from "./dnc-provider";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
+import { isUsCallingState } from "./us-calling-jurisdiction";
 import { LEAD_STATUS } from "./outbound-status";
 import { jsonSafeId } from "./server-utils";
 import {
@@ -22,26 +23,13 @@ import type { OutboundPurpose } from "./outbound-call-purpose";
 
 const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SAN_RE = /^[A-Za-z0-9-]{6,20}$/;
-const SERVICE_PURPOSES: readonly OutboundPurpose[] = [
+const DIRECT_NON_SALES_PURPOSES: readonly OutboundPurpose[] = [
+  "personal",
   "appointment_service",
   "existing_customer",
   "returning_contact",
   "callback",
 ];
-const CARRIER_TERMINAL_STATES = ["completed", "busy", "no-answer", "failed", "canceled"];
-
-function confirmedCarrierOutcome(lead: {
-  callId: string | null;
-  metadata: unknown;
-}): string | null {
-  if (!lead.callId || !lead.metadata || typeof lead.metadata !== "object") return null;
-  const voice = (lead.metadata as { native_voice?: unknown }).native_voice;
-  if (!voice || typeof voice !== "object") return null;
-  const terminal = voice as { carrier_status?: unknown; twilio_call_sid?: unknown };
-  return terminal.twilio_call_sid === lead.callId && typeof terminal.carrier_status === "string"
-    ? terminal.carrier_status
-    : null;
-}
 
 /** Merge gate diagnostics onto the current lead document without replacing it. */
 export function mergeLeadMetadata(
@@ -133,9 +121,10 @@ function registryProjectId(san: unknown, registration: unknown): string | undefi
 /**
  * Shared compliance gate for campaign dials, intake auto-dial, callbacks, and
  * manual Studio outbound. Federal Do Not Call screening runs only for sales.
- * Every purpose still enforces quiet hours, the workspace opt-out list, and
- * the repeat-call window. Owner-initiated service calls can retry a confirmed
- * busy or unanswered number. A requested callback may follow a settled call.
+ * The workspace opt-out list always applies. Only explicitly authorized,
+ * owner-reviewed non-sales service calls can bypass the default quiet hours.
+ * Owner-reviewed, non-sales direct calls may repeat when the owner chooses;
+ * automated work keeps the 24-hour repeat-call window.
  *
  * Bulk sales fails closed when no provider is configured. One-off sales does
  * not: it requires the workspace attestation, and it screens only when a
@@ -172,12 +161,14 @@ export async function evaluateOutboundDialGate(opts: {
   isRequestedCallback?: boolean;
   /**
    * In-session follow-up, such as a text during a live call or within an hour
-   * of an inbound text. Quiet hours and the one-call window are skipped.
+   * of an inbound text. Quiet hours and the automated repeat window are skipped.
    * Federal DNC still runs only when the effective purpose is sales.
    */
   isLiveSessionFollowUp?: boolean;
   /** Purpose confirmed by the owner in the atomic direct voice dial flow. */
   manualCallPurpose?: OutboundPurpose;
+  /** Fresh per-call owner attestation; only the atomic manual route may supply it. */
+  afterHoursServiceConfirmed?: boolean;
   audit?: OutboundAuditInput;
 }): Promise<OutboundDialGateResult> {
   const isLiveSessionFollowUp = opts.isLiveSessionFollowUp === true;
@@ -185,6 +176,24 @@ export async function evaluateOutboundDialGate(opts: {
   const isMarketingCall = isRequestedCallback ? false : opts.isMarketingCall !== false;
   const requiresFederalDncScreening =
     !isRequestedCallback && (isMarketingCall || opts.requireFederalDncScreening === true);
+  // Only the atomic owner-reviewed dial supplies this server-confirmed purpose.
+  // A client label alone cannot exempt campaigns, cadences or deferred jobs.
+  const directNonSales =
+    !requiresFederalDncScreening &&
+    opts.manualCallPurpose !== undefined &&
+    DIRECT_NON_SALES_PURPOSES.includes(opts.manualCallPurpose);
+  const afterHoursServiceAllowed =
+    directNonSales &&
+    opts.audit?.channel === "call" &&
+    opts.audit.attested === true &&
+    opts.audit.confirmations?.nonsales === true &&
+    opts.afterHoursServiceConfirmed === true &&
+    (opts.manualCallPurpose === "personal" ||
+      opts.manualCallPurpose === "appointment_service" ||
+      opts.manualCallPurpose === "existing_customer" ||
+      opts.manualCallPurpose === "returning_contact" ||
+      opts.manualCallPurpose === "callback");
+  let afterHoursOverride = false;
   // Legacy imports could persist a client-supplied consent boolean. Every
   // execution path must reject that claim, including cadences and deferred
   // intake/callback jobs that read records created before input sanitization.
@@ -229,6 +238,7 @@ export async function evaluateOutboundDialGate(opts: {
   ): Promise<OutboundDialGateResult> {
     const confirmations = {
       ...(auditBase.confirmations ?? {}),
+      ...(afterHoursOverride ? { afterHoursService: true, afterHoursPolicyVersion: "service-hours-v1" } : {}),
       ...(salesStamp
         ? {
             salesAttestation: {
@@ -284,7 +294,11 @@ export async function evaluateOutboundDialGate(opts: {
   if (!isLiveSessionFollowUp) {
     const callingHours = resolveCallingHoursForPhone(opts.phone);
     quietHoursTz = callingHours.timeZone ?? null;
-    if (!callingHours.allowed) {
+    const eligibleOverride =
+      afterHoursServiceAllowed && callingHours.inferred &&
+      typeof callingHours.state === "string" && isUsCallingState(callingHours.state);
+    if (!callingHours.allowed && eligibleOverride) afterHoursOverride = true;
+    if (!callingHours.allowed && !eligibleOverride) {
       const customerMessage = quietHoursBlockedMessage(callingHours);
       return finish(
         {
@@ -302,7 +316,7 @@ export async function evaluateOutboundDialGate(opts: {
     }
   }
 
-  if (opts.lastCalledAt && !isRequestedCallback) {
+  if (opts.lastCalledAt && !isRequestedCallback && !directNonSales) {
     const elapsed = Date.now() - opts.lastCalledAt.getTime();
     if (elapsed < DUPLICATE_WINDOW_MS) {
       const nextEligible = new Date(opts.lastCalledAt.getTime() + DUPLICATE_WINDOW_MS);
@@ -322,7 +336,7 @@ export async function evaluateOutboundDialGate(opts: {
     }
   }
 
-  if (!isRequestedCallback) {
+  if (!isRequestedCallback && !directNonSales) {
     const since = new Date(Date.now() - DUPLICATE_WINDOW_MS);
     const otherConditions = [
       eq(schema.outboundLeads.userId, opts.userId),
@@ -334,29 +348,15 @@ export async function evaluateOutboundDialGate(opts: {
       otherConditions.push(ne(schema.outboundLeads.id, BigInt(opts.leadId)));
     }
 
-    const manualService =
-      !requiresFederalDncScreening &&
-      opts.manualCallPurpose !== undefined &&
-      SERVICE_PURPOSES.includes(opts.manualCallPurpose);
-    const recentQuery = drizzle
+    const [otherRecent] = await drizzle
       .select({
         id: schema.outboundLeads.id,
-        callId: schema.outboundLeads.callId,
-        metadata: schema.outboundLeads.metadata,
       })
       .from(schema.outboundLeads)
-      .where(and(...otherConditions));
-    const [otherRecent, secondRecent] = manualService
-      ? await recentQuery.orderBy(desc(schema.outboundLeads.lastCalledAt)).limit(2)
-      : await recentQuery.limit(1);
-    const outcome = manualService && otherRecent ? confirmedCarrierOutcome(otherRecent) : null;
-    const callbackAllowed =
-      opts.manualCallPurpose === "callback" &&
-      outcome !== null &&
-      CARRIER_TERMINAL_STATES.includes(outcome);
-    const retryAllowed = !secondRecent && (outcome === "busy" || outcome === "no-answer");
+      .where(and(...otherConditions))
+      .limit(1);
 
-    if (otherRecent && !callbackAllowed && !retryAllowed) {
+    if (otherRecent) {
       return finish(
         {
           allowed: false,

@@ -27,6 +27,8 @@ export type SmsSenderRegistration =
       messagingServiceSid: string | null;
       /** The approved campaign describes texting a caller whose call was missed. */
       coversMissedCalls?: boolean;
+      /** The approved campaign describes replies to customer-initiated texts. */
+      coversInboundReplies?: boolean;
     }
   | {
       status: "unregistered";
@@ -71,11 +73,16 @@ type PooledService = {
   campaignStatuses: string[];
   /** A VERIFIED campaign in this Service describes missed-call follow-up texts. */
   coversMissedCalls?: boolean;
+  coversInboundReplies?: boolean;
 };
 
 /** Carriers vetted exactly what the campaign says; missed-call texts need it said. */
 export const MISSED_CALL_COVERAGE =
   /missed[- ]call|call (?:is|was) missed|missed (?:their|a|the) call/i;
+
+/** Customer-initiated messaging must appear in the registered consent flow. */
+export const INBOUND_REPLY_COVERAGE =
+  /(?:inbound|incoming|customer[- ]initiated)\s+(?:sms|text|messag)|(?:customer|recipient|user|caller)s?\s+(?:text|messag)e?s?\s+(?:us|the business|this number)/i;
 
 export type SmsRegistrationSnapshot = {
   readAtMs: number;
@@ -138,6 +145,13 @@ export async function readSmsRegistrationSnapshot(
           (campaign) =>
             String(campaign?.campaignStatus || "").toUpperCase() === "VERIFIED" &&
             MISSED_CALL_COVERAGE.test(
+              `${campaign?.description ?? ""} ${campaign?.messageFlow ?? ""}`,
+            ),
+        ),
+        coversInboundReplies: campaigns.some(
+          (campaign) =>
+            String(campaign?.campaignStatus || "").toUpperCase() === "VERIFIED" &&
+            INBOUND_REPLY_COVERAGE.test(
               `${campaign?.description ?? ""} ${campaign?.messageFlow ?? ""}`,
             ),
         ),
@@ -243,6 +257,7 @@ export function classifySmsSender(
       kind,
       messagingServiceSid: verified.serviceSid,
       coversMissedCalls: verified.coversMissedCalls === true,
+      coversInboundReplies: verified.coversInboundReplies === true,
     };
   }
   const statuses = pooled.flatMap((service) => service.campaignStatuses);

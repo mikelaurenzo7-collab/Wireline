@@ -14,15 +14,9 @@ describe("CRM connection availability", () => {
     const statusRoute = readFileSync(resolve(process.cwd(), "src/routes/oauth/status.ts"), "utf8");
 
     for (const [provider, resolver] of [
-      ["salesforce", "sfOAuthConfigured()"],
-      ["hubspot", "hsOAuthConfigured()"],
       ["slack", "slackOAuthConfigured()"],
       ["x", "xOAuthConfigured()"],
       ["zoom", "zoomOAuthConfigured()"],
-      ["apollo", "apolloPlatformConfigured()"],
-      ["meta", "metaOAuthConfigured()"],
-      ["shopify", "shopifyOAuthConfigured()"],
-      ["square", "squareOAuthConfigured()"],
       ["microsoft_teams", "microsoftGraphConfigured()"],
       ["microsoft_excel", "microsoftGraphConfigured()"],
       ["google_sheets", "googleSheetsConfigured()"],
