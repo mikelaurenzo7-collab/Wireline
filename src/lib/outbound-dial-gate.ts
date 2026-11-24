@@ -120,7 +120,8 @@ function registryProjectId(san: unknown, registration: unknown): string | undefi
 /**
  * Shared compliance gate for campaign dials, intake auto-dial, callbacks, and
  * manual Studio outbound. Federal Do Not Call screening runs only for sales.
- * Every purpose still enforces quiet hours and the workspace opt-out list.
+ * The workspace opt-out list always applies. Only explicitly authorized,
+ * owner-reviewed non-sales service calls can bypass the default quiet hours.
  * Owner-reviewed, non-sales direct calls may repeat when the owner chooses;
  * automated work keeps the 24-hour repeat-call window.
  *
@@ -165,6 +166,8 @@ export async function evaluateOutboundDialGate(opts: {
   isLiveSessionFollowUp?: boolean;
   /** Purpose confirmed by the owner in the atomic direct voice dial flow. */
   manualCallPurpose?: OutboundPurpose;
+  /** Fresh per-call owner attestation; only the atomic manual route may supply it. */
+  afterHoursServiceConfirmed?: boolean;
   audit?: OutboundAuditInput;
 }): Promise<OutboundDialGateResult> {
   const isLiveSessionFollowUp = opts.isLiveSessionFollowUp === true;
@@ -178,6 +181,17 @@ export async function evaluateOutboundDialGate(opts: {
     !requiresFederalDncScreening &&
     opts.manualCallPurpose !== undefined &&
     DIRECT_NON_SALES_PURPOSES.includes(opts.manualCallPurpose);
+  const afterHoursServiceAllowed =
+    directNonSales &&
+    opts.audit?.channel === "call" &&
+    opts.audit.attested === true &&
+    opts.audit.confirmations?.nonsales === true &&
+    opts.afterHoursServiceConfirmed === true &&
+    (opts.manualCallPurpose === "appointment_service" ||
+      opts.manualCallPurpose === "existing_customer" ||
+      opts.manualCallPurpose === "returning_contact" ||
+      opts.manualCallPurpose === "callback");
+  let afterHoursOverride = false;
   // Legacy imports could persist a client-supplied consent boolean. Every
   // execution path must reject that claim, including cadences and deferred
   // intake/callback jobs that read records created before input sanitization.
@@ -222,6 +236,7 @@ export async function evaluateOutboundDialGate(opts: {
   ): Promise<OutboundDialGateResult> {
     const confirmations = {
       ...(auditBase.confirmations ?? {}),
+      ...(afterHoursOverride ? { afterHoursService: true, afterHoursPolicyVersion: "service-hours-v1" } : {}),
       ...(salesStamp
         ? {
             salesAttestation: {
@@ -277,7 +292,8 @@ export async function evaluateOutboundDialGate(opts: {
   if (!isLiveSessionFollowUp) {
     const callingHours = resolveCallingHoursForPhone(opts.phone);
     quietHoursTz = callingHours.timeZone ?? null;
-    if (!callingHours.allowed) {
+    if (!callingHours.allowed && afterHoursServiceAllowed) afterHoursOverride = true;
+    if (!callingHours.allowed && !afterHoursServiceAllowed) {
       const customerMessage = quietHoursBlockedMessage(callingHours);
       return finish(
         {
