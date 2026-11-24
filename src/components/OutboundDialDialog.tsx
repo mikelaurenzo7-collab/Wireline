@@ -145,7 +145,7 @@ function DirectOutboundDialDialog({
     setAgentId(initialAgentId);
     setNumber(preparedCall?.phone || initialNumber);
     setContext(preparedCall?.instruction || initialContext);
-    setPurpose(null);
+    setPurpose(initialPurpose ?? null);
     setContactLookup(null);
     setPermissionChecked(false);
     setNonsalesChecked(false);
@@ -155,7 +155,7 @@ function DirectOutboundDialDialog({
     setUncertain(false);
     setPlacementError(null);
     requestRef.current = null;
-  }, [open, initialAgentId, initialNumber, initialContext, preparedCall]);
+  }, [open, initialAgentId, initialNumber, initialContext, initialPurpose, preparedCall]);
 
   useEffect(() => {
     if (!open || !phone) return;
@@ -682,7 +682,7 @@ function DirectOutboundDialDialog({
           ) : null}
         </div>
 
-        {!canPlace && blockedReason && !placing && !uncertain ? (
+        {!canPlace && blockedReason && !placing ? (
           <p id="outbound-dial-blocked-reason" role="status" className="shrink-0 border-t border-border px-6 py-2 text-sm text-foreground">{blockedReason}</p>
         ) : null}
         <DialogFooter className="shrink-0 gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4 sm:gap-0">
@@ -709,7 +709,7 @@ function DirectOutboundDialDialog({
             </Button>
           ) : (
             <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}
-              aria-describedby={!canPlace && blockedReason && !placing && !uncertain ? "outbound-dial-blocked-reason" : undefined}>
+              aria-describedby={!canPlace && blockedReason && !placing ? "outbound-dial-blocked-reason" : undefined}>
               {placing ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
