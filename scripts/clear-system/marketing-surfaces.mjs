@@ -1,7 +1,5 @@
 /** Public marketing access, layout safety and product-truth contract. Creative composition is evaluated in rendered QA. */
-export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failures }) {
-  const executable = (source) =>
-    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
