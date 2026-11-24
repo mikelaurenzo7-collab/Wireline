@@ -78,8 +78,6 @@ describe("provider spend launch kill switch", () => {
       "v2a_action_extraction",
       "execute_action",
       "adaptive_optimization",
-      "proactive_lead_enrichment",
-      "autonomous_prospecting",
       "knowledge_from_url",
       "paid_bot_identity_reconcile",
       "campaign_dial",

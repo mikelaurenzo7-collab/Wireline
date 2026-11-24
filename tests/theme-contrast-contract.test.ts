@@ -236,7 +236,6 @@ describe("BotBound appearance contrast", () => {
   it("does not reference undefined brand tiers in active product controls", () => {
     const components = [
       "src/components/insights/TopicsView.tsx",
-      "src/components/admin/GrowthPanel.tsx",
       "src/components/IntakeKeysManager.tsx",
       "src/components/recipes/forms/AgentReviewForm.tsx",
     ];
@@ -260,12 +259,10 @@ describe("BotBound appearance contrast", () => {
       "src/components/IntakeKeysManager.tsx",
       "src/components/WebhooksManager.tsx",
       "src/components/TrialGateModal.tsx",
-      "src/components/AgentTemplates.tsx",
+      "src/components/CreateAgentDialog.tsx",
       "src/components/admin/AuditActivityPanel.tsx",
       "src/components/admin/TeamPanel.tsx",
-      "src/components/admin/GrowthPanel.tsx",
       "src/components/recipes/forms/ObjectionDrillForm.tsx",
-      "src/components/recipes/forms/EnrichLeadForm.tsx",
       "src/components/recipes/forms/AgentReviewForm.tsx",
       "src/components/recipes/forms/CoachForm.tsx",
       "src/components/recipes/forms/ThreadSummaryForm.tsx",

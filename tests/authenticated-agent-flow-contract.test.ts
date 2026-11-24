@@ -25,7 +25,7 @@ describe("authenticated Bot flow", () => {
     expect(web).toContain("agentMutationRateLimit");
     expect(web.indexOf("owned(req.params.id, req.user.id)")).toBeLessThan(web.indexOf("drizzle"));
     expect(web).toContain('throw AppError.fromHttpStatus(404, "Agent not found");');
-    expect(permissions).toContain("resolveAgentTools(undefined, config.enabledTools)");
+    expect(permissions).toContain("resolveAgentTools(config.enabledTools)");
   });
 
   it("keeps the tool editor from discarding edits or overstating live capability", () => {
@@ -181,22 +181,20 @@ describe("authenticated Bot flow", () => {
     expect(createDialog).not.toContain("Choose one personal job");
   });
 
-  it("keeps the template gallery searchable and accessible", () => {
-    const templates = read("src/components/AgentTemplates.tsx");
-    expect(templates).toContain("searchableTemplateText");
-    expect(templates).toContain("template.firstMessage");
-    expect(templates).toContain('placeholder="Search templates"');
-    expect(templates).toContain('role="group"');
-    expect(templates).toContain('aria-label="Template category filter"');
-    expect(templates).toContain('aria-label="Template category"');
-    expect(templates).toContain("value={activeCategory}");
-    expect(templates).toContain("Clear Search");
-    expect(templates).not.toContain("hidden hidden");
+  it("keeps the retired template gallery from coming back as a create surface", () => {
+    // One Bot means nothing to browse: the create dialog offers a short row of
+    // starting briefs and the gallery, its search, and its category filter are
+    // gone rather than hidden.
+    const createDialog = read("src/components/CreateAgentDialog.tsx");
+    expect(existsSync("src/components/AgentTemplates.tsx")).toBe(false);
+    expect(existsSync("src/pages/TemplatesPage.tsx")).toBe(false);
+    expect(createDialog).not.toMatch(/searchableTemplateText|Search templates|activeCategory/);
+    expect(createDialog).toContain('aria-label="Starting briefs"');
+    expect(createDialog).toContain("What should it handle first?");
   });
 
   it("launches a resumable Train, Test, Launch wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
-    const templates = read("src/components/AgentTemplates.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
@@ -204,10 +202,11 @@ describe("authenticated Bot flow", () => {
 
     expect(createDialog).toContain("stashPostCreateWizard");
     expect(createDialog).toContain("onCreated?.(wizardPayload)");
-    expect(templates).toContain("stashPostCreateWizard");
-    expect(templates).toContain("isBotMarkKey(data.mark_key)");
-    expect(templates).toContain("setPostSignupFlowActive(true)");
-    expect(templates).toContain("&section=setup");
+    // The create dialog is now the only create surface, so it owns the whole
+    // handoff the template gallery used to duplicate.
+    expect(createDialog).toContain("isBotMarkKey(body.mark_key)");
+    expect(createDialog).toContain("setPostSignupFlowActive(true)");
+    expect(createDialog).toContain("&section=setup");
     expect(studioHome).toContain("onCreated={setPostCreateWizard}");
     expect(createFlow).toContain("POST_CREATE_WIZARD_KEY");
     expect(createFlow).toContain("readPostCreateWizard");
@@ -244,7 +243,6 @@ describe("authenticated Bot flow", () => {
 
   it("persists deploy-modal identity, voice, channel, greeting, and personality", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
-    const templates = read("src/components/AgentTemplates.tsx");
     const deployModal = read("src/components/DeployAgentModal.tsx");
 
     expect(routes).toContain("cleanText(req.body?.voice_id, 160)");
@@ -253,7 +251,6 @@ describe("authenticated Bot flow", () => {
     expect(routes).not.toContain('voiceProvider: "11labs"');
     expect(routes).toContain('req.body?.channel === "email"');
     expect(routes).toContain("resolveCreateFirstMessage(req.body?.firstMessage, name)");
-    expect(templates).toContain("template.firstMessage");
     expect(deployModal).toContain("firstMessage");
   });
 });

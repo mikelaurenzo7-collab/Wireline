@@ -200,9 +200,7 @@ describe("account-environment live external-action policy", () => {
     const core = source("src/lib/bot-tools/core.ts");
     const calendar = source("src/lib/bot-tools/calendar.ts");
     const workflow = source("src/lib/bot-tools/workflow.ts");
-    const enrichment = source("src/lib/bot-tools/enrichment.ts");
     const notifications = source("src/lib/bot-tools/notifications.ts");
-    const apollo = source("src/lib/apollo-service.ts");
     const slack = source("src/lib/slack-service.ts");
     const linkHandlers = source("src/lib/agent-link-tool-handlers.ts");
     const marketing = source("src/routes/marketing-runtime-routes.ts");
@@ -224,11 +222,7 @@ describe("account-environment live external-action policy", () => {
     expect(workflow).toContain("warmTransferExternalActionBlock(");
     expect(workflow).toContain("const postNotificationBlock = await");
     expect(workflow).toContain("const finalExternalActionBlock = await");
-    expect(enrichment).toContain("assertTenantEnrichmentAction");
     expect(notifications).toContain('"vapi_slack_notification"');
-    expect(apollo.indexOf("tenantApolloAllowed(userId")).toBeLessThan(
-      apollo.indexOf("const auth = await getApolloAuth(userId)"),
-    );
     expect(slack.indexOf("tenantSlackAllowed(userId")).toBeLessThan(
       slack.indexOf("const token = await getToken(userId)"),
     );

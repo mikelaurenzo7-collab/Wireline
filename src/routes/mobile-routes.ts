@@ -49,19 +49,9 @@ import {
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
-import {
-  agentRoleLaunchReviewMessage,
-  isAgentRoleLaunchReviewRequired,
-} from "../lib/template-launch-policy";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import type { AuthenticatedRequest } from "../types/auth";
-import {
-  AGENT_CREATE_DEFAULT_ROLE_ID,
-  canonicalizeAgentRoleForCreate,
-  listAgentRolesForApi,
-  resolveAgentRoleArchetype,
-  validateAgentRoleForCreate,
-} from "../lib/agent-role-definitions";
+import { DEFAULT_BOT_ARCHETYPE } from "../lib/agent-constants";
 import {
   defaultBotMarkKey,
   firstAvailableBotMarkKey,
@@ -192,20 +182,9 @@ router.get(
   },
 );
 
-// ── GET /api/mobile/agents/roles — shared role catalog ─────────────────────
-router.get(
-  "/api/mobile/agents/roles",
-  authenticateUser,
-  mobileRateLimiter,
-  (_req: AuthenticatedRequest, res: Response) => {
-    res.json({ roles: listAgentRolesForApi() });
-  },
-);
-
 // ── POST /api/mobile/agents — native-safe agent creation adapter ──────────
 const mobileCreateAgentSchema = z.object({
   name: z.string().min(1).max(120),
-  role: z.string().max(80).optional(),
   is_business_agent: z.boolean().optional().default(false),
 });
 
@@ -217,27 +196,11 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const name = cleanText(req.body?.name, 120);
-      const rawRole = cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
-      const roleError = validateAgentRoleForCreate(rawRole);
-      if (roleError) {
-        return res.status(400).json({ code: "UNKNOWN_AGENT_ROLE", error: roleError });
-      }
-      const role = canonicalizeAgentRoleForCreate(rawRole);
-      if (isAgentRoleLaunchReviewRequired(role)) {
-        return res.status(409).json({
-          code: "ROLE_REVIEW_REQUIRED",
-          error: agentRoleLaunchReviewMessage(role),
-        });
-      }
       const isBusinessAgent = req.body?.is_business_agent === true;
 
       const id = `agent-${randomUUID()}`;
-      const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
-      const seededPersonality = resolveCreatePersonality({
-        role,
-        isBusinessAgent,
-        agentName: name,
-      });
+      const enabledTools = resolveCreateEnabledTools(isBusinessAgent);
+      const seededPersonality = resolveCreatePersonality({ isBusinessAgent, agentName: name });
       const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
 
       // Count, entitlement, and insert must share one serialized transaction —
@@ -268,9 +231,8 @@ router.post(
           userId: req.user.id,
           name,
           markKey,
-          role,
           channel: "voice",
-          archetype: resolveAgentRoleArchetype(role),
+          archetype: DEFAULT_BOT_ARCHETYPE,
           voiceId,
           voiceProvider: "openai",
           autonomyLevel: "supervised",
@@ -294,8 +256,7 @@ router.post(
       res.status(201).json({
         id,
         name,
-        role,
-        archetype: resolveAgentRoleArchetype(role),
+        archetype: DEFAULT_BOT_ARCHETYPE,
         channels: ["voice"],
         voiceId: created.voiceId,
         mark_key: created.markKey,
@@ -320,7 +281,6 @@ router.get(
         .select({
           id: schema.agents.id,
           name: schema.agents.name,
-          role: schema.agents.role,
           archetype: schema.agents.archetype,
           channel: schema.agents.channel,
           channels: schema.agents.channels,
@@ -351,7 +311,6 @@ router.get(
         .select({
           id: schema.agents.id,
           name: schema.agents.name,
-          role: schema.agents.role,
           archetype: schema.agents.archetype,
           channel: schema.agents.channel,
           channels: schema.agents.channels,
@@ -390,7 +349,6 @@ router.get(
           tx
             .select({
               name: schema.agents.name,
-              role: schema.agents.role,
               archetype: schema.agents.archetype,
               enabledTools: schema.agents.enabledTools,
               voiceId: schema.agents.voiceId,
@@ -441,7 +399,6 @@ router.get(
         ? resolveAgentVideoPresenter({
             id: req.params.id,
             name: record.name,
-            role: record.role,
             isBusinessAgent: record.isBusinessAgent ?? false,
             videoPresenterProvider: record.videoPresenterProvider,
             videoPresenterAvatarId: record.videoPresenterAvatarId,
@@ -449,8 +406,7 @@ router.get(
           })
         : null;
       res.json({
-        role: record?.role || "customer_service",
-        archetype: record?.archetype || "Assistant",
+        archetype: record?.archetype || DEFAULT_BOT_ARCHETYPE,
         enabledTools: normalizeEnabledTools(record?.enabledTools),
         personality: personalities[0]?.content || "",
         directives,

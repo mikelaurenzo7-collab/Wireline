@@ -33,14 +33,28 @@ describe("post-merge UI and artifact hardening", () => {
       "UPSTASH_REDIS_REST_URL",
       "RESEND_API_KEY",
       "GOOGLE_CLIENT_ID",
-      "HUBSPOT_CLIENT_ID",
-      "META_APP_ID",
+      "MICROSOFT_CLIENT_ID",
+      "SLACK_CLIENT_ID",
       "DOCUSIGN_ACCOUNT_ID",
       "SENTRY_DSN",
       "VITE_SUPABASE_URL",
       "E2E_USER_EMAIL",
     ]) {
       expect(env).toContain(`${preservedKey}=`);
+    }
+
+    // The CRM, commerce, and prospecting connectors were removed rather than
+    // deprecated, so their credentials must not reappear in the template and
+    // invite an operator to configure a provider no code can reach.
+    for (const retiredPrefix of [
+      "SALESFORCE_",
+      "HUBSPOT_",
+      "APOLLO_",
+      "META_APP",
+      "SHOPIFY_",
+      "SQUARE_",
+    ]) {
+      expect(env, retiredPrefix).not.toContain(retiredPrefix);
     }
   });
 

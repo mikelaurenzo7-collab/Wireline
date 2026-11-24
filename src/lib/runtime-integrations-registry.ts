@@ -169,18 +169,6 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ),
     validate: resendWebhookSecretConfigured,
   },
-  item("hubspot", "HubSpot", "CRM contacts, deals, and activity.", "actions", false, [
-    "HUBSPOT_CLIENT_ID",
-    "HUBSPOT_CLIENT_SECRET",
-  ]),
-  item(
-    "salesforce",
-    "Salesforce",
-    "Accounts, contacts, opportunities, and tasks.",
-    "actions",
-    false,
-    ["SALESFORCE_CLIENT_ID", "SALESFORCE_CLIENT_SECRET"],
-  ),
   item("slack", "Slack", "Team alerts and escalations.", "actions", false, [
     "SLACK_CLIENT_ID",
     "SLACK_CLIENT_SECRET",
@@ -199,21 +187,6 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "DOCUSIGN_JWT_TOKEN can replace DOCUSIGN_ACCESS_TOKEN.",
     [["DOCUSIGN_ACCESS_TOKEN", "DOCUSIGN_JWT_TOKEN"]],
   ),
-  item("apollo", "Apollo", "Lead enrichment and prospect intelligence.", "actions", false, [
-    "APOLLO_API_KEY",
-  ]),
-  item("meta", "Meta", "Lead follow-up and attribution.", "actions", false, [
-    "META_APP_ID",
-    "META_APP_SECRET",
-  ]),
-  item("shopify", "Shopify", "Commerce support actions.", "actions", false, [
-    "SHOPIFY_CLIENT_ID",
-    "SHOPIFY_CLIENT_SECRET",
-  ]),
-  item("square", "Square", "Commerce and payment actions.", "actions", false, [
-    "SQUARE_APPLICATION_ID",
-    "SQUARE_APPLICATION_SECRET",
-  ]),
   item("x", "X", "Approved social engagement and reporting.", "actions", false, [
     "X_CLIENT_ID",
     "X_CLIENT_SECRET",

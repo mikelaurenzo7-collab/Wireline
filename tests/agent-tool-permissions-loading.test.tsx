@@ -93,14 +93,11 @@ describe("agent action editor loading", () => {
     async (saved) => {
       const blocked = [
         "send_contract",
-        "meta_submit_lead",
         "list_x_ad_campaigns",
         "get_x_ad_campaign_stats",
         ...UNVERIFIED_LIVE_TOOL_NAMES,
         "route_to_business_unit",
         "trigger_enterprise_webhook",
-        "shopify_apply_discount",
-        "square_send_invoice",
       ];
       h.fetch.mockImplementation((url: string) =>
         Promise.resolve(
@@ -108,7 +105,7 @@ describe("agent action editor loading", () => {
             url.startsWith("/api/agent-config/")
               ? { enabledTools: saved ? blocked : [] }
               : url === "/api/oauth/crm/status"
-                ? { x: { connected: true }, meta: { connected: true } }
+                ? { x: { connected: true } }
                 : { accounts: [] },
           ),
         ),
@@ -118,7 +115,6 @@ describe("agent action editor loading", () => {
       await flush();
       const editorText = textOf(render());
       expect(editorText).not.toContain("DocuSign");
-      expect(editorText).not.toContain("Submit lead to Meta");
       expect(editorText).not.toContain("X ad campaign");
       expect(editorText).toContain("Post on X");
       for (const entry of AGENT_TOOL_CATALOG.filter((tool) => blocked.includes(tool.name))) {
@@ -149,7 +145,6 @@ describe("agent action editor loading", () => {
       expect(textOf(xPanel)).toContain("Publishes a tweet");
       expect(textOf(xPanel)).not.toContain("campaign");
       expect(IntegrationCapabilityPanel({ ...props, integration: "docusign", compact })).toBeNull();
-      expect(IntegrationCapabilityPanel({ ...props, integration: "meta", compact })).toBeNull();
     }
   });
 
@@ -234,9 +229,7 @@ describe("agent action editor loading", () => {
     const save = editor.find(
       (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!;
-    const enableGroup = editor.find(
-      (node) => node.props["aria-label"] === "Enable all CRM actions",
-    )!;
+    const enableGroup = editor.find((node) => node.props["aria-label"] === "Enable all X actions")!;
     save.props.onClick!();
     const submitted = JSON.parse(
       h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
@@ -282,15 +275,15 @@ describe("agent action editor loading", () => {
       elements(render()).find((node) => node.type === "details" && textOf(node).includes(label))!;
     const selected = (label: string) =>
       elements(group(label)).filter((node) => node.type === "input" && node.props.checked);
-    elements(render()).find((node) => node.props["aria-label"] === "Enable all CRM actions")!.props
+    elements(render()).find((node) => node.props["aria-label"] === "Enable all X actions")!.props
       .onClick!();
-    expect(selected("CRM")).toHaveLength(3);
+    expect(selected("X")).toHaveLength(6);
     expect(selected("Platform Actions")).toHaveLength(0);
     expect(selected("Slack")).toHaveLength(0);
     elements(group("Platform Actions")).find((node) => node.type === "input")!.props.onChange!();
-    elements(render()).find((node) => node.props["aria-label"] === "Disable all CRM actions")!.props
+    elements(render()).find((node) => node.props["aria-label"] === "Disable all X actions")!.props
       .onClick!();
-    expect(selected("CRM")).toHaveLength(0);
+    expect(selected("X")).toHaveLength(0);
     expect(selected("Platform Actions")).toHaveLength(1);
   });
 

@@ -42,22 +42,4 @@ describe("common provider deletion-fence contract", () => {
       );
     }
   });
-
-  it("fences every public CRM mutation through one deletion-aware helper", () => {
-    const source = read("src/lib/crm-service.ts");
-    expect(source).toContain("private async runProviderMutation");
-    expect(source).toContain("runTenantProviderWorkWithDeletionFence");
-    expect(source).toContain("retainOnSuccess: () => providerWorkStarted");
-    expect(source).toContain("CRM mutation blocked by terminal account deletion");
-    for (const operation of [
-      "crm_contact_create",
-      "crm_lead_update",
-      "crm_call_log",
-      "crm_deal_stage_update",
-      "crm_opportunity_create",
-      "crm_enriched_lead_sync",
-    ]) {
-      expect(source).toContain(`this.runProviderMutation("${operation}"`);
-    }
-  });
 });

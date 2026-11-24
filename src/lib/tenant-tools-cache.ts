@@ -1,6 +1,6 @@
 /**
  * Short-TTL cache for tenant tool definitions resolved at assistant-request time.
- * buildRoleToolDefsForTenant hits CRM connection rows on every inbound call connect;
+ * buildAgentToolDefsForTenant hits connection rows on every inbound call connect;
  * caching cuts repeated DB reads for the same tenant within a call burst.
  */
 
@@ -27,7 +27,6 @@ function getRedis(): Redis | null {
 
 function buildCacheKey(
   userId: string,
-  role: string,
   enabledTools: unknown,
   aiTier: string | null | undefined,
   tenantFlags: { twilioMessaging?: boolean; twilioLookup?: boolean } | undefined,
@@ -35,7 +34,6 @@ function buildCacheKey(
   const sig = createHash("sha256")
     .update(
       JSON.stringify({
-        role,
         enabledTools: enabledTools ?? null,
         aiTier: aiTier ?? null,
         twilioMessaging: !!tenantFlags?.twilioMessaging,
@@ -49,12 +47,11 @@ function buildCacheKey(
 
 export async function getCachedTenantToolDefs(
   userId: string,
-  role: string,
   enabledTools: unknown,
   aiTier: string | null | undefined,
   tenantFlags: { twilioMessaging?: boolean; twilioLookup?: boolean } | undefined,
 ): Promise<object[] | null> {
-  const cacheKey = buildCacheKey(userId, role, enabledTools, aiTier, tenantFlags);
+  const cacheKey = buildCacheKey(userId, enabledTools, aiTier, tenantFlags);
 
   const r = getRedis();
   if (r) {
@@ -74,13 +71,12 @@ export async function getCachedTenantToolDefs(
 
 export async function setCachedTenantToolDefs(
   userId: string,
-  role: string,
   enabledTools: unknown,
   aiTier: string | null | undefined,
   tenantFlags: { twilioMessaging?: boolean; twilioLookup?: boolean } | undefined,
   tools: object[],
 ): Promise<void> {
-  const cacheKey = buildCacheKey(userId, role, enabledTools, aiTier, tenantFlags);
+  const cacheKey = buildCacheKey(userId, enabledTools, aiTier, tenantFlags);
 
   const r = getRedis();
   if (r) {

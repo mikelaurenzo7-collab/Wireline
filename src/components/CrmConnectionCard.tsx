@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2, Settings } from "lucide-react";
-import { Link } from "react-router";
+import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
-import { Input } from "./ui/shadcn/Input";
 import { Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { BRAND } from "../constants/brand-colors";
@@ -18,9 +16,9 @@ const CRM_SELECT_UNSET = "__unset__";
 export interface IntegrationStatus {
   connected: boolean;
   configured?: boolean;
-  /** Apollo: platform APOLLO_API_KEY and/or OAuth app credentials on Vercel */
+  /** Platform credentials are present for this provider. */
   platform_active?: boolean;
-  /** Apollo: Admin can open OAuth popup (CLIENT_ID + SECRET) */
+  /** The owner can start the OAuth popup for this provider. */
   oauth_connect_available?: boolean;
   email?: string;
   team?: string;
@@ -36,15 +34,9 @@ export interface IntegrationStatus {
 }
 
 interface IntegrationState {
-  salesforce: IntegrationStatus;
-  hubspot: IntegrationStatus;
   slack: IntegrationStatus;
   x: IntegrationStatus;
   zoom: IntegrationStatus;
-  apollo: IntegrationStatus;
-  meta: IntegrationStatus;
-  shopify: IntegrationStatus;
-  square: IntegrationStatus;
   microsoft_teams: IntegrationStatus;
   microsoft_excel: IntegrationStatus;
   google_sheets: IntegrationStatus;
@@ -111,13 +103,9 @@ export function getIntegrationStatusDetail(
   group: string,
   availability: IntegrationAvailability,
   oauthConnectAvailable: boolean,
-  apolloPlatformOnly = false,
 ): string {
   const primaryAction = resolveIntegrationPrimaryAction(availability, oauthConnectAvailable);
   if (primaryAction === "disconnect") return `${group} · Saved connection inactive`;
-  if (apolloPlatformOnly) {
-    return `${group} · Platform API active. Connecting your workspace is optional`;
-  }
   if (availability.available && oauthConnectAvailable) return group;
   if (availability.available) return `${group} · Platform configured`;
   return group;
@@ -142,20 +130,6 @@ const PROVIDERS: {
   beta?: boolean;
 }[] = [
   {
-    key: "salesforce",
-    label: "Salesforce",
-    color: "sky",
-    logo: "SF",
-    group: "CRM",
-  },
-  {
-    key: "hubspot",
-    label: "HubSpot",
-    color: "orange",
-    logo: "HS",
-    group: "CRM",
-  },
-  {
     key: "slack",
     label: "Slack",
     color: "purple",
@@ -176,35 +150,6 @@ const PROVIDERS: {
     logo: "ZM",
     group: "Meetings",
     beta: true,
-  },
-  {
-    key: "apollo",
-    label: "Apollo",
-    color: "indigo",
-    logo: "AP",
-    group: "Prospecting",
-  },
-  {
-    key: "meta",
-    label: "Meta (Lead Ads)",
-    color: "fuchsia",
-    logo: "M",
-    group: "Ads",
-    beta: true,
-  },
-  {
-    key: "shopify",
-    label: "Shopify",
-    color: "emerald",
-    logo: "SH",
-    group: "E-commerce",
-  },
-  {
-    key: "square",
-    label: "Square",
-    color: "amber",
-    logo: "SQ",
-    group: "E-commerce",
   },
   {
     key: "microsoft_teams",
@@ -255,13 +200,6 @@ export default function CrmConnectionCard() {
     message: string;
   } | null>(null);
   const channelSavePending = useRef(false);
-  // Shopify OAuth is per-store, so the Account Holder must supply their
-  // myshopify domain before the Connect button can build the install
-  // URL. Held here until they click Connect.
-  const [shopDomain, setShopDomain] = useState("");
-  const [shopError, setShopError] = useState<string | null>(null);
-  /** Keep Shopify domain collapsed until Connect so the grid stays even. */
-  const [shopDomainOpen, setShopDomainOpen] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -436,34 +374,21 @@ export default function CrmConnectionCard() {
   }, [fetchStatus, stopPopupPoll]);
 
   const connect = (provider: ProviderKey) => async () => {
-    // Shopify needs the merchant's myshopify domain appended as a
-    // query param so the per-store install URL can be built.
-    let endpoint = `/api/oauth/${provider}/url`;
-    if (provider === "shopify") {
-      const shop = shopDomain.trim().toLowerCase();
-      if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop)) {
-        setShopDomainOpen(true);
-        setShopError("Enter a valid store domain, e.g. your-store.myshopify.com");
-        return;
-      }
-      setShopError(null);
-      endpoint += `?shop=${encodeURIComponent(shop)}`;
-    }
+    const endpoint = `/api/oauth/${provider}/url`;
     setConnecting(provider);
     setError(null);
     const providerLabel = PROVIDERS.find((p) => p.key === provider)?.label || "This integration";
     try {
       const r = await authFetch(endpoint);
       if (!r.ok) {
-        // Every provider gets a visible failure, not just Shopify — a silent
-        // spinner-stop reads as a dead button during the Wire step.
+        // Every provider gets a visible failure — a silent spinner-stop reads
+        // as a dead button during the Wire step.
         const body = await r.json().catch(() => ({}));
         const message =
           typeof body?.error === "string" && body.error
             ? body.error
             : `${providerLabel} connect could not start. Try again shortly.`;
-        if (provider === "shopify") setShopError(message);
-        else setError(message);
+        setError(message);
         setConnecting(null);
         return;
       }
@@ -627,19 +552,16 @@ export default function CrmConnectionCard() {
               ) : null;
 
             const availability = resolveIntegrationAvailability(s);
-            const { available: platformReady, connected: isConnected } = availability;
-            const oauthConnectAvailable = key !== "apollo" || s.oauth_connect_available !== false;
+            const { connected: isConnected } = availability;
+            const oauthConnectAvailable = s.oauth_connect_available !== false;
             const primaryAction = resolveIntegrationPrimaryAction(
               availability,
               oauthConnectAvailable,
             );
-            const apolloPlatformOnly =
-              key === "apollo" && platformReady && !oauthConnectAvailable && !isConnected;
             const statusDetail = getIntegrationStatusDetail(
               group,
               availability,
               oauthConnectAvailable,
-              apolloPlatformOnly,
             );
 
             return (
@@ -699,16 +621,6 @@ export default function CrmConnectionCard() {
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
-                        )}
-                        {key === "salesforce" && (
-                          <Link
-                            to="/connections/salesforce"
-                            className="p-1.5 rounded-md hover:bg-muted text-muted hover:text-foreground transition-colors"
-                            title="Configure"
-                            aria-label="Configure Salesforce"
-                          >
-                            <Settings className="w-3.5 h-3.5" />
-                          </Link>
                         )}
                         <ShadButton
                           type="button"
@@ -786,31 +698,6 @@ export default function CrmConnectionCard() {
                     );
                   })()}
 
-                {key === "shopify" && !isConnected && shopDomainOpen && (
-                  <div className="mt-3 pt-3 border-t border-border space-y-1.5">
-                    <div className="wl-label text-muted/90">Your store domain</div>
-                    <Input
-                      type="text"
-                      value={shopDomain}
-                      onChange={(e) => {
-                        setShopDomain(e.target.value);
-                        if (shopError) setShopError(null);
-                      }}
-                      placeholder="your-store.myshopify.com"
-                      spellCheck={false}
-                      autoCapitalize="off"
-                      autoFocus
-                      className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/40"
-                    />
-                    {shopError ? (
-                      <p className="wl-micro-meta text-rose-500 leading-snug">{shopError}</p>
-                    ) : (
-                      <p className="wl-micro-meta leading-snug">
-                        Enter your myshopify.com domain, then click Connect to authorize.
-                      </p>
-                    )}
-                  </div>
-                )}
                 {key === "slack" && isConnected && (
                   <div className="mt-3 pt-3 border-t border-border space-y-2">
                     <div className="wl-label text-muted/90">Default notify channel</div>

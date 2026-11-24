@@ -72,11 +72,4 @@ describe("compliance & runtime fix contracts", () => {
     expect(late).toBeGreaterThan(timeout);
     expect(tools).toContain("Action confirmation timed out and the outcome is unknown");
   });
-
-  it("shopify_apply_discount does not fabricate success for the unimplemented stub", () => {
-    const shopify = read("src/lib/bot-tools/shopify.ts");
-    expect(shopify).not.toContain("applied to order ${order_number} successfully");
-    expect(shopify).toContain("No discount was applied.");
-    expect(shopify).toContain("confirm it only after the tool succeeds");
-  });
 });

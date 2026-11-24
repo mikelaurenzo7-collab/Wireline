@@ -5,18 +5,6 @@ const environment = vi.hoisted(() => ({
 }));
 
 const providers = vi.hoisted(() => ({
-  shopifyLookupOrder: vi.fn(),
-  shopifySearchProducts: vi.fn(),
-  shopifyLookupCustomer: vi.fn(),
-  shopifyStartReturn: vi.fn(),
-  shopifyCancelOrder: vi.fn(),
-  shopifyUpdateAddress: vi.fn(),
-  shopifyCreateDraftOrder: vi.fn(),
-  shopifyAddOrderNote: vi.fn(),
-  squareLookupOrder: vi.fn(),
-  squareLookupCustomer: vi.fn(),
-  squareCheckInventory: vi.fn(),
-  squareCreatePaymentLink: vi.fn(),
   postXTweet: vi.fn(),
   replyToXTweet: vi.fn(),
   likeXTweet: vi.fn(),
@@ -29,22 +17,6 @@ const providers = vi.hoisted(() => ({
 }));
 
 vi.mock("../src/lib/account-environment-policy", () => environment);
-vi.mock("../src/lib/shopify-service", () => ({
-  lookupOrder: providers.shopifyLookupOrder,
-  searchProducts: providers.shopifySearchProducts,
-  lookupCustomer: providers.shopifyLookupCustomer,
-  startReturn: providers.shopifyStartReturn,
-  cancelOrder: providers.shopifyCancelOrder,
-  updateOrderShippingAddress: providers.shopifyUpdateAddress,
-  createDraftOrder: providers.shopifyCreateDraftOrder,
-  addOrderNote: providers.shopifyAddOrderNote,
-}));
-vi.mock("../src/lib/square-service", () => ({
-  squareLookupOrder: providers.squareLookupOrder,
-  squareLookupCustomer: providers.squareLookupCustomer,
-  squareCheckInventory: providers.squareCheckInventory,
-  squareCreatePaymentLink: providers.squareCreatePaymentLink,
-}));
 vi.mock("../src/lib/x-service", () => ({
   postXTweet: providers.postXTweet,
   replyToXTweet: providers.replyToXTweet,
@@ -62,8 +34,6 @@ vi.mock("../src/lib/mobile-push", () => ({
 }));
 
 import { handleDeviceToolCall } from "../src/lib/bot-tools/device";
-import { handleShopifyToolCall } from "../src/lib/bot-tools/shopify";
-import { handleSquareToolCall } from "../src/lib/bot-tools/square";
 import { handleXToolCall } from "../src/lib/bot-tools/x";
 import type { ToolCallContext } from "../src/lib/agent-tool-types";
 
@@ -89,50 +59,14 @@ describe("demo/test agent-tool provider families", () => {
     );
   });
 
-  it.each(["demo", "missing"])(
-    "blocks Shopify, Square, X, and device providers for a %s tenant",
-    async () => {
-      const results = await Promise.all([
-        handleShopifyToolCall("shopify_lookup_order", { order_number: "1001" }, context),
-        handleSquareToolCall(
-          "square_create_payment_link",
-          { title: "Demo", amount_dollars: 5 },
-          context,
-        ),
-        handleXToolCall("post_x_tweet", { text: "demo" }, context),
-        handleDeviceToolCall("navigate_to", { destination: "Demo Street" }, context),
-      ]);
+  it.each(["demo", "missing"])("blocks X and device providers for a %s tenant", async () => {
+    const results = await Promise.all([
+      handleXToolCall("post_x_tweet", { text: "demo" }, context),
+      handleDeviceToolCall("navigate_to", { destination: "Demo Street" }, context),
+    ]);
 
-      expect(
-        [results[0], results[2], results[3]].every((result) => result?.result.includes("disabled")),
-      ).toBe(true);
-      expect(results[1]?.result).toContain("No payment link was created");
-      expect(environment.assertLiveExternalActionAllowed).toHaveBeenCalledTimes(3);
-      for (const provider of allProviderSpies()) expect(provider).not.toHaveBeenCalled();
-    },
-  );
-
-  it("preserves honest local no-op tools without opening a provider path", async () => {
-    await expect(
-      handleShopifyToolCall(
-        "shopify_apply_discount",
-        { order_number: "1001", discount_code: "DEMO" },
-        context,
-      ),
-    ).resolves.toEqual(
-      expect.objectContaining({ result: expect.stringContaining("No discount was applied.") }),
-    );
-    await expect(
-      handleSquareToolCall(
-        "square_send_invoice",
-        { email: "buyer@example.com", amount: 10 },
-        context,
-      ),
-    ).resolves.toEqual(
-      expect.objectContaining({ result: expect.stringContaining("cannot confirm") }),
-    );
-
-    expect(environment.assertLiveExternalActionAllowed).not.toHaveBeenCalled();
+    expect(results.every((result) => result?.result.includes("disabled"))).toBe(true);
+    expect(environment.assertLiveExternalActionAllowed).toHaveBeenCalledTimes(2);
     for (const provider of allProviderSpies()) expect(provider).not.toHaveBeenCalled();
   });
 });

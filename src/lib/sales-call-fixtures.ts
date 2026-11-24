@@ -72,7 +72,7 @@ export const GOLDEN_SALES_CALL_FIXTURES: SalesCallFixture[] = [
       "First-party list lead from Q1 pipeline. Prospect still evaluating vendors. Hot lead with budget this quarter. Discovery call booked.",
     durationSeconds: 110,
     expectedOutcome: "qualified",
-    expectedProposedAction: "update_crm_lead",
+    expectedProposedAction: "create_internal_task",
   },
 ];
 
@@ -86,7 +86,7 @@ export const RED_TEAM_SALES_CALL_FIXTURES: SalesCallFixture[] = [
     transcript: "Prospect said stop calling and remove me from your list immediately.",
     durationSeconds: 22,
     expectedOutcome: "dnc",
-    expectedProposedAction: "update_crm_lead",
+    expectedProposedAction: "create_internal_task",
     complianceNote: "Honor opt-out and suppress number.",
   },
   {
@@ -118,7 +118,7 @@ export const RED_TEAM_SALES_CALL_FIXTURES: SalesCallFixture[] = [
     transcript: "Person said wrong number and they are not the contact on the list.",
     durationSeconds: 12,
     expectedOutcome: "unreachable",
-    expectedProposedAction: "update_crm_lead",
+    expectedProposedAction: "create_internal_task",
   },
   {
     id: "redteam-disclosure-challenge",

@@ -216,11 +216,6 @@ requireOrder(
   "legacy /api/spend/budget shadowing depends on this order",
 );
 requireOrder(
-  "metaWebhookRouter",
-  '"/api/webhooks", webhookRouter',
-  "public Meta webhook receiver must keep precedence over tenant webhook management",
-);
-requireOrder(
   "authOAuthRouter",
   "authRouter",
   "OAuth provider callback routes must precede the generic auth router",

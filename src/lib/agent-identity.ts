@@ -45,12 +45,7 @@ export type AgentFaceConfig = {
   accent: string;
 };
 
-export type AgentIdentityPersonaId =
-  | "front_desk"
-  | "concierge_scheduler"
-  | "revenue_operator"
-  | "support_specialist"
-  | "private_operator";
+export type AgentIdentityPersonaId = "front_desk" | "private_operator";
 
 export type VideoPresenterProviderId =
   "liveavatar" | "heygen" | "tavus" | "d-id" | "simli" | "synthetic";
@@ -88,33 +83,6 @@ export const AGENT_IDENTITY_PERSONAS: Record<AgentIdentityPersonaId, AgentIdenti
     microcopy: "Greets, routes, books, and hands off cleanly.",
     promptDirective:
       "Sound calm, prepared, and accountable. Keep answers brief, confirm next steps, and hand off urgent callers without drama.",
-  },
-  concierge_scheduler: {
-    id: "concierge_scheduler",
-    label: "Scheduler",
-    shortLabel: "Calendar pro",
-    defaultName: "Sarah",
-    microcopy: "Turns loose requests into booked time.",
-    promptDirective:
-      "Sound helpful and precise. Ask only for missing scheduling details, confirm the time plainly, and protect the user's calendar.",
-  },
-  revenue_operator: {
-    id: "revenue_operator",
-    label: "Sales Concierge",
-    shortLabel: "Lead qualifier",
-    defaultName: "Liam",
-    microcopy: "Qualifies, captures intent, and routes hot leads.",
-    promptDirective:
-      "Sound sharp and commercially aware. Qualify fit quickly, capture buying intent, and escalate high-value prospects.",
-  },
-  support_specialist: {
-    id: "support_specialist",
-    label: "Support Desk",
-    shortLabel: "Issue resolver",
-    defaultName: "Support Desk",
-    microcopy: "Finds the issue, logs it, and closes the loop.",
-    promptDirective:
-      "Sound steady and useful. Triage the issue, gather exact facts, explain next steps, and avoid overpromising.",
   },
   private_operator: {
     id: "private_operator",
@@ -212,29 +180,23 @@ export function faceConfigFor(seed: string): AgentFaceConfig {
   };
 }
 
-export function personaForRole(
-  role: string | null | undefined,
-  isBusinessAgent = false,
-): AgentIdentityPersona {
-  const normalized = (role || "").trim().toLowerCase();
-  if (!isBusinessAgent) return AGENT_IDENTITY_PERSONAS.private_operator;
-  if (normalized === "sales" || normalized === "sdr")
-    return AGENT_IDENTITY_PERSONAS.revenue_operator;
-  if (normalized === "scheduler" || normalized === "appointment_scheduler")
-    return AGENT_IDENTITY_PERSONAS.concierge_scheduler;
-  if (normalized === "customer_service" || normalized === "support")
-    return AGENT_IDENTITY_PERSONAS.support_specialist;
-  return AGENT_IDENTITY_PERSONAS.front_desk;
+/**
+ * One Bot, two postures. A business account gets the front-desk persona; a
+ * personal account gets the private operator, which is privacy-first.
+ */
+export function personaForAgent(isBusinessAgent = false): AgentIdentityPersona {
+  return isBusinessAgent
+    ? AGENT_IDENTITY_PERSONAS.front_desk
+    : AGENT_IDENTITY_PERSONAS.private_operator;
 }
 
 export function buildAgentIdentityPreview(input: {
   id?: string | null;
   name?: string | null;
-  role?: string | null;
   faceId?: string | null;
   isBusinessAgent?: boolean;
 }): AgentIdentityPreview {
-  const persona = personaForRole(input.role, input.isBusinessAgent === true);
+  const persona = personaForAgent(input.isBusinessAgent === true);
   const seed = normalizeFaceSeed(input.faceId || input.name || input.id || persona.defaultName);
   const providerPreference: VideoPresenterProviderId = "synthetic";
   const provider = VIDEO_PRESENTER_PROVIDERS[providerPreference];

@@ -14,8 +14,6 @@ export const PAUSABLE_PROVIDER_SPEND_JOB_TYPES = [
   "v2a_action_extraction",
   "execute_action",
   "adaptive_optimization",
-  "proactive_lead_enrichment",
-  "autonomous_prospecting",
   "knowledge_from_url",
   "intake_auto_dial",
   "paid_bot_identity_reconcile",

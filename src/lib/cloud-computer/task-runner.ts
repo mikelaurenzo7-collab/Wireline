@@ -660,7 +660,7 @@ async function admitComputerTask(
   };
   live.set(row.id, task);
 
-  const bot = { name: agent.name, role: agent.role || "assistant" };
+  const bot = { name: agent.name };
   void tenantStore
     .run(userId, () =>
       executeTask(task, { goal, startUrl, prepareBrowser, model, bot, connection }),
@@ -673,7 +673,7 @@ async function admitComputerTask(
 
 async function loadComputerBotContext(
   { userId, agentId }: Pick<LiveTask, "userId" | "agentId">,
-  bot: Pick<BotContext, "name" | "role">,
+  bot: Pick<BotContext, "name">,
   goal: string,
 ): Promise<BotContext> {
   // Voice also imports the task runner. Load knowledge search only when
@@ -1034,7 +1034,7 @@ async function executeTaskWithBrowser(
     startUrl: string | null;
     prepareBrowser: boolean;
     model: string;
-    bot: Pick<BotContext, "name" | "role">;
+    bot: Pick<BotContext, "name">;
     connection: NonNullable<ReturnType<typeof cloudComputerConnection>>;
   },
 ): Promise<void> {

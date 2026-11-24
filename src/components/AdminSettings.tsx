@@ -61,11 +61,6 @@ interface AdminSettingsState {
   twilio_sms_from_number: string;
   twilio_whatsapp_from_number: string;
   twilio_manager_alert_number: string;
-  prospecting_enabled: boolean;
-  target_titles: string[];
-  target_industries: string[];
-  target_states: string[];
-  target_employee_ranges: string[];
   brand_name: string;
   brand_logo_url: string;
   primary_color: string;
@@ -96,11 +91,6 @@ function AdminSettingsContent() {
     twilio_sms_from_number: "",
     twilio_whatsapp_from_number: "",
     twilio_manager_alert_number: "",
-    prospecting_enabled: false,
-    target_titles: [] as string[],
-    target_industries: [] as string[],
-    target_states: [] as string[],
-    target_employee_ranges: ["1,10", "11,50"] as string[],
     brand_name: "",
     brand_logo_url: "",
     primary_color: BRAND.colors.primary,
@@ -112,8 +102,7 @@ function AdminSettingsContent() {
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
-  type AdminTab =
-    "accounts" | "branding" | "carrier" | "subscription" | "team" | "activity";
+  type AdminTab = "accounts" | "branding" | "carrier" | "subscription" | "team" | "activity";
   const VALID_TABS: AdminTab[] = [
     "accounts",
     "branding",
@@ -209,11 +198,6 @@ function AdminSettingsContent() {
           twilio_sms_from_number: settingsJson.twilio_sms_from_number || "",
           twilio_whatsapp_from_number: settingsJson.twilio_whatsapp_from_number || "",
           twilio_manager_alert_number: settingsJson.twilio_manager_alert_number || "",
-          prospecting_enabled: !!settingsJson.prospecting_enabled,
-          target_titles: settingsJson.target_titles || [],
-          target_industries: settingsJson.target_industries || [],
-          target_states: settingsJson.target_states || [],
-          target_employee_ranges: settingsJson.target_employee_ranges || ["1,10", "11,50"],
           brand_name: settingsJson.brand_name || "",
           brand_logo_url: settingsJson.brand_logo_url || "",
           primary_color: settingsJson.primary_color || BRAND.colors.primary,

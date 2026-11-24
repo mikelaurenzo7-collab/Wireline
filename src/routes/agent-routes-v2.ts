@@ -51,12 +51,6 @@ import {
   resolveCreateFirstMessage,
   resolveCreatePersonality,
 } from "../lib/agent-create-defaults";
-import {
-  agentRoleLaunchReviewMessage,
-  isAgentRoleLaunchReviewRequired,
-  isTemplateLaunchReviewRequired,
-  templateLaunchReviewMessage,
-} from "../lib/template-launch-policy";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { AI_TOOLS } from "../lib/ai-tools";
 import { isOpenAIModelId, isXAIModelId } from "../lib/ai-models";
@@ -88,13 +82,7 @@ import {
   resolveResponsesEvidence,
 } from "../lib/ai-client";
 import { normalizeResponsesUsage } from "../lib/ai-usage";
-import {
-  AGENT_CREATE_DEFAULT_ROLE_ID,
-  canonicalizeAgentRoleForCreate,
-  listAgentRolesForApi,
-  resolveAgentRoleArchetype,
-  validateAgentRoleForCreate,
-} from "../lib/agent-role-definitions";
+import { DEFAULT_BOT_ARCHETYPE } from "../lib/agent-constants";
 import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
 import {
   defaultBotMarkKey,
@@ -269,22 +257,34 @@ async function persistExtraction(
     if (!locked.rows.length) throw AppError.notFound("Agent not found");
 
     const existingRules = extraction.directives.length
-      ? await tx.select({ content: schema.directives.content }).from(schema.directives).where(
-          and(
-            eq(schema.directives.agentId, agentId),
-            eq(schema.directives.userId, userId),
-            inArray(schema.directives.content, extraction.directives.map((item) => item.content)),
-          ),
-        )
+      ? await tx
+          .select({ content: schema.directives.content })
+          .from(schema.directives)
+          .where(
+            and(
+              eq(schema.directives.agentId, agentId),
+              eq(schema.directives.userId, userId),
+              inArray(
+                schema.directives.content,
+                extraction.directives.map((item) => item.content),
+              ),
+            ),
+          )
       : [];
     const existingFacts = extraction.knowledge.length
-      ? await tx.select({ content: schema.knowledge.content }).from(schema.knowledge).where(
-          and(
-            eq(schema.knowledge.agentId, agentId),
-            eq(schema.knowledge.userId, userId),
-            inArray(schema.knowledge.content, extraction.knowledge.map((item) => item.content)),
-          ),
-        )
+      ? await tx
+          .select({ content: schema.knowledge.content })
+          .from(schema.knowledge)
+          .where(
+            and(
+              eq(schema.knowledge.agentId, agentId),
+              eq(schema.knowledge.userId, userId),
+              inArray(
+                schema.knowledge.content,
+                extraction.knowledge.map((item) => item.content),
+              ),
+            ),
+          )
       : [];
     const directives = retainFirstUnique(
       extraction.directives,
@@ -548,23 +548,12 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
   }
 });
 
-router.get("/api/agents/roles", authenticateUser, (_req: AuthenticatedRequest, res: Response) => {
-  res.json({ roles: listAgentRolesForApi() });
-});
-
 router.post(
   "/api/agents",
   authenticateUser,
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const name = cleanText(req.body?.name, 100);
-    const rawRole = cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
-    const roleError = validateAgentRoleForCreate(rawRole);
-    if (roleError) throw new AppError(400, "UNKNOWN_AGENT_ROLE", roleError);
-    const role = canonicalizeAgentRoleForCreate(rawRole);
-    if (isAgentRoleLaunchReviewRequired(role)) {
-      throw new AppError(409, "ROLE_REVIEW_REQUIRED", agentRoleLaunchReviewMessage(role));
-    }
     const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
     const requestedMarkKey = cleanText(req.body?.mark_key, 32);
@@ -574,8 +563,6 @@ router.post(
     // Quick Deploy sends a curated pick as voice_id; anything outside the
     // managed roster falls back to rotation so the runtime stays managed.
     const requestedVoiceId = cleanText(req.body?.voice_id, 160);
-    // Template deploys carry the template's channel, opening line, and
-    // personality overlay; plain Fast Start creates keep the defaults.
     const channel = req.body?.channel === "email" ? "email" : "voice";
     const requestedTimeZone = cleanText(req.body?.timezone, 80);
     let timezone: string | undefined;
@@ -588,22 +575,12 @@ router.post(
       }
     }
     const firstMessage = resolveCreateFirstMessage(req.body?.firstMessage, name);
-    const templateId = cleanText(req.body?.templateId, 80);
-    if (isTemplateLaunchReviewRequired(templateId)) {
-      throw new AppError(409, "TEMPLATE_REVIEW_REQUIRED", templateLaunchReviewMessage(templateId));
-    }
-    // Always seed a real personality. Fast Start used to leave personal agents
-    // with a one-line tone from the client; Studio Set up then overwrote it with
-    // role-ready copy. Templates still win when templateId is present.
-    const seededPersonality = resolveCreatePersonality({
-      role,
-      isBusinessAgent,
-      templateId,
-      agentName: name,
-    });
+    // Always seed a real personality. Fast Start used to leave personal Bots
+    // with a one-line tone from the client; Studio Set up then overwrote it.
+    const seededPersonality = resolveCreatePersonality({ isBusinessAgent, agentName: name });
 
     const id = `agent-${randomUUID()}`;
-    const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
+    const enabledTools = resolveCreateEnabledTools(isBusinessAgent);
     const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
 
     const markKey = await withBotMarkPersistenceErrors(() =>
@@ -635,9 +612,8 @@ router.post(
           userId: req.user.id,
           name,
           markKey: availableMarkKey,
-          role,
           channel,
-          archetype: resolveAgentRoleArchetype(role),
+          archetype: DEFAULT_BOT_ARCHETYPE,
           voiceId,
           voiceProvider: "openai",
           autonomyLevel: "supervised",
@@ -678,14 +654,13 @@ router.post(
       event: "agent_draft_created",
       userId: req.user.id,
       agentId: id,
-      metadata: { source: "web_fast_start", role },
+      metadata: { source: "web_fast_start" },
     });
 
     res.status(201).json({
       id,
       name,
       mark_key: markKey,
-      role,
       channel,
       enabledTools,
       is_business_agent: isBusinessAgent,
@@ -761,7 +736,6 @@ router.get(
             name: schema.agents.name,
             firstMessage: schema.agents.firstMessage,
             markKey: schema.agents.markKey,
-            role: schema.agents.role,
             archetype: schema.agents.archetype,
             flowConfig: schema.agents.flowConfig,
             playbook: schema.agents.playbook,
@@ -818,8 +792,7 @@ router.get(
           .where(eq(schema.settings.userId, req.user.id))
           .limit(1);
         return [agentRows, personalities, directives, knowledge, tenantSettings] as const;
-      },
-    );
+      });
     const record = agentRows[0];
     const catalogVoice = await phoneCatalogService.resolve(record?.businessVariables);
     const phoneCall = catalogVoice
@@ -853,7 +826,6 @@ router.get(
       ? resolveAgentVideoPresenter({
           id: req.params.id,
           name: record.name,
-          role: record.role,
           isBusinessAgent: record.isBusinessAgent ?? false,
           videoPresenterProvider: record.videoPresenterProvider,
           videoPresenterAvatarId: record.videoPresenterAvatarId,
@@ -868,8 +840,7 @@ router.get(
       capabilities: { image_uploads: isTrainingImageAvailable() },
       firstMessage: record?.firstMessage || null,
       openingGreeting: resolveAgentGreeting(record || {}, directives),
-      role: record?.role || "customer_service",
-      archetype: record?.archetype || "Assistant",
+      archetype: record?.archetype || DEFAULT_BOT_ARCHETYPE,
       flowConfig: record?.flowConfig || null,
       playbook: readStoredAgentPlaybook(record?.playbook),
       enabledTools: normalizeEnabledTools(record?.enabledTools),
@@ -1507,9 +1478,7 @@ router.post(
     const truncation = knowledgeTextTruncationNotice(rawText.length);
     res.json({
       success: true,
-      summary: truncation
-        ? `${extractionReply(saved)} ${truncation}`
-        : extractionReply(saved),
+      summary: truncation ? `${extractionReply(saved)} ${truncation}` : extractionReply(saved),
       factsAdded: saved.knowledge.length,
       rulesAdded: saved.directives.length,
       toneUpdated: Boolean(saved.personality),

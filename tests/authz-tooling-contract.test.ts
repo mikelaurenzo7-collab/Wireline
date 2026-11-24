@@ -41,7 +41,10 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     // oauth/index.ts provider composition.
     expect(matrix).toContain("| oauth/google.ts | GET | `/api/oauth/google/callback` |");
     expect(matrix).toMatch(
-      /\| oauth\/square\.ts \| GET \| `\/api\/ecommerce\/oauth\/callback` \|.*\| Public \(allowlisted\) \|/,
+      /\| oauth\/google\.ts \| GET \| `\/api\/oauth\/google\/callback` \|.*\| Public \(allowlisted\) \|/,
+    );
+    expect(matrix).toMatch(
+      /\| oauth\/google\.ts \| GET \| `\/api\/oauth\/google\/url` \|.*\| Protected \|/,
     );
     // twilio-webhook.ts -> twilio-webhook-base.ts.
     expect(matrix).toMatch(

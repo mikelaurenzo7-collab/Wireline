@@ -6,7 +6,7 @@ import { Link } from "react-router";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { authFetch } from "../lib/api";
-import { formatAgentRoleLabel, SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
+import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import { resolveVoiceLabel } from "../lib/voice-catalog";
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { resolveDeliveryToneLabel } from "../lib/compose-setup-personality";
@@ -19,7 +19,6 @@ import { formatPhone } from "../lib/safe-number";
 import { useCreateBriefTraining } from "../lib/create-brief-recovery";
 
 type AgentConfigResponse = {
-  role?: string | null;
   personality?: string | null;
   openingGreeting?: string | null;
   firstMessage?: string | null;
@@ -37,7 +36,6 @@ type AgentConfigResponse = {
 type StudioAgentReviewPanelProps = {
   agentId: string;
   agentName: string;
-  agentRole?: string | null;
   phoneNumber?: string | null;
   onEdit: () => void;
   onRehearse: () => void;
@@ -57,7 +55,6 @@ type MailboxState = {
 export default function StudioAgentReviewPanel({
   agentId,
   agentName,
-  agentRole,
   phoneNumber,
   onEdit,
   onRehearse,
@@ -287,7 +284,6 @@ export default function StudioAgentReviewPanel({
       : callVoice.status === "unavailable"
         ? "Check Voice Setup"
         : (callVoice.name ?? voiceName);
-  const role = formatAgentRoleLabel(config?.role ?? agentRole ?? null);
   const hasPhone = Boolean(phoneNumber);
   const contentClass = compact
     ? "mx-auto w-full max-w-none space-y-3 px-3 py-3"
@@ -333,7 +329,6 @@ export default function StudioAgentReviewPanel({
           ) : (
             <dl className="divide-y divide-border">
               {[
-                { label: "Role", value: role },
                 { label: "Tone", value: resolveDeliveryToneLabel(config?.personality) },
                 {
                   label: "Greeting",

@@ -2,9 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  isBusinessTemplateCategory,
-  PERSONAL_DEFAULT_TEMPLATE_ID,
-  PERSONAL_FAST_START_ROLE,
   resolveCreateEnabledTools,
   resolveCreatePersonality,
 } from "../src/lib/agent-create-defaults";
@@ -12,9 +9,9 @@ import {
   applyPlanToolUnlocks,
   BUSINESS_TOOL_NAMES,
   getDefaultAgentTools,
-  getRoleToolSet,
   resolveAgentTools,
 } from "../src/lib/agent-capabilities";
+import { DEFAULT_BOT_ARCHETYPE } from "../src/lib/agent-constants";
 import { composeSetupPersonality } from "../src/lib/compose-setup-personality";
 import { WIRELINE_DESIGN_VISION } from "../src/lib/wireline-design-vision";
 
@@ -22,28 +19,28 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("restored launch regression guards", () => {
-  it("preserves rich personal Bot defaults without representing the Bot as the principal", () => {
-    expect(PERSONAL_FAST_START_ROLE).toBe("personal_assistant");
-    expect(PERSONAL_DEFAULT_TEMPLATE_ID).toBe("personal-concierge");
-
-    const personal = resolveCreatePersonality({
-      role: PERSONAL_FAST_START_ROLE,
-      isBusinessAgent: false,
-      agentName: "Sarah",
-    });
-    expect(personal).toContain("elite personal assistant");
-    expect(personal).toContain("TEMPLATE SPECIALTY: Personal Concierge");
-    expect(personal).toContain("You represent your principal");
-    expect(personal).not.toContain("You represent Sarah");
+  it("keeps a new Bot from representing itself as the principal or the business", () => {
+    // One Bot means there is no personal role or template to seed from. What
+    // still has to hold is that the Bot's own name never fills the principal
+    // or business slot, on either account type.
+    const personal = resolveCreatePersonality({ isBusinessAgent: false, agentName: "Sarah" });
+    expect(personal).toContain("## PERSONAL POSTURE");
+    expect(personal).toContain("one principal in their personal life, not a business");
+    expect(personal).toContain("Speak for them rather than about them");
+    expect(personal).not.toContain("Sarah");
 
     const business = resolveCreatePersonality({
-      role: "sales",
       isBusinessAgent: true,
-      templateId: "sales-sdr",
       agentName: "Revenue Desk",
     });
-    expect(business).toContain("from your business");
-    expect(business).not.toContain("from Revenue Desk");
+    expect(business).not.toContain("## PERSONAL POSTURE");
+    expect(business).not.toContain("Revenue Desk");
+
+    // Business tokens never leak a literal placeholder, and a personal account
+    // resolves them to the principal rather than to a business.
+    expect(
+      resolveCreatePersonality({ isBusinessAgent: true, agentName: "Revenue Desk" }),
+    ).not.toMatch(/\{\{\w+\}\}/);
 
     const rich =
       "You are an elite personal assistant.\n\n## TEMPLATE SPECIALTY: Personal Concierge\nBook appointments and take messages.";
@@ -57,14 +54,16 @@ describe("restored launch regression guards", () => {
     const roleDefaults = read("src/lib/agent-constants.ts");
     expect(voiceRuntime).toContain("runtimeTemplate.rolePersonality");
     expect(voiceRuntime).toContain("input.personality");
-    expect(roleDefaults).toContain("extension of your principal's time");
-    expect(roleDefaults).toContain("never reveal personal details");
-    expect(roleDefaults).not.toContain("You represent Sarah");
+    // The one-Bot baseline carries the same two personal guarantees the retired
+    // personal-assistant role used to: protect the principal's time, and keep
+    // their details confidential.
+    expect(roleDefaults).toContain("protect the principal's time");
+    expect(roleDefaults).toContain("as confidential unless the task plainly requires it");
   });
 
   it("keeps personal and business tool defaults scoped while explicit selections stay authoritative", () => {
-    const personalTools = resolveCreateEnabledTools("personal_assistant", false);
-    const businessTools = resolveCreateEnabledTools("sales", true);
+    const personalTools = resolveCreateEnabledTools(false);
+    const businessTools = resolveCreateEnabledTools(true);
     const deviceActions = ["navigate_to", "add_reminder", "play_music"] as const;
 
     expect(personalTools.length).toBeGreaterThan(0);
@@ -77,46 +76,50 @@ describe("restored launch regression guards", () => {
     expect(businessTools.length).toBeLessThan(getDefaultAgentTools().length);
     expect(businessTools).toContain("send_email");
     expect(businessTools).toContain("book_appointment");
-    expect(businessTools).toContain("crm_create_opportunity");
+    expect(businessTools).toContain("create_followup_task");
     expect(businessTools).toContain("send_contract");
     expect(personalTools).toContain("book_appointment");
     expect(personalTools).toContain("send_text_message");
 
     const selected = ["send_email", "book_appointment"] as const;
     expect(applyPlanToolUnlocks(selected, "enterprise")).toEqual(selected);
-    expect(resolveAgentTools("sales", selected)).toEqual(selected);
-    const personalRole = getRoleToolSet("personal_assistant");
-    expect(personalRole).not.toContain("send_slack_notification");
-    expect(personalRole).not.toContain("send_teams_message");
-    expect(personalRole).not.toContain("send_contract");
-    expect(resolveAgentTools("sales", null)).toEqual(getDefaultAgentTools());
+    expect(resolveAgentTools(selected)).toEqual(selected);
+    expect(resolveAgentTools(null)).toEqual(getDefaultAgentTools());
+
+    // A personal account still never gets the business-only channels.
+    for (const businessOnly of ["send_slack_notification", "send_teams_message", "send_contract"]) {
+      expect(personalTools).not.toContain(businessOnly);
+    }
   });
 
-  it("keeps legacy capability classification only as compatibility, not workspace navigation", () => {
-    expect(isBusinessTemplateCategory("Everyday")).toBe(false);
-    expect(isBusinessTemplateCategory("Operations")).toBe(true);
-    expect(isBusinessTemplateCategory("Custom")).toBe(true);
-    expect(isBusinessTemplateCategory("Personal & Lifestyle")).toBe(false);
-    expect(isBusinessTemplateCategory("Sales & Revenue")).toBe(true);
-    expect(isBusinessTemplateCategory(null)).toBe(true);
-
-    const templates = read("src/components/AgentTemplates.tsx");
+  it("keeps every create path on the one-Bot defaults instead of a role", () => {
     const mobile = read("src/routes/mobile-routes.ts");
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
     const dialog = read("src/components/CreateAgentDialog.tsx");
-    expect(templates).toContain("isBusinessTemplateCategory(modalTemplate.category)");
-    expect(mobile).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
-    expect(mobile).toContain("resolveCreatePersonality");
-    expect(agentRoutes).toContain("resolveCreatePersonality");
-    expect(agentRoutes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
-    expect(dialog).toContain("isBusinessTemplateCategory(selectedTemplate.category)");
+
+    expect(DEFAULT_BOT_ARCHETYPE).toBe("All-Purpose Bot");
+    expect(existsSync(resolve(root, "src/components/AgentTemplates.tsx"))).toBe(false);
+    expect(existsSync(resolve(root, "src/pages/TemplatesPage.tsx"))).toBe(false);
+
+    for (const [path, source] of [
+      ["mobile-routes.ts", mobile],
+      ["agent-routes-v2.ts", agentRoutes],
+    ] as const) {
+      expect(source, path).toContain("resolveCreateEnabledTools(isBusinessAgent)");
+      expect(source, path).toContain("resolveCreatePersonality");
+      expect(source, path).toContain("archetype: DEFAULT_BOT_ARCHETYPE");
+      // No create path may narrow the toolbox by role, or re-add a /roles menu.
+      expect(source, path).not.toContain("getRoleToolSet");
+      expect(source, path).not.toMatch(/"\/roles"/);
+    }
+
     expect(dialog).not.toContain("accountType");
-    expect(dialog).toContain("BOT_ROLE_TEMPLATES.find");
     expect(dialog).toContain(
       'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
     );
     expect(dialog).toContain('workspace_model: "one_workspace"');
     expect(dialog).not.toMatch(/setPosture|rolesForPosture|Choose one personal job/);
+    expect(dialog).not.toMatch(/TECHNICAL_ROLE_BY_TEMPLATE|Start from a role/);
   });
 
   it("keeps one roster while preserving legacy seed flags for safe migrations", () => {

@@ -34,12 +34,6 @@ export function resolveTenantToolIntegrationStatus(
     return googleReady || microsoftReady ? "configured" : "missing";
   }
 
-  if (integration === "crm") {
-    const sf = ctx.oauthStatus.salesforce;
-    const hs = ctx.oauthStatus.hubspot;
-    return sf?.connected || hs?.connected ? "configured" : "missing";
-  }
-
   const row = ctx.oauthStatus[integration];
   if (row?.connected) return "configured";
   if (row && "configured" in row && row.configured === false) return "missing";

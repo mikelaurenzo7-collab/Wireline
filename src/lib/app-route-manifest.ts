@@ -53,7 +53,6 @@ export const APP_ROUTE_FAMILIES: readonly AppRouteFamily[] = [
     "/overview",
     "/agents",
     "/workspace",
-    "/templates",
     "/knowledge",
     "/integrations",
     "/call-logs",

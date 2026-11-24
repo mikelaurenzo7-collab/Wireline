@@ -61,8 +61,6 @@ export type JobType =
   | "v2a_action_extraction" // Voice-to-Action: extract action items from a call transcript
   | "execute_action" // Execute an extracted action via the Action Engine
   | "calendar_sync" // Sync Google/Outlook calendars
-  | "proactive_lead_enrichment" // Async lead enrichment
-  | "autonomous_prospecting" // AI-driven lead discovery
   | "knowledge_from_url" // Async site crawl → structured knowledge entries
   | "cadence_tick" // Multi-touch outbound cadence step processor
   | "callback_tick" // Caller-requested callback executor (due callback_scheduled_at rows)

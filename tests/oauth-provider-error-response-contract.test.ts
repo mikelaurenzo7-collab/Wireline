@@ -6,15 +6,9 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 const oauthCallbackRoutes = [
-  "src/routes/oauth/apollo.ts",
-  "src/routes/oauth/hubspot.ts",
-  "src/routes/oauth/meta.ts",
   "src/routes/oauth/microsoft-graph.ts",
   "src/routes/oauth/microsoft.ts",
-  "src/routes/oauth/salesforce.ts",
-  "src/routes/oauth/shopify.ts",
   "src/routes/oauth/slack.ts",
-  "src/routes/oauth/square.ts",
   "src/routes/oauth/x.ts",
   "src/routes/oauth/yahoo.ts",
   "src/routes/oauth/zoom.ts",
@@ -45,17 +39,11 @@ describe("OAuth provider-error responses", () => {
 
   it("does not leak OAuth env var names from connect-start routes", () => {
     const connectStarts = [
-      "src/routes/oauth/apollo.ts",
       "src/routes/oauth/google-sheets.ts",
       "src/routes/oauth/google.ts",
-      "src/routes/oauth/hubspot.ts",
-      "src/routes/oauth/meta.ts",
       "src/routes/oauth/microsoft-graph.ts",
       "src/routes/oauth/microsoft.ts",
-      "src/routes/oauth/salesforce.ts",
-      "src/routes/oauth/shopify.ts",
       "src/routes/oauth/slack.ts",
-      "src/routes/oauth/square.ts",
       "src/routes/oauth/x.ts",
       "src/routes/oauth/yahoo.ts",
       "src/routes/oauth/zoom.ts",

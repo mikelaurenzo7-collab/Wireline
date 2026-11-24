@@ -13,8 +13,6 @@ import {
   toolAuditResultText,
 } from "./post-call-follow-up";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
-import { apolloReadyForUser, searchLeads as apolloSearch } from "./apollo-service";
-import { LEAD_STATUS } from "./outbound-status";
 import {
   claimTerminalAccountPurge,
   purgeAccount,
@@ -437,125 +435,6 @@ export async function handleJob(job: JobRow): Promise<void> {
       jobId: job.id,
       user_id: p.user_id,
       tables_touched: sequence.purge.tablesTouched.length,
-    });
-  }
-
-  if (job.type === "proactive_lead_enrichment") {
-    // Unreachable by design: job-worker.ts intercepts this type before the
-    // base handler and runs the tenant-scoped replacement. Keeping a hard
-    // throw here means removing the intercept cannot silently revive the
-    // phone-only cross-tenant history reads that caused #879.
-    throw new Error(
-      "proactive_lead_enrichment must be handled by the tenant-safe intercept in job-worker.ts",
-    );
-  }
-
-  if (job.type === "autonomous_prospecting") {
-    const p = job.payload as { userId?: string };
-    const userId = assertJobPayloadOwner(job, p);
-    const [settings] = await drizzle
-      .select()
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, userId))
-      .limit(1);
-
-    if (!settings?.prospectingEnabled) {
-      log.info("Prospecting disabled for user", { userId });
-      await persistJobResult(job.id, {
-        skipped: true,
-        reason: "prospecting_disabled",
-        leadsFound: 0,
-        leadsAdded: 0,
-      });
-      return;
-    }
-
-    const apolloReady = await apolloReadyForUser(userId);
-    log.info("Starting autonomous prospecting", {
-      userId,
-      titles: settings.targetTitles,
-      apolloReady,
-    });
-
-    if (!apolloReady) {
-      await persistJobResult(job.id, {
-        skipped: true,
-        reason: "apollo_not_configured",
-        leadsFound: 0,
-        leadsAdded: 0,
-        hint: "Connect Apollo in Settings → Integrations or set APOLLO_API_KEY on the platform.",
-      });
-      return;
-    }
-
-    const leads = await apolloSearch(
-      {
-        titles: (settings.targetTitles as string[]) || [],
-        industries: (settings.targetIndustries as string[]) || [],
-        states: (settings.targetStates as string[]) || [],
-        employee_ranges: (settings.targetEmployeeRanges as string[]) || [],
-        limit: 10,
-      },
-      userId,
-    );
-
-    let added = 0;
-    for (const lead of leads) {
-      try {
-        const customerName =
-          `${lead.first_name} ${lead.last_name}`.trim() || lead.company || "Lead";
-        const phoneIdentity = lead.phone.replace(/\D+/g, "");
-        const idempotencyKey = `apollo:${lead.apollo_id || phoneIdentity}`;
-        await drizzle.insert(schema.outboundLeads).values({
-          userId,
-          customerName,
-          customerNumber: lead.phone,
-          phoneNumber: lead.phone,
-          email: lead.email,
-          status: LEAD_STATUS.PENDING,
-          source: "apollo",
-          idempotencyKey,
-          context: `Sourced via Apollo Lead Hunt for ${lead.title || "a decision-maker"} role at ${lead.company || "the matched company"}.`,
-          metadata: {
-            source: "apollo_lead_hunt",
-            call_purpose: "marketing_or_sales",
-            has_express_written_consent: false,
-            lead_hunt: {
-              provider: "apollo",
-              apollo_id: lead.apollo_id || null,
-              title: lead.title || null,
-              company: lead.company || null,
-              phone_source: lead.phone_source || null,
-              linkedin_url: lead.linkedin_url || null,
-              city: lead.city || null,
-              state: lead.state || null,
-              review_status: "pending",
-            },
-          },
-        });
-        added++;
-      } catch (error: any) {
-        const errorCode = error?.code || error?.cause?.code;
-        if (errorCode !== "23505") {
-          log.warn("Lead Hunt could not stage an Apollo result", {
-            userId,
-            errorCode: typeof errorCode === "string" ? errorCode : "unknown",
-          });
-        }
-      }
-    }
-
-    await persistJobResult(job.id, {
-      leadsFound: leads.length,
-      leadsAdded: added,
-      reviewPending: added,
-      apolloReady: true,
-    });
-
-    log.info("Autonomous prospecting complete", {
-      userId,
-      leadsFound: leads.length,
-      leadsAdded: added,
     });
   }
 

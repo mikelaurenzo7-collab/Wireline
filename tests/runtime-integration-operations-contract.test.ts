@@ -12,19 +12,9 @@ import {
 
 describe("runtime integration operations", () => {
   it("covers available integration tools without advertising private live reads or unavailable payments", () => {
-    const withheld = new Set([...UNVERIFIED_LIVE_TOOL_NAMES, "square_send_invoice"]);
+    const withheld = new Set(UNVERIFIED_LIVE_TOOL_NAMES);
     const gaps = validatePlaybookCoverage();
     expect(gaps.filter((name) => !withheld.has(name))).toEqual([]);
-    expect(new Set(gaps)).toEqual(
-      new Set([
-        "crm_search_contacts",
-        "crm_log_call",
-        "square_lookup_order",
-        "square_lookup_customer",
-        "square_create_payment_link",
-        "square_send_invoice",
-      ]),
-    );
   });
 
   it("keeps runtime vendor truth aligned with the actual platform", () => {

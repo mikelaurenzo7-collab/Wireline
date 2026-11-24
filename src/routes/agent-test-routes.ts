@@ -113,7 +113,7 @@ router.post(
       const agent = agentRows[0];
       if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
       const savedPersonality = personalities[0]?.content || "";
-      if (isSavedRuntimeReviewRequired(savedPersonality, agent.role)) {
+      if (isSavedRuntimeReviewRequired(savedPersonality)) {
         const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
         const sse = createSseStream(req, res);
         writeSseBootstrap(sse, { agentId, agentName: agent.name, mode: "customer_test" });

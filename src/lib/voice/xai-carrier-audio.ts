@@ -27,21 +27,25 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
   // estimates how much is queued; a carrier mark remains the authority for
   // completed playback. Keep chunks until the corresponding mark arrives.
   let queuedUntil = 0;
-  const playback = new Map<string, {
+  type PlaybackItem = {
     itemId: string;
     contentIndex: number;
     responseId: string;
     chunks: { start: number; duration: number }[];
-  }>();
+  };
+  const playback = new Map<string, PlaybackItem>();
   const interruptedResponses = new Set<string>();
   // Bound startup on an already-answered, billable phone call. Reset while
   // greeting audio flows so a long disclosure can finish.
   let openingTimeout: ReturnType<typeof setTimeout> | undefined;
   const waitForOpening = () => {
     clearTimeout(openingTimeout);
-    openingTimeout = setTimeout(() => {
-      if (model.readyState === WebSocket.OPEN) model.close(1011, "Opening audio unavailable");
-    }, 20_000 + Math.max(0, queuedUntil - Date.now()));
+    openingTimeout = setTimeout(
+      () => {
+        if (model.readyState === WebSocket.OPEN) model.close(1011, "Opening audio unavailable");
+      },
+      20_000 + Math.max(0, queuedUntil - Date.now()),
+    );
     openingTimeout.unref();
   };
   model.once("open", waitForOpening);
@@ -99,8 +103,10 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
       return;
     }
     if (!event) return;
-    if (typeof event.response_id === "string" && interruptedResponses.has(event.response_id)) return;
-    if (typeof event.response?.id === "string" && interruptedResponses.has(event.response.id)) return;
+    if (typeof event.response_id === "string" && interruptedResponses.has(event.response_id))
+      return;
+    if (typeof event.response?.id === "string" && interruptedResponses.has(event.response.id))
+      return;
     if (event.type === "session.updated") configured = true;
     if (
       (event.type === "response.output_audio.delta" || event.type === "response.audio.delta") &&
@@ -115,7 +121,7 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
       if (typeof event.item_id === "string" && event.item_id) {
         const contentIndex = Number.isInteger(event.content_index) ? event.content_index : 0;
         const key = JSON.stringify([event.item_id, contentIndex]);
-        const item = playback.get(key) ?? {
+        const item: PlaybackItem = playback.get(key) ?? {
           itemId: event.item_id,
           contentIndex,
           responseId,
@@ -152,12 +158,14 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
           0,
         );
         if (played < total && model.readyState === WebSocket.OPEN) {
-          model.send(JSON.stringify({
-            type: "conversation.item.truncate",
-            item_id: item.itemId,
-            content_index: item.contentIndex,
-            audio_end_ms: Math.floor(played),
-          }));
+          model.send(
+            JSON.stringify({
+              type: "conversation.item.truncate",
+              item_id: item.itemId,
+              content_index: item.contentIndex,
+              audio_end_ms: Math.floor(played),
+            }),
+          );
         }
       }
       playback.clear();
