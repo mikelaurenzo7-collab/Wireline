@@ -6,6 +6,7 @@ import { getDncProvider } from "./dnc-provider";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
+import { isUsCallingState } from "./us-calling-jurisdiction";
 import { LEAD_STATUS } from "./outbound-status";
 import { jsonSafeId } from "./server-utils";
 import {
@@ -292,8 +293,11 @@ export async function evaluateOutboundDialGate(opts: {
   if (!isLiveSessionFollowUp) {
     const callingHours = resolveCallingHoursForPhone(opts.phone);
     quietHoursTz = callingHours.timeZone ?? null;
-    if (!callingHours.allowed && afterHoursServiceAllowed) afterHoursOverride = true;
-    if (!callingHours.allowed && !afterHoursServiceAllowed) {
+    const eligibleOverride =
+      afterHoursServiceAllowed && callingHours.inferred &&
+      typeof callingHours.state === "string" && isUsCallingState(callingHours.state);
+    if (!callingHours.allowed && eligibleOverride) afterHoursOverride = true;
+    if (!callingHours.allowed && !eligibleOverride) {
       const customerMessage = quietHoursBlockedMessage(callingHours);
       return finish(
         {
