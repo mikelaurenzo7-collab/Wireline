@@ -11,7 +11,7 @@ import {
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
 import {
-  buildRoleToolDefsForTenant,
+  buildAgentToolDefsForTenant,
   clampRuntimePromptPreservingTail,
 } from "../agent-runtime-helpers";
 import {
@@ -82,17 +82,6 @@ export function resolveOpenAIAgentVoiceSelection(input: {
   );
 }
 
-const ROLE_TO_PROFILE: Record<string, WirelineVoiceProfile> = {
-  sales: "bright",
-  lead_qualifier: "clear",
-  scheduler: "warm",
-  appointment_scheduler: "warm",
-  receptionist: "balanced",
-  customer_service: "warm",
-  technical_support: "balanced",
-  collections: "direct",
-};
-
 const PRIVATE_TEST_TOOL: OpenAIRealtimeToolDefinition = {
   type: "function",
   name: "search_agent_knowledge",
@@ -115,17 +104,9 @@ export function normalizeWirelineVoiceProfile(value: unknown): WirelineVoiceProf
     : undefined;
 }
 
-export function resolveWirelineVoiceProfile(
-  role?: string | null,
-  requestedProfile?: unknown,
-): WirelineVoiceProfile {
-  const explicit = normalizeWirelineVoiceProfile(requestedProfile);
-  if (explicit) return explicit;
-  const normalizedRole = String(role || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-  return ROLE_TO_PROFILE[normalizedRole] || "balanced";
+/** One Bot, so the saved profile decides. Unset falls back to balanced. */
+export function resolveWirelineVoiceProfile(requestedProfile?: unknown): WirelineVoiceProfile {
+  return normalizeWirelineVoiceProfile(requestedProfile) || "balanced";
 }
 
 const NON_NEGOTIABLE_RUNTIME_RULES = [
@@ -311,8 +292,8 @@ export function composeOpenAIRealtimeInstructions(input: {
   const runtimeTemplate = internalPolicy
     ? null
     : resolveRuntimeTemplatePersonality(input.personality);
-  const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, input.agent.role);
-  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, input.agent.role);
+  const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, input.personality);
+  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, input.personality);
   const customInstructions = internalPolicy
     ? ""
     : runtimeReviewRequired
@@ -326,7 +307,6 @@ export function composeOpenAIRealtimeInstructions(input: {
       ].join("\n")
     : [
         `You are ${input.agent.name}.`,
-        `Your role is ${input.agent.role || "agent"}.`,
         input.tenant.businessName ? `You represent ${input.tenant.businessName}.` : "",
         ...NON_NEGOTIABLE_RUNTIME_RULES,
       ]
@@ -524,13 +504,12 @@ async function resolveTools(
   surface: OpenAIRealtimeSurface,
   runtime: Awaited<ReturnType<typeof loadRuntime>>,
 ): Promise<readonly ProviderTool[]> {
-  if (isSavedRuntimeReviewRequired(runtime.personality, runtime.agent.role)) return [];
+  if (isSavedRuntimeReviewRequired(runtime.personality)) return [];
   if (surface === "browser_test") {
     return [PRIVATE_TEST_TOOL] as readonly ProviderTool[];
   }
 
-  const tools = await buildRoleToolDefsForTenant(
-    runtime.agent.role || "customer_service",
+  const tools = await buildAgentToolDefsForTenant(
     runtime.agent.enabledTools,
     runtime.agent.userId,
     runtime.tenant.aiTier,
@@ -548,17 +527,14 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
   surface: OpenAIRealtimeSurface;
 }) {
   const runtime = await loadRuntime(input.agentId, input.userId);
-  const profile = resolveWirelineVoiceProfile(
-    runtime.agent.role,
-    storedProfile(runtime.agent.businessVariables),
-  );
+  const profile = resolveWirelineVoiceProfile(storedProfile(runtime.agent.businessVariables));
   const voice = resolveOpenAIAgentVoiceSelection({
     voiceProvider: runtime.agent.voiceProvider,
     voiceId: runtime.agent.voiceId,
     phoneVoiceId: runtime.agent.phoneVoiceId,
     profile,
   });
-  const reviewRequired = isSavedRuntimeReviewRequired(runtime.personality, runtime.agent.role);
+  const reviewRequired = isSavedRuntimeReviewRequired(runtime.personality);
   if (reviewRequired) {
     throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
   }
@@ -611,7 +587,6 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     userId: input.userId,
     agentId: runtime.agent.id,
     agentName: runtime.agent.name,
-    role: runtime.agent.role || "customer_service",
     timezone: runtime.agent.timezone || "UTC",
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     profile,
@@ -627,23 +602,17 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
   };
 }
 
-function resolveWirelineOpenAIVoice(
-  role?: string | null,
-  profile?: WirelineVoiceProfile,
-): OpenAIRealtimeVoice {
-  return PROFILE_TO_VOICE[profile || resolveWirelineVoiceProfile(role)];
+function resolveWirelineOpenAIVoice(profile?: WirelineVoiceProfile): OpenAIRealtimeVoice {
+  return PROFILE_TO_VOICE[profile || resolveWirelineVoiceProfile(undefined)];
 }
 
 export async function getOpenAIRealtimeVoiceProfile(userId: string, agentId: string) {
   const runtime = await loadRuntime(agentId, userId);
-  const profile = resolveWirelineVoiceProfile(
-    runtime.agent.role,
-    storedProfile(runtime.agent.businessVariables),
-  );
+  const profile = resolveWirelineVoiceProfile(storedProfile(runtime.agent.businessVariables));
   return {
     profile,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: resolveWirelineOpenAIVoice(runtime.agent.role, profile),
+    voice: resolveWirelineOpenAIVoice(profile),
     customVoiceConfigured: customVoiceSelection(runtime.agent.businessVariables) !== null,
   };
 }
@@ -669,7 +638,7 @@ export async function setOpenAIRealtimeVoiceProfile(
   return {
     profile: normalized,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: resolveWirelineOpenAIVoice(runtime.agent.role, normalized),
+    voice: resolveWirelineOpenAIVoice(normalized),
     customVoiceConfigured: false,
   };
 }

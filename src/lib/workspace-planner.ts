@@ -402,7 +402,7 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
   const role = agent.role || "AI receptionist";
   const archetype = agent.archetype || "warm professional";
 
-  const enabledTools = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
+  const enabledTools = resolveAgentTools(agent.enabledTools);
   const enabledSet = new Set(enabledTools);
   const capabilityLines = AGENT_TOOL_CATALOG.filter((tool) => isAgentToolConfigurable(tool.name))
     .map((tool) => `- ${tool.name} (${tool.label})${enabledSet.has(tool.name) ? ": ON" : ": off"}`)

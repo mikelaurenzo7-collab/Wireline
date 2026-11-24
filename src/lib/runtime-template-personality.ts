@@ -1,10 +1,11 @@
-import { isAgentRoleLaunchReviewRequired } from "./template-launch-policy";
-
 /**
- * Template agents persist their role, selected specialty, and (for newly
- * composed rows) Account Holder instructions in one personality string. The
- * voice providers historically kept only the role-first 1,200/1,500 chars,
- * which silently removed every specialty because its marker comes later.
+ * Reads the personality text already saved on a Bot row.
+ *
+ * BotBound no longer ships role templates, but Bots created while it did still
+ * persist a role personality, a selected specialty, and Account Holder
+ * instructions in one string. The voice providers historically kept only the
+ * role-first 1,200/1,500 chars, which silently removed every specialty because
+ * its marker comes later.
  *
  * This parser is deliberately read-only and marker-gated: ordinary personality
  * rows keep their existing provider behavior, while both legacy role-first
@@ -84,25 +85,30 @@ export function removesRegulatedTemplateProvenance(
   return regulatedTemplateProvenanceMarker(proposedPersonality) !== currentMarker;
 }
 
-function regulatedRoleHold(role: string | null | undefined): string | null {
-  if (!isAgentRoleLaunchReviewRequired(role)) return null;
+/**
+ * Bots seeded from the retired collections role carry its opening line in their
+ * saved personality. The role column is gone, so the hold now keys off that
+ * saved text — the only durable evidence those rows still exist.
+ */
+const SAVED_COLLECTIONS_ROLE_MARKER = "This collections role is review-required";
+
+function regulatedRoleHold(personality: string | null | undefined): string | null {
+  const saved = typeof personality === "string" ? personality : "";
+  if (!saved.includes(SAVED_COLLECTIONS_ROLE_MARKER)) return null;
   return `## REGULATED ROLE HOLD
-This saved collections role is not authorized for live operation. Do not discuss an account or balance, verify an alleged debtor, request payment, offer terms, record a payment promise, or initiate collection activity.
+This saved collections workflow is not authorized for live operation. Do not discuss an account or balance, verify an alleged debtor, request payment, offer terms, record a payment promise, or initiate collection activity.
 Explain briefly that this workflow requires BotBound review and an approved jurisdiction-specific account configuration. Route to a configured human only when the transfer tool confirms success; otherwise share only a verified general contact channel.`;
 }
 
 export function isRuntimeReviewRequired(
   guidance: RuntimeTemplatePersonality | null,
-  role?: string | null,
+  personality?: string | null,
 ): boolean {
-  return Boolean((guidance && regulatedTemplateHold(guidance)) || regulatedRoleHold(role));
+  return Boolean((guidance && regulatedTemplateHold(guidance)) || regulatedRoleHold(personality));
 }
 
-export function isSavedRuntimeReviewRequired(
-  personality: string | null | undefined,
-  role?: string | null,
-): boolean {
-  return isRuntimeReviewRequired(resolveRuntimeTemplatePersonality(personality), role);
+export function isSavedRuntimeReviewRequired(personality: string | null | undefined): boolean {
+  return isRuntimeReviewRequired(resolveRuntimeTemplatePersonality(personality), personality);
 }
 
 function clampPreservingEnds(value: string, max: number): string {
@@ -166,9 +172,10 @@ export function resolveRuntimeTemplatePersonality(
  */
 export function runtimeTemplateGuidanceBlock(
   guidance: RuntimeTemplatePersonality | null,
-  role?: string | null,
+  personality?: string | null,
 ): string {
-  const regulatedHold = (guidance && regulatedTemplateHold(guidance)) || regulatedRoleHold(role);
+  const regulatedHold =
+    (guidance && regulatedTemplateHold(guidance)) || regulatedRoleHold(personality);
   if (regulatedHold) return regulatedHold;
   if (!guidance) return "";
 

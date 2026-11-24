@@ -24,7 +24,6 @@ import {
 } from "../lib/create-brief-recovery";
 import { extractionPersistedSomething } from "../lib/training-extraction-result";
 import { authFetch, safeJson } from "../lib/api";
-import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
 import { stashPostCreateWizard, type PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
@@ -40,17 +39,13 @@ import {
 } from "../lib/bot-mark";
 
 type TemplateKey = (typeof BOT_ROLE_TEMPLATES)[number]["key"];
-type TechnicalRole =
-  | "receptionist"
-  | "sales"
-  | "customer_service"
-  | "scheduler"
-  | "lead_qualifier"
-  | "personal_assistant"
-  | "custom";
 
-/** The five roles BotBound sells, offered as one-tap starters in the dialog. */
-const ROLE_PRESET_KEYS: TemplateKey[] = [
+/**
+ * One Bot handles everything, so a starter no longer picks a role or a
+ * personality. It only prefills the first brief and the suggested name; the
+ * Bot that gets created is the same either way.
+ */
+const STARTER_KEYS: TemplateKey[] = [
   "front-desk",
   "sales-rep",
   "appointment-setter",
@@ -58,18 +53,12 @@ const ROLE_PRESET_KEYS: TemplateKey[] = [
   "recruiter",
 ];
 
-const TECHNICAL_ROLE_BY_TEMPLATE: Record<TemplateKey, TechnicalRole> = {
-  "front-desk": "receptionist",
-  "sales-rep": "sales",
-  "appointment-setter": "scheduler",
-  "customer-support": "customer_service",
-  "lead-qualifier": "lead_qualifier",
-  recruiter: "custom",
-  "property-manager": "custom",
-  "personal-assistant": "personal_assistant",
-  "family-concierge": "personal_assistant",
-  custom: "custom",
-};
+/**
+ * Personal starters seed the privacy-first posture instead of the business
+ * one. This is a posture, not a role: the toolbox and prompt are otherwise
+ * identical.
+ */
+const PERSONAL_STARTER_KEYS = new Set<TemplateKey>(["personal-assistant", "family-concierge"]);
 
 function templateForKey(value: string | null | undefined) {
   return (
@@ -110,7 +99,7 @@ async function applyStartingBrief({
       body: JSON.stringify({
         agentId,
         message: [
-          `Role starter: ${template.name}.`,
+          `Starter: ${template.name}.`,
           `Conversation direction: ${template.direction}.`,
           `Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")
             .map((channel) => channel.label)
@@ -129,7 +118,6 @@ async function applyStartingBrief({
         metadata: {
           source: "fast_start_brief",
           template: template.key,
-          role: TECHNICAL_ROLE_BY_TEMPLATE[template.key],
           workspace_model: "one_workspace",
           object: "bot",
         },
@@ -325,10 +313,9 @@ export default function CreateAgentDialog({
       return;
     }
     const finalName = name.trim() || defaultName(templateKey);
-    const role = TECHNICAL_ROLE_BY_TEMPLATE[templateKey];
-    // Compatibility only: legacy records and provider defaults still store a
-    // capability profile. It never creates a second customer-facing workspace.
-    const legacyCapabilityProfile = isBusinessTemplateCategory(selectedTemplate.category);
+    // Business or personal posture. It never creates a second customer-facing
+    // workspace and never changes which Bot gets created.
+    const legacyCapabilityProfile = !PERSONAL_STARTER_KEYS.has(templateKey);
 
     setCreating(true);
     setError("");
@@ -343,7 +330,6 @@ export default function CreateAgentDialog({
         body: JSON.stringify({
           name: finalName,
           mark_key: markKey,
-          role,
           is_business_agent: legacyCapabilityProfile,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
@@ -352,7 +338,6 @@ export default function CreateAgentDialog({
         id?: string;
         name?: string;
         mark_key?: unknown;
-        role?: string;
         channel?: WorkspaceAgentSummary["channel"];
         is_business_agent?: boolean;
         error?: string;
@@ -382,7 +367,6 @@ export default function CreateAgentDialog({
         id: body.id,
         name: body.name || finalName,
         mark_key: isBotMarkKey(body.mark_key) ? body.mark_key : null,
-        role: body.role ?? role,
         channel: body.channel ?? "voice",
         is_business_agent: body.is_business_agent ?? legacyCapabilityProfile,
       };
@@ -403,7 +387,6 @@ export default function CreateAgentDialog({
         event: "agent_draft_created",
         agentId: body.id,
         metadata: {
-          role,
           template: templateKey,
           workspace_model: "one_workspace",
           object: "bot",
@@ -414,26 +397,12 @@ export default function CreateAgentDialog({
         event: "agent_created",
         agentId: body.id,
         metadata: {
-          role,
           template: templateKey,
           workspace_model: "one_workspace",
           object: "bot",
           phone_provisioned: false,
         },
       });
-      if (role === "sales") {
-        emitProductEvent({
-          event: "sales_agent_created",
-          audience: "sales",
-          agentId: body.id,
-          metadata: {
-            role,
-            template: templateKey,
-            workspace_model: "one_workspace",
-            object: "bot",
-          },
-        });
-      }
       const wizardPayload: PostCreateWizardPayload = {
         agentId: body.id,
         agentName: savedAgent.name,
@@ -511,9 +480,11 @@ export default function CreateAgentDialog({
           ) : null}
           <div className="grid min-w-0 grid-cols-1 gap-5">
             <div>
-              <span className="text-sm font-semibold text-foreground">Start from a role</span>
-              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Role starters">
-                {ROLE_PRESET_KEYS.map((key) => {
+              <span className="text-sm font-semibold text-foreground">
+                What should it handle first?
+              </span>
+              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Starting briefs">
+                {STARTER_KEYS.map((key) => {
                   const preset = templateForKey(key);
                   const selected = templateKey === key;
                   return (

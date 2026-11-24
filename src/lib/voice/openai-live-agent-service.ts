@@ -371,7 +371,7 @@ export async function createOpenAILiveVoiceCall(input: {
     runtime.directives,
     runtime.knowledge,
   );
-  const reviewRequired = isSavedRuntimeReviewRequired(runtime.personality, runtime.agent.role);
+  const reviewRequired = isSavedRuntimeReviewRequired(runtime.personality);
   if (reviewRequired) {
     throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
   }

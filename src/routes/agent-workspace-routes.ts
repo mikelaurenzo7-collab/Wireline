@@ -258,7 +258,7 @@ router.get(
           id: agent.id,
           name: agent.name,
           role: agent.role,
-          enabledTools: resolveAgentTools(agent.role ?? undefined, agent.enabledTools),
+          enabledTools: resolveAgentTools(agent.enabledTools),
         },
         messages: messages.reverse().map((m) => {
           const metadata = readStoredStudioMessageMetadata(m.metadata);
@@ -880,7 +880,7 @@ router.post(
           enable,
         });
 
-        const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
+        const current = resolveAgentTools(agent.enabledTools);
         if (review.metadata.savedProposalKeys.includes(review.ref.key)) {
           return { enabledTools: current, previouslySaved: true };
         }

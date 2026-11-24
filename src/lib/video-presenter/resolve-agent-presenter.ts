@@ -17,7 +17,6 @@ export { businessAgentVideoPresenterDefaults } from "./liveavatar-service";
 export function resolveAgentVideoPresenter(input: {
   id: string;
   name: string;
-  role?: string | null;
   isBusinessAgent?: boolean;
   videoPresenterProvider?: string | null;
   videoPresenterAvatarId?: string | null;
@@ -26,7 +25,6 @@ export function resolveAgentVideoPresenter(input: {
   const identity = buildAgentIdentityPreview({
     id: input.id,
     name: input.name,
-    role: input.role,
     isBusinessAgent: input.isBusinessAgent,
   });
 

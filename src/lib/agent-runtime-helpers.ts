@@ -3,7 +3,6 @@ import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,
 } from "./tenant-integration-connections";
-import { DEFAULT_AGENT_ROLE_ID } from "./agent-role-definitions";
 import { getTenantChannelEntitlements } from "./channel-entitlements";
 import { isAgentToolChannelAllowed } from "./agent-tool-channel-policy";
 import { log } from "./server-context";
@@ -183,66 +182,6 @@ export const SENTIMENT_POSITIVE_SIGNALS = [
   "you're the best",
   "makes sense",
 ];
-
-/** Map BotBound persona roles (wireline_sales, etc.) to voice-runtime role keys. */
-const OUTBOUND_VOICE_ROLE_ALIASES: Record<string, string> = {
-  wireline_sales: "sales",
-  wireline_reception: "receptionist",
-  wireline_support: "customer_service",
-  wireline_technical: "technical_support",
-  wireline_onboarding: "scheduler",
-};
-
-export function mapOutboundVoiceRole(role: string | null | undefined): string {
-  if (!role) return DEFAULT_AGENT_ROLE_ID;
-  return OUTBOUND_VOICE_ROLE_ALIASES[role] ?? role.replace(/^wireline_/, "");
-}
-
-export const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
-  sales: "The Closer",
-  lead_qualifier: "The Closer",
-  marketing: "The Closer",
-  customer_service: "The Empath",
-  technical_support: "Support Tech",
-  collections: "The Collector",
-  scheduler: "Receptionist",
-  receptionist: "Receptionist",
-};
-
-export function getArchetypeConfig(archetype: string): { rules: string; temp: number } {
-  switch (archetype) {
-    case "The Closer":
-      return {
-        rules:
-          "You are a consultative closer. Lead with discovery, uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.",
-        temp: 0.7,
-      };
-    case "Support Tech":
-      return {
-        rules:
-          "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush. You summarize your findings before proposing a fix, and you verify the fix worked before closing.",
-        temp: 0.2,
-      };
-    case "The Empath":
-      return {
-        rules:
-          "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always. Hold your own calm, steady voice throughout, do not raise your energy or speed up to match an upset caller; your steadiness is what de-escalates them.",
-        temp: 0.6,
-      };
-    case "The Collector":
-      return {
-        rules:
-          "You are firm, professional, and fully compliant with debt collection regulations. You always verify identity before discussing account details. You present the balance factually, listen to the customer's situation, and offer payment plan options before escalating. You never threaten, never harass, and document every promise made.",
-        temp: 0.3,
-      };
-    default: // Receptionist
-      return {
-        rules:
-          "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.",
-        temp: 0.4,
-      };
-  }
-}
 
 export const AGENT_TOOL_DEFS = {
   search_knowledge_base: {
@@ -962,38 +901,20 @@ export const AGENT_TOOL_DEFS = {
 
 export type AgentToolName = keyof typeof AGENT_TOOL_DEFS;
 
-export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
-  sales:
-    "Always assume the sale. If the caller is interested, book a follow-up demo or meeting immediately using book_appointment. Use capture_customer_profile to record budget and timeline before the call ends.",
-  customer_service:
-    "Be helpful and empathetic. Ask the caller to describe the issue without revealing private account history. If the issue is complex or requires private records, create_followup_task for the back-office team. Only use send_text_message after the caller explicitly asks for a text or confirms that channel is okay.",
-  collections:
-    "Remain professional and firm but compliant. You MUST verify the caller's identity before discussing debt details. Use log_payment_promise to record all commitments, this is a legal requirement. If the customer opts out of future contact, use add_to_dnc immediately.",
-  technical_support:
-    "Be methodical. Use caller-provided details and approved knowledge to troubleshoot. If private history is needed or you cannot solve it, use create_support_ticket to escalate to engineering.",
-  scheduler:
-    "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. When send_email is available and the caller requests an email, confirm their email address before sending the booking details. Only say an email was sent after the send tool confirms success. Use send_text_message only if available and the customer asked for a text confirmation. If a requested send tool is unavailable, offer a manual follow-up using create_followup_task when available; claim the request is saved only after that tool confirms creation.",
-  lead_qualifier:
-    "Qualify fast: budget, timeline, authority, need. Record what the caller shares with capture_customer_profile. Book a demo with book_appointment when qualified; notify the team on Slack or Teams for hot leads.",
-  marketing:
-    "Capture campaign interest and next steps. Record what the caller shares with capture_customer_profile. For existing-record changes or callbacks, create_followup_task for team review. Offer book_appointment for demos or nurture with send_email.",
-};
-
-export function buildRoleToolDefs(role: string, enabledTools?: unknown): object[] {
-  const toolNames = resolveAgentTools(role, enabledTools) as AgentToolName[];
+export function buildAgentToolDefs(enabledTools?: unknown): object[] {
+  const toolNames = resolveAgentTools(enabledTools) as AgentToolName[];
   const tools = toolNames
     .filter((name) => !UNVERIFIED_LIVE_TOOL_NAMES.has(name))
     .map((name) => AGENT_TOOL_DEFS[name])
     .filter(Boolean);
-  if (role === "BotBound Specialist" && isLegacyFounderShowcaseToolSelection(enabledTools)) {
+  if (isLegacyFounderShowcaseToolSelection(enabledTools)) {
     tools.push(AGENT_TOOL_DEFS.create_followup_task);
   }
   return tools;
 }
 
 /** Live tools respect the selected set, available connections and current paid channels. */
-export async function buildRoleToolDefsForTenant(
-  role: string,
+export async function buildAgentToolDefsForTenant(
   enabledTools: unknown,
   userId: string,
   aiTier?: string | null,
@@ -1004,7 +925,7 @@ export async function buildRoleToolDefsForTenant(
   // Connection schemas may be cached, but paid channel authority must be fresh.
   // A downgrade must not keep advertising customer sends from an older cache.
   const [cached, entitlements] = await Promise.all([
-    getCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags),
+    getCachedTenantToolDefs(userId, enabledTools, aiTier, tenantFlags),
     getTenantChannelEntitlements(userId).catch((error: unknown) => {
       log.warn("Agent channel lookup failed; disabling customer send tools", {
         errorClass: error instanceof Error ? error.name : typeof error,
@@ -1012,8 +933,7 @@ export async function buildRoleToolDefsForTenant(
       return { channels: [] };
     }),
   ]);
-  const legacyFounderSpecialist =
-    role === "BotBound Specialist" && isLegacyFounderShowcaseToolSelection(enabledTools);
+  const legacyFounderSpecialist = isLegacyFounderShowcaseToolSelection(enabledTools);
   const allowedTools = (tools: object[]) => {
     const computerTools = [
       AGENT_TOOL_DEFS.start_computer_task,
@@ -1061,7 +981,7 @@ export async function buildRoleToolDefsForTenant(
   };
   if (cached) return allowedTools(cached);
 
-  let resolved = applyPlanToolUnlocks(resolveAgentTools(role, enabledTools), aiTier);
+  let resolved = applyPlanToolUnlocks(resolveAgentTools(enabledTools), aiTier);
   if (!tenantFlags?.twilioMessaging) {
     resolved = resolved.filter((n) => n !== "send_text_message");
   }
@@ -1072,6 +992,6 @@ export async function buildRoleToolDefsForTenant(
   const toolNames = filterToolsByTenantConnections(resolved, conn) as AgentToolName[];
   const tools = toolNames.map((name) => AGENT_TOOL_DEFS[name]).filter(Boolean);
 
-  await setCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags, tools);
+  await setCachedTenantToolDefs(userId, enabledTools, aiTier, tenantFlags, tools);
   return allowedTools(tools);
 }

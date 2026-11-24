@@ -72,7 +72,7 @@ async function assignNativePhoneLineUnfenced(input: {
       .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
       .limit(1);
     if (!agent) throw AppError.notFound("Agent not found");
-    if (isSavedRuntimeReviewRequired(agent.personality, agent.role)) {
+    if (isSavedRuntimeReviewRequired(agent.personality)) {
       throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
     }
     if (includesVoice) assertOpenAIRealtimeConfigured(input.userId);

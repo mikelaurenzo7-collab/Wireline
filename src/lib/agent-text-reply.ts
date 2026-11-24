@@ -192,7 +192,7 @@ export async function generateAgentTextReply(input: {
   const agent = agentRows[0];
   if (!agent) throw new Error("Bot not found");
   const savedPersonality = personalities[0]?.content || "";
-  if (isSavedRuntimeReviewRequired(savedPersonality, agent.role)) {
+  if (isSavedRuntimeReviewRequired(savedPersonality)) {
     throw new AgentTextReplyReviewRequiredError();
   }
 

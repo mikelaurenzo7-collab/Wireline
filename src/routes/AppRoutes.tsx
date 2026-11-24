@@ -17,9 +17,6 @@ const SettingsPage = lazy(() =>
 const AdminSettings = lazy(() =>
   import("../components/AdminSettings").then((module) => withVisualQaPage(module, "admin")),
 );
-const TemplatesPage = lazy(() =>
-  import("../pages/TemplatesPage").then((module) => withVisualQaPage(module, "templates")),
-);
 const KnowledgePage = lazy(() =>
   import("../pages/KnowledgePage").then((module) => withVisualQaPage(module, "knowledge")),
 );
@@ -175,7 +172,6 @@ export default function AppRoutes() {
         <Route path="/voice-clone" element={<VoiceToStudioRedirect clone />} />
         {/* The Workspace's canonical route stays /studio so saved links keep working. */}
         <Route path="/workspace" element={<ToStudioRedirect />} />
-        <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 
         <Route path="/connections" element={<ConnectionsPage />} />
