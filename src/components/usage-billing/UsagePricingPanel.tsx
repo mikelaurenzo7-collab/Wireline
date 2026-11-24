@@ -464,7 +464,7 @@ export default function UsagePricingPanel({
       </dl>
       <p className="text-center text-xs text-muted-foreground">
         No rollover. Limit alerts at 50%, 80%, and 100%. SMS and outbound require sender approval
-        and recipient permission. Registration fees may apply.
+        and recipient permission. BotBound covers US carrier registration fees for texting.
       </p>
     </div>
   );

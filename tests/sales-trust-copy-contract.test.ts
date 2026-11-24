@@ -65,7 +65,7 @@ describe("sales trust copy contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("shows sales prospecting and follow up with truthful activation requirements", () => {
+  it("shows sales follow up with truthful activation requirements", () => {
     const sales = WEDGES.sales;
     const security = read("src/components/Security.tsx");
     expect(sales.metaTitle).toContain("BotBound");

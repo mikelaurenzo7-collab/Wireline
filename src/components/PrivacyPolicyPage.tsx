@@ -326,6 +326,13 @@ export default function PrivacyPolicyPage() {
               or shared with any third party, and text messaging opt in data and consent are
               excluded from every other kind of sharing described in this policy.
             </p>
+            <p>
+              How BotBound asks permission to text, and how STOP and HELP work, is described on the{" "}
+              <Link to="/sms-consent" className="text-brand underline hover:text-brand/80">
+                SMS consent page
+              </Link>
+              .
+            </p>
           </Section>
 
           <Section title="5. Data Retention and Security">

@@ -463,21 +463,21 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   sales: {
     slug: "sales",
-    metaTitle: "Sales Bots for Prospecting and Follow Up | BotBound",
+    metaTitle: "Sales Bots for Lead Follow Up | BotBound",
     metaDescription:
-      "Find prospects, qualify leads, and follow up on deals with calls, SMS, email, and a Computer. No CRM required.",
+      "Answer new inquiries, qualify leads, and follow up on deals with calls, SMS, email, and a Computer. No CRM required.",
     eyebrow: "For Sales",
     headline: "Keep Every Deal Moving",
     pains: [
       {
         icon: "Phone",
-        title: "Prospect and Qualify",
-        body: "Research prospects, start approved outbound conversations, and capture what each lead needs.",
+        title: "Answer and Qualify",
+        body: "Answer new inquiries, ask your qualification questions, and capture what each lead needs.",
       },
       {
         icon: "Clock",
         title: "Follow Up to Close",
-        body: "Answer objections from your Knowledge and follow up by call, SMS, or email. Keep the next step visible.",
+        body: "Answer objections from your Knowledge and follow up by call, SMS, or email with people who asked to hear from you. Keep the next step visible.",
       },
       {
         icon: "Calendar",
