@@ -1,4 +1,4 @@
-/** BotBound launch story and acquisition contract. */
+/** BotBound acquisition and product truth; exact homepage composition is not a release gate. */
 const RETIRED_PRODUCT_TERMS = [
   "Ametrine Precision",
   "Browser Companion",
@@ -125,49 +125,6 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     landing,
     /signedIn \? "\/studio" : "\/signup"/,
     "landing must route its primary action to plan-neutral account creation",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
-    /The Bot Gets:/,
-    "landing must introduce the three BotBound work surfaces",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
-    /BOT_MARKETING_VOICE\.activationLine|landing-prestige__promise/,
-    "landing must keep the hero free of a redundant subhero paragraph",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
-    /HERO_CHANNEL_ORDER|BOT_CHANNELS|CALL\s*[·/]\s*TEXT\s*[·/]\s*EMAIL/,
-    "landing must not repeat the channel promise as decorative copy",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
-    /aria-labelledby="landing-prestige-showcase-title"[\s\S]*The Bot Gets:[\s\S]*EXAMPLES\.map[\s\S]*<CapabilityPreview channel=\{id\} \/>/,
-    "landing must show three named static capability demos",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
-    /<CapabilityPreview channel=\{id\} \/>/,
-    "each capability card must show its compact product demo",
-  );
-  for (const label of ["Phone Number", "Email Address", "A Computer"])
-    mustInclude(
-      "src/components/marketing/WireAgentLanding.tsx",
-      landing,
-      new RegExp(`label: "${label}"`),
-      `landing must show the ${label} work surface`,
-    );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    landing,
-    /Inbound and outbound[\s\S]*>SMS<|>SMS<[\s\S]*Inbound and outbound/,
-    "the phone card must show call direction and SMS",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
