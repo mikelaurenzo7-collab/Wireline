@@ -22,7 +22,18 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
   let openingPlayed = false;
   let hasAudio = false;
   let markSequence = 0;
-  const pendingMarks = new Set<string>();
+  const pendingMarks = new Map<string, string[]>();
+  // PCMU is 8,000 one-byte samples per second. The local playback clock
+  // estimates how much is queued; a carrier mark remains the authority for
+  // completed playback. Keep chunks until the corresponding mark arrives.
+  let queuedUntil = 0;
+  const playback = new Map<string, {
+    itemId: string;
+    contentIndex: number;
+    responseId: string;
+    chunks: { start: number; duration: number }[];
+  }>();
+  const interruptedResponses = new Set<string>();
   // Bound startup on an already-answered, billable phone call. Reset while
   // greeting audio flows so a long disclosure can finish.
   let openingTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -30,7 +41,7 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
     clearTimeout(openingTimeout);
     openingTimeout = setTimeout(() => {
       if (model.readyState === WebSocket.OPEN) model.close(1011, "Opening audio unavailable");
-    }, 20_000);
+    }, 20_000 + Math.max(0, queuedUntil - Date.now()));
     openingTimeout.unref();
   };
   model.once("open", waitForOpening);
@@ -58,10 +69,15 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
     }
     if (!frame || frame.streamSid !== streamSid) return;
     if (frame.event === "stop") return endModel();
-    if (frame.event === "mark" && pendingMarks.delete(frame.mark?.name)) {
-      openingPlayed = true;
-      clearTimeout(openingTimeout);
-      model.emit("message", Buffer.from(JSON.stringify({ type: "output_audio_buffer.stopped" })));
+    if (frame.event === "mark") {
+      const played = pendingMarks.get(frame.mark?.name);
+      if (played) {
+        pendingMarks.delete(frame.mark.name);
+        for (const key of played) playback.delete(key);
+        openingPlayed = true;
+        clearTimeout(openingTimeout);
+        model.emit("message", Buffer.from(JSON.stringify({ type: "output_audio_buffer.stopped" })));
+      }
     }
     if (
       configured &&
@@ -88,7 +104,24 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
       typeof event.delta === "string" &&
       event.delta
     ) {
+      const responseId = typeof event.response_id === "string" ? event.response_id : "";
+      if (interruptedResponses.has(responseId)) return;
       hasAudio = true;
+      const duration = Buffer.from(event.delta, "base64").length / 8;
+      const start = Math.max(Date.now(), queuedUntil);
+      queuedUntil = start + duration;
+      if (typeof event.item_id === "string" && event.item_id) {
+        const contentIndex = Number.isInteger(event.content_index) ? event.content_index : 0;
+        const key = JSON.stringify([event.item_id, contentIndex]);
+        const item = playback.get(key) ?? {
+          itemId: event.item_id,
+          contentIndex,
+          responseId,
+          chunks: [],
+        };
+        item.chunks.push({ start, duration });
+        playback.set(key, item);
+      }
       if (!openingPlayed) waitForOpening();
       sendCarrier({ event: "media", media: { payload: event.delta } });
     } else if (
@@ -99,12 +132,40 @@ export function bridgeXaiAudio(carrier: WebSocket, model: WebSocket, streamSid: 
     ) {
       hasAudio = false;
       const name = `audio-${++markSequence}`;
-      pendingMarks.add(name);
+      pendingMarks.set(name, [...playback.keys()]);
       sendCarrier({ event: "mark", mark: { name } });
     } else if (event.type === "input_audio_buffer.speech_started" && openingPlayed) {
       hasAudio = false;
+      // Cleared marks are echoed by Twilio too; discard their identities
+      // before clearing so they never count as played. xAI server VAD
+      // cancels generation; explicitly truncate its history to heard audio.
       pendingMarks.clear();
       sendCarrier({ event: "clear" });
+      const now = Date.now();
+      for (const item of playback.values()) {
+        if (item.responseId) interruptedResponses.add(item.responseId);
+        const total = item.chunks.reduce((sum, chunk) => sum + chunk.duration, 0);
+        const played = item.chunks.reduce(
+          (sum, chunk) => sum + Math.min(chunk.duration, Math.max(0, now - chunk.start)),
+          0,
+        );
+        if (played < total && model.readyState === WebSocket.OPEN) {
+          model.send(JSON.stringify({
+            type: "conversation.item.truncate",
+            item_id: item.itemId,
+            content_index: item.contentIndex,
+            audio_end_ms: Math.floor(played),
+          }));
+        }
+      }
+      playback.clear();
+      queuedUntil = 0;
+      // Bound retained response IDs on long calls.
+      while (interruptedResponses.size > 128) {
+        const oldest = interruptedResponses.values().next().value;
+        if (oldest === undefined) break;
+        interruptedResponses.delete(oldest);
+      }
     }
   });
 }
