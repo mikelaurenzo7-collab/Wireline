@@ -134,8 +134,6 @@ describe("live tool channel entitlements", () => {
     );
   });
 
-  it("does not instruct the scheduling role to promise an unavailable email", () => {});
-
   it("omits customer email and text from a Calls-only Bot's new schema", async () => {
     expect(
       names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
