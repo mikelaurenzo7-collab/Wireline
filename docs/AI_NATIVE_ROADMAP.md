@@ -1,11 +1,16 @@
 # BotBound AI-native roadmap — November 23, 2026
 
-Status: proposed implementation baseline; not evidence of deployed functionality. Supersedes the October 27 connector direction when approved and merged. Existing deployment, carrier, consent and database runbooks remain authoritative.
+Status: approved implementation baseline; not evidence of deployed functionality. Supersedes the October 27 connector direction. Existing deployment, carrier, consent and database runbooks remain authoritative.
 
 ## Release first
-- [ ] PR #1517: exact-candidate full verification, review, authenticated old-worker drain, coordinated API/voice/cron release, readiness and founder two-way live call.
+- [x] PR #1517 merged; all four Render services deployed on `917fde11dae757c3e40c53ebaed4efc99ada2ba8`; authenticated old-worker drain confirmed zero active and pending calls, replacement readiness returned HTTP 200.
+- [ ] Complete full candidate verification/review and founder two-way live call; deployment and readiness alone do not prove carrier behavior.
 - [ ] Verify inbound call settlement, SMS carrier scope, email delivery/replies, billing and Computer execution.
 - [ ] Restore CI or retain exact-candidate command-level proof (npm run verify:full). No skipped check counts as success.
+
+## Launch quality, not perfection
+
+Release blockers are demonstrated material defects: security, consent, tenant isolation, financial integrity, data loss, broken essential journeys, misleading claims, material accessibility failures, or unrecoverable work. Keep these checks blocking. Visual composition, slogans, punctuation, mascot treatment, creative format, and editorial choices are review guidance, not universal release invariants. Marketing may iterate on these choices while maintaining accurate pricing, capability availability, accessible controls, valid routes and honest evidence. Retain historical evidence without treating old design decisions as permanent contracts. Prefer behavioral and rendered checks over exact source strings. Track residual noncritical findings with owner, impact and next review. Never count skipped validation as a pass.
 
 ## Phase 0 — consolidate
 - [ ] Verify ownership of production-classified accounts and recheck grants, queued jobs, historical records and dependencies.
