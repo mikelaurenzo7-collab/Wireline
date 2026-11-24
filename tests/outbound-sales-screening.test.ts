@@ -260,12 +260,16 @@ describe("explicit after-hours service calling", () => {
     const gate = await loadGate([], false, false);
     expect(await gate.evaluateOutboundDialGate(request)).toMatchObject({ allowed: true });
   });
-  it("retains restrictions for unconfirmed, automated, SMS, personal and marketing calls", async () => {
+  it("allows explicitly authorized personal coordination", async () => {
+    const gate = await loadGate([], false, false);
+    expect(await gate.evaluateOutboundDialGate({ ...request, manualCallPurpose: "personal" })).toMatchObject({ allowed: true });
+  });
+  it("retains restrictions for unconfirmed, automated, SMS and marketing calls", async () => {
     for (const patch of [
       { afterHoursServiceConfirmed: false },
       { manualCallPurpose: undefined },
       { audit: { ...request.audit, channel: "sms" as const } },
-      { manualCallPurpose: "personal" as const },
+      { manualCallPurpose: "personal" as const, afterHoursServiceConfirmed: false },
       { audit: { ...request.audit, attested: false } },
       { audit: { ...request.audit, confirmations: { nonsales: false } } },
       { isMarketingCall: true, salesScreening: "one_off" as const },
