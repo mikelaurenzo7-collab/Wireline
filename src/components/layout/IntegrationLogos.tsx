@@ -173,17 +173,6 @@ const ALL_LOGOS: Record<string, LogoDef> = {
       </svg>
     ),
   },
-  yahoo: {
-    name: "Yahoo",
-    svg: (
-      <svg viewBox="0 0 100 100" aria-label="Yahoo" width="100%" height="100%">
-        <path
-          fill="currentColor"
-          d="M11 28h13l8 21 8-21h13L37 65v17H24V65L11 28Zm56 0h13l-9 28-4-12 5-16h-5Zm-7 33a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z"
-        />
-      </svg>
-    ),
-  },
   icloud: {
     name: "iCloud",
     svg: (

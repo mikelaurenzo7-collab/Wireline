@@ -102,18 +102,6 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
         );
         return r.ok || r.status === 401 || r.status === 403;
       }
-      case "yahoo": {
-        const id = process.env.YAHOO_CLIENT_ID;
-        const secret = process.env.YAHOO_CLIENT_SECRET;
-        if (!id || !secret) return false;
-        const basic = Buffer.from(`${id}:${secret}`).toString("base64");
-        const r = await postForm(
-          "https://api.login.yahoo.com/oauth2/revoke",
-          new URLSearchParams({ token: token! }),
-          { Authorization: `Basic ${basic}` },
-        );
-        return r.ok || r.status === 400;
-      }
       case "slack": {
         if (!access) return false;
         const r = await fetchWithTimeout(
@@ -206,9 +194,8 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
         // tenant webhook. Disconnect and GDPR purge must drop that
         // subscription or AgentMail keeps retrying a dead mailbox URL.
         if (!access) return false;
-        const { deleteAgentMailWebhooksForAccount, deleteWirelineAgentMailWebhooks } = await import(
-          "./agentmail-mail"
-        );
+        const { deleteAgentMailWebhooksForAccount, deleteWirelineAgentMailWebhooks } =
+          await import("./agentmail-mail");
         if (conn.accountId) {
           await deleteAgentMailWebhooksForAccount({ apiKey: access, accountId: conn.accountId });
         } else {

@@ -9,8 +9,8 @@ Status: proposed implementation baseline; not evidence of deployed functionality
 
 ## Phase 0 — consolidate
 - [ ] Verify ownership of production-classified accounts and recheck grants, queued jobs, historical records and dependencies.
-- [ ] Remove legacy CRM/commerce routers, services, catalog tools and dispatch in one reviewed change.
-- [ ] Remove legacy Slack/X/Zoom/Sheets/Teams/Excel/Yahoo mail paths in a second reviewed change; preserve Yahoo sign-in and supported Google/Microsoft mail/calendar.
+- [x] Remove legacy CRM/commerce routers, services, catalog tools and dispatch in one reviewed change (PR #1518).
+- [x] Remove the X, Zoom and Yahoo mail paths in reviewed changes. Slack, Google Sheets, Microsoft Teams and Excel are on the owner's November 24 keep list and stay, as do Yahoo sign-in and the supported Google/Microsoft mail and calendar paths.
 - [ ] Preserve disconnect/revoke, historical receipts, account deletion and audit until absence of dependent data is established.
 - [ ] Only after deployed readers/writers are gone, review append-only migration for legacy connections, agent teams/members and call queues. No destructive migration before approval.
 - [ ] Reconcile missing schema indexes/tables against live catalog; remove retired Gemini runtime and dependency after reference audit.

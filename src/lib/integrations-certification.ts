@@ -21,10 +21,7 @@ const SUPPORTED_IDS = new Set([
   "slack",
 ]);
 
-const BETA_IDS = new Set([
-  "docusign",
-  "yahoo",
-]);
+const BETA_IDS = new Set(["docusign"]);
 
 export function buyerTierForIntegration(id: string): BuyerTier {
   if (SUPPORTED_IDS.has(id)) return "supported";

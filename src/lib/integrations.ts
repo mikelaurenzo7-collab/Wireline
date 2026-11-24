@@ -37,7 +37,7 @@ export type InboxMessagePreview = {
   subject: string;
   snippet: string;
   receivedAt: Date;
-  provider: "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
+  provider: "google" | "microsoft" | "icloud" | "agentmail";
 };
 
 /** A connected mailbox whose fetch failed: dead token, revoked grant, outage. */
@@ -322,7 +322,7 @@ export class IntegrationService {
    * and the manual "Sync inbox" button. Returns a unified shape
    * regardless of provider so callers don't branch.
    *
-   * Yahoo inbox retrieval is not implemented; report that account as
+   * A provider with no implemented retrieval reports that account as
    * unavailable rather than treating an unattempted fetch as a healthy inbox.
    */
   async fetchInboxMessages(
@@ -398,9 +398,6 @@ export class IntegrationService {
     }
     if (account.provider === "microsoft") {
       return this.fetchMicrosoftInbox(account, opts);
-    }
-    if (account.provider === "yahoo") {
-      throw new Error("Yahoo inbox refresh is not available yet.");
     }
     if (account.provider === "icloud") {
       return this.fetchIcloudInbox(account, opts);
@@ -658,12 +655,16 @@ export class IntegrationService {
                 },
               });
             }
-            if (account.provider === "yahoo") {
-              log.warn("Yahoo Mail send refused because XOAUTH2 transport is not implemented", {
-                userId: this.userId,
-              });
-              return false;
-            }
+            // A connected tenant mailbox whose provider has no send transport
+            // must never fall through to the platform sender below: the
+            // customer's mail would leave from BotBound's own Resend identity
+            // instead of theirs. Yahoo used to be that provider by name; the
+            // guard now closes the door on any unimplemented provider row.
+            log.warn("Email send refused, the connected mailbox provider has no send transport", {
+              userId: this.userId,
+              provider: String(account.provider ?? "unknown"),
+            });
+            return false;
           }
 
           // A tenant cadence must leave from the tenant's own mailbox. Sending a

@@ -131,7 +131,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "yahoo",
     "Yahoo",
-    "Yahoo sign-in is supported. Yahoo Mail read and send actions are not yet available.",
+    "Yahoo account sign-in only. BotBound does not connect, read, or send Yahoo mail.",
     "oauth",
     false,
     ["YAHOO_CLIENT_ID", "YAHOO_CLIENT_SECRET"],

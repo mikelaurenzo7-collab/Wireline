@@ -16,8 +16,8 @@ intent rather than as a description of main.
 **The keep list, decided November 24, 2026.** The owner's direction is to keep
 Google Workspace and the Google connectors, and to keep Microsoft including
 Excel. Slack stays with them as the team-chat surface. The October 27 plan to
-delete all of those is superseded for those providers; X, Zoom and Yahoo Mail are
-not on the keep list.
+delete all of those is superseded for those providers; X, Zoom and Yahoo Mail
+were not on the keep list and are all deleted.
 
 **Removed outright, not deprecated.** Salesforce, HubSpot, Apollo, Meta, Shopify,
 and Square are deleted: services, OAuth routes, the Meta webhook, the Salesforce
@@ -41,13 +41,32 @@ and needs no extra scope. The switch for it is still the `auto_zoom_link` column
 which now means "put a video meeting on this booking"; renaming the column needs a
 migration on the shared database.
 
+Yahoo Mail is deleted and Yahoo sign-in is untouched. The mailbox half never
+worked: `src/routes/oauth/yahoo.ts` carried `YAHOO_MAIL_CONNECTION_AVAILABLE =
+false`, so its connect route answered 503 and its callback answered 410, and no
+`wireline_email_accounts` row in the shared database has ever had
+`provider = 'yahoo'`. The route file, the mail scopes, the dead Yahoo branch in
+the mailbox revocation switch, the connection-card provider, the logo, and the
+beta-tier claim are gone. `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` stay,
+because sign-in needs the same Yahoo app: `src/lib/yahoo-openid.ts`,
+`/api/auth/yahoo/*`, the `oauth_yahoo` consent method, and the Yahoo button in
+`AuthAccessPanel.tsx` all remain live.
+
+One guard outlived the provider. The Yahoo send branch existed to stop a tenant
+with a connected mailbox falling through to BotBound's own Resend identity when
+their provider had no send transport. That branch is now provider-agnostic, so
+the next unimplemented provider row inherits the refusal instead of sending a
+customer's mail from the wrong sender.
+
 Public research survived: `gemini_ground` lives in `src/lib/bot-tools/research.ts`
 and still resolves for Bots that already store the tool name.
 
 **What `src/routes/oauth/` still holds.** Google, Google Sheets, Microsoft,
-Microsoft Graph, Slack, and Yahoo, plus `index.ts` and `status.ts`. Yahoo is
-sign-in plus a mail connector; the mail half is not on the keep list and is the
-next deletion.
+Microsoft Graph and Slack, plus `index.ts` and `status.ts`.
+
+Account sign-in is not in that directory. It lives in
+`src/routes/auth-oauth-routes.ts` and `src/routes/auth-oauth-browser-binding.ts`,
+and that is where Yahoo still appears.
 
 **What the connections card still offers.** Slack, Microsoft Teams, Microsoft
 Excel, and Google Sheets.

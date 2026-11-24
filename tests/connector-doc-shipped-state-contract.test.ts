@@ -27,6 +27,7 @@ const RETIRED_PROVIDERS = [
   "meta-webhook",
   "x",
   "zoom",
+  "yahoo",
 ] as const;
 
 /**
@@ -42,6 +43,7 @@ const RETIRED_IN_PROSE: readonly (readonly [string, RegExp])[] = [
   ["Square", /\bSquare\b/i],
   ["X", /\bX\b/],
   ["Zoom", /\bZoom\b/i],
+  ["Yahoo", /\bYahoo\b/i],
 ];
 
 const OAUTH_SENTENCE_MARKER = "**What `src/routes/oauth/` still holds.**";

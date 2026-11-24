@@ -173,6 +173,6 @@ describe("runtime integration operations", () => {
     expect(buyerTierForIntegration("microsoft-365")).toBe("supported");
     expect(buyerTierForIntegration("twilio")).toBe("supported");
     expect(buyerTierForIntegration("docusign")).toBe("beta");
-    expect(buyerTierForIntegration("yahoo")).toBe("beta");
+    expect(buyerTierForIntegration("yahoo")).toBe("internal");
   });
 });

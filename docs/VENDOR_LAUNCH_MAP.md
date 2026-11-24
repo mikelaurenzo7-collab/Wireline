@@ -148,11 +148,12 @@ A readable API key, a READY build, or an empty error log does not prove funded s
 | Deliver email              | Resend, AgentMail                                               | Plan/quota, verified BotBound domain, signed callbacks, and sending/receiving proof. A domain being verified does not certify callback delivery.                              |
 | Collect customer payments  | Stripe                                                          | Account requirements, payout eligibility, negative balances or failed debits, and a controlled checkout lifecycle. Do not add funds just to manufacture test evidence.        |
 | Restore release automation | GitHub                                                          | Billing/spending limits and whether jobs actually executed. Never classify a test failure as a billing failure.                                                               |
-| Optional paid features     | Perplexity, Apollo, X and other explicitly enabled integrations | Only fund the route or integration actually needed by the approved cohort. Track its quota separately from the primary runtime; retired providers are not funding targets.    |
+| Optional paid features     | Perplexity and other explicitly enabled integrations            | Only fund the route or integration actually needed by the approved cohort. Track its quota separately from the primary runtime; retired providers are not funding targets.    |
 | Later launch gates         | Federal DNC, Apple Developer, Google Play                       | Registration/approval and relevant service funding when those surfaces are deliberately opened. These are not substitutes for core pilot evidence.                            |
 
-Review CRM/calendar/commerce OAuth connections (Google, Microsoft, Yahoo, HubSpot, Salesforce,
-Shopify, Square, Zoom, Slack, Meta, DocuSign) against the selected tenant's subscription and scopes.
+Review the surviving OAuth connections (Google, Google Sheets, Microsoft, Microsoft Teams,
+Microsoft Excel, Slack) against the selected tenant's subscription and scopes. Yahoo is sign-in
+only and buys nothing.
 Code support alone does not mean the founder needs to buy every vendor subscription.
 Retired Vapi, LiveAvatar, and HeyGen runtime paths are not core launch funding targets.
 

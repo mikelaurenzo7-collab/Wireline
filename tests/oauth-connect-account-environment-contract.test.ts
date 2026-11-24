@@ -37,13 +37,6 @@ const ROUTES: OAuthRouteContract[] = [
     exchange: 'fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token"',
   },
   {
-    file: "yahoo.ts",
-    start: '"/api/oauth/yahoo/url"',
-    callback: '"/api/oauth/yahoo/callback"',
-    authorization: "new URLSearchParams({",
-    exchange: 'fetch("https://api.login.yahoo.com/oauth2/get_token"',
-  },
-  {
     file: "slack.ts",
     start: '"/api/oauth/slack/url"',
     callback: '"/api/oauth/slack/callback"',
