@@ -39,15 +39,11 @@ const CLOUD_COMPUTER_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
 ]);
 
 export const NO_TENANT_INTEGRATIONS: TenantIntegrationConnections = {
-  shopify: false,
-  square: false,
   slack: false,
   x: false,
   microsoft_teams: false,
   microsoft_excel: false,
   google_sheets: false,
-  salesforce: false,
-  hubspot: false,
   zoom: false,
   google_calendar: false,
   microsoft_calendar: false,
@@ -252,7 +248,8 @@ export async function isAgentToolExecutionAuthorized(
       !agentId ||
       !userId ||
       typeof (context.drizzle as { select?: unknown } | undefined)?.select !== "function"
-    ) return false;
+    )
+      return false;
     const [agent] = await context.drizzle
       .select({ enabledTools: schema.agents.enabledTools })
       .from(schema.agents)

@@ -743,44 +743,6 @@ export const AGENT_TOOL_DEFS = {
       required: ["topic", "start_time"],
     },
   },
-  crm_search_contacts: {
-    name: "crm_search_contacts",
-    description:
-      "Private CRM contacts require stronger caller verification. This live tool shares no contact details; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  crm_log_call: {
-    name: "crm_log_call",
-    description:
-      "Existing CRM contact logging requires team verification. This live tool makes no CRM change; offer a follow-up task.",
-    parameters: {
-      type: "object",
-      properties: {
-        subject: { type: "string", description: "Brief subject line for the activity." },
-        notes: { type: "string", description: "Call notes / outcome summary." },
-      },
-      required: ["subject"],
-    },
-  },
-  crm_create_opportunity: {
-    name: "crm_create_opportunity",
-    description:
-      "A new CRM opportunity needs team verification. This tool makes no CRM change; offer a follow-up task with the caller's request.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Opportunity / deal name." },
-        contact_id: { type: "string", description: "CRM contact ID to associate." },
-        stage: { type: "string", description: "Pipeline stage." },
-        amount: { type: "number", description: "Estimated deal value." },
-      },
-      required: ["name"],
-    },
-  },
   send_contract: {
     name: "send_contract",
     description:
@@ -798,22 +760,6 @@ export const AGENT_TOOL_DEFS = {
       required: ["recipient_name", "recipient_email"],
     },
   },
-  enrich_lead: {
-    name: "enrich_lead",
-    description:
-      "Enriches a phone number to discover the caller's professional identity (name, title, company) via Apollo.io. Use this at the start of a call if you only have a phone number.",
-    parameters: {
-      type: "object",
-      properties: {
-        phone_number: {
-          type: "string",
-          description:
-            "The phone number to enrich. Leave blank to use the current caller's number.",
-        },
-      },
-      required: [],
-    },
-  },
   gemini_ground: {
     name: "gemini_ground",
     description:
@@ -828,203 +774,6 @@ export const AGENT_TOOL_DEFS = {
         },
       },
       required: ["query"],
-    },
-  },
-  shopify_lookup_order: {
-    name: "shopify_lookup_order",
-    description:
-      "Looks up a Shopify order only when the caller provides both its order number and the matching email on the order. Returns status, tracking, items, and total. Caller ID alone never unlocks details.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_number: {
-          type: "string",
-          description: "The order number, e.g. '1001' or '#1001'. Required with the order email.",
-        },
-        email: {
-          type: "string",
-          description:
-            "The email address on the order, as the caller states it. Required with the order number.",
-        },
-      },
-      required: ["order_number", "email"],
-    },
-  },
-  shopify_check_inventory: {
-    name: "shopify_check_inventory",
-    description:
-      "Searches the Shopify store catalog for a product by name and returns its variants, prices, and live inventory (in-stock) levels. Use when a caller asks if something is in stock or about a price.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Product name or keyword to search for." },
-      },
-      required: ["query"],
-    },
-  },
-  shopify_lookup_customer: {
-    name: "shopify_lookup_customer",
-    description:
-      "A customer profile needs stronger verification than caller ID. This tool shares no profile details; offer a specific order lookup with number and email, or a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  shopify_start_return: {
-    name: "shopify_start_return",
-    description:
-      "A return request needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order and reason.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: {
-          type: "string",
-          description:
-            "The Shopify order ID (numeric). Get this from shopify_lookup_order first if you only have the order number.",
-        },
-        reason: {
-          type: "string",
-          description:
-            "Why the customer wants to return, e.g. 'wrong size', 'item defective', 'arrived late'.",
-        },
-      },
-      required: ["order_id", "reason"],
-    },
-  },
-  shopify_cancel_order: {
-    name: "shopify_cancel_order",
-    description:
-      "A cancellation needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order number.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: {
-          type: "string",
-          description:
-            "The Shopify order ID (numeric). Get this from shopify_lookup_order if you only have the order number.",
-        },
-      },
-      required: ["order_id"],
-    },
-  },
-  shopify_update_address: {
-    name: "shopify_update_address",
-    description:
-      "An address change needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order number and requested address.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: { type: "string", description: "The Shopify order ID (numeric)." },
-        address1: { type: "string", description: "Street address line 1." },
-        address2: { type: "string", description: "Street address line 2 (apt/suite)." },
-        city: { type: "string", description: "City." },
-        province: { type: "string", description: "State / province." },
-        zip: { type: "string", description: "ZIP / postal code." },
-        country: { type: "string", description: "Country." },
-        name: { type: "string", description: "Recipient name." },
-      },
-      required: ["order_id"],
-    },
-  },
-  shopify_create_draft_order: {
-    name: "shopify_create_draft_order",
-    description:
-      "Creates an unpaid Shopify draft from a real catalog variant and returns its invoice link. Use shopify_check_inventory to get the variant ID, then confirm the item and quantity with the caller. Custom titles and prices are not accepted.",
-    parameters: {
-      type: "object",
-      properties: {
-        variant_id: {
-          type: "string",
-          description: "Numeric catalog variant ID from shopify_check_inventory. Required.",
-        },
-        quantity: { type: "number", description: "Whole-number quantity from 1 to 20." },
-        customer_email: { type: "string", description: "Customer email for the invoice." },
-        customer_first_name: { type: "string", description: "Customer first name." },
-        customer_last_name: { type: "string", description: "Customer last name." },
-      },
-      required: ["variant_id", "quantity"],
-    },
-  },
-  shopify_add_order_note: {
-    name: "shopify_add_order_note",
-    description:
-      "An order note needs team verification. This tool makes no Shopify change; offer to create a follow-up task with the order number and note.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: { type: "string", description: "Shopify order ID from shopify_lookup_order." },
-        note: { type: "string", description: "Short note for the merchant (plain text)." },
-      },
-      required: ["order_id", "note"],
-    },
-  },
-  square_lookup_order: {
-    name: "square_lookup_order",
-    description:
-      "Private Square order details require stronger caller verification. This live tool shares no order details; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: {
-          type: "string",
-          description: "The Square order ID. Ask the caller for this if they have it.",
-        },
-        email: {
-          type: "string",
-          description:
-            "The customer's email, use to find their most recent order when no order ID is known.",
-        },
-      },
-      required: [],
-    },
-  },
-  square_lookup_customer: {
-    name: "square_lookup_customer",
-    description:
-      "Private Square customer details require stronger caller verification. This live tool shares no profile details; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {
-        email: { type: "string", description: "The customer's email address." },
-        phone: {
-          type: "string",
-          description: "The customer's phone number. Leave blank to use the caller's number.",
-        },
-      },
-      required: [],
-    },
-  },
-  square_check_inventory: {
-    name: "square_check_inventory",
-    description:
-      "Searches the Square item catalog for a product by name and returns its variants, prices, and live inventory levels. Use when a caller asks if something is available or what it costs.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Product name or keyword to search for." },
-      },
-      required: ["query"],
-    },
-  },
-  square_create_payment_link: {
-    name: "square_create_payment_link",
-    description:
-      "Square checkout links require a server-verified catalog price or approved quote. This live tool creates no link; offer a team follow-up.",
-    parameters: {
-      type: "object",
-      properties: {
-        title: {
-          type: "string",
-          description: "Name of the product or service the payment is for.",
-        },
-        amount_dollars: {
-          type: "number",
-          description: "Amount to charge in dollars (e.g. 49.99).",
-        },
-      },
-      required: ["title", "amount_dollars"],
     },
   },
   send_teams_message: {
@@ -1203,7 +952,8 @@ export const AGENT_TOOL_DEFS = {
       properties: {
         task_id: {
           type: "string",
-          description: "Optional task_id returned on this call. Defaults to the latest task started on this call.",
+          description:
+            "Optional task_id returned on this call. Defaults to the latest task started on this call.",
         },
       },
     },
@@ -1224,9 +974,9 @@ export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
   scheduler:
     "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. When send_email is available and the caller requests an email, confirm their email address before sending the booking details. Only say an email was sent after the send tool confirms success. Use send_text_message only if available and the customer asked for a text confirmation. If a requested send tool is unavailable, offer a manual follow-up using create_followup_task when available; claim the request is saved only after that tool confirms creation.",
   lead_qualifier:
-    "Qualify fast: budget, timeline, authority, need. Use enrich_lead when you have a company or email. Book a demo with book_appointment when qualified; notify the team on Slack or Teams for hot leads.",
+    "Qualify fast: budget, timeline, authority, need. Record what the caller shares with capture_customer_profile. Book a demo with book_appointment when qualified; notify the team on Slack or Teams for hot leads.",
   marketing:
-    "Capture campaign interest and next steps. Use enrich_lead for unknown companies. For existing-record changes or callbacks, create_followup_task for team review. Offer book_appointment for demos or nurture with send_email.",
+    "Capture campaign interest and next steps. Record what the caller shares with capture_customer_profile. For existing-record changes or callbacks, create_followup_task for team review. Offer book_appointment for demos or nurture with send_email.",
 };
 
 export function buildRoleToolDefs(role: string, enabledTools?: unknown): object[] {

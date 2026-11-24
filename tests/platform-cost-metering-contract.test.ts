@@ -12,15 +12,13 @@ const read = (path: string) => readFileSync(path, "utf8");
 /**
  * The plan-entitlements AI-spend envelope claims to fund "provider COGS", and
  * the commercial prose tells customers where each workload draws from. Both
- * were only half-true until platform research and enrichment were metered:
- * Perplexity and platform-key Apollo ran as invisible COGS outside every
- * budget. These contracts pin the completeness of the envelope and the
+ * were only half-true until platform research was metered: Perplexity ran as
+ * invisible COGS outside every budget. These contracts pin the completeness of the envelope and the
  * honesty of the copy that describes it.
  */
 describe("platform cost metering contract", () => {
   const middleware = read("src/middleware/audit-middleware.ts");
   const perplexity = read("src/lib/perplexity-platform.ts");
-  const apollo = read("src/lib/apollo-service.ts");
 
   it("provides a flat-reserve cost record that feeds the same spend pipeline", () => {
     expect(middleware).toContain("export async function persistPlatformCostRecord");
@@ -43,26 +41,6 @@ describe("platform cost metering contract", () => {
         purpose,
       ).toHaveLength(1);
     }
-  });
-
-  it("reserves Apollo spend before shared-key calls and bypasses tenant-funded calls", () => {
-    // A tenant's own OAuth connection spends their Apollo credits — charging
-    // the Wireline envelope for it would double-bill them.
-    expect(apollo).toContain('source: "tenant" | "platform"');
-    expect(apollo).toContain('if (auth.source !== "platform" || !userId) return fetch(url, init);');
-    expect(apollo).toContain("reservePlatformCostRecord({");
-    expect(apollo).toContain("commitPlatformCostReservation(decision.reservation)");
-    expect(apollo).toContain("markPlatformCostReservationAmbiguous(decision.reservation)");
-    expect(apollo).toContain('"lead_search"');
-    expect(apollo).toContain('"lead_match"');
-
-    const helper = apollo.slice(
-      apollo.indexOf("async function fetchApolloWithSpend"),
-      apollo.indexOf("const APOLLO_TARGET_LIMIT"),
-    );
-    expect(helper.indexOf("reservePlatformCostRecord({")).toBeLessThan(
-      helper.indexOf("request = fetch(url, init)"),
-    );
   });
 
   it("keeps the envelope copy telling the implemented story", () => {

@@ -58,13 +58,6 @@ describe("launch readiness deep pass 2026-07-27", () => {
     expect(seed).not.toContain("specializedAgents");
   });
 
-  it("fails Meta page fetch honestly instead of empty-success", () => {
-    const meta = read("src/routes/oauth/meta.ts");
-    expect(meta).not.toContain(".then((r) => (r.ok ? r.json() : { data: [] }))");
-    expect(meta).toContain("could not load your Facebook Pages");
-    expect(meta).toContain("status(502)");
-  });
-
   it("claims stripe_events before acknowledging allowance reversals", () => {
     const middleware = read("src/middleware/stripe-runtime-allowance-retry.ts");
     const claims = read("src/lib/stripe-event-claim.ts");

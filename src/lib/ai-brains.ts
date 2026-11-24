@@ -120,7 +120,6 @@ const BUSINESS_ACTIONS_TOOL: StructuredToolSchema = {
                 "send_email",
                 "send_text_message",
                 "schedule_calendar",
-                "update_crm_lead",
                 "create_internal_task",
               ],
             },
@@ -132,7 +131,7 @@ const BUSINESS_ACTIONS_TOOL: StructuredToolSchema = {
             payload: {
               type: "object",
               description:
-                "Structured data for the action. send_email: {to, subject, body}. send_text_message: {to, body, channel}. schedule_calendar: {event_name, customer_name, date, time, timezone, attendees}, where customer_name is the customer's confirmed name, date is YYYY-MM-DD, time is 24-hour HH:mm, and timezone is a confirmed IANA zone such as America/Chicago. Never emit schedule_calendar when any of date, time, or timezone is unresolved, or the customer name is missing; create an internal follow-up instead. Do not schedule again if a live booking tool already confirmed the appointment. update_crm_lead: {customer_number, status, notes}.",
+                "Structured data for the action. send_email: {to, subject, body}. send_text_message: {to, body, channel}. schedule_calendar: {event_name, customer_name, date, time, timezone, attendees}, where customer_name is the customer's confirmed name, date is YYYY-MM-DD, time is 24-hour HH:mm, and timezone is a confirmed IANA zone such as America/Chicago. Never emit schedule_calendar when any of date, time, or timezone is unresolved, or the customer name is missing; create an internal follow-up instead. Do not schedule again if a live booking tool already confirmed the appointment. create_internal_task: {description}.",
             },
           },
           required: ["type", "priority", "payload", "reasoning"],
@@ -346,12 +345,7 @@ Score each dimension 0 to 20 and provide a concise, actionable coaching note.`;
 }
 
 export interface ExtractedBusinessAction {
-  type:
-    | "send_email"
-    | "send_text_message"
-    | "schedule_calendar"
-    | "update_crm_lead"
-    | "create_internal_task";
+  type: "send_email" | "send_text_message" | "schedule_calendar" | "create_internal_task";
   priority: "high" | "medium" | "low";
   reasoning: string;
   payload: Record<string, unknown>;

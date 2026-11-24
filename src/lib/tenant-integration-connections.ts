@@ -1,7 +1,7 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { type AgentToolName, SHOPIFY_TOOL_NAMES, SQUARE_TOOL_NAMES } from "./agent-capabilities";
+import type { AgentToolName } from "./agent-capabilities";
 import {
   loadPlatformIntegrationFlags,
   type PlatformIntegrationFlags,
@@ -11,26 +11,14 @@ import { getNativeCalendarConfiguration } from "./native-calendar";
 import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
 import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "./platform-live-tool-exclusions";
 
-const CRM_TOOL_NAMES = new Set<AgentToolName>([
-  "crm_search_contacts",
-  "crm_log_call",
-  "crm_create_opportunity",
-  "crm_create_contact",
-  "crm_update_deal_stage",
-]);
-
 export { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "./platform-live-tool-exclusions";
 
 export interface TenantIntegrationConnections {
-  shopify: boolean;
-  square: boolean;
   slack: boolean;
   x: boolean;
   microsoft_teams: boolean;
   microsoft_excel: boolean;
   google_sheets: boolean;
-  salesforce: boolean;
-  hubspot: boolean;
   zoom: boolean;
   /** Google Calendar OAuth (calendarAccounts). */
   google_calendar: boolean;
@@ -46,11 +34,9 @@ export interface TenantIntegrationConnections {
   microsoft_mail: boolean;
 }
 
-const SHOPIFY_SET = new Set<string>(SHOPIFY_TOOL_NAMES);
-const SQUARE_SET = new Set<string>(SQUARE_TOOL_NAMES);
 const X_ENGAGEMENT_SET = new Set<string>(X_ENGAGEMENT_TOOL_NAMES);
 
-/** Active CRM OAuth rows for a tenant — used to gate voice tool schemas. */
+/** Active connection rows for a tenant — used to gate voice tool schemas. */
 export async function loadTenantIntegrationConnections(
   userId: string,
 ): Promise<TenantIntegrationConnections> {
@@ -80,15 +66,11 @@ export async function loadTenantIntegrationConnections(
   const mailProviders = new Set(emailRows.map((r) => (r.provider || "google").toLowerCase()));
 
   return {
-    shopify: providers.has("shopify"),
-    square: providers.has("square"),
     slack: providers.has("slack"),
     x: providers.has("x"),
     microsoft_teams: providers.has("microsoft_teams"),
     microsoft_excel: providers.has("microsoft_excel"),
     google_sheets: providers.has("google_sheets"),
-    salesforce: providers.has("salesforce"),
-    hubspot: providers.has("hubspot"),
     zoom: providers.has("zoom"),
     google_calendar: calendarProviders.has("google"),
     microsoft_calendar: calendarProviders.has("microsoft") || calendarProviders.has("microsoft365"),
@@ -107,8 +89,6 @@ export function filterToolsByTenantConnections(
   return toolNames.filter((name) => {
     if (UNVERIFIED_LIVE_TOOL_NAMES.has(name)) return false;
     if (UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(name)) return false;
-    if (SHOPIFY_SET.has(name)) return conn.shopify;
-    if (SQUARE_SET.has(name)) return conn.square;
     if (name === "send_slack_notification") return conn.slack;
     if (X_ENGAGEMENT_SET.has(name)) return conn.x;
     if (name === "send_teams_message") return conn.microsoft_teams;
@@ -119,8 +99,6 @@ export function filterToolsByTenantConnections(
       if (conn.native_calendar_configured) return Boolean(conn.native_calendar);
       return Boolean(conn.native_calendar || conn.google_calendar || conn.microsoft_calendar);
     }
-    if (CRM_TOOL_NAMES.has(name)) return conn.salesforce || conn.hubspot;
-    if (name === "enrich_lead") return platform.apollo;
     if (name === "gemini_ground") return platform.liveResearch;
     return true;
   });

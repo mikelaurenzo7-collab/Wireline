@@ -5,10 +5,8 @@ import { randomUUID } from "node:crypto";
 import { handleCalendarToolCall } from "./bot-tools/calendar";
 import { handleCoreToolCall } from "./bot-tools/core";
 import { handleDeviceToolCall } from "./bot-tools/device";
-import { handleEnrichmentToolCall } from "./bot-tools/enrichment";
 import { handleNotificationToolCall } from "./bot-tools/notifications";
-import { handleShopifyToolCall } from "./bot-tools/shopify";
-import { handleSquareToolCall } from "./bot-tools/square";
+import { handleResearchToolCall } from "./bot-tools/research";
 import type { ToolCallContext, ToolCallResult } from "./agent-tool-types";
 import { handleWorkflowToolCall } from "./bot-tools/workflow";
 import { handleXToolCall } from "./bot-tools/x";
@@ -143,7 +141,8 @@ export async function handleComputerToolCall(
   if (!targetTaskId || !callTaskIds.has(targetTaskId)) {
     return {
       toolCallId,
-      result: "COMPUTER_TASK_NONE: No Cloud Computer task started on this call matches the request.",
+      result:
+        "COMPUTER_TASK_NONE: No Cloud Computer task started on this call matches the request.",
     };
   }
 
@@ -246,12 +245,10 @@ async function dispatchToFirstAvailableHandler(
     handleComputerToolCall,
     handleCoreToolCall,
     handleCalendarToolCall,
-    handleEnrichmentToolCall,
+    handleResearchToolCall,
     handleNotificationToolCall,
     handleXToolCall,
     handleWorkflowToolCall,
-    handleShopifyToolCall,
-    handleSquareToolCall,
     handleDeviceToolCall,
   ];
 

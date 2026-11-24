@@ -11,7 +11,6 @@ import {
 import { type AgentToolName } from "./agent-capabilities";
 import { type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
-import { CRMService } from "./crm-service";
 import { IntegrationService } from "./integrations";
 import { actionExecutionMode } from "./bot-permission";
 import { bookNativeAppointment, getNativeCalendarConfiguration } from "./native-calendar";
@@ -24,7 +23,6 @@ import {
   recordedCallIds,
   type TextSendConfirmations,
 } from "./approved-text-confirmations";
-import { searchLeads } from "./apollo-service";
 import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
 import { postAgentNotification, getDefaultChannel } from "./slack-service";
@@ -69,10 +67,8 @@ const ACTION_TOOL_REQUIREMENTS: Readonly<Record<string, AgentToolName>> = {
   send_email: "send_email",
   send_text_message: "send_text_message",
   schedule_calendar: "book_appointment",
-  update_crm_lead: "crm_log_call",
   create_internal_task: "create_followup_task",
   send_contract: "send_contract",
-  prospect_leads: "enrich_lead",
   notify_slack: "send_slack_notification",
 };
 
@@ -80,8 +76,6 @@ const AUTONOMOUS_LIVE_EXTERNAL_ACTIONS = new Set([
   "send_email",
   "send_text_message",
   "schedule_calendar",
-  "update_crm_lead",
-  "prospect_leads",
   "notify_slack",
 ]);
 
@@ -428,8 +422,6 @@ async function executeAutonomousAction(
       });
       return { success: calOk };
     }
-    case "update_crm_lead":
-      return executeCrmAction(userId, action);
     case "create_internal_task":
       return handleCreateInternalTask(userId, action, context);
     case "send_contract":
@@ -438,8 +430,6 @@ async function executeAutonomousAction(
         error:
           "Automated contract sending is disabled until a tenant-owned DocuSign account and template registry are connected.",
       };
-    case "prospect_leads":
-      return handleProspectLeads(userId, action, context);
     case "notify_slack":
       return handleNotifySlack(userId, action);
     default:
@@ -459,14 +449,10 @@ async function queueDraftAction(
       return handleDraftSendTextMessage(userId, action, context);
     case "schedule_calendar":
       return handleScheduleCalendar(userId, action, context);
-    case "update_crm_lead":
-      return queueCrmAction(userId, action, context);
     case "create_internal_task":
       return handleCreateInternalTask(userId, action, context);
     case "send_contract":
       return queueSideEffectAction(userId, action, context, "send_contract", "manual");
-    case "prospect_leads":
-      return queueSideEffectAction(userId, action, context, "prospect_leads", "apollo");
     case "notify_slack":
       return queueSideEffectAction(userId, action, context, "notify_slack", "slack");
     default:
@@ -706,65 +692,6 @@ async function handleScheduleCalendar(
   return { success: true, queued: true };
 }
 
-function isCrmCallLogPayload(payload: Record<string, unknown>): boolean {
-  const crmType = payload.crm_type ?? payload.crmType;
-  return (
-    (crmType === "hubspot" || crmType === "salesforce") &&
-    (typeof payload.subject === "string" || typeof payload.description === "string")
-  );
-}
-
-async function queueCrmAction(
-  userId: string,
-  action: ActionItem,
-  context: { sourceId: string; sourceType: string },
-): Promise<ActionResult> {
-  const payload = (action.payload || {}) as Record<string, unknown>;
-  const description =
-    action.reasoning ||
-    (isCrmCallLogPayload(payload)
-      ? `CRM call log: ${payload.subject || "Post-call note"}`
-      : "CRM lead update");
-
-  await insertFollowUpTask({
-    userId,
-    agentId: action.agentId,
-    taskType: "update_crm_lead",
-    description,
-    priority: action.priority || "medium",
-    status: "pending",
-    sourceType: context.sourceType,
-    sourceId: context.sourceId,
-    targetChannel: "crm",
-    payload: action.payload,
-  });
-  await touchNavCounts(userId);
-  return { success: true, queued: true };
-}
-
-async function executeCrmAction(userId: string, action: ActionItem): Promise<ActionResult> {
-  const crm = new CRMService(userId);
-  const payload = (action.payload || {}) as Record<string, unknown>;
-  const callLogShape = isCrmCallLogPayload(payload);
-
-  if (callLogShape) {
-    const crmType = (payload.crm_type ?? payload.crmType) as "hubspot" | "salesforce";
-    const logId = await crm.logCall({
-      crmType,
-      subject: String(payload.subject || "Call"),
-      description: String(payload.description || ""),
-      to_number: String(payload.to_number || payload.customerNumber || ""),
-      duration_minutes:
-        typeof payload.duration_minutes === "number" ? payload.duration_minutes : undefined,
-      outcome: typeof payload.outcome === "string" ? payload.outcome : undefined,
-    });
-    return { success: !!logId };
-  }
-
-  const updated = await crm.updateLead(action.payload as Parameters<CRMService["updateLead"]>[0]);
-  return { success: updated };
-}
-
 async function handleCreateInternalTask(
   userId: string,
   action: ActionItem,
@@ -810,15 +737,6 @@ async function queueSideEffectAction(
   });
   await touchNavCounts(userId);
   return { success: true, queued: true };
-}
-
-async function handleProspectLeads(
-  userId: string,
-  action: ActionItem,
-  _context: { sourceId: string; sourceType: string },
-): Promise<ActionResult> {
-  const leads = await searchLeads(action.payload as Parameters<typeof searchLeads>[0], userId);
-  return { success: Array.isArray(leads) };
 }
 
 async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {

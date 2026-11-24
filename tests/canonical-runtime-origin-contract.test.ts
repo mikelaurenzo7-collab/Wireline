@@ -18,7 +18,6 @@ const customerUrlProducers = [
   "src/lib/voice/openai-sip-config.ts",
   "src/routes/auth-routes.ts",
   "src/routes/billing-routes.ts",
-  "src/routes/meta-webhook-routes.ts",
   "src/routes/openai-inbound-twilio-routes.ts",
   "src/routes/openai-sip-routes.ts",
   "src/routes/team-routes.ts",
@@ -54,10 +53,7 @@ describe("canonical BotBound runtime origins", () => {
       expect(read(path), path).toContain("resolveCanonicalAppUrl");
     }
 
-    for (const path of [
-      "src/lib/safe-public-text-fetch.ts",
-      "src/routes/meta-webhook-routes.ts",
-    ]) {
+    for (const path of ["src/lib/safe-public-text-fetch.ts"]) {
       expect(read(path), path).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     }
   });

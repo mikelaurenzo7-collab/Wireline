@@ -91,20 +91,6 @@ describe("industry-leader audit hardening contracts", () => {
     expect(mailbox).toContain('id: "icloud"');
   });
 
-  it("does not auto-enable unimplemented commerce stub tools on role defaults", () => {
-    const caps = read("src/lib/agent-capabilities.ts");
-    // Catalog may still list them with honest "not available" copy, but ROLE
-    // default sets must not advertise them on every ecommerce/support agent.
-    const roleSets = caps.slice(caps.indexOf("export const ROLE_TOOL_SETS"));
-    const ecommerceBlock = roleSets.slice(
-      roleSets.indexOf("ecommerce:"),
-      roleSets.indexOf("scheduler:"),
-    );
-    expect(ecommerceBlock).not.toContain("shopify_apply_discount");
-    expect(ecommerceBlock).not.toContain("square_send_invoice");
-    expect(caps).toContain("Not available on live calls yet");
-  });
-
   it("keeps Appearance focused while Goals remains discoverable in Activity", () => {
     const customization = read("src/pages/CustomizationSettings.tsx");
     expect(customization).toContain("<AppearanceSettings />");

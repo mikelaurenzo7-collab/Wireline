@@ -34,19 +34,9 @@ import {
 } from "../src/lib/agent-tool-authorization";
 
 const selected = ["send_email", "send_text_message", "search_knowledge_base"] as const;
-const privateLiveReads = [
-  "search_leads",
-  "crm_search_contacts",
-  "view_recent_interactions",
-  "square_lookup_order",
-  "square_lookup_customer",
-] as const;
-const callerLinkedLiveWrites = ["update_lead_status", "crm_log_call", "schedule_callback"] as const;
-const unverifiedLiveTools = [
-  ...privateLiveReads,
-  ...callerLinkedLiveWrites,
-  "square_create_payment_link",
-] as const;
+const privateLiveReads = ["search_leads", "view_recent_interactions"] as const;
+const callerLinkedLiveWrites = ["update_lead_status", "schedule_callback"] as const;
+const unverifiedLiveTools = [...privateLiveReads, ...callerLinkedLiveWrites] as const;
 const legacyFounderCsTools = [
   "send_signup_link",
   "send_payment_link",
@@ -263,13 +253,25 @@ describe("live tool channel entitlements", () => {
       "stop_computer_task",
     ];
     const fresh = names(
-      await buildRoleToolDefsForTenant("front_desk", selectedComputer, "user-pilot", "standard", flags),
+      await buildRoleToolDefsForTenant(
+        "front_desk",
+        selectedComputer,
+        "user-pilot",
+        "standard",
+        flags,
+      ),
     );
     expect(fresh.filter((name) => computerNames.includes(name))).toEqual(selectedComputer);
 
     h.cached.mockResolvedValue(computerNames.map((name) => ({ name })));
     const cached = names(
-      await buildRoleToolDefsForTenant("front_desk", selectedComputer, "user-pilot", "standard", flags),
+      await buildRoleToolDefsForTenant(
+        "front_desk",
+        selectedComputer,
+        "user-pilot",
+        "standard",
+        flags,
+      ),
     );
     expect(cached.filter((name) => computerNames.includes(name))).toEqual(selectedComputer);
   });

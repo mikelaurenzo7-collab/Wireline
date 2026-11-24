@@ -9,14 +9,6 @@ const STATIC_INTEGRATION_CALLBACKS = {
   "src/routes/oauth/google.ts": "/api/oauth/google/callback",
   "src/routes/oauth/google-sheets.ts": "/api/oauth/google_sheets/callback",
   "src/routes/oauth/microsoft.ts": "/api/oauth/microsoft/callback",
-  "src/routes/oauth/salesforce.ts": "/api/oauth/salesforce/callback",
-  "src/routes/oauth/hubspot.ts": "/api/oauth/hubspot/callback",
-  "src/routes/oauth/apollo.ts": "/api/oauth/apollo/callback",
-  "src/routes/oauth/meta.ts": "/api/oauth/meta/callback",
-  "src/routes/oauth/shopify.ts": "/api/oauth/shopify/callback",
-  // Square is a deliberate compatibility exception: this exact path is what
-  // is already registered in the Square Developer Dashboard.
-  "src/routes/oauth/square.ts": "/api/ecommerce/oauth/callback",
   "src/routes/oauth/slack.ts": "/api/oauth/slack/callback",
   "src/routes/oauth/x.ts": "/api/oauth/x/callback",
   "src/routes/oauth/zoom.ts": "/api/oauth/zoom/callback",

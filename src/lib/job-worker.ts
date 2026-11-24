@@ -25,7 +25,6 @@ import {
   generateScheduledOperatingReport,
   type ScheduledReportJobPayload,
 } from "./scheduled-report-service";
-import { handleProactiveLeadEnrichmentJob } from "./proactive-lead-enrichment-job";
 import { retryPendingOrphanCarrierResources } from "./orphan-carrier-retry";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -546,13 +545,6 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
   }
   if (job.type === "scheduled_report") {
     await handleScheduledReport(job);
-    return;
-  }
-  // Intercept the legacy handler before it can run unscoped phone-only history
-  // reads. The replacement asserts job/payload ownership and enters tenant RLS.
-  if (job.type === "proactive_lead_enrichment") {
-    assertLaunchProviderSpendAllowed(job);
-    await handleProactiveLeadEnrichmentJob(job);
     return;
   }
   // Extend the existing daily integrity janitor rather than creating another

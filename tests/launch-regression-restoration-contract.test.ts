@@ -77,7 +77,7 @@ describe("restored launch regression guards", () => {
     expect(businessTools.length).toBeLessThan(getDefaultAgentTools().length);
     expect(businessTools).toContain("send_email");
     expect(businessTools).toContain("book_appointment");
-    expect(businessTools).toContain("crm_create_opportunity");
+    expect(businessTools).toContain("create_followup_task");
     expect(businessTools).toContain("send_contract");
     expect(personalTools).toContain("book_appointment");
     expect(personalTools).toContain("send_text_message");

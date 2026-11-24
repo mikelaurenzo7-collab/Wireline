@@ -33,7 +33,7 @@ describe("live agent tool idempotency", () => {
   it("classifies external writes and transfers while leaving reads and legal opt-outs unledgered", () => {
     expect(isIdempotentAgentTool("send_email")).toBe(true);
     expect(isIdempotentAgentTool("book_appointment")).toBe(true);
-    expect(isIdempotentAgentTool("shopify_cancel_order")).toBe(true);
+    expect(isIdempotentAgentTool("send_text_message")).toBe(true);
     expect(isIdempotentAgentTool("escalate_to_human")).toBe(true);
     expect(isIdempotentAgentTool("search_knowledge_base")).toBe(false);
     expect(isIdempotentAgentTool("check_calendar_availability")).toBe(false);

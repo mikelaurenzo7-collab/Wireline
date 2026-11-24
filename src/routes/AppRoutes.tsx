@@ -26,11 +26,6 @@ const KnowledgePage = lazy(() =>
 const ConnectionsPage = lazy(() =>
   import("../pages/ConnectionsPage").then((module) => withVisualQaPage(module, "connections")),
 );
-const SalesforceIntegrationPage = lazy(() =>
-  import("../pages/SalesforceIntegrationPage").then((module) =>
-    withVisualQaPage(module, "salesforce"),
-  ),
-);
 const PhonePage = lazy(() =>
   import("../pages/PhonePage").then((module) => withVisualQaPage(module, "phone")),
 );
@@ -184,7 +179,6 @@ export default function AppRoutes() {
         <Route path="/knowledge" element={<KnowledgePage />} />
 
         <Route path="/connections" element={<ConnectionsPage />} />
-        <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/integrations" element={<PreservingRedirect to="/connections" />} />
         <Route
           path="/call-logs"

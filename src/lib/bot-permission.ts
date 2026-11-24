@@ -8,13 +8,7 @@ export const BOT_PERMISSION_LEVELS = ["full", "auto", "ask"] as const;
 export type BotPermissionLevel = (typeof BOT_PERMISSION_LEVELS)[number];
 export const DEFAULT_NEW_BOT_AUTONOMY = "supervised" as const;
 
-const CUSTOMER_SENDS = new Set([
-  "send_email",
-  "send_text_message",
-  "update_crm_lead",
-  "send_contract",
-  "prospect_leads",
-]);
+const CUSTOMER_SENDS = new Set(["send_email", "send_text_message", "send_contract"]);
 
 export function isBotPermissionLevel(value: unknown): value is BotPermissionLevel {
   return value === "full" || value === "auto" || value === "ask";

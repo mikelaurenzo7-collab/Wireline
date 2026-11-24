@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 474
-**Protected:** 384
-**Public (allowlisted):** 90
+**Routes scanned:** 444
+**Protected:** 363
+**Public (allowlisted):** 81
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -51,21 +51,12 @@
 | `POST /api/public/demo-call` | Retired 410 tombstone; no provider work or tenant data |
 | `POST /api/public/demo-session` | Retired 410 tombstone; no provider work or tenant data |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
-| `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
-| `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
-| `POST /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
-| `GET /api/oauth/apollo/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/google_sheets/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/google/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/oauth/hubspot/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/oauth/meta/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/microsoft_excel/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/microsoft_teams/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/microsoft/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/oauth/salesforce/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/oauth/shopify/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/slack/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/ecommerce/oauth/callback` | Square OAuth callback (redirect URL registered with Square); state verified in-handler via verifyOAuthState |
 | `GET /api/oauth/x/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/yahoo/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/zoom/callback` | OAuth initiation/callback (state-validated) |
@@ -335,7 +326,6 @@
 | job-routes.ts | GET | `/api/jobs/:id([0-9a-fA-F-]{36})` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/:id([0-9a-fA-F-]{36})/run` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
-| job-routes.ts | POST | `/api/jobs/prospect` | inline | — | — | Protected |
 | job-routes.ts | GET | `/api/jobs/stats` | inline | — | — | Protected |
 | job-routes.ts | GET | `/api/jobs/sweep` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/sweep` | inline | — | — | Protected |
@@ -346,10 +336,6 @@
 | launch-billing-checkout-atomic-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | launch-billing-checkout-atomic-routes.ts | POST | `/api/billing/checkout/verify` | inline | — | — | Protected |
 | launch-billing-checkout-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
-| lead-hunter-routes.ts | POST | `/api/lead-hunter/action` | inline | — | — | Protected |
-| lead-hunter-routes.ts | POST | `/api/lead-hunter/dial` | inline | — | — | Protected |
-| lead-hunter-routes.ts | POST | `/api/lead-hunter/discover` | inline | — | — | Protected |
-| lead-hunter-routes.ts | GET | `/api/lead-hunter/leads` | inline | — | — | Protected |
 | learning-routes.ts | GET | `/api/agents/:id/learning-digest` | inline | — | — | Protected |
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
 | legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
@@ -370,9 +356,6 @@
 | mcp-coaching-settings-routes.ts | POST | `/api/mcp/coaching-writes` | inline | — | — | Protected |
 | mcp-coaching-settings-routes.ts | GET | `/api/mcp/connections` | inline | — | — | Protected |
 | mcp-coaching-settings-routes.ts | DELETE | `/api/mcp/connections` | inline | — | — | Protected |
-| meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
-| meta-webhook-routes.ts | GET | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
-| meta-webhook-routes.ts | POST | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
 | mobile-routes.ts | POST | `/api/mobile/agents` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/agents` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/agents/:id` | inline | — | — | Protected |
@@ -401,20 +384,11 @@
 | native-phone-routing-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | POST | `/api/phone-numbers/search` | inline | — | — | Protected |
 | nav-counts-truth-routes.ts | GET | `/api/nav-counts` | inline | — | — | Protected |
-| oauth/apollo.ts | GET | `/api/oauth/apollo/callback` | — | — | yes | Public (allowlisted) |
-| oauth/apollo.ts | POST | `/api/oauth/apollo/disconnect` | inline | — | yes | Protected |
-| oauth/apollo.ts | GET | `/api/oauth/apollo/url` | inline | — | yes | Protected |
 | oauth/google-sheets.ts | GET | `/api/oauth/google_sheets/callback` | — | — | yes | Public (allowlisted) |
 | oauth/google-sheets.ts | POST | `/api/oauth/google_sheets/disconnect` | inline | — | yes | Protected |
 | oauth/google-sheets.ts | GET | `/api/oauth/google_sheets/url` | inline | — | yes | Protected |
 | oauth/google.ts | GET | `/api/oauth/google/callback` | — | — | yes | Public (allowlisted) |
 | oauth/google.ts | GET | `/api/oauth/google/url` | inline | — | yes | Protected |
-| oauth/hubspot.ts | GET | `/api/oauth/hubspot/callback` | — | — | yes | Public (allowlisted) |
-| oauth/hubspot.ts | POST | `/api/oauth/hubspot/disconnect` | inline | — | yes | Protected |
-| oauth/hubspot.ts | GET | `/api/oauth/hubspot/url` | inline | — | yes | Protected |
-| oauth/meta.ts | GET | `/api/oauth/meta/callback` | — | — | yes | Public (allowlisted) |
-| oauth/meta.ts | POST | `/api/oauth/meta/disconnect` | inline | — | yes | Protected |
-| oauth/meta.ts | GET | `/api/oauth/meta/url` | inline | — | yes | Protected |
 | oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/callback` | — | — | yes | Public (allowlisted) |
 | oauth/microsoft-graph.ts | POST | `/api/oauth/microsoft_excel/disconnect` | inline | — | yes | Protected |
 | oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/url` | inline | — | yes | Protected |
@@ -425,21 +399,11 @@
 | oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/url` | inline | — | yes | Protected |
 | oauth/microsoft.ts | GET | `/api/oauth/microsoft/callback` | — | — | yes | Public (allowlisted) |
 | oauth/microsoft.ts | GET | `/api/oauth/microsoft/url` | inline | — | yes | Protected |
-| oauth/salesforce.ts | GET | `/api/oauth/salesforce/callback` | — | — | yes | Public (allowlisted) |
-| oauth/salesforce.ts | POST | `/api/oauth/salesforce/disconnect` | inline | — | yes | Protected |
-| oauth/salesforce.ts | GET | `/api/oauth/salesforce/url` | inline | — | yes | Protected |
-| oauth/shopify.ts | GET | `/api/oauth/shopify/callback` | — | — | yes | Public (allowlisted) |
-| oauth/shopify.ts | POST | `/api/oauth/shopify/disconnect` | inline | — | yes | Protected |
-| oauth/shopify.ts | GET | `/api/oauth/shopify/url` | inline | — | yes | Protected |
 | oauth/slack.ts | GET | `/api/oauth/slack/callback` | — | — | yes | Public (allowlisted) |
 | oauth/slack.ts | GET | `/api/oauth/slack/channels` | inline | — | yes | Protected |
 | oauth/slack.ts | POST | `/api/oauth/slack/default-channel` | inline | — | yes | Protected |
 | oauth/slack.ts | POST | `/api/oauth/slack/disconnect` | inline | — | yes | Protected |
 | oauth/slack.ts | GET | `/api/oauth/slack/url` | inline | — | yes | Protected |
-| oauth/square.ts | GET | `/api/ecommerce/oauth/callback` | — | — | yes | Public (allowlisted) |
-| oauth/square.ts | POST | `/api/oauth/square/disconnect` | inline | — | yes | Protected |
-| oauth/square.ts | GET | `/api/oauth/square/url` | inline | — | yes | Protected |
-| oauth/status.ts | PUT | `/api/oauth/crm/salesforce/preferences` | inline | — | yes | Protected |
 | oauth/status.ts | GET | `/api/oauth/crm/status` | inline | — | yes | Protected |
 | oauth/status.ts | GET | `/api/oauth/integration-health` | inline | — | yes | Protected |
 | oauth/x.ts | GET | `/api/oauth/x/callback` | — | — | yes | Public (allowlisted) |
@@ -470,9 +434,6 @@
 | outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial/:requestKey/cancel-missing` | inline | — | — | Protected |
 | outbound-dial-atomic-routes.ts | GET | `/api/outbound/prepared/:requestKey` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
-| outbound-routes.ts | POST | `/api/lead-hunt/approve` | inline | — | — | Protected |
-| outbound-routes.ts | GET | `/api/lead-hunt/leads` | inline | — | — | Protected |
-| outbound-routes.ts | DELETE | `/api/lead-hunt/leads/:id` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound` | inline | — | — | Protected |
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
