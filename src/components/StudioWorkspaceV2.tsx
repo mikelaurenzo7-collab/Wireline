@@ -164,6 +164,7 @@ function StudioWorkspaceContent() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const setupTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const panelExpandRef = useRef<HTMLButtonElement | null>(null);
+  const browserOpenerId = useRef("");
   const returnFocus = useRef<{ view: "setup" | "computer"; id: string } | null>(null);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   // Explicit Computer links reopen the pane even after a saved collapse.
@@ -268,7 +269,10 @@ function StudioWorkspaceContent() {
     const target = returnFocus.current;
     if (!target) return;
     if (target.view === "setup" ? inspectorOpen : panelOpen || mobileBrowserOpen) return;
-    document.getElementById(target.id)?.focus({ preventScroll: true });
+    const opener = document.getElementById(target.id);
+    const fallback =
+      target.view === "computer" ? document.getElementById("studio-panel-toggle") : null;
+    (opener ?? fallback)?.focus({ preventScroll: true });
     returnFocus.current = null;
   }, [inspectorOpen, mobileBrowserOpen, panelOpen]);
 
@@ -378,7 +382,8 @@ function StudioWorkspaceContent() {
   }, [setParams]);
 
   const closeComputer = useCallback(() => {
-    returnFocus.current = { view: "computer", id: "studio-panel-toggle" };
+    returnFocus.current = { view: "computer", id: browserOpenerId.current };
+    browserOpenerId.current = "";
     setPanelExpanded(false);
     if (splitWorkspace) setPanelCollapsed(true);
     setParams(
@@ -429,18 +434,22 @@ function StudioWorkspaceContent() {
 
   const rehearsalVisible = workroomMode === "test";
 
-  const showBrowser = useCallback(() => {
-    if (splitWorkspace) setPanelCollapsed(false);
-    setParams(
-      (current) => {
-        const next = clearStudioInspectorSectionParams(current);
-        next.set("panel", "computer");
-        next.delete("focus");
-        return next;
-      },
-      { replace: true },
-    );
-  }, [setPanelCollapsed, setParams, splitWorkspace]);
+  const showBrowser = useCallback(
+    (openerId = "") => {
+      browserOpenerId.current = openerId;
+      if (splitWorkspace) setPanelCollapsed(false);
+      setParams(
+        (current) => {
+          const next = clearStudioInspectorSectionParams(current);
+          next.set("panel", "computer");
+          next.delete("focus");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setPanelCollapsed, setParams, splitWorkspace],
+  );
 
   useEffect(() => {
     if (!rehearsalFocusRequest) return;
@@ -627,9 +636,9 @@ function StudioWorkspaceContent() {
                   }
                 : undefined
             }
-            onShowBrowser={() => {
+            onShowBrowser={(openerId) => {
               computer.setSelectedId(task.id);
-              showBrowser();
+              showBrowser(openerId);
             }}
           />
         ),
@@ -645,7 +654,7 @@ function StudioWorkspaceContent() {
         computer.listFailed ? (
           <StatusNotice
             tone="warning"
-            title="Computer history could not load"
+            title="Task history could not load"
             action={
               <Button size="sm" variant="secondary" onClick={() => void computer.loadTasks()}>
                 Retry
@@ -685,7 +694,7 @@ function StudioWorkspaceContent() {
       <aside
         id="studio-computer-panel"
         className="flex h-full min-h-0 min-w-0 w-full flex-col"
-        aria-label="Computer"
+        aria-label="Browser"
         onKeyDown={(event) => {
           if (
             event.key !== "Escape" ||
@@ -710,7 +719,7 @@ function StudioWorkspaceContent() {
         }}
       >
         <header className="wl-studio-panel-header">
-          <h2 className="text-sm font-semibold">Computer</h2>
+          <h2 className="text-sm font-semibold">Browser</h2>
           <div className="wl-studio-panel-actions">
             {splitWorkspace ? (
               <button
@@ -737,8 +746,8 @@ function StudioWorkspaceContent() {
               type="button"
               onClick={closeComputer}
               className="wl-studio-panel-action wl-focus-ring-halo"
-              aria-label="Close Computer"
-              title="Close Computer"
+              aria-label="Close browser"
+              title="Close browser"
             >
               <X className="size-4" aria-hidden="true" />
             </button>

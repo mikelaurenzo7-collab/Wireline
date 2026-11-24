@@ -27,7 +27,7 @@ export function useStudioTaskComposer({
   requested: boolean;
   messageDraft: string;
   onRequest: () => void;
-  onShowBrowser: () => void;
+  onShowBrowser: (openerId: string) => void;
   onFocus: () => void;
 }) {
   const model = useComputerWorkspace();
@@ -248,9 +248,10 @@ export function useStudioTaskComposer({
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => {
+              id="studio-view-active-task"
+              onClick={(event) => {
                 model.setSelectedId(active.id);
-                onShowBrowser();
+                onShowBrowser(event.currentTarget.id);
               }}
             >
               View active task

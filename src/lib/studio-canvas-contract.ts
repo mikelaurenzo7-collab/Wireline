@@ -126,7 +126,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     // The conversation owns tasks and rehearsal. Bot setup has its own view.
     { id: "single-workroom", pattern: /onModeChange=\{panelOpen \? undefined : setWorkroomMode\}/ },
     { id: "bot-setup-view", pattern: /id="studio-inspector"[\s\S]*aria-label="Bot setup"/ },
-    { id: "computer-panel", pattern: /id="studio-computer-panel"[\s\S]*<h2[^>]*>Computer<\/h2>/ },
+    { id: "computer-panel", pattern: /id="studio-computer-panel"[\s\S]*<h2[^>]*>Browser<\/h2>/ },
     {
       id: "accessible-setup-tabs",
       pattern: /role="tablist"[\s\S]*aria-label="Bot setup sections"/,
