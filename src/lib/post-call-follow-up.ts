@@ -39,14 +39,22 @@ export function toolAuditResultText(metadata: unknown): string {
   return typeof record.result === "string" ? record.result : "";
 }
 
-/** The live email tool already accepted this recipient, so a second draft would send it again. */
-export function sendEmailDraftAlreadyDelivered(
+/** A live submission or saved approval for this recipient already covers the requested follow-up. */
+export function liveEmailAlreadyHandled(
   action: ExtractedBusinessAction,
   completedResults: readonly unknown[],
 ): boolean {
   if (action.type !== "send_email") return false;
   const recipient = action.payload?.to;
-  return completedResults.some((result) => emailResultAcceptedForRecipient(result, recipient));
+  const email = normalizeEmailAddress(recipient);
+  if (!email) return false;
+  return completedResults.some(
+    (result) =>
+      emailResultAcceptedForRecipient(result, email) ||
+      (typeof result === "string" &&
+        result.startsWith("DRAFT_SAVED: ") &&
+        normalizeEmailAddress(result.split("\n", 1)[0].slice("DRAFT_SAVED: ".length)) === email),
+  );
 }
 
 export function postCallFollowUpAction(action: ExtractedBusinessAction): ExtractedBusinessAction {

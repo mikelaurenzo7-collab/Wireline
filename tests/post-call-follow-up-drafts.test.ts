@@ -6,7 +6,7 @@ import { shouldEnrichPostCall } from "../src/lib/post-call-digest";
 import {
   emailResultAcceptedForRecipient,
   postCallFollowUpAction,
-  sendEmailDraftAlreadyDelivered,
+  liveEmailAlreadyHandled,
 } from "../src/lib/post-call-follow-up";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -72,15 +72,24 @@ describe("post-call follow-up drafts", () => {
     expect(
       emailResultAcceptedForRecipient("The email send was not confirmed.", email.payload.to),
     ).toBe(false);
-    expect(sendEmailDraftAlreadyDelivered(email, [accepted])).toBe(true);
+    expect(liveEmailAlreadyHandled(email, [accepted])).toBe(true);
+    expect(liveEmailAlreadyHandled(email, ["DRAFT_SAVED: Dana@example.com\nPending review."])).toBe(
+      true,
+    );
     expect(
-      sendEmailDraftAlreadyDelivered(
+      liveEmailAlreadyHandled(email, ["DRAFT_SAVED: other@example.com\nPending review."]),
+    ).toBe(false);
+    expect(emailResultAcceptedForRecipient("DRAFT_SAVED: Dana@example.com", email.payload.to)).toBe(
+      false,
+    );
+    expect(
+      liveEmailAlreadyHandled(
         { ...email, payload: { ...email.payload, to: "other@example.com" } },
         [accepted],
       ),
     ).toBe(false);
     expect(
-      sendEmailDraftAlreadyDelivered(
+      liveEmailAlreadyHandled(
         {
           type: "create_internal_task",
           priority: "medium",
@@ -93,10 +102,10 @@ describe("post-call follow-up drafts", () => {
     const worker = read("src/lib/job-worker-base.ts");
     const extraction = worker.slice(worker.indexOf('if (job.type === "v2a_action_extraction")'));
     expect(extraction).toContain("completedSendEmailResults(p.userId, p.callId)");
-    expect(extraction).toContain("sendEmailDraftAlreadyDelivered(action, completedEmailSends)");
-    expect(
-      extraction.indexOf("sendEmailDraftAlreadyDelivered(action, completedEmailSends)"),
-    ).toBeLessThan(extraction.indexOf('type: "execute_action"'));
+    expect(extraction).toContain("liveEmailAlreadyHandled(action, completedEmailSends)");
+    expect(extraction.indexOf("liveEmailAlreadyHandled(action, completedEmailSends)")).toBeLessThan(
+      extraction.indexOf('type: "execute_action"'),
+    );
   });
 
   it("queues enrichment from the digest and keeps every follow-up a draft", () => {

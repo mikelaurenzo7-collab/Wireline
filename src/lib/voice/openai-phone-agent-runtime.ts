@@ -1,3 +1,4 @@
+import { actionExecutionMode } from "../bot-permission";
 import { resolveAgentGreeting } from "../agent-greeting";
 import { playbookPromptBlock } from "../agent-playbook";
 import { DIRECTIVE_PROMPT_ORDER } from "../agent-knowledge-search";
@@ -138,6 +139,7 @@ export type OpenAIRealtimeInstructionAgent = {
   escalationEmail: string | null;
   transferPhone?: string | null;
   businessVariables: unknown;
+  autonomyLevel?: string | null;
   enabledTools: unknown;
   timezone: string | null;
   kpiFocus: string | null;
@@ -153,6 +155,7 @@ export type OpenAIRealtimeTenantSettings = {
   twilioMessagingEnabled: boolean | null;
   twilioLookupEnabled: boolean | null;
   businessName: string | null;
+  autonomyLevel?: string | null;
   nativeCalendar?: unknown;
 };
 
@@ -342,6 +345,13 @@ export function composeOpenAIRealtimeInstructions(input: {
       ? "\nPRIVATE TEST: This is a private browser test with the account holder. Search approved Training when needed, but do not send, book, transfer, create records, or change external systems.\n"
       : [
           "\nLIVE PHONE CALL: Use enabled tools only when their action is necessary and the caller supplied the required facts. Treat every tool result as authoritative.",
+          actionExecutionMode({
+            agentLevel: input.agent.autonomyLevel,
+            tenantLevel: input.tenant.autonomyLevel,
+            actionType: "send_email",
+          }) === "draft"
+            ? "Customer email requires team approval. Offer to submit the request. Confirm the address once and use the enabled email tool. Tell the caller it is awaiting the team only after a saved draft receipt."
+            : "When a caller asks for email, describe submission only after the send result confirms it.",
           "CLOUD COMPUTER BROWSER: When a caller asks you to check a live website, portal, schedule, or web form not covered by direct tools, call start_computer_task and immediately tell the caller you are checking it in your browser now. Use check_computer_task to read progress. If a browser task pauses with status=needs_input and a pending question, ask the caller that exact question and pass their answer using reply_computer_task. Use stop_computer_task if the caller cancels the browser lookup.\n",
         ].join("\n");
 
@@ -402,6 +412,7 @@ async function loadRuntime(agentId: string, userId: string) {
             escalationEmail: schema.agents.escalationEmail,
             transferPhone: schema.agents.transferPhone,
             businessVariables: schema.agents.businessVariables,
+            autonomyLevel: schema.agents.autonomyLevel,
             enabledTools: schema.agents.enabledTools,
             timezone: schema.agents.timezone,
             kpiFocus: schema.agents.kpiFocus,
@@ -415,6 +426,7 @@ async function loadRuntime(agentId: string, userId: string) {
           .limit(1),
         tx
           .select({
+            autonomyLevel: schema.settings.autonomyLevel,
             aiTier: schema.settings.aiTier,
             twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
             twilioLookupEnabled: schema.settings.twilioLookupEnabled,
@@ -458,6 +470,7 @@ async function loadRuntime(agentId: string, userId: string) {
   const row = settings[0];
   const tenant: OpenAIRealtimeTenantSettings = row
     ? {
+        autonomyLevel: row.autonomyLevel,
         aiTier: row.aiTier,
         twilioMessagingEnabled: row.twilioMessagingEnabled,
         twilioLookupEnabled: row.twilioLookupEnabled,

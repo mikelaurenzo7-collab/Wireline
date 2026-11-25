@@ -9,7 +9,7 @@ import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import {
   postCallFollowUpAction,
-  sendEmailDraftAlreadyDelivered,
+  liveEmailAlreadyHandled,
   toolAuditResultText,
 } from "./post-call-follow-up";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
@@ -177,7 +177,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
     let skippedDuplicateEmails = 0;
     for (const action of actions.map(postCallFollowUpAction)) {
-      if (sendEmailDraftAlreadyDelivered(action, completedEmailSends)) {
+      if (liveEmailAlreadyHandled(action, completedEmailSends)) {
         skippedDuplicateEmails += 1;
         continue;
       }
