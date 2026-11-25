@@ -18,14 +18,10 @@ export function normalizeEmailAddress(value: unknown): string {
 /** A completed live send stores SUBMISSION_OK and the accepted address in the tool result. */
 export function emailResultAcceptedForRecipient(result: unknown, recipient: unknown): boolean {
   const email = normalizeEmailAddress(recipient);
-  const text = typeof result === "string" ? result : "";
-  if (!email || !text.startsWith("SUBMISSION_OK")) return false;
-  const haystack = text.toLowerCase();
-  const at = haystack.indexOf(email);
-  if (at < 0) return false;
-  const before = at === 0 ? " " : haystack[at - 1];
-  const after = haystack[at + email.length] ?? " ";
-  return /[\s:]/.test(before) && /[\s.]/.test(after);
+  if (!email || typeof result !== "string") return false;
+  const receipt =
+    /^SUBMISSION_OK: Email accepted by the sending service for\s+(\S+)\s*\.(?:\s|$)/.exec(result);
+  return normalizeEmailAddress(receipt?.[1]) === email;
 }
 
 export function toolAuditResultText(metadata: unknown): string {

@@ -108,6 +108,29 @@ describe("post-call follow-up drafts", () => {
     );
   });
 
+  it("keeps the follow-up when the receipt names a different mailbox", () => {
+    const receipt =
+      "SUBMISSION_OK: Email accepted by the sending service for Dana+jobs@Example.com.au. Confirm briefly.";
+    const action = {
+      type: "send_email" as const,
+      priority: "medium" as const,
+      reasoning: "Caller corrected the address.",
+      payload: { to: "dana+jobs@example.com", subject: "Appointment", body: "Details" },
+    };
+    expect(liveEmailAlreadyHandled(action, [receipt])).toBe(false);
+    expect(emailResultAcceptedForRecipient(receipt, "jobs@example.com.au")).toBe(false);
+    expect(emailResultAcceptedForRecipient(receipt, " DANA+jobs@example.com.au ")).toBe(true);
+    const historicalReceipt =
+      'SUBMISSION_OK: Email accepted by the sending service for Dana@Example.com. Tell the caller: "I sent it."';
+    expect(emailResultAcceptedForRecipient(historicalReceipt, "dana@example.com")).toBe(true);
+    expect(
+      emailResultAcceptedForRecipient(
+        receipt + " Contact support@example.com.",
+        "support@example.com",
+      ),
+    ).toBe(false);
+  });
+
   it("queues enrichment from the digest and keeps every follow-up a draft", () => {
     const digest = read("src/lib/post-call-digest.ts");
     expect(digest).toContain('type: "post_call_enrichment",');
