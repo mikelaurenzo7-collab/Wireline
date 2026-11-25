@@ -7,7 +7,7 @@ import { AppError } from "../lib/api-error";
  * Memory model: thread history + recent call summaries injected each turn.
  */
 import express, { type Response } from "express";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter, smsRateLimit } from "../middleware/api-rate-limits";
@@ -210,14 +210,76 @@ async function loadPlanningAgent(agentId: string, userId: string, userMessage: s
     : null;
 }
 
-// Hard cap on stored history per agent — keeps the LLM payload bounded
-// + storage manageable. Most account holders won't get near this. When the
-// cap is hit, oldest rows are silently pruned on the next write.
-const MAX_THREAD_LENGTH = 200;
-// How many messages we feed back to Claude as conversational context.
-// Older than this is still in the DB (visible in the UI) but doesn't
-// influence the agent's response. Keeps token cost predictable.
+const MAX_THREAD_LENGTH = 80;
 const CLAUDE_CONTEXT_WINDOW = 40;
+const HISTORY_PAGE_SIZE = 40;
+
+function readThreadId(value: unknown): string | null {
+  if (value === undefined || value === "legacy") return null;
+  if (
+    typeof value !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  )
+    throw AppError.badRequest("Choose a valid chat.");
+  return value;
+}
+
+function beforeMessage(value: unknown) {
+  if (value === undefined) return undefined;
+  if (
+    typeof value !== "string" ||
+    !/^[1-9]\d{0,18}$/.test(value) ||
+    BigInt(value) > 9223372036854775807n
+  )
+    throw AppError.badRequest("Invalid history cursor.");
+  return BigInt(value);
+}
+
+const chatMessages = schema.agentConversationMessages;
+function chatScope(userId: string, agentId: string, threadId: string | null) {
+  return and(
+    eq(chatMessages.userId, userId),
+    eq(chatMessages.agentId, agentId),
+    threadId ? eq(chatMessages.threadId, threadId) : isNull(chatMessages.threadId),
+  );
+}
+
+async function listChats(userId: string, agentId: string, before?: bigint) {
+  const last = sql<bigint>`max(${chatMessages.id})`;
+  const groups = drizzle
+    .select({
+      threadId: chatMessages.threadId,
+      firstId: sql<bigint>`min(${chatMessages.id})`.as("first_id"),
+      lastId: last.as("last_id"),
+      updatedAt: sql<Date>`max(${chatMessages.createdAt})`.as("updated_at"),
+    })
+    .from(chatMessages)
+    .where(and(eq(chatMessages.userId, userId), eq(chatMessages.agentId, agentId)))
+    .groupBy(chatMessages.threadId)
+    .having(before ? sql`${last} < ${before}` : undefined)
+    .orderBy(desc(last))
+    .limit(HISTORY_PAGE_SIZE + 1)
+    .as("threads");
+  const rows = await drizzle
+    .select({
+      id: groups.threadId,
+      title: sql<string>`left(${chatMessages.content}, 96)`,
+      project: chatMessages.projectName,
+      updatedAt: groups.updatedAt,
+      lastId: groups.lastId,
+    })
+    .from(groups)
+    .innerJoin(chatMessages, eq(groups.firstId, chatMessages.id))
+    .orderBy(desc(groups.lastId));
+  return {
+    threads: rows.slice(0, HISTORY_PAGE_SIZE).map(({ lastId: _last, ...row }) => ({
+      ...row,
+      id: row.id || "legacy",
+      title: row.id ? row.title : "Earlier conversation",
+    })),
+    nextCursor: rows.length > HISTORY_PAGE_SIZE ? String(rows[HISTORY_PAGE_SIZE - 1].lastId) : null,
+  };
+}
 
 // GET /api/agents/:id/workspace/messages — load thread history.
 router.get(
@@ -238,17 +300,24 @@ router.get(
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
+      const before = beforeMessage(req.query.before);
+      if (req.query.view === "history") {
+        res.json(await listChats(req.user.id, agentId, before));
+        return;
+      }
+      const threadId = readThreadId(req.query.thread);
+      const pageSize = req.query.thread === undefined ? 200 : MAX_THREAD_LENGTH;
       const messages = await drizzle
         .select()
         .from(schema.agentConversationMessages)
         .where(
           and(
-            eq(schema.agentConversationMessages.agentId, agentId),
-            eq(schema.agentConversationMessages.userId, req.user.id),
+            chatScope(req.user.id, agentId, threadId),
+            before ? lt(chatMessages.id, before) : undefined,
           ),
         )
-        .orderBy(desc(schema.agentConversationMessages.createdAt))
-        .limit(MAX_THREAD_LENGTH);
+        .orderBy(desc(chatMessages.id))
+        .limit(pageSize + 1);
 
       // Return newest-last so the UI can append directly. We also surface
       // the agent's resolved capabilities so the chat can render its
@@ -260,19 +329,23 @@ router.get(
           role: agent.role,
           enabledTools: resolveAgentTools(agent.enabledTools),
         },
-        messages: messages.reverse().map((m) => {
-          const metadata = readStoredStudioMessageMetadata(m.metadata);
-          return {
-            id: String(m.id),
-            role: m.role,
-            content: m.content,
-            reasoning: m.reasoning || undefined,
-            createdAt: m.createdAt,
-            proposals: metadata?.proposals,
-            savedProposalKeys: metadata?.savedProposalKeys,
-            reviewUnavailable: m.role === "agent" && !metadata && claimsStudioReview(m.content),
-          };
-        }),
+        nextCursor: messages.length > pageSize ? String(messages[pageSize - 1].id) : null,
+        messages: messages
+          .slice(0, pageSize)
+          .reverse()
+          .map((m) => {
+            const metadata = readStoredStudioMessageMetadata(m.metadata);
+            return {
+              id: String(m.id),
+              role: m.role,
+              content: m.content,
+              reasoning: m.reasoning || undefined,
+              createdAt: m.createdAt,
+              proposals: metadata?.proposals,
+              savedProposalKeys: metadata?.savedProposalKeys,
+              reviewUnavailable: m.role === "agent" && !metadata && claimsStudioReview(m.content),
+            };
+          }),
       });
     } catch (e) {
       if (e instanceof AppError) throw e;
@@ -298,6 +371,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
+      const threadId = readThreadId(req.query.thread);
       const userMessage = req.body.content.trim();
 
       // Load agent + current config (the planner proposes changes against
@@ -320,13 +394,8 @@ router.post(
       const priorMessages = await drizzle
         .select()
         .from(schema.agentConversationMessages)
-        .where(
-          and(
-            eq(schema.agentConversationMessages.agentId, agentId),
-            eq(schema.agentConversationMessages.userId, req.user.id),
-          ),
-        )
-        .orderBy(desc(schema.agentConversationMessages.createdAt))
+        .where(chatScope(req.user.id, agentId, threadId))
+        .orderBy(desc(chatMessages.id))
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
@@ -342,6 +411,7 @@ router.post(
       await drizzle.insert(schema.agentConversationMessages).values({
         userId: req.user.id,
         agentId,
+        threadId,
         role: "Account Holder",
         content: userMessage,
       });
@@ -383,6 +453,7 @@ router.post(
         .values({
           userId: req.user.id,
           agentId,
+          threadId,
           role: "agent",
           content: reply,
           reasoning: reasoning || null,
@@ -419,6 +490,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
+      const threadId = readThreadId(req.query.thread);
       const userMessage = req.body.content.trim();
       if (!isRuntimeAvailable()) {
         throw AppError.fromHttpStatus(503, "LLM not configured");
@@ -435,13 +507,8 @@ router.post(
       const priorMessages = await drizzle
         .select()
         .from(schema.agentConversationMessages)
-        .where(
-          and(
-            eq(schema.agentConversationMessages.agentId, agentId),
-            eq(schema.agentConversationMessages.userId, req.user.id),
-          ),
-        )
-        .orderBy(desc(schema.agentConversationMessages.createdAt))
+        .where(chatScope(req.user.id, agentId, threadId))
+        .orderBy(desc(chatMessages.id))
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
@@ -456,6 +523,7 @@ router.post(
       await drizzle.insert(schema.agentConversationMessages).values({
         userId: req.user.id,
         agentId,
+        threadId,
         role: "Account Holder",
         content: userMessage,
       });
@@ -505,6 +573,7 @@ router.post(
           .values({
             userId: req.user.id,
             agentId,
+            threadId,
             role: "agent",
             content: reply || "(empty)",
             reasoning: thinking || null,
@@ -558,6 +627,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
+      const threadId = readThreadId(req.query.thread);
       const legacyPdfUpload = typeof req.body.pdfBase64 === "string";
       const fileBase64 = legacyPdfUpload ? req.body.pdfBase64 : req.body.fileBase64;
       const suppliedName =
@@ -622,6 +692,7 @@ router.post(
       await drizzle.insert(schema.agentConversationMessages).values({
         userId: req.user.id,
         agentId,
+        threadId,
         role: "agent",
         content: ack,
       });
@@ -643,6 +714,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
+      const threadId = readThreadId(req.query.thread);
       const [agent] = await drizzle
         .select({ id: schema.agents.id })
         .from(schema.agents)
@@ -652,18 +724,39 @@ router.delete(
 
       await drizzle
         .delete(schema.agentConversationMessages)
-        .where(
-          and(
-            eq(schema.agentConversationMessages.agentId, agentId),
-            eq(schema.agentConversationMessages.userId, req.user.id),
-          ),
-        );
+        .where(chatScope(req.user.id, agentId, threadId));
       res.json({ cleared: true });
     } catch (e) {
       if (e instanceof AppError) throw e;
       log.error("workspace clear failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to clear workspace");
     }
+  },
+);
+
+// A project is a folder of saved chats within one Bot. The first message owns its label.
+router.patch(
+  "/api/agents/:id/workspace/messages",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const threadId = readThreadId(req.query.thread);
+    const project = req.body?.project;
+    if (typeof project !== "string" || project.trim().length > 80)
+      throw AppError.badRequest("Choose a project name of up to 80 characters.");
+    const scope = chatScope(req.user.id, req.params.id, threadId);
+    const first = drizzle
+      .select({ id: chatMessages.id })
+      .from(chatMessages)
+      .where(scope)
+      .orderBy(asc(chatMessages.id))
+      .limit(1);
+    const [saved] = await drizzle
+      .update(chatMessages)
+      .set({ projectName: project.trim() || null })
+      .where(and(scope, eq(chatMessages.id, first)))
+      .returning({ project: chatMessages.projectName });
+    if (!saved) throw AppError.fromHttpStatus(404, "Chat not found");
+    res.json(saved);
   },
 );
 

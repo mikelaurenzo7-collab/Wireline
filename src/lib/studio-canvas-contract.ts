@@ -150,7 +150,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     },
     {
       id: "workroom-draft-preservation",
-      pattern: /initialDraft=\{workroomDrafts\.get\(main\.key\)\}/,
+      pattern: /initialDraft=\{workroomDrafts\.get\(main\.draftKey\)\}/,
     },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
     { id: "empty-state", pattern: /Create Your Bot/i },

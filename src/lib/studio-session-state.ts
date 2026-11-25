@@ -46,6 +46,16 @@ function reviewableMessageIds(session: StudioConversationSession, messages: Stud
   return retained;
 }
 
+/** Restore unfinished work when returning within the signed-in page session. */
+export function hasUnfinishedConversation(session: StudioConversationSession) {
+  return (
+    session.snapshot.clearing ||
+    session.snapshot.interrupted ||
+    Boolean(session.snapshot.replyError) ||
+    reviewableMessageIds(session, session.snapshot.messages).size > 0
+  );
+}
+
 /** Page-session memory only. Never persist private conversations in browser storage. */
 export function createStudioSessionState(ownerId: string | null) {
   const setupDrafts = createStudioSetupDrafts(ownerId);

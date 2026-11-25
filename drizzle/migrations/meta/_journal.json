@@ -659,6 +659,13 @@
       "when": 1793100000001,
       "tag": "0195_computer_tasks_agent_id_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1795615200000,
+      "tag": "0196_studio_chat_threads",
+      "breakpoints": true
     }
   ]
 }
