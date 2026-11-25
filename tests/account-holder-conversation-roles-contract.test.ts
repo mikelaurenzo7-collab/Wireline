@@ -9,12 +9,12 @@ function read(relativePath: string) {
 describe("account holder conversation roles", () => {
   it("keeps Studio workroom inserts on Account Holder, not legacy operator", () => {
     const routes = read("src/routes/agent-workspace-routes.ts");
-    const schema = read("src/db/schema.ts");
+    const schema = read("src/db/schema-base.ts");
     const workroom = read("src/components/StudioWorkroom.tsx");
 
     expect(routes).toContain('role: "Account Holder"');
     expect(routes).not.toMatch(/role:\s*"operator"/);
-    expect(schema).toContain('role="Account Holder"');
+    expect(schema).toContain('role is one of "Account Holder" | "agent"');
     expect(workroom).toContain('role: "Account Holder"');
   });
 

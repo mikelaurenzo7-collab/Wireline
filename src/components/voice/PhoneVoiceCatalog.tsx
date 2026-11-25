@@ -19,6 +19,12 @@ export default function PhoneVoiceCatalog({
   const [query, setQuery] = useState("");
   const [provider, setProvider] = useState("all");
   const [visible, setVisible] = useState(12);
+  const [page, setPage] = useState(0);
+  const [community, setCommunity] = useState<CatalogPhoneVoice[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryAttempt, setLibraryAttempt] = useState(0);
+  const library = provider === "library";
   const [saving, setSaving] = useState<string | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -45,6 +51,43 @@ export default function PhoneVoiceCatalog({
       if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
     };
   }, []);
+  useEffect(() => {
+    if (!open || !library) return;
+    const controller = new AbortController();
+    setLibraryLoading(true);
+    setCommunity([]);
+    setHasMore(false);
+    setError("");
+    const timer = window.setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({
+          library: "elevenlabs",
+          search: query,
+          page: String(page),
+        });
+        const response = await authFetch(
+          `/api/agent-config/${encodeURIComponent(agentId)}/phone-voices?${params}`,
+          { signal: controller.signal },
+        );
+        const result = await response.json();
+        if (!response.ok || !Array.isArray(result.voices)) throw new Error();
+        if (!controller.signal.aborted) {
+          setCommunity(result.voices);
+          setHasMore(result.hasMore === true);
+        }
+      } catch {
+        if (!controller.signal.aborted)
+          setError("The ElevenLabs library could not load. Try again.");
+      } finally {
+        if (!controller.signal.aborted) setLibraryLoading(false);
+      }
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [agentId, library, open, page, query, libraryAttempt]);
+
   async function load() {
     if (loading) return;
     setLoading(true);
@@ -75,7 +118,18 @@ export default function PhoneVoiceCatalog({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: voice.id, provider: voice.provider }),
+          body: JSON.stringify({
+            id: voice.id,
+            provider: voice.provider,
+            ...(voice.library
+              ? {
+                  library: {
+                    ownerId: voice.library.ownerId,
+                    listingName: voice.library.listingName,
+                  },
+                }
+              : {}),
+          }),
         },
       );
       const result = await response.json();
@@ -98,14 +152,17 @@ export default function PhoneVoiceCatalog({
     setPlaying(id);
     setError("");
     try {
-      const response = await authFetch(
-        `/api/agent-config/${encodeURIComponent(agentId)}/voice/sample?provider=${voice.provider}&voice=${encodeURIComponent(voice.id)}`,
-      );
-      if (!response.ok) throw new Error("Sample unavailable. Try another voice.");
-      const blob = await response.blob();
-      if (!alive.current || current !== request.current) return;
-      const url = URL.createObjectURL(blob);
-      audioUrl.current = url;
+      let url = voice.library?.previewUrl;
+      if (!url) {
+        const response = await authFetch(
+          `/api/agent-config/${encodeURIComponent(agentId)}/voice/sample?provider=${voice.provider}&voice=${encodeURIComponent(voice.id)}`,
+        );
+        if (!response.ok) throw new Error("Sample unavailable. Try another voice.");
+        const blob = await response.blob();
+        if (!alive.current || current !== request.current) return;
+        url = URL.createObjectURL(blob);
+        audioUrl.current = url;
+      }
       const player = new Audio(url);
       audio.current = player;
       player.onended = () => {
@@ -118,13 +175,15 @@ export default function PhoneVoiceCatalog({
       setError(reason instanceof Error ? reason.message : "Sample unavailable.");
     }
   }
-  const filtered = (voices ?? []).filter(
-    (voice) =>
-      (provider === "all" || voice.provider === provider) &&
-      `${voice.name} ${voice.language} ${voice.gender ?? ""}`
-        .toLowerCase()
-        .includes(query.toLowerCase()),
-  );
+  const filtered = library
+    ? community
+    : (voices ?? []).filter(
+        (voice) =>
+          (provider === "all" || voice.provider === provider) &&
+          `${voice.name} ${voice.language} ${voice.gender ?? ""}`
+            .toLowerCase()
+            .includes(query.toLowerCase()),
+      );
   return (
     <details
       className="rounded-xl border border-border bg-background"
@@ -147,7 +206,9 @@ export default function PhoneVoiceCatalog({
             placeholder="Search Voices"
             value={query}
             onChange={(event) => {
+              stop();
               setQuery(event.target.value);
+              setPage(0);
               setVisible(12);
             }}
             className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm wl-focus-ring-halo"
@@ -156,24 +217,28 @@ export default function PhoneVoiceCatalog({
             aria-label="Voice Provider"
             value={provider}
             onChange={(event) => {
+              stop();
+              setError("");
               setProvider(event.target.value);
+              setPage(0);
               setVisible(12);
             }}
             className="min-h-11 rounded-lg border border-border bg-background px-2 text-sm wl-focus-ring-halo"
           >
-            <option value="all">All Voices</option>
+            <option value="all">Built-in phone catalog</option>
+            <option value="library">ElevenLabs Voice Library</option>
             <option value="cartesia">Cartesia</option>
-            <option value="elevenlabs">ElevenLabs</option>
+            <option value="elevenlabs">ElevenLabs stock voices</option>
           </select>
         </div>
         {error ? <StatusNotice tone="warning">{error}</StatusNotice> : null}
-        {loading ? (
+        {(library ? libraryLoading : loading) ? (
           <p className="text-sm text-muted-foreground" role="status">
             Loading Voices…
           </p>
         ) : (
           <div className="max-h-80 space-y-2 overflow-y-auto">
-            {filtered.slice(0, visible).map((voice) => {
+            {filtered.slice(0, library ? undefined : visible).map((voice) => {
               const id = identity(voice);
               const active = selected && identity(selected) === id;
               return (
@@ -204,6 +269,7 @@ export default function PhoneVoiceCatalog({
                   <button
                     type="button"
                     aria-label={`${playing === id ? "Stop" : "Play"} ${voice.name} Phone Sample`}
+                    disabled={Boolean(voice.library && !voice.library.previewUrl)}
                     onClick={() => void preview(voice)}
                     className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted wl-focus-ring-halo"
                   >
@@ -216,12 +282,39 @@ export default function PhoneVoiceCatalog({
                 </div>
               );
             })}
-            {voices && !filtered.length ? (
+            {(library || voices) && !error && !filtered.length ? (
               <p className="text-sm text-muted-foreground">No Matching Voices.</p>
             ) : null}
           </div>
         )}
-        {filtered.length > visible ? (
+        {library && (page > 0 || hasMore) ? (
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              disabled={page === 0 || libraryLoading}
+              onClick={() => {
+                stop();
+                setPage(page - 1);
+              }}
+              className="min-h-11 rounded-lg px-3 text-sm font-semibold wl-focus-ring-halo disabled:opacity-50"
+            >
+              Previous voices
+            </button>
+            <span className="text-xs text-muted-foreground">Page {page + 1}</span>
+            <button
+              type="button"
+              disabled={!hasMore || libraryLoading}
+              onClick={() => {
+                stop();
+                setPage(page + 1);
+              }}
+              className="min-h-11 rounded-lg px-3 text-sm font-semibold wl-focus-ring-halo disabled:opacity-50"
+            >
+              Next voices
+            </button>
+          </div>
+        ) : null}
+        {!library && filtered.length > visible ? (
           <button
             type="button"
             onClick={() => setVisible((count) => count + 12)}
@@ -230,15 +323,21 @@ export default function PhoneVoiceCatalog({
             Show More
           </button>
         ) : null}
-        {error || unavailable ? (
+        {error || (!library && unavailable) ? (
           <button
             type="button"
-            onClick={() => void load()}
+            onClick={() => (library ? setLibraryAttempt((value) => value + 1) : void load())}
             disabled={loading}
             className="min-h-11 rounded-lg px-3 text-sm font-semibold wl-focus-ring-halo"
           >
             Refresh Voices
           </button>
+        ) : null}
+        {library ? (
+          <p className="text-xs text-muted-foreground">
+            Hear the original ElevenLabs sample. Select a voice to check availability for your
+            calls. Custom-rate voices are preview only.
+          </p>
         ) : null}
         {!selected ? (
           <p className="text-xs text-muted-foreground">

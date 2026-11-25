@@ -312,7 +312,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("denied")}
-                    className="flex-1 sm:flex-initial min-w-0 whitespace-normal min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[110px]"
+                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 min-w-0 whitespace-normal h-auto px-2.5 text-xs font-medium sm:min-w-[110px]"
                   >
                     Essential Only
                   </ShadButton>
@@ -321,7 +321,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("granted")}
-                    className="flex-1 sm:flex-initial min-w-0 whitespace-normal min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[120px]"
+                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 min-w-0 whitespace-normal h-auto px-2.5 text-xs font-medium sm:min-w-[120px]"
                   >
                     Allow Optional
                   </ShadButton>

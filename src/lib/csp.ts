@@ -67,7 +67,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     `connect-src ${connectSrcs}`,
-    "media-src 'self' blob:",
+    "media-src 'self' blob: https://storage.googleapis.com/eleven-public-prod/",
     "worker-src 'self' blob:",
     "frame-src 'self' blob:",
     "frame-ancestors 'none'",
