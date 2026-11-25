@@ -337,8 +337,11 @@ test("owners can search, page and select a public ElevenLabs phone voice from Se
     await route.fulfill({ json: { success: true, catalogVoice: sample } });
   });
   const voice = await openVoice(page);
-  await voice.locator("summary").filter({ hasText: "More Phone Voices" }).click();
-  await voice.getByLabel("Voice Provider").selectOption("library");
+  await voice
+    .locator("summary")
+    .filter({ hasText: "Browse ElevenLabs and other phone voices" })
+    .click();
+  await expect(voice.getByLabel("Voice Provider")).toHaveValue("library");
   await voice.getByLabel("Search Phone Voices").fill("warm");
   await expect(voice.getByRole("button", { name: /First Voice ElevenLabs/ })).toBeVisible();
   await voice.getByRole("button", { name: "Next voices" }).click();

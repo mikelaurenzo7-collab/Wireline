@@ -17,7 +17,7 @@ export default function PhoneVoiceCatalog({
   const [voices, setVoices] = useState<CatalogPhoneVoice[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const [provider, setProvider] = useState("all");
+  const [provider, setProvider] = useState("library");
   const [visible, setVisible] = useState(12);
   const [page, setPage] = useState(0);
   const [community, setCommunity] = useState<CatalogPhoneVoice[]>([]);
@@ -191,12 +191,12 @@ export default function PhoneVoiceCatalog({
       onToggle={(event) => {
         const expanded = event.currentTarget.open;
         setOpen(expanded);
-        if (expanded && voices === null && !loading && !error) void load();
+        if (expanded && !library && voices === null && !loading && !error) void load();
         if (!expanded) stop();
       }}
     >
       <summary className="min-h-12 cursor-pointer rounded-xl px-3 py-3 text-sm font-semibold wl-focus-ring-halo">
-        {selected ? `Phone Voice · ${selected.name}` : "More Phone Voices"}
+        {selected ? `Phone Voice · ${selected.name}` : "Browse ElevenLabs and other phone voices"}
       </summary>
       <div className="space-y-3 border-t border-border p-3">
         <div className="flex flex-wrap gap-2">
@@ -220,6 +220,7 @@ export default function PhoneVoiceCatalog({
               stop();
               setError("");
               setProvider(event.target.value);
+              if (event.target.value !== "library" && voices === null && !loading) void load();
               setPage(0);
               setVisible(12);
             }}
