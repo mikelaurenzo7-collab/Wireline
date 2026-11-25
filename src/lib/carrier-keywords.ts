@@ -122,7 +122,7 @@ const PLAIN_LANGUAGE_OPT_OUT: readonly RegExp[] = [
   /^(?:please\s+)?(?:remove|delete|take)\s+(?:me|my number|this number)\s+(?:off|from)\s+(?:your|the)?\s*(?:text|messaging|contact)?\s*list(?:\s+please)?$/,
   /^(?:please\s+)?(?:remove|delete|take)\s+(?:me|my number|this number)\s+(?:off|from)(?:\s+your\s+list)?(?:\s+please)?$/,
   /^(?:please\s+)?(?:no\s+more|i\s+(?:don'?t|do not)\s+want\s+(?:any\s+)?more)\s+(?:texts?|text messages?|messages?|sms|calls?)(?:\s+please)?$/,
-  /^(?:please\s+)?(?:i\s+want\s+to\s+)?(?:unsubscribe|opt\s*-?\s*out)(?:\s+me)?(?:\s+please)?$/,
+  /^(?:please\s+)?(?:i\s+want\s+to\s+)?(?:unsubscribe|opt\s*-?\s*out)(?:\s+me)?(?:\s+(?:from|of)\s+(?:(?:all|any|the|your|these|future)\s+)*(?:texts?|text messages?|messages?|sms))?(?:\s+please)?$/,
   /^(?:please\s+)?leave\s+me\s+alone(?:\s+please)?$/,
 ];
 
@@ -140,10 +140,10 @@ export function isPlainLanguageOptOut(trimmedLower: string): boolean {
   if (matches(text)) return true;
 
   // A polite sign-off does not change a complete revocation into a request.
-  const withoutThanks = text
-    .replace(/(?:[,;]\s*|\s+)(?:thanks|thank you)(?:\s+very much)?$/, "")
+  const withoutSignOff = text
+    .replace(/(?:[,;]\s*|\s+)(?:please|(?:thanks|thank you)(?:\s+very much)?)$/, "")
     .trim();
-  if (matches(withoutThanks)) return true;
+  if (withoutSignOff !== text && matches(withoutSignOff)) return true;
 
   // Keep the anchored intent check, but also honor a complete opening
   // revocation followed by a separate statement or a different contact
