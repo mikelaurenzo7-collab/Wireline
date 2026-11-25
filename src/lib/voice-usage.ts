@@ -131,6 +131,11 @@ async function prepareVoiceUsage(opts: {
       ? Math.min(opts.minutes, Math.ceil(funding.maxSeconds / 60))
       : opts.minutes;
     const periodKey = funding?.periodKey ?? opts.periodKey;
+    const meteredCall = funding ? isUsagePlanId(funding.planId) : opts.usageMetered;
+    const eventScope = and(
+      eq(voiceUsageEvents.userId, userId),
+      eq(voiceUsageEvents.providerCallId, providerCallId),
+    );
     const [inserted] = await tx
       .insert(voiceUsageEvents)
       .values({
@@ -154,16 +159,25 @@ async function prepareVoiceUsage(opts: {
           chargedAt: voiceUsageEvents.chargedAt,
         })
         .from(voiceUsageEvents)
-        .where(
-          and(
-            eq(voiceUsageEvents.userId, userId),
-            eq(voiceUsageEvents.providerCallId, providerCallId),
-          ),
-        )
+        .where(eventScope)
         .limit(1);
 
       if (!existing) {
         throw new Error("Voice usage event claim exists but could not be re-read");
+      }
+
+      // An older writer could leave a pending wallet estimate on a metered call.
+      if (
+        meteredCall &&
+        !existing.chargedAt &&
+        (Number(existing.incrementalOverageMinutes) !== 0 || Number(existing.overageCostUsd) !== 0)
+      ) {
+        const correction = { incrementalOverageMinutes: 0, overageCostUsd: "0" };
+        await tx
+          .update(voiceUsageEvents)
+          .set({ ...correction, updatedAt: new Date() })
+          .where(eventScope);
+        Object.assign(existing, correction);
       }
 
       if (funding) {
@@ -269,9 +283,10 @@ async function prepareVoiceUsage(opts: {
     const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
     const previousOverage = Math.max(0, previousUsed - included);
     const newOverageTotal = Math.max(0, newUsed - included);
-    const incrementalOverageMinutes = funding
-      ? Math.max(0, minutes - funding.includedMinutes)
-      : Math.max(0, newOverageTotal - previousOverage);
+    const incrementalOverageMinutes =
+      funding && !meteredCall
+        ? Math.max(0, minutes - funding.includedMinutes)
+        : Math.max(0, newOverageTotal - previousOverage);
     const overageRateUsd =
       funding?.rateUsd ?? plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
     // Fail CLOSED on an unresolvable stored plan id: charging $0 here would
@@ -293,12 +308,7 @@ async function prepareVoiceUsage(opts: {
         overageCostUsd: String(overageCostUsd),
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(voiceUsageEvents.userId, userId),
-          eq(voiceUsageEvents.providerCallId, providerCallId),
-        ),
-      );
+      .where(eventScope);
 
     return {
       newlyCounted: true,
