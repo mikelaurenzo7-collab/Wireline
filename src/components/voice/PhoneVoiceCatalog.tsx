@@ -268,7 +268,7 @@ export default function PhoneVoiceCatalog({
                   </button>
                   <button
                     type="button"
-                    aria-label={`${playing === id ? "Stop" : "Play"} ${voice.name} Phone Sample`}
+                    aria-label={`${playing === id ? "Stop" : "Play"} ${voice.name} ${voice.library ? "Library" : "Phone"} Sample`}
                     disabled={Boolean(voice.library && !voice.library.previewUrl)}
                     onClick={() => void preview(voice)}
                     className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted wl-focus-ring-halo"

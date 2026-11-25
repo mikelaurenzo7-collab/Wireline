@@ -123,6 +123,28 @@ describe("public phone catalog isolation", () => {
     expect(url.searchParams.get("include_custom_rates")).toBe("true");
     expect(request).toHaveBeenCalledTimes(1);
   });
+  it("preserves provider-signed library samples and rejects unrecognized media sources", async () => {
+    const id = "library-example-voice";
+    const valid = `https://api.us.elevenlabs.io/v1/voices/${id}/previews/audio?sample=public`;
+    const rows = [
+      valid,
+      "https://example.com/voice.mp3",
+      "https://storage.googleapis.com/eleven-public-prod/../private/sample",
+    ].map((preview_url) => ({
+      voice_id: id,
+      public_owner_id: "public-owner-123",
+      name: "River",
+      preview_url,
+    }));
+    const service = createPhoneCatalogService({ ELEVENLABS_API_KEY: "test" }, async () =>
+      json({ voices: rows }),
+    );
+    expect((await service.libraryPage("", 0)).voices.map((v) => v.library?.previewUrl)).toEqual([
+      valid,
+      undefined,
+      undefined,
+    ]);
+  });
   it("imports an eligible public voice once and resolves it on a fresh phone worker", async () => {
     const row = {
       voice_id: "shared-voice-123",

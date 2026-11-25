@@ -48,6 +48,21 @@ export function parsePublicCatalog(
   });
 }
 
+function publicPreviewUrl(value: unknown, voiceId: string): string | undefined {
+  const raw = text(value, 8192);
+  if (!URL.canParse(raw)) return;
+  const url = new URL(raw);
+  if (url.username || url.password || url.protocol !== "https:" || url.port) return;
+  if (url.hostname === "storage.googleapis.com" && url.pathname.startsWith("/eleven-public-prod/"))
+    return url.href;
+  const previewHosts = ["api.elevenlabs.io", "api.us.elevenlabs.io", "api.eu.elevenlabs.io"];
+  if (
+    previewHosts.includes(url.hostname) &&
+    url.pathname === `/v1/voices/${voiceId}/previews/audio`
+  )
+    return url.href;
+}
+
 function publicLibraryVoice(row: JsonRecord): CatalogPhoneVoice | null {
   const id = text(row.voice_id, 80);
   const ownerId = text(row.public_owner_id, 128);
@@ -55,7 +70,7 @@ function publicLibraryVoice(row: JsonRecord): CatalogPhoneVoice | null {
   if (!/^[a-zA-Z0-9-]{10,80}$/.test(id) || !/^[a-zA-Z0-9_-]{10,128}$/.test(ownerId) || !listingName)
     return null;
   const gender = text(row.gender, 30).toLowerCase();
-  const preview = text(row.preview_url, 2048);
+  const previewUrl = publicPreviewUrl(row.preview_url, id);
   return {
     provider: "elevenlabs",
     id,
@@ -65,9 +80,7 @@ function publicLibraryVoice(row: JsonRecord): CatalogPhoneVoice | null {
     library: {
       ownerId,
       listingName,
-      ...(preview.startsWith("https://storage.googleapis.com/eleven-public-prod/")
-        ? { previewUrl: preview }
-        : {}),
+      ...(previewUrl ? { previewUrl } : {}),
     },
   };
 }
