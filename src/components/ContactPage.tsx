@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { ArrowRight, CheckCircle2, Loader2, Mail, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import { campaignAttributionFromSearchParams } from "../lib/campaign-attribution";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
 
@@ -72,6 +73,7 @@ export function ContactPage() {
   const normalizedSubject = subject.trim();
   const normalizedBody = body.trim();
   const supportIssueType = inquiryType === "demo" ? "sales" : inquiryType;
+  const campaignAttribution = campaignAttributionFromSearchParams(searchParams);
   const contextLines = [
     company.trim() ? `Company: ${company.trim()}` : null,
     phone.trim() ? `Preferred callback: ${phone.trim()}` : null,
@@ -124,6 +126,7 @@ export function ContactPage() {
           email: normalizedEmail,
           subject: normalizedSubject,
           body: composedBody,
+          attribution: campaignAttribution,
         }),
       });
       responseStatus = response.status;

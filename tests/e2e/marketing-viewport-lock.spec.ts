@@ -396,6 +396,30 @@ for (const width of [390, 1365]) {
   });
 }
 
+test("demo inquiry carries campaign attribution into the support request", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("wireline_cookie_consent", "acknowledged"));
+  await openPublicRoute(
+    page,
+    "/contact?topic=demo&utm_source=google&utm_medium=paid_search&utm_campaign=missed_call_pilot&utm_content=call_demo_a",
+  );
+  await page.route("**/api/support/ticket", (route) =>
+    route.fulfill({ json: { ok: true, sent: true } }),
+  );
+  await page.getByLabel("Email", { exact: true }).fill("pilot@example.com");
+  await page.getByLabel("Message", { exact: true }).fill("I want a missed-call demo.");
+  const request = page.waitForRequest("**/api/support/ticket");
+  await page.getByRole("button", { name: "Send Message" }).click();
+  expect((await request).postDataJSON()).toMatchObject({
+    issueType: "sales",
+    attribution: {
+      utm_source: "google",
+      utm_medium: "paid_search",
+      utm_campaign: "missed_call_pilot",
+      utm_content: "call_demo_a",
+    },
+  });
+});
+
 test("showcase redirects into plan-neutral account creation without horizontal escape", async ({
   page,
 }) => {
