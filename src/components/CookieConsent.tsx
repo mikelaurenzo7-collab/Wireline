@@ -285,7 +285,7 @@ export default function CookieConsent() {
 
             <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <h2 className="sr-only">Privacy Choices</h2>
-              <p className="wl-balance break-words text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-12 sm:pr-0">
+              <p className="wl-balance max-w-full min-w-0 [overflow-wrap:anywhere] text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-12 sm:pr-0">
                 Advertising measurement is off by default.{" "}
                 <Link
                   to="/privacy"
@@ -305,14 +305,14 @@ export default function CookieConsent() {
                   Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5 w-full sm:w-auto">
                   <ShadButton
                     type="button"
                     variant="outline"
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("denied")}
-                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[110px]"
+                    className="flex-1 sm:flex-initial min-w-0 whitespace-normal min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[110px]"
                   >
                     Essential Only
                   </ShadButton>
@@ -321,7 +321,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("granted")}
-                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[120px]"
+                    className="flex-1 sm:flex-initial min-w-0 whitespace-normal min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[120px]"
                   >
                     Allow Optional
                   </ShadButton>
