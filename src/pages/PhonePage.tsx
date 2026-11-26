@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 import { Button } from "../components/atoms";
@@ -76,6 +77,19 @@ export default function PhonePage() {
   const scopeLoading = Boolean(activeAgentId && agentsLoading);
   const scopeUnavailable = Boolean(activeAgentId && !agentsLoading && !hasRequestedAgent);
   const scopeBlocked = scopeLoading || scopeUnavailable;
+
+  // A link from People names one call. Once History has answered it, drop it
+  // from the URL, so changing tabs or Bots does not reopen that call over
+  // whatever the owner is looking at now.
+  const clearCallLink = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        prev.delete("call");
+        return prev;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   function setPrimaryTab(id: string) {
     setSearchParams(
@@ -226,6 +240,7 @@ export default function PhonePage() {
               <PhoneCallHistoryPanel
                 agentId={activeAgentId || null}
                 focusCallId={searchParams.get("call")}
+                onFocusSettled={clearCallLink}
               />
             </div>
           )}

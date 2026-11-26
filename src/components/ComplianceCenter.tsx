@@ -232,7 +232,9 @@ export default function ComplianceCenter() {
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {formatPhone(entry.customer_number, "Unknown Number")}
-                      {entry.state ? ` · ${entry.state}` : ""}
+                      {/* A call records the US state. A text records a status
+                          token such as opted_in, which the label already says. */}
+                      {entry.state && /^[A-Z]{2}$/.test(entry.state) ? ` · ${entry.state}` : ""}
                     </p>
                   </div>
                 ))

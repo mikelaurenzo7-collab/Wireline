@@ -58,6 +58,7 @@ import {
   isBotMarkKey,
   type BotMarkKey,
 } from "../lib/bot-mark";
+import { mostUsedTimeZone } from "../lib/owner-time-zone";
 
 const router = Router();
 
@@ -210,9 +211,15 @@ router.post(
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
         const existingAgents = await tx
-          .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+          .select({
+            id: schema.agents.id,
+            markKey: schema.agents.markKey,
+            timezone: schema.agents.timezone,
+          })
           .from(schema.agents)
           .where(eq(schema.agents.userId, req.user.id));
+        // The mobile app sends no zone: start where the owner's other Bots are.
+        const startingTimeZone = mostUsedTimeZone(existingAgents.map((agent) => agent.timezone));
         const existing = existingAgents.length;
 
         const usedMarkKeys = new Set<BotMarkKey>();
@@ -236,6 +243,7 @@ router.post(
           voiceId,
           voiceProvider: "openai",
           autonomyLevel: "supervised",
+          ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
           enabledTools,
           firstMessage: `Hi, this is ${name}. How can I help?`,
           isBusinessAgent,

@@ -118,14 +118,15 @@ describe("Cursor Directory plugin contract", () => {
     );
   });
 
-  it("requires the Apps Training toggle before writes land", () => {
+  it("requires the Apps Save to Knowledge toggle before writes land", () => {
     expect(skill).toContain("Apps");
     expect(skill).toContain("train_botbound_agent");
     expect(panel).toContain("/api/mcp/connections");
     expect(panel).toContain("/api/mcp/coaching-writes");
-    expect(panel).toContain("Save Training");
+    expect(panel).toContain("Save to Knowledge");
+    expect(panel).not.toContain("Save Training");
     expect(panel).toContain('htmlFor="mcp-coaching-writes"');
-    expect(panel).toContain('aria-label="Allow connected apps to save Training"');
+    expect(panel).toContain('aria-label="Allow connected apps to save to Knowledge"');
     expect(read("src/lib/mcp-coaching-preferences.ts")).toContain(
       'MCP_COACHING_WRITES_KEY = "mcp_coaching_writes"',
     );

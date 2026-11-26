@@ -43,7 +43,6 @@ const CUSTOMER_BOT_SURFACES = [
   "src/components/PublicChangelog.tsx",
   "src/components/StripeBillingCard.tsx",
   "src/components/StudioWorkroom.tsx",
-  "src/components/DeployAgentModal.tsx",
   "src/components/EmailInbox.tsx",
   "src/components/SmsThreads.tsx",
   "src/components/SupportPage.tsx",

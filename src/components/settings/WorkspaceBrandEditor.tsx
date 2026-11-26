@@ -12,6 +12,8 @@ export type WorkspaceBrandForm = {
 
 type WorkspaceBrandEditorProps = {
   settings: WorkspaceBrandForm;
+  /** The business name from the profile: what is used while no brand name is set. */
+  businessName?: string;
   onUpdate: (next: WorkspaceBrandForm) => void;
   onSave: () => void;
   isSaving?: boolean;
@@ -33,6 +35,7 @@ function previewTextColor(hex: string): string {
  */
 export default function WorkspaceBrandEditor({
   settings,
+  businessName = "",
   onUpdate,
   onSave,
   isSaving = false,
@@ -53,7 +56,8 @@ export default function WorkspaceBrandEditor({
   const validColor = /^#[\da-f]{6}$/i.test(expandedColor);
   const primary = validColor ? expandedColor : BRAND.colors.primary;
   const onPrimary = previewTextColor(primary);
-  const name = settings.brand_name.trim() || "BotBound";
+  const fallbackName = businessName.trim();
+  const name = settings.brand_name.trim() || fallbackName || "Your Business";
 
   return (
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
@@ -75,7 +79,7 @@ export default function WorkspaceBrandEditor({
             <Input
               id={nameId}
               type="text"
-              placeholder="Your name or business"
+              placeholder={fallbackName || "Your name or business"}
               className="app-input-soft h-auto py-3"
               value={settings.brand_name}
               onChange={(event) => onUpdate({ ...settings, brand_name: event.target.value })}

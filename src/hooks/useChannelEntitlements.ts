@@ -8,6 +8,8 @@ export type ChannelEntitlements = {
   subscription_status: string;
   channels: readonly CommunicationChannel[];
   is_owner: boolean;
+  /** BotBound platform admin. Absent from older responses, which grants nothing. */
+  is_platform_admin?: boolean;
 };
 
 export function parseChannelEntitlements(value: unknown): ChannelEntitlements | null {
@@ -17,6 +19,7 @@ export function parseChannelEntitlements(value: unknown): ChannelEntitlements | 
     !(record.plan_id === null || typeof record.plan_id === "string") ||
     typeof record.subscription_status !== "string" ||
     typeof record.is_owner !== "boolean" ||
+    !(record.is_platform_admin === undefined || typeof record.is_platform_admin === "boolean") ||
     !Array.isArray(record.channels) ||
     !record.channels.every((channel) => ["voice", "email", "sms"].includes(channel))
   )

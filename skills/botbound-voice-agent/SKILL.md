@@ -42,7 +42,7 @@ Create, update, rehearsal, and Training writes require `confirmed: true` only af
 
 ## Training that lands in BotBound
 
-`train_botbound_agent` fails closed until the account holder enables **Allow connected apps to save Training** in BotBound Apps. If the tool says the toggle is off, send the user to `/settings/apps#chatgpt-mcp`. Do not invent a workaround.
+`train_botbound_agent` fails closed until the account holder turns on **Save to Knowledge** in BotBound under Settings, Apps. If the tool says the toggle is off, send the user to `/settings/apps#chatgpt-mcp`. Do not invent a workaround.
 
 ## Triggering an agent
 

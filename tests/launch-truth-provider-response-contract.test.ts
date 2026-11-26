@@ -48,12 +48,12 @@ describe("launch-truth provider and response-time contracts", () => {
 
   it("does not equate the database region with every provider's processing location", () => {
     const security = read("src/components/Security.tsx");
-    const team = read("src/components/admin/TeamPanel.tsx");
+    const team = read("src/pages/TeamSettings.tsx");
 
     expect(security).toContain("Processing locations vary by provider and feature.");
     expect(security).toContain("Confirm any specific data residency requirement");
     expect(security).not.toContain("US-East");
-    expect(team).toContain("By provider");
+    // The Team page names no region at all; the retired admin Team panel did.
     expect(team).not.toContain("US-East");
   });
 

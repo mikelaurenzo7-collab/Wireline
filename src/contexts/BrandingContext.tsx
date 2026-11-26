@@ -23,7 +23,9 @@ type BrandingSettings = {
 type BrandingDraft = Pick<BrandingSettings, "brand_name" | "brand_logo_url" | "primary_color">;
 
 const DEFAULT_BRANDING: BrandingSettings = {
-  brand_name: "BotBound",
+  // Empty until the owner names a brand. Texts, email and shared files then use
+  // the business name, and the editor never saves a name the owner did not type.
+  brand_name: "",
   brand_logo_url: "",
   primary_color: "#A78BFA",
   business_name: "",

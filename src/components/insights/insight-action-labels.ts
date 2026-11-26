@@ -1,8 +1,8 @@
 const KNOWN_ACTION_LABELS = new Map([
   ["computer.browser", "Computer Browsing"],
   ["computer.browse", "Computer Browsing"],
-  ["training.training", "Knowledge Training"],
-  ["train-extract", "Knowledge Training"],
+  ["training.training", "Knowledge Update"],
+  ["train-extract", "Knowledge Update"],
   ["training.asset_text", "Text Upload"],
   ["training.asset_image", "Image Upload"],
   ["training.asset_document", "Document Upload"],

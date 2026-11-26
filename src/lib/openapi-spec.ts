@@ -477,6 +477,11 @@ const BillingStatus: JsonSchema = {
         subscription_status: { type: "string" },
         channels: { type: "array", items: { type: "string", enum: ["voice", "email", "sms"] } },
         is_owner: { type: "boolean" },
+        is_platform_admin: {
+          type: "boolean",
+          description:
+            "True for BotBound platform admins; decides whether the client shows /admin.",
+        },
       },
     },
     email_verified: {

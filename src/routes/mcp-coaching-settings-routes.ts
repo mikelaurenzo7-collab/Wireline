@@ -89,7 +89,10 @@ router.post(
     } catch (error) {
       if (error instanceof AppError) throw error;
       log.error("Failed to update MCP coaching writes", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to update connected-app training permission.");
+      throw AppError.fromHttpStatus(
+        500,
+        "The Knowledge permission for connected apps could not be updated. Try again.",
+      );
     }
   },
 );

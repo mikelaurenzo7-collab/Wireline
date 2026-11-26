@@ -42,7 +42,9 @@ export default function WorkspaceBrandingSettings() {
 
   async function save() {
     if (savingRef.current || isLoading) return;
-    const releaseSave = beginBrandingSave(form);
+    // A name of only spaces would be stored as a brand and hide the business name.
+    const draft = { ...form, brand_name: form.brand_name.trim() };
+    const releaseSave = beginBrandingSave(draft);
     if (!releaseSave) return;
     savingRef.current = true;
     let failure: string | null = null;
@@ -50,7 +52,7 @@ export default function WorkspaceBrandingSettings() {
       const response = await authFetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(draft),
       });
       if (!response.ok) {
         const body = (await safeJson(response)) as { error?: string; message?: string } | null;
@@ -58,7 +60,7 @@ export default function WorkspaceBrandingSettings() {
           body?.error || body?.message || `Brand settings could not be saved (${response.status}).`,
         );
       }
-      updateBranding(form);
+      updateBranding(draft);
       toastSuccess("Brand Saved", "Email identity and artifact preferences updated.");
     } catch (error) {
       failure = error instanceof Error ? error.message : "Brand settings could not be saved.";
@@ -72,6 +74,7 @@ export default function WorkspaceBrandingSettings() {
   return (
     <WorkspaceBrandEditor
       settings={form}
+      businessName={branding.business_name}
       onUpdate={(next) => {
         if (!saving && !savingRef.current && !isLoading) setForm(next);
       }}

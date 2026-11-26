@@ -827,13 +827,19 @@ router.get(
       // Email-verification state — surfaces to EmailVerifyBanner so
       // it can show/hide without a separate /api/me call.
       let emailVerified: boolean | null = null;
+      // Same rule as requirePlatformAdmin: the owner address, or an account the
+      // database marks as an admin. A failed lookup grants nothing. This only
+      // decides whether the client shows the platform console; every admin
+      // route still checks on the server.
+      let platformAdmin = isOwnerEmail(req.user.email);
       try {
         const [u] = await drizzle
-          .select({ verifiedAt: schema.users.emailVerifiedAt })
+          .select({ verifiedAt: schema.users.emailVerifiedAt, isAdmin: schema.users.isAdmin })
           .from(schema.users)
           .where(eq(schema.users.id, req.user.id))
           .limit(1);
         emailVerified = !!u?.verifiedAt;
+        platformAdmin = platformAdmin || u?.isAdmin === true;
       } catch {
         // A lookup failure is not proof of verification. Clients retain the
         // last confirmed state and can retry without claiming success.
@@ -848,6 +854,7 @@ router.get(
           subscription_status: channels.subscriptionStatus,
           channels: channels.channels,
           is_owner: channels.isOwner,
+          is_platform_admin: platformAdmin,
         };
       } catch {
         // An unavailable authoritative read must not look like zero purchased channels.

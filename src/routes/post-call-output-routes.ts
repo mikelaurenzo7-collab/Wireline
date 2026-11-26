@@ -229,7 +229,7 @@ router.post(
       if (preferences.artifact_mode === "off") {
         throw AppError.fromHttpStatus(
           409,
-          "Enable special call reports in Training before requesting a file.",
+          "Turn on call files in Calls, Settings, before requesting a file.",
         );
       }
 

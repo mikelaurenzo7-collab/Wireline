@@ -51,7 +51,7 @@ function text(node: ReactNode): string {
 }
 const labels = {
   "agents.read": "Read Bot Context",
-  "agents.write": "Edit Drafts & Training",
+  "agents.write": "Edit Drafts & Knowledge",
   "demo.voice": "Private Rehearsals",
   "calls.prepare": "Prepare Calls for Review",
   "notes.write": "Save Confirmed Private Notes",
@@ -71,13 +71,13 @@ describe("connected app permission presentation", () => {
     expect(text(disclosure)).not.toContain(scope);
   });
 
-  it("preserves unknown scopes and the off-by-default Training permission boundary", () => {
+  it("preserves unknown scopes and the off-by-default Knowledge permission boundary", () => {
     h.scope = "future.scope";
     const view = McpCoachingPanel();
     const nodes = elements(view);
     expect(text(nodes.find((node) => node.type === "details"))).toContain("future.scope");
     expect(nodes.find((node) => node.type === "switch")?.props).toMatchObject({
-      "aria-label": "Allow connected apps to save Training",
+      "aria-label": "Allow connected apps to save to Knowledge",
       "aria-describedby": "mcp-coaching-writes-help",
       checked: false,
     });

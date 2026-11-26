@@ -92,6 +92,7 @@ import {
   isBotMarkKey,
   type BotMarkKey,
 } from "../lib/bot-mark";
+import { mostUsedTimeZone } from "../lib/owner-time-zone";
 import { PAID_BOT_IDENTITY_JOB_TYPE } from "../lib/paid-bot-identity";
 
 const router = Router();
@@ -204,7 +205,7 @@ function cleanText(value: unknown, max: number) {
 }
 
 function extractionReply(parsed: SavedExtraction) {
-  if (parsed.alreadySaved) return "This training is already saved in Knowledge.";
+  if (parsed.alreadySaved) return "This is already saved in Knowledge.";
   const parts: string[] = [];
   if (parsed.directives.length)
     parts.push(
@@ -308,7 +309,7 @@ async function persistExtraction(
         throw new AppError(
           409,
           "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
-          "This review-required Bot's regulated template marker cannot be removed through Training extraction.",
+          "This review-required Bot's regulated template marker cannot be removed through Knowledge extraction.",
         );
       }
       if (savedContent !== current?.content) {
@@ -524,10 +525,7 @@ export async function extractImageAsset(
     // The accounting wrapper needs the definitive rejection classification to
     // release an unspent hold. Preserve a usable API error after it has done so.
     if (error instanceof DefiniteProviderRejectionError) {
-      throw AppError.fromHttpStatus(
-        502,
-        "Image training is temporarily unavailable. Try again shortly.",
-      );
+      throw AppError.fromHttpStatus(502, "Images cannot be read right now. Try again shortly.");
     }
     throw error;
   });
@@ -591,10 +589,18 @@ router.post(
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
         const existingAgents = await tx
-          .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+          .select({
+            id: schema.agents.id,
+            markKey: schema.agents.markKey,
+            timezone: schema.agents.timezone,
+          })
           .from(schema.agents)
           .where(eq(schema.agents.userId, req.user.id));
         const existing = existingAgents.length;
+        // No zone from the creator: start where the owner's other Bots are, not
+        // in the UTC column default.
+        const startingTimeZone =
+          timezone ?? mostUsedTimeZone(existingAgents.map((agent) => agent.timezone));
 
         const usedMarkKeys = new Set<BotMarkKey>();
         for (const existingAgent of existingAgents) {
@@ -619,7 +625,7 @@ router.post(
           voiceId,
           voiceProvider: "openai",
           autonomyLevel: "supervised",
-          ...(timezone ? { timezone } : {}),
+          ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
           enabledTools,
           firstMessage,
           isBusinessAgent,

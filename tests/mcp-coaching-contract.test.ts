@@ -22,7 +22,8 @@ describe("MCP coaching and first-agent contract", () => {
 
   it("fails Training writes closed until the Apps toggle is true", () => {
     expect(account).toContain("readMcpCoachingWritesEnabled");
-    expect(account).toContain("Enable connected-app Training writes in BotBound Apps");
+    // The refusal names the toggle as the owner sees it in Settings, Apps.
+    expect(account).toContain("Turn on Save to Knowledge in BotBound under Settings, Apps");
     expect(settings).toContain('router.post(\n  "/api/mcp/coaching-writes"');
     expect(settings).toContain("revokeAllMcpGrantsForUser");
     expect(settings).not.toContain("token_hash");

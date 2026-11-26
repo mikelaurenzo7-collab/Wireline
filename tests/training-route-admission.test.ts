@@ -214,7 +214,7 @@ describe("training routes reserve only validated, owned provider work", () => {
     expect(first).toMatchObject({ readiness: { facts: 1, rules: 1, tone: false } });
     expect(retry).toMatchObject({
       alreadySaved: true,
-      responseContent: "This training is already saved in Knowledge.",
+      responseContent: "This is already saved in Knowledge.",
       readiness: { facts: 0, rules: 0, tone: false },
     });
     expect(saved.get(schema.directives)).toHaveLength(1);

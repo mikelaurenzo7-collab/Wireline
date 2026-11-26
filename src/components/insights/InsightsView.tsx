@@ -1,7 +1,7 @@
 /**
  * InsightsView — Refactored Shell
  *
- * Primary groups + secondary views live in WorkspaceTopBar (AppChromeSubTabs).
+ * Primary groups + secondary views live in the page's own tab band.
  * This shell renders the active view body only.
  */
 import { Suspense, lazy, useMemo, useState } from "react";

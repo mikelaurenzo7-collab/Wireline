@@ -173,9 +173,12 @@ const FOCUS_CALL_PAGE_LIMIT = 5;
 export default function CallLogsClaude({
   agentId,
   focusCallId,
+  onFocusSettled,
 }: {
   agentId?: string | null;
   focusCallId?: string | null;
+  /** The link was answered, found or not, so the page can drop it from the URL. */
+  onFocusSettled?: () => void;
 }) {
   const callLabel = "New Call";
   const [calls, setCalls] = useState<Call[]>([]);
@@ -317,19 +320,34 @@ export default function CallLogsClaude({
     );
   }, [calls, query]);
 
+  const focusSettled = useRef<string | null>(null);
+  // A link names one call. Until it is found or given up on, the report pane
+  // must not fill with the newest call, which belongs to someone else.
+  const [focusMissing, setFocusMissing] = useState(false);
+  const pickedByOwner = useRef(false);
+  const pickCall = (id: string) => {
+    pickedByOwner.current = true;
+    setFocusMissing(false);
+    setSelectedId(id);
+  };
+
   useEffect(() => {
     if (!desktop || selectedId || !visibleCalls.length) return;
+    if (focusCallId && focusSettled.current !== focusCallId) return;
     setSelectedId(visibleCalls[0].id);
-  }, [desktop, selectedId, visibleCalls]);
+  }, [desktop, focusCallId, focusMissing, selectedId, visibleCalls]);
 
-  const focusSettled = useRef<string | null>(null);
   useEffect(() => {
     if (!focusCallId || focusSettled.current === focusCallId || loading || loadingMore) return;
     const match = calls.find((call) => String(call.id) === focusCallId);
     if (match) {
       focusSettled.current = focusCallId;
-      setQuery("");
-      setSelectedId(match.id);
+      // A late match never replaces a call the owner opened while pages loaded.
+      if (!pickedByOwner.current) {
+        setQuery("");
+        setSelectedId(match.id);
+      }
+      onFocusSettled?.();
       return;
     }
     if (hasMore && !loadMoreError && calls.length < CALL_PAGE_SIZE * FOCUS_CALL_PAGE_LIMIT) {
@@ -337,7 +355,10 @@ export default function CallLogsClaude({
       return;
     }
     focusSettled.current = focusCallId;
-  }, [calls, focusCallId, hasMore, loadMore, loadMoreError, loading, loadingMore]);
+    // Say so, instead of leaving another customer's call where theirs should be.
+    setFocusMissing(!pickedByOwner.current);
+    onFocusSettled?.();
+  }, [calls, focusCallId, hasMore, loadMore, loadMoreError, loading, loadingMore, onFocusSettled]);
 
   const paginationControl =
     hasMore || loadMoreError ? (
@@ -406,6 +427,13 @@ export default function CallLogsClaude({
         </>
       ) : (
         <>
+          {focusMissing ? (
+            <StatusNotice tone="info" title="Call Not in This List" className="m-3">
+              {hasMore
+                ? "The call you opened is older than the calls loaded here. Load more calls to find it."
+                : "The call you opened is no longer in this history."}
+            </StatusNotice>
+          ) : null}
           <ul className="divide-y divide-border">
             {visibleCalls.map((call) => {
               const active = call.id === selectedId;
@@ -424,7 +452,7 @@ export default function CallLogsClaude({
                 <li key={call.id}>
                   <button
                     type="button"
-                    onClick={() => setSelectedId(call.id)}
+                    onClick={() => pickCall(call.id)}
                     aria-pressed={active}
                     className={`w-full px-3.5 py-2.5 text-left transition-colors border-l-2 ${
                       active

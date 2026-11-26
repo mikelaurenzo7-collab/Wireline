@@ -11,6 +11,7 @@ import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./Integr
 import { WorkspacePageFrame } from "./layout/WorkspacePageFrame";
 import { useToast } from "../contexts/ToastContext";
 import { useBranding } from "../contexts/BrandingContext";
+import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import AdminHubViewport from "./layout/AdminHubViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
@@ -25,7 +26,11 @@ import { CarrierPanel } from "./admin/CarrierPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
 import { PanelSkeleton } from "./atoms/skeleton-presets";
-import { isLegacyAdminTabRedirect } from "../lib/admin-access";
+import {
+  isLegacyAdminTabRedirect,
+  isWirelineAccountHolder,
+  settingsPathForAdminTab,
+} from "../lib/admin-access";
 
 // The audit activity panel is the only Recharts consumer in Admin settings, and
 // it lives behind the compliance tab. Imported eagerly it pulls the charting
@@ -68,10 +73,23 @@ interface AdminSettingsState {
 
 export default function AdminSettings() {
   const location = useLocation();
-  if (new URLSearchParams(location.search).get("tab") === "team") {
+  const { user } = useAuth();
+  const access = useChannelEntitlements();
+  const tab = new URLSearchParams(location.search).get("tab");
+  if (tab === "team") {
     return <Navigate to="/settings/team" replace />;
   }
-  return <AdminSettingsContent />;
+  // The platform console is for BotBound's own admins: the owner address, or an
+  // account the database marks as an admin. Every other account already has
+  // these controls in Settings, Lines and Compliance. This is presentation;
+  // every admin route checks again on the server.
+  if (isWirelineAccountHolder(user) || access.data?.is_platform_admin === true) {
+    return <AdminSettingsContent />;
+  }
+  if (access.status === "loading") {
+    return <ClientRouteLoading icon={<Settings className="w-7 h-7" />} label={OPS_ADMIN.loading} />;
+  }
+  return <Navigate to={settingsPathForAdminTab(tab)} replace />;
 }
 
 function AdminSettingsContent() {
@@ -111,9 +129,8 @@ function AdminSettingsContent() {
     "team",
     "activity",
   ];
-  // Honor ?tab=<name> in the URL so deep links (SettingsTabSwitcher and the
-  // ComplianceChecklist both point at /admin?tab=<name>) land on the correct
-  // tab instead of bouncing to the default.
+  // Honor ?tab=<name> in the URL so deep links land on the correct tab instead
+  // of bouncing to the default.
   const location = useLocation();
   const navigate = useNavigate();
   const activeTab: AdminTab = (() => {

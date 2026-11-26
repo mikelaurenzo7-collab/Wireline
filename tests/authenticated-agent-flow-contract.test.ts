@@ -228,9 +228,8 @@ describe("authenticated Bot flow", () => {
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
   });
 
-  it("persists deploy-modal identity, voice, channel, greeting, and personality", () => {
+  it("persists a new Bot's identity, voice, channel, greeting, and personality", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
-    const deployModal = read("src/components/DeployAgentModal.tsx");
 
     expect(routes).toContain("cleanText(req.body?.voice_id, 160)");
     expect(routes).toContain("normalizeManagedOpenAIVoiceId(requestedVoiceId)");
@@ -238,6 +237,6 @@ describe("authenticated Bot flow", () => {
     expect(routes).not.toContain('voiceProvider: "11labs"');
     expect(routes).toContain('req.body?.channel === "email"');
     expect(routes).toContain("resolveCreateFirstMessage(req.body?.firstMessage, name)");
-    expect(deployModal).toContain("firstMessage");
+    expect(existsSync("src/components/DeployAgentModal.tsx")).toBe(false);
   });
 });

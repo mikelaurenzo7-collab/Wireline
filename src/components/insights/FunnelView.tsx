@@ -55,7 +55,14 @@ export default function FunnelView({ days }: { days: number }) {
           Activity Totals
         </h3>
       </div>
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {/* Four totals is the usual case: two rows of two, then one row of four.
+          Three columns would leave the fourth alone on a row. */}
+      <dl
+        className={cn(
+          "grid grid-cols-2 gap-3",
+          totals.length === 4 ? "lg:grid-cols-4" : "sm:grid-cols-3",
+        )}
+      >
         {totals.map((item) => (
           <div
             key={item.name}

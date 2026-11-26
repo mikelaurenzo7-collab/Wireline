@@ -1551,7 +1551,7 @@ router.post("/mcp", async (req, res) => {
       if (!allowed) {
         throw AppError.fromHttpStatus(
           403,
-          "Enable connected-app Training writes in BotBound Apps before a fact or rule can land in Training.",
+          "Turn on Save to Knowledge in BotBound under Settings, Apps, before a fact or rule can be saved.",
         );
       }
       const saved = await tenantStore.run(authed.userId, () =>

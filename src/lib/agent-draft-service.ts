@@ -19,6 +19,7 @@ import {
 import { isOwnerEmail } from "./auth-service";
 import { drizzle, tenantStore } from "./server-context";
 import { emitServerProductEventOnce } from "./product-event-server";
+import { mostUsedTimeZone } from "./owner-time-zone";
 import {
   defaultBotMarkKey,
   firstAvailableBotMarkKey,
@@ -186,10 +187,16 @@ export async function createAgentDraft(
     await drizzle.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${principal.userId}))`);
       const existingAgents = await tx
-        .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+        .select({
+          id: schema.agents.id,
+          markKey: schema.agents.markKey,
+          timezone: schema.agents.timezone,
+        })
         .from(schema.agents)
         .where(eq(schema.agents.userId, principal.userId));
       existingCount = existingAgents.length;
+      // A connected app sends no zone: start where the owner's other Bots are.
+      const startingTimeZone = mostUsedTimeZone(existingAgents.map((agent) => agent.timezone));
       await assertAgentCapacity(tx, principal, existingCount);
 
       const usedMarkKeys = new Set<BotMarkKey>();
@@ -214,6 +221,7 @@ export async function createAgentDraft(
         voiceId,
         voiceProvider: "openai",
         autonomyLevel: "supervised",
+        ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
         // A draft records intended actions in its customization profile, but it
         // never receives external tools until the user configures and enables
         // them explicitly in BotBound.

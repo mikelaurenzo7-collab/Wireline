@@ -92,7 +92,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "search_knowledge_base",
     label: "Search knowledge base",
-    description: "Look up an answer in the agent's approved training material.",
+    description: "Look up an answer in the Bot's approved Knowledge.",
     group: "core",
   },
   {

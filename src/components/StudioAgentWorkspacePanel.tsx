@@ -17,6 +17,7 @@ import {
   rememberCreateBrief,
   useCreateBriefTraining,
 } from "../lib/create-brief-recovery";
+import { readPostCreateWizard } from "../lib/wireline-create-flow";
 import {
   extractionBodyPersistedSomething,
   type TrainingExtractionBody,
@@ -390,7 +391,7 @@ export default function StudioAgentWorkspacePanel({
       if (confirmedChange && showResult()) {
         setSetupNotice("Saved. Try the updated Bot before sending live traffic.");
       } else if (trainingAlreadySaved && showResult()) {
-        setSetupNotice("This training is already saved in Knowledge.");
+        setSetupNotice("This is already saved in Knowledge.");
       }
     } catch (reason) {
       if (showResult()) {
@@ -434,7 +435,9 @@ export default function StudioAgentWorkspacePanel({
           ) : null}
         </header>
 
-        {trainingBrief ? (
+        {/* The setup guide says this while it is open over this panel; once it
+            closes, this line explains why the brief is locked. */}
+        {trainingBrief && readPostCreateWizard()?.agentId !== agentId ? (
           <StatusNotice tone="info">Applying your starting brief…</StatusNotice>
         ) : null}
 

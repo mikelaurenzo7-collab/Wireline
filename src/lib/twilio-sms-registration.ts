@@ -38,31 +38,31 @@ export type SmsSenderRegistration =
     }
   | { status: "unknown"; kind: SmsSenderKind | null; reason: string };
 
+type ListOptions = { limit: number; pageSize?: number };
+
 /** Minimal read surface, so tests can supply a fake without the SDK. */
 export interface SmsRegistrationClient {
   incomingPhoneNumbers: {
-    list(options: { limit: number }): Promise<Array<{ sid: string; phoneNumber: string }>>;
+    list(options: ListOptions): Promise<Array<{ sid: string; phoneNumber: string }>>;
   };
   messaging: {
     v1: {
       services: ((sid: string) => {
         phoneNumbers: {
-          list(options: { limit: number }): Promise<Array<{ phoneNumber: string }>>;
+          list(options: ListOptions): Promise<Array<{ phoneNumber: string }>>;
         };
         usAppToPerson: {
-          list(options: {
-            limit: number;
-          }): Promise<
-            Array<{ campaignStatus: string; description?: string; messageFlow?: string }>
-          >;
+          list(
+            options: ListOptions,
+          ): Promise<Array<{ campaignStatus: string; description?: string; messageFlow?: string }>>;
         };
       }) & {
-        list(options: { limit: number }): Promise<Array<{ sid: string }>>;
+        list(options: ListOptions): Promise<Array<{ sid: string }>>;
       };
       tollfreeVerifications: {
-        list(options: {
-          limit: number;
-        }): Promise<Array<{ tollfreePhoneNumberSid: string; status: string }>>;
+        list(
+          options: ListOptions,
+        ): Promise<Array<{ tollfreePhoneNumberSid: string; status: string }>>;
       };
     };
   };
@@ -100,6 +100,15 @@ const SNAPSHOT_TTL_MS = 10 * 60_000;
 /** A recent good snapshot outlives a transient read failure. */
 const STALE_SNAPSHOT_MAX_MS = 60 * 60_000;
 const LIST_LIMIT = 1000;
+/**
+ * The carrier SDK asks for a whole `limit` in one page unless told otherwise,
+ * and some of these lists accept at most 50 a page. A page of 1000 was refused
+ * ("Page size must be between 1 and 50"), which failed every snapshot read in
+ * production and left every line "could not be checked". Fifty is accepted by
+ * all of them; the SDK follows the pages up to `limit`.
+ */
+export const LIST_PAGE_SIZE = 50;
+const LIST_PAGE: ListOptions = { limit: LIST_LIMIT, pageSize: LIST_PAGE_SIZE };
 
 const PENDING_CAMPAIGN_STATUSES = new Set(["IN_PROGRESS", "PENDING"]);
 const FAILED_CAMPAIGN_STATUSES = new Set(["FAILED", "SUSPENDED", "EXPIRED"]);
@@ -115,9 +124,9 @@ export async function readSmsRegistrationSnapshot(
   nowMs: number = Date.now(),
 ): Promise<SmsRegistrationSnapshot> {
   const [numbers, services, verifications] = await Promise.all([
-    client.incomingPhoneNumbers.list({ limit: LIST_LIMIT }),
-    client.messaging.v1.services.list({ limit: LIST_LIMIT }),
-    client.messaging.v1.tollfreeVerifications.list({ limit: LIST_LIMIT }),
+    client.incomingPhoneNumbers.list(LIST_PAGE),
+    client.messaging.v1.services.list(LIST_PAGE),
+    client.messaging.v1.tollfreeVerifications.list(LIST_PAGE),
   ]);
 
   const numberSids = new Map<string, string>();
@@ -131,8 +140,8 @@ export async function readSmsRegistrationSnapshot(
       if (!service?.sid) return;
       const context = client.messaging.v1.services(service.sid);
       const [senders, campaigns] = await Promise.all([
-        context.phoneNumbers.list({ limit: LIST_LIMIT }),
-        context.usAppToPerson.list({ limit: 20 }),
+        context.phoneNumbers.list(LIST_PAGE),
+        context.usAppToPerson.list({ limit: 20, pageSize: 20 }),
       ]);
       const pooled: PooledService = {
         serviceSid: service.sid,

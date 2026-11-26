@@ -187,9 +187,9 @@ export default function Developers() {
                   : ""}
             </p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Build, privately rehearse, and review your Bot from ChatGPT, Claude, or Cursor.
-              Training writes require the Apps toggle and your confirmation. Continue in BotBound
-              for live phone numbers, email, and cloud computer tasks on eligible paid plans.
+              Build, privately rehearse, and review your Bot from ChatGPT, Claude, or Cursor. Saving
+              to Knowledge requires the Apps toggle and your confirmation. Continue in BotBound for
+              live phone numbers, email, and cloud computer tasks on eligible paid plans.
             </p>
           </div>
 

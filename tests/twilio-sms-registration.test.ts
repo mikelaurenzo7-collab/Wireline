@@ -197,7 +197,8 @@ describe("SMS sender registration", () => {
       0,
     );
     expect(classifySmsSender(LOCAL_REGISTERED, snapshot)).toMatchObject({
-      status: "registered", coversInboundReplies: true,
+      status: "registered",
+      coversInboundReplies: true,
     });
     expect(classifySmsSender(LOCAL_PENDING, snapshot)).toMatchObject({
       status: "unregistered",
@@ -283,12 +284,16 @@ describe("SMS sender registration", () => {
 
 describe("inbound automation campaign coverage", () => {
   it("does not treat call-requested texts as an approved inbound reply program", () => {
-    expect(INBOUND_REPLY_COVERAGE.test(
-      "During a customer-care call, the customer asks for a text. After verbal permission we send the requested information.",
-    )).toBe(false);
-    expect(INBOUND_REPLY_COVERAGE.test(
-      "Customers text us for support after seeing the published number and consent disclosures. The Bot automatically replies to incoming customer texts.",
-    )).toBe(true);
+    expect(
+      INBOUND_REPLY_COVERAGE.test(
+        "During a customer-care call, the customer asks for a text. After verbal permission we send the requested information.",
+      ),
+    ).toBe(false);
+    expect(
+      INBOUND_REPLY_COVERAGE.test(
+        "Customers text us for support after seeing the published number and consent disclosures. The Bot automatically replies to incoming customer texts.",
+      ),
+    ).toBe(true);
   });
 });
 
@@ -319,5 +324,47 @@ describe("first-contact SMS composition", () => {
     expect(composeFirstContactSmsBody({ body: "Feel free to stop by Tuesday." })).toBe(
       `Feel free to stop by Tuesday. ${FIRST_CONTACT_OPT_OUT}`,
     );
+  });
+});
+
+describe("carrier list page size", () => {
+  // The SDK sends `limit` as the page size unless a page size is given, and the
+  // carrier refuses a page over 50 on some of these lists. Production failed
+  // every snapshot read this way, so every line read "could not be checked".
+  function strict<T>(rows: T[]) {
+    return async (options: { limit: number; pageSize?: number }): Promise<T[]> => {
+      const page = options.pageSize ?? options.limit;
+      if (page < 1 || page > 50) throw new Error("Page size must be between 1 and 50");
+      return rows;
+    };
+  }
+
+  it("never asks the carrier for a page it refuses", async () => {
+    const services = Object.assign(
+      () => ({
+        phoneNumbers: { list: strict([{ phoneNumber: LOCAL_REGISTERED }]) },
+        usAppToPerson: {
+          list: strict([
+            {
+              campaignStatus: "VERIFIED",
+              description: "Replies when customers text this number after a missed call.",
+            },
+          ]),
+        },
+      }),
+      { list: strict([{ sid: "MGapproved" }]) },
+    );
+    const client: SmsRegistrationClient = {
+      incomingPhoneNumbers: { list: strict([{ sid: "PN0", phoneNumber: LOCAL_REGISTERED }]) },
+      messaging: { v1: { services, tollfreeVerifications: { list: strict([]) } } },
+    };
+
+    const registration = await resolveSmsSenderRegistration(LOCAL_REGISTERED, { client });
+    expect(registration).toMatchObject({
+      status: "registered",
+      messagingServiceSid: "MGapproved",
+      coversMissedCalls: true,
+      coversInboundReplies: true,
+    });
   });
 });

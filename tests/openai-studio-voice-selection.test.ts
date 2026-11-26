@@ -176,7 +176,6 @@ describe("OpenAI Studio voice selection", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
     const review = read("src/components/StudioAgentReviewPanel.tsx");
-    const deploy = read("src/components/DeployAgentModal.tsx");
 
     expect(routes).toContain('if (requestedProvider !== "openai")');
     expect(routes).toContain("const voiceId = normalizeManagedOpenAIVoiceId(requestedVoiceId)");
@@ -197,7 +196,5 @@ describe("OpenAI Studio voice selection", () => {
     expect(picker).not.toContain("primaryVoiceProvider");
     expect(review).toContain('config?.voice?.provider?.trim().toLowerCase() === "presenter"');
     expect(review).toContain("config.voice.phoneVoiceId");
-    expect(deploy).toContain("allVoices.map");
-    expect(deploy).not.toContain("allVoices.filter((v) => v.gender === gender)");
   });
 });

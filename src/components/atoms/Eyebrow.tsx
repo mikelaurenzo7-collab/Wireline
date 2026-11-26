@@ -25,9 +25,8 @@ export interface EyebrowProps {
  * uppercase tracking-[...]` wrappers. Use `tone="primary"` for patina, or
  * `tone="muted"` when the kicker sits under a heavier heading.
  *
- * Note: the wired variant (`wl-eyebrow--wired`) lives in `WiredEyebrow` and
- * carries the marketing wire-pulse; use that for public marketing surfaces
- * and `Eyebrow` for authenticated workspace surfaces.
+ * Note: the wired variant is the `wl-eyebrow--wired` class, which carries the
+ * marketing wire-pulse. Use `Eyebrow` for authenticated workspace surfaces.
  */
 export function Eyebrow({
   children,

@@ -95,7 +95,6 @@ describe("authenticated seeded-state visual QA contract", () => {
 
   it("keeps authenticated category tabs inside a real horizontal scroller on phones", () => {
     const css = read("src/styles/system-refinement-pass-two.css");
-    const tabs = read("src/components/layout/ClientSubTabs.tsx");
     const rule =
       css
         .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -106,7 +105,5 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(rule).not.toBe("");
     expect(rule).toContain("overflow-x: auto");
     expect(rule).toContain("max-width: 100%");
-    expect(tabs).toContain("tab-strip-scroll");
-    expect(tabs).toContain("min-w-0 max-w-full");
   });
 });

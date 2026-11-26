@@ -159,13 +159,13 @@ describe("branding owner isolation", () => {
     h.fetch.mockReturnValueOnce(next.promise);
     h.user = { id: "owner-b" };
     const immediate = render(false);
-    expect(immediate.branding.brand_name).toBe("BotBound");
+    expect(immediate.branding.brand_name).toBe("");
     expect(immediate.branding.business_name).toBe("");
     expect(immediate.branding.brand_logo_url).toBe("");
     expect(immediate.isLoading).toBe(true);
     render();
     next.resolve(new Response("{}", { status: 503 }));
-    await loaded("BotBound");
+    await loaded("");
   });
 
   it("ignores a departed owner's delayed JSON even after the new owner has loaded", async () => {
@@ -191,11 +191,11 @@ describe("branding owner isolation", () => {
     const old = await loaded("Business A");
     h.user = null;
     const signedOut = render(false);
-    expect(signedOut.branding.brand_name).toBe("BotBound");
+    expect(signedOut.branding.brand_name).toBe("");
     expect(signedOut.isLoading).toBe(false);
     render();
     old.updateBranding({ brand_name: "Late save" });
-    expect(render().branding.brand_name).toBe("BotBound");
+    expect(render().branding.brand_name).toBe("");
 
     h.user = { id: "owner-a" };
     h.fetch.mockResolvedValueOnce(response("Current A"));

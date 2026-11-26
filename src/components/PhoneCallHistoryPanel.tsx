@@ -15,9 +15,11 @@ type CallsProbeResponse = {
 export default function PhoneCallHistoryPanel({
   agentId,
   focusCallId,
+  onFocusSettled,
 }: {
   agentId?: string | null;
   focusCallId?: string | null;
+  onFocusSettled?: () => void;
 }) {
   const {
     agents,
@@ -96,7 +98,10 @@ export default function PhoneCallHistoryPanel({
     );
   }
 
-  if (hasCalls === true) return <CallLogsClaude agentId={agentId} focusCallId={focusCallId} />;
+  if (hasCalls === true)
+    return (
+      <CallLogsClaude agentId={agentId} focusCallId={focusCallId} onFocusSettled={onFocusSettled} />
+    );
 
   const scopedAgent = agentId ? agents.find((agent) => agent.id === agentId) : null;
   const relevantAgents = scopedAgent ? [scopedAgent] : agents;

@@ -1959,7 +1959,7 @@ export function nextActionFromOutcome(tag: string): string {
     case "unreachable":
       return "Review retry policy and voicemail settings before another attempt.";
     case "info":
-      return "The caller asked a question. Check your Bot answered it; if not, add the answer in Training.";
+      return "The caller asked a question. Check your Bot answered it; if not, add the answer in Knowledge.";
     default:
       return "Read the summary and decide whether anything needs doing.";
   }

@@ -31,7 +31,6 @@ describe("authenticated modal lifecycle contract", () => {
   it("keeps every custom authenticated modal on the shared lifecycle hooks", () => {
     const customDialogs = [
       "src/components/TrialGateModal.tsx",
-      "src/components/DeployAgentModal.tsx",
       "src/components/recipes/RecipeModal.tsx",
       "src/components/CreateAgentDialog.tsx",
       "src/components/onboarding/PostCreateActivationWizard.tsx",
@@ -59,7 +58,6 @@ describe("authenticated modal lifecycle contract", () => {
 
     for (const [path, guard] of [
       ["src/components/CreateAgentDialog.tsx", "if (creating) return"],
-      ["src/components/DeployAgentModal.tsx", "if (!deploying) onClose()"],
       ["src/components/OutboundDialDialog.tsx", "if (!next && !placing) onClose()"],
       ["src/components/DncManager.tsx", "if (!nextOpen && adding) return"],
       ["src/pages/TeamSettings.tsx", "if (inviting) return"],
@@ -71,19 +69,16 @@ describe("authenticated modal lifecycle contract", () => {
   it("keeps pending dialogs honest about dismissal and assistive-technology state", () => {
     const dnc = source("src/components/DncManager.tsx");
     const confirm = source("src/components/ConfirmModal.tsx");
-    const deploy = source("src/components/DeployAgentModal.tsx");
     const shadcnDialog = source("src/components/ui/shadcn/Dialog.tsx");
 
     expect(shadcnDialog).toContain("showClose?: boolean");
     expect(dnc).toContain("showClose={!adding}");
     expect(confirm).toContain("aria-busy={loading}");
-    expect(deploy).toContain("window.clearTimeout(focusTimer)");
   });
 
   it("does not leave duplicate global Escape listeners in migrated modals", () => {
     for (const path of [
       "src/components/TrialGateModal.tsx",
-      "src/components/DeployAgentModal.tsx",
       "src/components/recipes/RecipeModal.tsx",
     ]) {
       const component = source(path);

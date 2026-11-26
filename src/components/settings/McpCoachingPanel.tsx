@@ -104,7 +104,7 @@ export default function McpCoachingPanel() {
         error?: string;
       } | null;
       if (!response.ok) {
-        throw new Error(data?.error || "Couldn't update Training permission.");
+        throw new Error(data?.error || "Couldn't update the Knowledge permission.");
       }
       if (
         typeof data?.coaching_writes_enabled !== "boolean" ||
@@ -117,12 +117,12 @@ export default function McpCoachingPanel() {
       setEnabled(data.coaching_writes_enabled);
       setNotice(
         data?.coaching_writes_enabled
-          ? "Connected apps can now save a confirmed Training fact or rule into BotBound."
-          : "Connected app Training writes are off. Drafts and private rehearsals still work.",
+          ? "Connected apps can now save a fact or rule you confirm to Knowledge."
+          : "Connected apps can no longer save to Knowledge. Drafts and private rehearsals still work.",
       );
     } catch (err) {
       setRefreshRequired(true);
-      setError(err instanceof Error ? err.message : "Couldn't update Training permission.");
+      setError(err instanceof Error ? err.message : "Couldn't update the Knowledge permission.");
     } finally {
       mutationPending.current = false;
       setSaving(false);
@@ -180,7 +180,7 @@ export default function McpCoachingPanel() {
           htmlFor="mcp-coaching-writes"
           className="wl-preserve-case min-w-0 normal-case tracking-normal"
         >
-          <span className="block font-medium text-foreground">Save Training</span>
+          <span className="block font-medium text-foreground">Save to Knowledge</span>
           <span
             id="mcp-coaching-writes-help"
             className="mt-1 block text-sm leading-6 text-muted-foreground"
@@ -195,7 +195,7 @@ export default function McpCoachingPanel() {
           onCheckedChange={(checked) => void updateWrites(checked)}
           disabled={loading || Boolean(loadError) || saving || disconnecting || refreshRequired}
           aria-describedby="mcp-coaching-writes-help"
-          aria-label="Allow connected apps to save Training"
+          aria-label="Allow connected apps to save to Knowledge"
         />
       </div>
 
@@ -232,7 +232,7 @@ export default function McpCoachingPanel() {
                       scope === "agents.read"
                         ? "Read Bot Context"
                         : scope === "agents.write"
-                          ? "Edit Drafts & Training"
+                          ? "Edit Drafts & Knowledge"
                           : scope === "demo.voice"
                             ? "Private Rehearsals"
                             : scope === "calls.prepare"

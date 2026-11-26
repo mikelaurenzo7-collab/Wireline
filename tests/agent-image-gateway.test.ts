@@ -83,7 +83,7 @@ describe("agent image training through AI Gateway", () => {
     );
     await expect(extractImageAsset("menu.png", image, "tenant")).rejects.toMatchObject({
       status: 502,
-      message: "Image training is temporarily unavailable. Try again shortly.",
+      message: "Images cannot be read right now. Try again shortly.",
     });
   });
 
