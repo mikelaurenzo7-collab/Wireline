@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import twilio from "twilio";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/lib/server-context", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -13,6 +14,7 @@ import {
   resolveSmsSenderRegistration,
   smsSenderKind,
   type SmsRegistrationClient,
+  type SmsRegistrationListOptions,
 } from "../src/lib/twilio-sms-registration";
 import {
   composeFirstContactSmsBody,
@@ -373,5 +375,219 @@ describe("registration snapshot paging", () => {
       expect(call.pageSize, call.list).toBeLessThanOrEqual(50);
       expect(call.limit, call.list).toBeGreaterThanOrEqual(call.pageSize);
     }
+  });
+
+  it("hands every list call an options object of its own", async () => {
+    const handed: SmsRegistrationListOptions[] = [];
+    // The SDK writes each call's callbacks onto the options it is given.
+    const sdkLike =
+      <T>(rows: T[]) =>
+      async (options: SmsRegistrationListOptions) => {
+        handed.push(options);
+        Object.assign(options, { callback: () => undefined, done: () => undefined });
+        return rows;
+      };
+    const client: SmsRegistrationClient = {
+      incomingPhoneNumbers: { list: sdkLike([{ sid: "PN0", phoneNumber: LOCAL_REGISTERED }]) },
+      messaging: {
+        v1: {
+          services: Object.assign(
+            () => ({
+              phoneNumbers: { list: sdkLike([{ phoneNumber: LOCAL_REGISTERED }]) },
+              usAppToPerson: { list: sdkLike([{ campaignStatus: "VERIFIED" }]) },
+            }),
+            { list: sdkLike([{ sid: "MGapproved" }]) },
+          ),
+          tollfreeVerifications: { list: sdkLike([]) },
+        },
+      },
+    };
+
+    await Promise.all([
+      readSmsRegistrationSnapshot(client, 0),
+      readSmsRegistrationSnapshot(client, 0),
+    ]);
+
+    expect(handed).toHaveLength(10);
+    expect(new Set(handed).size).toBe(10);
+  });
+});
+
+describe("registration read through the carrier SDK itself", () => {
+  const ACCOUNT_SID = `AC${"0".repeat(32)}`;
+  const SERVICE_SID = `MG${"b".repeat(32)}`;
+
+  beforeEach(() => resetSmsRegistrationCache());
+
+  /** Answers like the carrier API, a little late, so the first three lists overlap. */
+  function carrierStub() {
+    const requests: Array<{ uri: string; pageSize: unknown }> = [];
+    const page = (key: string, rows: unknown[]) => ({
+      [key]: rows,
+      meta: { key, next_page_url: null, page: 0, page_size: 50 },
+    });
+    const httpClient = {
+      request(options: { uri: string; params?: Record<string, unknown> }) {
+        const uri = String(options.uri);
+        requests.push({ uri, pageSize: options.params?.PageSize });
+        let body: unknown = {};
+        if (uri.includes("IncomingPhoneNumbers") && uri.includes("Page=1")) {
+          body = {
+            incoming_phone_numbers: [{ sid: "PNsecond", phone_number: LOCAL_UNPOOLED }],
+            next_page_uri: null,
+            page: 1,
+            page_size: 50,
+          };
+        } else if (uri.includes("IncomingPhoneNumbers")) {
+          body = {
+            incoming_phone_numbers: [{ sid: "PNfirst", phone_number: LOCAL_REGISTERED }],
+            next_page_uri: `/2010-04-01/Accounts/${ACCOUNT_SID}/IncomingPhoneNumbers.json?PageSize=50&Page=1&PageToken=PAtest`,
+            page: 0,
+            page_size: 50,
+          };
+        } else if (uri.includes("Tollfree/Verifications")) {
+          body = page("verifications", []);
+        } else if (uri.includes("/PhoneNumbers")) {
+          body = page("phone_numbers", [{ sid: "PNfirst", phone_number: LOCAL_REGISTERED }]);
+        } else if (uri.includes("Compliance/Usa2p")) {
+          body = page("compliance", [
+            {
+              sid: "QEtest",
+              campaign_status: "VERIFIED",
+              description: "Customers text us for support.",
+            },
+          ]);
+        } else if (uri.includes("/Services")) {
+          body = page("services", [{ sid: SERVICE_SID }]);
+        }
+        const delayMs = uri.includes("IncomingPhoneNumbers")
+          ? 5
+          : uri.includes("Tollfree")
+            ? 25
+            : 15;
+        return new Promise((resolve) => {
+          setTimeout(
+            () => resolve({ statusCode: 200, body: JSON.stringify(body), headers: {} }),
+            delayMs,
+          );
+        });
+      },
+    };
+    const client = twilio(ACCOUNT_SID, "test-token", { httpClient: httpClient as never });
+    return { client, requests };
+  }
+
+  function answeredWithin<T>(work: Promise<T>, ms: number): Promise<T | "still waiting"> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<"still waiting">((resolve) => {
+      timer = setTimeout(() => resolve("still waiting"), ms);
+    });
+    return Promise.race([work, late]).finally(() => clearTimeout(timer));
+  }
+
+  it("finishes when its lists run at the same time, and follows the next page", async () => {
+    const { client, requests } = carrierStub();
+
+    // One options object shared by the three first lists left this pending forever.
+    const verdict = await answeredWithin(
+      resolveSmsSenderRegistration(LOCAL_REGISTERED, { client }),
+      3_000,
+    );
+
+    expect(verdict).toEqual({
+      status: "registered",
+      kind: "local_10dlc",
+      messagingServiceSid: SERVICE_SID,
+      coversMissedCalls: false,
+      coversInboundReplies: true,
+    });
+    // The line on the second page of numbers is known to the account, so it is refused.
+    await expect(resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client })).resolves.toMatchObject({
+      status: "unregistered",
+      code: "SMS_SENDER_UNREGISTERED",
+    });
+    // Numbers twice, services, toll-free, then the one service: senders and campaigns.
+    expect(requests).toHaveLength(6);
+    const pageSizes = requests
+      .map((request) => request.pageSize)
+      .filter((pageSize) => pageSize !== undefined);
+    expect(pageSizes).toHaveLength(5);
+    for (const pageSize of pageSizes) {
+      expect(Number(pageSize)).toBeGreaterThanOrEqual(1);
+      expect(Number(pageSize)).toBeLessThanOrEqual(50);
+    }
+  });
+});
+
+describe("a registration read that is slow or never comes back", () => {
+  beforeEach(() => {
+    resetSmsRegistrationCache();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    resetSmsRegistrationCache();
+  });
+
+  const never = () => new Promise<never>(() => undefined);
+
+  it("stops waiting after five seconds and does not make the next send wait", async () => {
+    const { client } = fakeClient();
+    const stuck: SmsRegistrationClient = { ...client, incomingPhoneNumbers: { list: never } };
+
+    const first = resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: stuck, nowMs: 0 });
+    let answered = false;
+    void first.then(() => {
+      answered = true;
+    });
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(answered).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(first).resolves.toMatchObject({ status: "unknown", kind: "local_10dlc" });
+
+    // The read is still out. The next send is answered at once, with no timer to wait on.
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: stuck, nowMs: 6_000 }),
+    ).resolves.toMatchObject({ status: "unknown" });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("reads again once a stuck read is a minute old", async () => {
+    const { client, calls } = fakeClient();
+    const stuck: SmsRegistrationClient = { ...client, incomingPhoneNumbers: { list: never } };
+
+    const first = resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: stuck, nowMs: 0 });
+    await vi.advanceTimersByTimeAsync(5_000);
+    await first;
+    await resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: stuck, nowMs: 30_000 });
+    expect(calls.services).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(55_000);
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_REGISTERED, { client, nowMs: 60_000 }),
+    ).resolves.toMatchObject({ status: "registered", messagingServiceSid: "MGapproved" });
+    expect(calls.services).toBe(2);
+  });
+
+  it("keeps the result of a read that lands after its caller stopped waiting", async () => {
+    const { client, calls } = fakeClient();
+    const numbers = client.incomingPhoneNumbers.list;
+    const slow: SmsRegistrationClient = {
+      ...client,
+      incomingPhoneNumbers: {
+        list: (options) =>
+          new Promise((resolve) => setTimeout(resolve, 8_000)).then(() => numbers(options)),
+      },
+    };
+
+    const first = resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: slow, nowMs: 0 });
+    await vi.advanceTimersByTimeAsync(5_000);
+    await expect(first).resolves.toMatchObject({ status: "unknown" });
+
+    await vi.advanceTimersByTimeAsync(3_000);
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: slow, nowMs: 9_000 }),
+    ).resolves.toMatchObject({ status: "registered", messagingServiceSid: "MGapproved" });
+    expect(calls.services).toBe(1);
   });
 });

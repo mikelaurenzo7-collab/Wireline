@@ -105,10 +105,17 @@ const STALE_SNAPSHOT_MAX_MS = 60 * 60_000;
  * Twilio refuses a page size above 50 on some of these lists ("Page size must
  * be between 1 and 50"), which failed every snapshot read and left every
  * sender `unknown`. A fixed page of 50 lets the SDK page up to the limit.
+ *
+ * Every call gets an object of its own. The SDK writes that call's `callback`
+ * and `done` onto the options it is handed, so one object shared by lists
+ * running at the same time leaves every promise but the last pending forever.
  */
 const LIST_PAGE_SIZE = 50;
-const LIST_OPTIONS: SmsRegistrationListOptions = { limit: 1000, pageSize: LIST_PAGE_SIZE };
-const CAMPAIGN_LIST_OPTIONS: SmsRegistrationListOptions = { limit: 20, pageSize: 20 };
+const listOptions = (): SmsRegistrationListOptions => ({
+  limit: 1000,
+  pageSize: LIST_PAGE_SIZE,
+});
+const campaignListOptions = (): SmsRegistrationListOptions => ({ limit: 20, pageSize: 20 });
 
 const PENDING_CAMPAIGN_STATUSES = new Set(["IN_PROGRESS", "PENDING"]);
 const FAILED_CAMPAIGN_STATUSES = new Set(["FAILED", "SUSPENDED", "EXPIRED"]);
@@ -124,9 +131,9 @@ export async function readSmsRegistrationSnapshot(
   nowMs: number = Date.now(),
 ): Promise<SmsRegistrationSnapshot> {
   const [numbers, services, verifications] = await Promise.all([
-    client.incomingPhoneNumbers.list(LIST_OPTIONS),
-    client.messaging.v1.services.list(LIST_OPTIONS),
-    client.messaging.v1.tollfreeVerifications.list(LIST_OPTIONS),
+    client.incomingPhoneNumbers.list(listOptions()),
+    client.messaging.v1.services.list(listOptions()),
+    client.messaging.v1.tollfreeVerifications.list(listOptions()),
   ]);
 
   const numberSids = new Map<string, string>();
@@ -140,8 +147,8 @@ export async function readSmsRegistrationSnapshot(
       if (!service?.sid) return;
       const context = client.messaging.v1.services(service.sid);
       const [senders, campaigns] = await Promise.all([
-        context.phoneNumbers.list(LIST_OPTIONS),
-        context.usAppToPerson.list(CAMPAIGN_LIST_OPTIONS),
+        context.phoneNumbers.list(listOptions()),
+        context.usAppToPerson.list(campaignListOptions()),
       ]);
       const pooled: PooledService = {
         serviceSid: service.sid,
@@ -316,8 +323,20 @@ export function classifySmsSender(
  */
 const REFUSAL_RECHECK_MS = 60_000;
 
+/**
+ * A text send waits on this read, so the wait has to end. Past this bound the
+ * caller gets the last good snapshot or `unknown`, and the read carries on in
+ * the background to fill the cache for the next caller.
+ */
+const SNAPSHOT_WAIT_MS = 5_000;
+/** A read still unsettled after this long is given up for a new one. */
+const SNAPSHOT_ABANDON_MS = 60_000;
+const SNAPSHOT_TOO_SLOW = "The carrier registration read did not finish in time.";
+
+type SnapshotRead = { read: Promise<SmsRegistrationSnapshot>; startedAtMs: number };
+
 let cachedSnapshot: SmsRegistrationSnapshot | null = null;
-let inflight: Promise<SmsRegistrationSnapshot> | null = null;
+let inflight: SnapshotRead | null = null;
 
 /** Test and operator hook. Production reads expire on their own. */
 export function resetSmsRegistrationCache(): void {
@@ -325,19 +344,44 @@ export function resetSmsRegistrationCache(): void {
   inflight = null;
 }
 
+function startSnapshotRead(client: SmsRegistrationClient, nowMs: number): SnapshotRead {
+  const started: SnapshotRead = {
+    read: readSmsRegistrationSnapshot(client, nowMs),
+    startedAtMs: Date.now(),
+  };
+  // Attached before any caller waits, so the cache is filled and the slot is
+  // free by the time a caller continues. It also runs after callers gave up.
+  const finish = (snapshot?: SmsRegistrationSnapshot) => {
+    if (snapshot && (!cachedSnapshot || snapshot.readAtMs >= cachedSnapshot.readAtMs)) {
+      cachedSnapshot = snapshot;
+    }
+    if (inflight === started) inflight = null;
+  };
+  started.read.then(finish, () => finish());
+  return started;
+}
+
+function settledWithin<T>(read: Promise<T>, waitMs: number): Promise<T> {
+  if (waitMs <= 0) return Promise.reject(new Error(SNAPSHOT_TOO_SLOW));
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  // Not unref'd: a script whose only pending work is this wait must reach the timeout.
+  const tooSlow = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(SNAPSHOT_TOO_SLOW)), waitMs);
+  });
+  return Promise.race([read, tooSlow]).finally(() => clearTimeout(timer));
+}
+
 async function currentSnapshot(
   client: SmsRegistrationClient,
   nowMs: number,
 ): Promise<SmsRegistrationSnapshot | null> {
   if (cachedSnapshot && nowMs - cachedSnapshot.readAtMs < SNAPSHOT_TTL_MS) return cachedSnapshot;
-  if (!inflight) {
-    inflight = readSmsRegistrationSnapshot(client, nowMs).finally(() => {
-      inflight = null;
-    });
-  }
+  if (inflight && Date.now() - inflight.startedAtMs >= SNAPSHOT_ABANDON_MS) inflight = null;
+  if (!inflight) inflight = startSnapshotRead(client, nowMs);
+  const current = inflight;
   try {
-    cachedSnapshot = await inflight;
-    return cachedSnapshot;
+    // One deadline per read, not per caller: once a read is late, later sends do not wait again.
+    return await settledWithin(current.read, SNAPSHOT_WAIT_MS - (Date.now() - current.startedAtMs));
   } catch (error) {
     log.warn("Twilio SMS registration snapshot unavailable", { error: getErrorMessage(error) });
     if (cachedSnapshot && nowMs - cachedSnapshot.readAtMs < STALE_SNAPSHOT_MAX_MS) {
