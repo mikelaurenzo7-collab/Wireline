@@ -125,6 +125,8 @@ const PRE_SESSION_CLAIM_LEASE_MS = 2 * 60_000;
 const RUNNING_CLAIM_LEASE_MS = 90_000;
 const RUNNING_CLAIM_HEARTBEAT_MS = 30_000;
 const RUNNING_CLAIM_LOCAL_FENCE_MS = RUNNING_CLAIM_LEASE_MS - 15_000;
+/** How often an owner phone test's transcript-so-far may be written. */
+const LIVE_TRANSCRIPT_INTERVAL_MS = 1_500;
 const IN_PROGRESS_SUMMARY = "OpenAI Realtime voice call in progress.";
 const RECOVERED_SUMMARY =
   "OpenAI Realtime voice call ended before its terminal state could be persisted.";
@@ -1004,6 +1006,70 @@ export function markOpenAISipCallRunning(input: {
       .returning({ id: schema.callLogs.id });
     if (!updated) throw new Error("OpenAI SIP session startup lost its durable claim lease.");
   });
+}
+
+/**
+ * Coalesce transcript progress into at most one write per interval, in order.
+ * `notify` takes a snapshot function so compaction runs only when a write is due.
+ */
+export function createTranscriptProgressRecorder(
+  write: (transcript: string) => Promise<void>,
+  onError: (error: unknown) => void,
+  intervalMs: number = LIVE_TRANSCRIPT_INTERVAL_MS,
+) {
+  let snapshot: (() => string) | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastWritten = "";
+  let stopped = false;
+  let writes: Promise<void> = Promise.resolve();
+  const flush = () => {
+    timer = null;
+    if (stopped || !snapshot) return;
+    const transcript = snapshot();
+    snapshot = null;
+    if (!transcript || transcript === lastWritten) return;
+    lastWritten = transcript;
+    writes = writes.then(() => write(transcript)).catch(onError);
+  };
+  return {
+    notify(next: () => string) {
+      if (stopped) return;
+      snapshot = next;
+      if (timer) return;
+      timer = setTimeout(flush, intervalMs);
+      timer.unref?.();
+    },
+    /** No later writes; the final call record owns the transcript from here. */
+    stop() {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+    },
+  };
+}
+
+/**
+ * Owner phone tests show the call in Studio while it runs. Each write is
+ * fenced to this session's running claim, so a write that lands late can never
+ * replace the final transcript written when the call ends.
+ */
+function recordLivePhoneTestTranscript(
+  call: OpenAISipIncomingCall,
+  claim: OpenAISipCallClaim,
+  transcript: string,
+): Promise<void> {
+  return drizzle
+    .update(schema.callLogs)
+    .set({ transcript })
+    .where(
+      and(
+        eq(schema.callLogs.id, claim.callLogId),
+        eq(schema.callLogs.userId, call.userId),
+        eq(schema.callLogs.openaiSipPhase, "running"),
+        eq(schema.callLogs.openaiSipOwnerToken, claim.ownerToken),
+      ),
+    )
+    .then(() => undefined);
 }
 
 async function renewOpenAISipCallLease(input: {
@@ -1906,6 +1972,8 @@ async function runRealtimeSession(
   ownershipSignal?: AbortSignal,
   accountElapsed?: (seconds: number) => Promise<void>,
   observeUsage?: (event: Record<string, unknown>) => void,
+  /** Owner phone tests: told after each turn so the transcript can be shown live. */
+  onTranscriptProgress?: (snapshot: () => string) => void,
 ): Promise<RealtimeSessionOutcome> {
   const provider = realtimeProviderForCallId(input.callId);
   const apiKey = realtimeApiKey(provider);
@@ -2155,10 +2223,13 @@ async function runRealtimeSession(
   const sessionHandle = { notifyTransferred };
   liveSipSessions.set(input.callId, sessionHandle);
 
+  const reportTranscriptProgress = () =>
+    onTranscriptProgress?.(() => compactOpenAITranscript(transcriptLines));
   const flushAssistantTurn = () => {
     const text = assistantTurn.trim();
     if (text) transcriptLines.push({ role: "Agent", text });
     assistantTurn = "";
+    if (text) reportTranscriptProgress();
   };
 
   const finishExactOpeningIfNeeded = (delivered: boolean) => {
@@ -2689,6 +2760,7 @@ async function runRealtimeSession(
       const itemId = String(event.item_id || "caller");
       const transcript = typeof event.transcript === "string" ? event.transcript : "";
       upsertOrderedCallerTranscript(transcriptLines, callerTranscriptIndexes, itemId, transcript);
+      if (transcript.trim()) reportTranscriptProgress();
       const optOut = detectOptOut(transcript);
       if (optOut.kind === "dnc") {
         await endForCallerDnc(optOut.matched_pattern);
@@ -3400,6 +3472,17 @@ export async function runOpenAISipCallSession(
               runtime.session.audio?.input?.transcription?.model || "",
             )
           : undefined;
+      const liveTranscript =
+        input.phoneTest && claim
+          ? createTranscriptProgressRecorder(
+              (transcript) => recordLivePhoneTestTranscript(input, claim, transcript),
+              (error) =>
+                log.warn("Phone test live transcript could not be recorded", {
+                  callId: providerCallId(input.callId),
+                  errorClass: error instanceof Error ? error.name : typeof error,
+                }),
+            )
+          : null;
       try {
         outcome = await runRealtimeSession(
           input,
@@ -3407,8 +3490,10 @@ export async function runOpenAISipCallSession(
           ownerFence.signal,
           accountElapsed,
           providerUsage?.observe,
+          liveTranscript?.notify,
         );
       } finally {
+        liveTranscript?.stop();
         await providerUsage?.flush();
       }
     } catch (error) {

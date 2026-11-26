@@ -1,6 +1,7 @@
 import { AppError } from "../api-error";
 import { hangupOpenAIRealtimeCall } from "./openai-realtime-call-control";
 import { verifyLiveVoiceCleanupToken } from "./live-voice-cleanup-token";
+import { stopRehearsalRelay } from "./xai-rehearsal-relay";
 
 /** Only an authenticated owner can end the exact private call minted for them. */
 export async function stopOpenAILiveVoiceCall(input: { userId: string; cleanupToken: string }) {
@@ -12,6 +13,9 @@ export async function stopOpenAILiveVoiceCall(input: { userId: string; cleanupTo
   }
   if (!claims)
     throw AppError.badRequest("This voice rehearsal cleanup ticket is invalid or expired.");
+  // A relayed xAI rehearsal lives in this process; ending it closes the provider session.
+  if (stopRehearsalRelay({ userId: input.userId, callId: claims.callId }))
+    return { stopped: true } as const;
   try {
     await hangupOpenAIRealtimeCall({
       callId: claims.callId,

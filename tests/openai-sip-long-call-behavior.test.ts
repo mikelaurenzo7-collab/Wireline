@@ -1768,3 +1768,57 @@ describe("cross-process SIP transfers", () => {
     ]);
   });
 });
+
+describe("owner phone test live transcript", () => {
+  const liveWrites = () =>
+    h.writes.filter((row) => Object.keys(row).length === 1 && typeof row.transcript === "string");
+
+  it("records the call so far while an owner phone test runs, then keeps the final record", async () => {
+    const session = runOpenAISipCallSession(
+      { ...call, phoneTest: true },
+      runtime as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await emit({
+      type: "conversation.item.input_audio_transcription.completed",
+      item_id: "caller-1",
+      transcript: "When are you open?",
+    });
+    await emit({ type: "response.output_audio_transcript.delta", delta: "We open at eight." });
+    await emit({ type: "response.done", response: { status: "completed" } });
+    // Turns are coalesced into one write per interval.
+    expect(liveWrites()).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(liveWrites()).toHaveLength(1);
+    expect(liveWrites()[0]!.transcript).toContain("Caller: When are you open?");
+    expect(liveWrites()[0]!.transcript).toContain("Agent: We open at eight.");
+
+    h.sockets[0].close();
+    await session;
+    await vi.advanceTimersByTimeAsync(5_000);
+    // Nothing is written live after the call ends; the final record carries it.
+    expect(liveWrites()).toHaveLength(1);
+    const final = h.writes.find((row) => row.openaiSipPhase === "terminal" && "transcript" in row);
+    expect(final?.transcript).toContain("Agent: We open at eight.");
+  });
+
+  it("never records a live transcript for an ordinary call", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await emit({
+      type: "conversation.item.input_audio_transcription.completed",
+      item_id: "caller-1",
+      transcript: "When are you open?",
+    });
+    await emit({ type: "response.done", response: { status: "completed" } });
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(liveWrites()).toHaveLength(0);
+    h.sockets[0].close();
+    await session;
+  });
+});

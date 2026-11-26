@@ -8,9 +8,12 @@ per-number signed webhooks) by default for every number. A line registers with
 xAI when it is activated, and any line that reaches a call unregistered
 registers itself in the background; until that finishes, or whenever xAI is
 unavailable, the call answers on OpenAI Realtime (`gpt-realtime-2.1`).
-`WIRELINE_PHONE_VOICE_PROVIDER=openai` is the operator opt-out. Browser
-rehearsals (authenticated Studio and ChatGPT private simulation) stay on OpenAI
-Realtime WebRTC. The provider travels with the call id, so hangup, transfer,
+`WIRELINE_PHONE_VOICE_PROVIDER=openai` is the operator opt-out. Studio
+rehearsals follow the phone provider: on xAI they run through BotBound's
+rehearsal relay (see below), so owners hear the voice and opening callers hear,
+and they fall back to OpenAI Realtime WebRTC whenever xAI is off or fails to
+open. `WIRELINE_REHEARSAL_VOICE_PROVIDER=openai` moves rehearsals alone back to
+OpenAI. ChatGPT private simulation stays on OpenAI Realtime WebRTC. The provider travels with the call id, so hangup, transfer,
 and recovery always reach the provider that owns the call. See the xAI section
 of `docs/DEPLOYMENT_RUNBOOK.md` for rollback.
 Public and guest audio/call demos are retired. Twilio owns carrier transport,
@@ -22,12 +25,13 @@ Customer surfaces describe the voice as BotBound's and never name the vendor.
 
 ## Transport map
 
-| Surface                                           | Transport                                                                         | Runtime                              |
-| ------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ |
-| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime                      |
-| Inbound phone                                     | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | xAI voice (OpenAI Realtime fallback) |
-| Outbound phone                                    | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | xAI voice (OpenAI Realtime fallback) |
-| SMS                                               | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime           |
+| Surface                                  | Transport                                                                         | Runtime                              |
+| ---------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ |
+| Authenticated Studio rehearsal           | Same-origin BotBound WebSocket relay (`/api/voice/live/relay`)                    | xAI voice (OpenAI WebRTC fallback)   |
+| Authenticated ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime                      |
+| Inbound phone                            | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | xAI voice (OpenAI Realtime fallback) |
+| Outbound phone                           | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | xAI voice (OpenAI Realtime fallback) |
+| SMS                                      | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime           |
 
 The OpenAI project SIP URI is:
 
@@ -86,6 +90,18 @@ and funding controls.
    rejects late verification/SIP admission and schedules carrier termination.
 5. **End call** keeps an unconfirmed stop pending until carrier evidence confirms
    termination. Closing the dialog does not redial or silently claim a call ended.
+6. Studio shows the call's transcript in the dialog. While the test runs, the voice
+   worker records the transcript so far on the test's own call log at most every
+   1.5 seconds; each write requires that call's running claim and owner token, so
+   it can never replace the final transcript written when the call ends. The
+   status check returns those lines only to the owner, for that Bot and the exact
+   carrier call the test placed, and only after verification. After the call ends
+   the dialog checks four more times for the final record. If the worker stops
+   mid-call, crash recovery keeps the turns recorded so far. Ordinary calls
+   record no live transcript.
+
+After a voice rehearsal that ended cleanly and in which the Bot answered the owner, Studio offers **Call My Phone**
+as the next step when the account can place the test.
 
 Verification and AI conversation share one canonical funding and usage identity.
 Completed verification and conversation use the carrier parent's terminal duration,
@@ -168,16 +184,63 @@ Twilio retry fragment.
 
 ## Voice roster and studio boundary
 
-Phone and browser sessions use only OpenAI's documented Realtime voices:
+Owners choose from OpenAI's documented Realtime voice names:
 `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`,
 and `cedar`. BotBound defaults to `marin`; `cedar` is the second recommended
 quality choice. The saved voice remains fixed for an active session and can be
-changed before a later session. Studio previews and phone calls resolve the same
-saved choice.
+changed before a later session. On xAI, the default for calls and Studio
+rehearsal, each saved name maps to the closest xAI voice
+(`xaiVoiceForSavedVoice`), so calls, rehearsals and voice samples use that same
+voice; an OpenAI session (the fallback) speaks the saved voice itself.
 
-BotBound does not operate a separate voice-cloning provider or accept customer
-voice uploads. Historical presenter/video records retain an explicit OpenAI
-phone fallback, and Studio uses that same fallback for a consistent preview.
+Consented cloned voices are described in
+[the production voice policy](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md#cloned-live-voices).
+Historical presenter/video records retain an explicit OpenAI phone fallback, and
+Studio uses that same fallback for a consistent preview.
+
+## Studio rehearsal on xAI
+
+xAI serves browsers over WebSocket only, and its short-lived client tokens
+cannot carry session settings, so a direct connection would have to send the
+Bot's prompt from the page. Studio therefore asks
+`POST /api/voice/live/session` with `{ agentId, transport: "relay" }`. With the
+same authentication, launch gate, spend cap, minute quota, rate limit,
+account-environment policy and account-deletion fence as the WebRTC path, the
+server reserves spend (labelled `xai`, at the same conservative reserve; it is
+committed when the browser attaches and released if it never does), builds the
+session from the phone runtime's private-test surface
+(`browser_test`: the phone prompt with a private-test notice and approved
+knowledge search as the only tool), maps the saved voice exactly as phone
+calls do, and opens and configures the xAI session before answering. The
+response carries a single-use ticket that expires after 20 seconds and the usual
+encrypted cleanup ticket. The browser attaches to `/api/voice/live/relay` with
+the subprotocols `botbound-rehearsal.v1` and `ticket.<ticket>`; the upgrade
+shares the supervisor socket's deployment gate and requires a same-site Origin.
+
+Over the relay the browser sends 24 kHz PCM16 microphone frames and typed lines
+and receives the Bot's PCM16 audio plus a transcript in a small BotBound
+protocol that never names the provider. The server speaks the inbound opening
+with its AI disclosure verbatim and non-interruptible, as on a call (without a
+recording notice, because rehearsals are not recorded), runs knowledge lookups
+in the owner's tenant scope, tells xAI how much of an interrupted reply was
+heard, and ends the session at its time limit, when the browser leaves, on the
+owner's stop ticket, or when the API restarts (the owner is told to start
+again; a shutting-down process opens no new relays). The Bot's reply to a
+knowledge result or a typed line is requested only when no response is active,
+the owner is not speaking and xAI is not about to answer by itself. Any reply
+that starts afterwards counts as the answer; the request is retried, at most
+twice, only when no reply starts at all. Typing over the Bot interrupts it. The
+commit and release of the spend reservation run in the owner's tenant scope.
+Each session logs its duration, turns and reply latency.
+
+If xAI is unset or opted out, the server answers `{ "transport": "webrtc" }`
+before taking any quota. If xAI rejects the session or cannot be reached, the
+reservation and minute quota are released, the reason is logged, and the
+answer is the same. If the browser cannot connect to the relay, it ends that
+session through its cleanup ticket (returning its reservation) and uses WebRTC
+for this and later rehearsals in the view. In each case the browser sends its
+WebRTC offer and the rehearsal answers on OpenAI Realtime below. A cloned voice
+is not used in rehearsal; Studio says so and offers a preview.
 
 Studio opens private rehearsal in Voice. Entering the view or selecting Voice never
 requests a microphone or creates a provider call; the owner must choose Start.

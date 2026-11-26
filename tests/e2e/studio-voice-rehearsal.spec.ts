@@ -1,4 +1,15 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
+
+/**
+ * Studio first asks for the relayed (xAI) rehearsal. These WebRTC scenarios
+ * answer that request with "webrtc", the server's fallback, so the OpenAI
+ * offer path below stays covered.
+ */
+async function answerRelayProbeWithWebRtc(route: Route): Promise<boolean> {
+  if (route.request().postDataJSON()?.transport !== "relay") return false;
+  await route.fulfill({ json: { transport: "webrtc", reason: "xai_not_configured" } });
+  return true;
+}
 
 async function mockRehearsal(
   page: Page,
@@ -79,6 +90,7 @@ async function mockRehearsal(
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/api/voice/live/session") {
+      if (await answerRelayProbeWithWebRtc(route)) return;
       sessions.push(route.request().postDataJSON().agentId);
       await route.fulfill({
         json: { sdp: "v=0\r\n", cleanupToken: `token-${sessions.length}`, maxDurationSeconds: 60 },
@@ -509,6 +521,7 @@ test("leaving while a voice session is accepted closes its late provider session
     releaseAnswer = resolve;
   });
   await page.route("**/api/voice/live/session", async (route) => {
+    if (await answerRelayProbeWithWebRtc(route)) return;
     signalAccepted();
     await answer;
     await route.fulfill({ json: { sdp: "v=0\r\n", cleanupToken: "late-accepted-call" } });
@@ -604,9 +617,10 @@ for (const [label, token] of [
     page,
   }) => {
     const { stops } = await mockRehearsal(page);
-    await page.route("**/api/voice/live/session", (route) =>
-      route.fulfill({ json: { sdp: "v=0\r\n", cleanupToken: token } }),
-    );
+    await page.route("**/api/voice/live/session", async (route) => {
+      if (await answerRelayProbeWithWebRtc(route)) return;
+      await route.fulfill({ json: { sdp: "v=0\r\n", cleanupToken: token } });
+    });
     await page.goto("/studio?agent=bot-front-desk&workroom=test");
     await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
     await expect(
@@ -652,3 +666,172 @@ for (const failure of ["peer-constructor", "data-channel"] as const) {
     await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   });
 }
+
+const RELAY_SESSION = {
+  transport: "relay",
+  relayPath: "/api/voice/live/relay",
+  protocol: "botbound-rehearsal.v1",
+  ticket: "relay-ticket",
+  maxDurationSeconds: 120,
+};
+
+test("a relayed rehearsal speaks the opening, shows replies and ends through its ticket", async ({
+  page,
+}) => {
+  const { stops, sessions } = await mockRehearsal(page);
+  const relayRequests: string[][] = [];
+  const fromBrowser: string[] = [];
+  let relay!: { send: (message: string | Buffer) => void; close: () => void };
+  await page.route("**/api/voice/live/session", (route) =>
+    route.fulfill({ json: { ...RELAY_SESSION, cleanupToken: "relay-cleanup" } }),
+  );
+  await page.routeWebSocket("**/api/voice/live/relay", (socket) => {
+    relayRequests.push(socket.protocols());
+    relay = socket;
+    socket.onMessage((message) => {
+      if (typeof message === "string") fromBrowser.push(message);
+    });
+    socket.send(JSON.stringify({ type: "ready", sampleRate: 24_000, maxDurationSeconds: 120 }));
+    socket.send(
+      JSON.stringify({
+        type: "bot_text",
+        id: "opening",
+        text: "Hi, I'm Front Desk, and I'm an AI assistant.",
+        final: true,
+      }),
+    );
+  });
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await expect(page.getByText("Hi, I'm Front Desk, and I'm an AI assistant.")).toBeVisible();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  expect(relayRequests).toEqual([["botbound-rehearsal.v1", "ticket.relay-ticket"]]);
+  // No WebRTC offer is made when the relay answers.
+  expect(sessions).toEqual([]);
+  expect(
+    await page.evaluate(() => (window as unknown as { rehearsalAnswers: number }).rehearsalAnswers),
+  ).toBe(0);
+
+  relay.send(
+    JSON.stringify({ type: "caller_text", id: "c1", text: "When are you open?", final: true }),
+  );
+  relay.send(
+    JSON.stringify({ type: "bot_text", id: "r1", text: "We open at eight.", final: true }),
+  );
+  await expect(page.getByText("When are you open?", { exact: true })).toBeVisible();
+  await expect(page.getByText("We open at eight.", { exact: true })).toBeVisible();
+
+  await page.getByRole("textbox", { name: "Type a test" }).fill("Do you fix drains?");
+  await page.getByRole("button", { name: "Send test", exact: true }).click();
+  await expect
+    .poll(() => fromBrowser)
+    .toContain(JSON.stringify({ type: "user_text", text: "Do you fix drains?" }));
+
+  await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
+  await expect.poll(() => stops).toEqual(["relay-cleanup"]);
+  expect(await microphoneCount(page)).toMatchObject({ microphones: 1, tracksStopped: 1 });
+});
+
+test("a relayed rehearsal that loses its voice connection explains why", async ({ page }) => {
+  await mockRehearsal(page);
+  await page.route("**/api/voice/live/session", (route) =>
+    route.fulfill({ json: { ...RELAY_SESSION, cleanupToken: "relay-cleanup" } }),
+  );
+  await page.routeWebSocket("**/api/voice/live/relay", (socket) => {
+    socket.send(JSON.stringify({ type: "ready" }));
+    socket.send(
+      JSON.stringify({
+        type: "ended",
+        reason: "provider_closed",
+        message: "The voice connection ended. Start the rehearsal again to continue.",
+      }),
+    );
+    socket.close();
+  });
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await expect(
+    page.getByText("The voice connection ended. Start the rehearsal again to continue."),
+  ).toBeVisible();
+  expect(await microphoneCount(page)).toMatchObject({ microphones: 1, tracksStopped: 1 });
+});
+
+test("leaving while a relayed rehearsal is being accepted releases its late ticket", async ({
+  page,
+}) => {
+  const { stops } = await mockRehearsal(page);
+  let relayConnections = 0;
+  await page.routeWebSocket("**/api/voice/live/relay", () => {
+    relayConnections += 1;
+  });
+  let signalAccepted!: () => void;
+  const accepted = new Promise<void>((resolve) => {
+    signalAccepted = resolve;
+  });
+  let releaseAnswer!: () => void;
+  const answer = new Promise<void>((resolve) => {
+    releaseAnswer = resolve;
+  });
+  await page.route("**/api/voice/live/session", async (route) => {
+    signalAccepted();
+    await answer;
+    await route.fulfill({ json: { ...RELAY_SESSION, cleanupToken: "late-relay" } });
+  });
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await accepted;
+  await page.getByRole("link", { name: "Inbox", exact: true }).click();
+  await expect(page).toHaveURL(/\/inbox$/);
+  // The URL changes before the next page renders; wait for Studio to unmount.
+  await expect(page.getByRole("button", { name: "End Rehearsal", exact: true })).toHaveCount(0);
+  releaseAnswer();
+  await expect.poll(() => stops).toEqual(["late-relay"]);
+  expect(relayConnections).toBe(0);
+  expect(await microphoneCount(page)).toMatchObject({ microphones: 1, tracksStopped: 1 });
+});
+
+test("after a rehearsal in which the Bot answered, Studio offers a real call to the owner's phone", async ({
+  page,
+}) => {
+  await mockRehearsal(page);
+  await page.route("**/api/voice/live/session", (route) =>
+    route.fulfill({ json: { ...RELAY_SESSION, cleanupToken: "relay-cleanup" } }),
+  );
+  let relay!: { send: (message: string) => void };
+  await page.routeWebSocket("**/api/voice/live/relay", (socket) => {
+    relay = socket;
+    socket.send(JSON.stringify({ type: "ready", maxDurationSeconds: 120 }));
+  });
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  const nextStep = page.getByTestId("rehearsal-next-step");
+
+  // A rehearsal in which only the opening played offers nothing yet.
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  relay.send(JSON.stringify({ type: "turn_done", completed: true }));
+  await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
+  await expect(nextStep).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  relay.send(
+    JSON.stringify({ type: "caller_text", id: "c1", text: "When are you open?", final: true }),
+  );
+  relay.send(
+    JSON.stringify({ type: "bot_text", id: "r1", text: "We open at eight.", final: true }),
+  );
+  relay.send(JSON.stringify({ type: "turn_done", completed: true }));
+  await expect(page.getByText("We open at eight.", { exact: true })).toBeVisible();
+  await expect(nextStep).toHaveCount(0);
+  await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
+  await expect(nextStep).toBeVisible();
+  await expect(nextStep).toContainText("Hear It on a Real Call");
+
+  await nextStep.getByRole("button", { name: "Call My Phone", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Phone Test", exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(nextStep).toHaveCount(0);
+  // Closing the dialog returns keyboard focus to Start, not the page body.
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeFocused();
+});

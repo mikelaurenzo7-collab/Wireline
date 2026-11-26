@@ -36,6 +36,8 @@ type AgentVoiceResponse = {
     phoneCall?: PhoneCallVoice;
     phoneCallReady?: boolean | null;
     catalogVoice?: CatalogPhoneVoice | null;
+    /** Rehearsal speaks the same stock phone voice callers hear. */
+    rehearsalHearsPhoneVoice?: boolean;
   };
 };
 
@@ -67,6 +69,7 @@ export default function SimpleVoicePicker({
   const [choicesOpen, setChoicesOpen] = useState(false);
   const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
   const [phoneCallReady, setPhoneCallReady] = useState<boolean | null>(null);
+  const [rehearsalHearsPhoneVoice, setRehearsalHearsPhoneVoice] = useState(false);
   const [clonedVoiceName, setClonedVoiceName] = useState<string | null>(null);
   const [catalogVoice, setCatalogVoice] = useState<CatalogPhoneVoice | null>(null);
   const handleActiveClone = useCallback((name: string | null) => {
@@ -100,6 +103,7 @@ export default function SimpleVoicePicker({
     setUndoVoice(null);
     setChoicesOpen(false);
     setPhoneCall(null);
+    setRehearsalHearsPhoneVoice(false);
     setCatalogVoice(null);
     if (!agentId || !ownerId) {
       setLoading(false);
@@ -130,6 +134,7 @@ export default function SimpleVoicePicker({
         );
         setSelectedVoiceId(managedVoice?.id ?? storedVoiceId);
         setPhoneCall(agentData.voice?.phoneCall ?? null);
+        setRehearsalHearsPhoneVoice(agentData.voice?.rehearsalHearsPhoneVoice === true);
         setCatalogVoice(agentData.voice?.catalogVoice ?? null);
         setPhoneCallReady(
           typeof agentData.voice?.phoneCallReady === "boolean"
@@ -273,12 +278,14 @@ export default function SimpleVoicePicker({
           phoneVoiceId?: string | null;
           phoneVoiceProvider?: string | null;
           phoneCall?: PhoneCallVoice;
+          rehearsalHearsPhoneVoice?: boolean;
         };
       } | null;
       if (!response.ok) throw new Error(body?.error || "Voice could not be saved.");
       if (!isCurrentSave()) return;
       setCatalogVoice(null);
       setPhoneCall(body?.voice?.phoneCall ?? null);
+      setRehearsalHearsPhoneVoice(body?.voice?.rehearsalHearsPhoneVoice === true);
       setPhoneCallReady(
         typeof body?.voice?.phoneCallReady === "boolean" ? body.voice.phoneCallReady : null,
       );
@@ -521,7 +528,9 @@ export default function SimpleVoicePicker({
             : phoneCall && phoneCallReady === false
               ? "Finish phone setup to use this voice."
               : phoneCallVoiceName(phoneCall)
-                ? `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
+                ? rehearsalHearsPhoneVoice
+                  ? `Callers and rehearsals hear ${phoneCallVoiceName(phoneCall)}.`
+                  : `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
                 : "Used for phone calls and browser rehearsals."}
       </p>
       <button

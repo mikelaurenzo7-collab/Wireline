@@ -40,6 +40,13 @@ describe("Render Blueprint xAI wiring", () => {
     expect(worker).not.toContain("XAI_MANAGEMENT_API_KEY");
   });
 
+  it("declares the rehearsal-only rollback on the API, which alone relays rehearsals", () => {
+    const block = envVarBlock(api, "WIRELINE_REHEARSAL_VOICE_PROVIDER");
+    expect(block).toContain("sync: false");
+    expect(block).not.toContain("value:");
+    expect(worker).not.toContain("WIRELINE_REHEARSAL_VOICE_PROVIDER");
+  });
+
   it("carries no retired provider keys", () => {
     expect(blueprint).not.toMatch(
       /GEMINI_API_KEY|XAI_API_KEY_CHATKIT|XAI_SIP_ALLOWED_ADDRESSES|VAPI_/,

@@ -5,7 +5,8 @@ async function setup(page: Page, lostResponse = false, rejectStart = false) {
   const ends: string[] = [];
   let status = "ringing";
   let id = "";
-  const receipt = () => ({
+  let transcript: Array<{ speaker: string; text: string }> = [];
+  const receipt = (method = "GET") => ({
     test: {
       id,
       agent_id: "bot-front-desk",
@@ -14,6 +15,8 @@ async function setup(page: Page, lostResponse = false, rejectStart = false) {
       ...(["ringing", "verifying"].includes(status) ? { verification_code: "123456" } : {}),
       phone_last4: "0123",
     },
+    // Only status checks carry the transcript, as on the server.
+    ...(method === "GET" && transcript.length ? { transcript } : {}),
   });
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -35,7 +38,7 @@ async function setup(page: Page, lostResponse = false, rejectStart = false) {
         ends.push(path);
         status = "ending";
       }
-      await route.fulfill({ json: receipt() });
+      await route.fulfill({ json: receipt(route.request().method()) });
       return;
     }
     await route.fulfill({
@@ -84,8 +87,49 @@ async function setup(page: Page, lostResponse = false, rejectStart = false) {
     finish: () => {
       status = "cancelled";
     },
+    connect: (lines: Array<{ speaker: string; text: string }>) => {
+      status = "connected";
+      transcript = lines;
+    },
+    complete: () => {
+      status = "completed";
+    },
   };
 }
+
+test("a connected phone test shows the call's transcript and keeps it after the call", async ({
+  page,
+}) => {
+  const state = await setup(page);
+  const dialog = page.getByRole("dialog", { name: "Phone Test", exact: true });
+  await page.getByRole("textbox", { name: "Your phone number", exact: true }).fill("3125550123");
+  await page
+    .getByRole("checkbox", { name: "I’m requesting an AI test call to my own phone.", exact: true })
+    .check();
+  await dialog.getByRole("button", { name: "Call my phone", exact: true }).click();
+  await expect(page.getByLabel("Phone verification code", { exact: true })).toHaveText("123456");
+  await expect(dialog.getByRole("log", { name: "Call transcript" })).toHaveCount(0);
+
+  state.connect([
+    { speaker: "bot", text: "Hi, I'm Front Desk, and I'm an AI assistant." },
+    { speaker: "caller", text: "When are you open?" },
+  ]);
+  await dialog.getByRole("button", { name: "Check call", exact: true }).click();
+  const log = dialog.getByRole("log", { name: "Call transcript" });
+  await expect(log).toContainText("Front Desk: Hi, I'm Front Desk, and I'm an AI assistant.");
+  await expect(log).toContainText("You: When are you open?");
+  // The verification code is gone once the call is connected.
+  await expect(page.getByLabel("Phone verification code", { exact: true })).toHaveCount(0);
+
+  // Ending answers with the status alone; the lines stay on screen.
+  await dialog.getByRole("button", { name: "End call", exact: true }).click();
+  await expect(page.getByText("Ending your call", { exact: true })).toBeVisible();
+  await expect(log).toContainText("You: When are you open?");
+  state.complete();
+  await dialog.getByRole("button", { name: "Check call", exact: true }).click();
+  await expect(page.getByText("Call completed", { exact: true })).toBeVisible();
+  await expect(log).toContainText("You: When are you open?");
+});
 
 for (const width of [320, 1440]) {
   test(`self phone test shows a code and preserves one operation at ${width}px`, async ({

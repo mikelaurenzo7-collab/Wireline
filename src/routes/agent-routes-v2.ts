@@ -13,6 +13,7 @@ import { retainFirstUnique } from "../lib/knowledge-dedup";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
+import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
 import { LIVE_CUSTOM_VOICE_KEY } from "../lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
 import { phoneCatalogService, CARTESIA_SPEECH_MODEL } from "../lib/voice/phone-catalog-service";
@@ -857,6 +858,9 @@ router.get(
         phoneCall,
         phoneCallReady,
         catalogVoice,
+        // Studio rehearsal speaks this same stock phone voice (see xai-rehearsal-relay.ts).
+        rehearsalHearsPhoneVoice:
+          !catalogVoice && Boolean(phoneCall) && rehearsalVoiceProvider().provider === "xai",
       },
       personality: personalities[0]?.content || "",
       directives,
@@ -1296,6 +1300,9 @@ router.patch(
         phoneVoiceId: savedVoice?.phoneVoiceId ?? null,
         phoneVoiceProvider: savedVoice?.phoneVoiceProvider ?? null,
         phoneCall: phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId),
+        rehearsalHearsPhoneVoice:
+          Boolean(phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId)) &&
+          rehearsalVoiceProvider().provider === "xai",
       },
       customVoiceCleared,
     });
