@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   ArrowLeft,
   CalendarDays,
@@ -489,11 +489,13 @@ function TimelineIcon({ item }: { item: TimelineItem }) {
   );
 }
 
+// "Open" lands on the exact call, thread or booking, not just its list.
 function timelineHref(item: TimelineItem): string | null {
-  if (item.source === "call") return "/phone?tab=logs";
-  if (item.source === "sms") return "/inbox?tab=sms";
-  if (item.source === "email") return "/inbox?tab=email";
-  if (item.source === "appointment") return "/calendar";
+  const id = encodeURIComponent(item.ref.id);
+  if (item.source === "call") return `/phone?tab=logs&call=${id}`;
+  if (item.source === "sms") return `/inbox?tab=sms&thread=${id}`;
+  if (item.source === "email") return `/inbox?tab=email&thread=${id}`;
+  if (item.source === "appointment") return `/calendar?appointment=${id}`;
   return null;
 }
 
@@ -985,6 +987,29 @@ export default function PeoplePage() {
     source?: string;
   } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // "Save to People" on a call, text or email lands here with the form filled.
+  useEffect(() => {
+    const kind = searchParams.get("add");
+    const value = searchParams.get("value")?.trim();
+    if ((kind !== "phone" && kind !== "email") || !value) return;
+    setAdding({
+      displayName: searchParams.get("name")?.trim() || undefined,
+      phone: kind === "phone" ? value : undefined,
+      email: kind === "email" ? value : undefined,
+    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("add");
+        next.delete("value");
+        next.delete("name");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1045,15 +1070,7 @@ export default function PeoplePage() {
         mode="operate"
         className="flex min-h-0 flex-1 flex-col !gap-0 !px-0 sm:!px-0 lg:!px-0 !pt-0 pb-0"
       >
-        <WorkspaceOperateIntro
-          title="People"
-          titleHidden
-          action={
-            <Button size="sm" onClick={() => setAdding({})}>
-              <Plus aria-hidden="true" /> Add Person
-            </Button>
-          }
-        />
+        <WorkspaceOperateIntro title="People" titleHidden />
         {error ? <ErrorNotice error={error} onRetry={refresh} /> : null}
         <div className="flex min-h-0 flex-1">
           <aside
@@ -1072,18 +1089,23 @@ export default function PeoplePage() {
                 onChange={(e) => setQuery(e.target.value)}
                 onClear={() => setQuery("")}
               />
-              <div role="group" aria-label="Show" className="flex gap-1">
-                {(["active", "archived"] as const).map((value) => (
-                  <Button
-                    key={value}
-                    size="sm"
-                    variant={status === value ? "secondary" : "ghost"}
-                    aria-pressed={status === value}
-                    onClick={() => setStatus(value)}
-                  >
-                    {value === "active" ? "Active" : "Archived"}
-                  </Button>
-                ))}
+              <div className="flex items-center justify-between gap-2">
+                <div role="group" aria-label="Show" className="flex gap-1">
+                  {(["active", "archived"] as const).map((value) => (
+                    <Button
+                      key={value}
+                      size="sm"
+                      variant={status === value ? "secondary" : "ghost"}
+                      aria-pressed={status === value}
+                      onClick={() => setStatus(value)}
+                    >
+                      {value === "active" ? "Active" : "Archived"}
+                    </Button>
+                  ))}
+                </div>
+                <Button size="sm" onClick={() => setAdding({})}>
+                  <Plus aria-hidden="true" /> Add Person
+                </Button>
               </div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">

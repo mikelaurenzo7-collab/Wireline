@@ -90,6 +90,7 @@ type Props = {
 };
 let tree: ReactNode;
 let agentId = "first";
+let focusCallId: string | null = null;
 const json = <T extends { id: string }>(calls: T[], total = 3, status = 200) =>
   new Response(JSON.stringify({ calls, total, hasMore: calls.length < total }), { status });
 function deferred() {
@@ -106,7 +107,7 @@ function render() {
     h.dirty = false;
     h.cursor = 0;
     h.effects = [];
-    tree = CallLogsClaude({ agentId });
+    tree = CallLogsClaude({ agentId, focusCallId });
     h.effects.forEach((run) => run());
   } while (h.dirty);
 }
@@ -140,8 +141,39 @@ beforeEach(() => {
   h.dirty = false;
   h.fetch.mockReset();
   agentId = "first";
+  focusCallId = null;
 });
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
+describe("call history links to one call", () => {
+  it("opens the call a People link names, loading the next page when it sits past the first", async () => {
+    focusCallId = "37";
+    h.fetch
+      .mockResolvedValueOnce(json([{ id: "40" }, { id: "39" }], 4))
+      .mockResolvedValueOnce(json([{ id: "38" }, { id: 37 as unknown as string }], 4));
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    expect(String(h.fetch.mock.calls[1][0])).toContain("offset=2");
+    const active = elements(tree).filter(
+      (node) => node.type === "button" && node.props["aria-pressed" as keyof Props] === true,
+    );
+    expect(active).toHaveLength(1);
+    const report = elements(tree).find((node) => node.props["aria-label"] === "Call report");
+    expect(report).toBeDefined();
+  });
+
+  it("stops looking when the named call is not in the history", async () => {
+    focusCallId = "missing";
+    h.fetch.mockResolvedValueOnce(json([{ id: "one" }], 1));
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(
+      elements(tree).filter(
+        (node) => node.type === "button" && node.props["aria-pressed" as keyof Props] === true,
+      ),
+    ).toHaveLength(0);
+  });
+});
+
 describe("call history request ordering", () => {
   it("shows what the call did instead of a sales score", async () => {
     h.fetch.mockResolvedValueOnce(
@@ -170,14 +202,17 @@ describe("call history request ordering", () => {
 
   it("does not present a missed attempt as a completed conversation", async () => {
     h.fetch.mockResolvedValueOnce(
-      json([
-        {
-          id: "missed",
-          outcome_tag: "missed",
-          duration_seconds: 4,
-          summary: "Native voice call completed without a usable transcript.",
-        },
-      ], 1),
+      json(
+        [
+          {
+            id: "missed",
+            outcome_tag: "missed",
+            duration_seconds: 4,
+            summary: "Native voice call completed without a usable transcript.",
+          },
+        ],
+        1,
+      ),
     );
     await settle();
     const call = elements(tree).find(
@@ -193,15 +228,18 @@ describe("call history request ordering", () => {
 
   it("shows duration once in a connected report with sequential headings", async () => {
     h.fetch.mockResolvedValueOnce(
-      json([
-        {
-          id: "connected",
-          outcome_tag: "other",
-          duration_seconds: 65,
-          transcript: "Caller: Thanks for your help.",
-          recording_url: "https://example.com/recording.mp3",
-        },
-      ], 1),
+      json(
+        [
+          {
+            id: "connected",
+            outcome_tag: "other",
+            duration_seconds: 65,
+            transcript: "Caller: Thanks for your help.",
+            recording_url: "https://example.com/recording.mp3",
+          },
+        ],
+        1,
+      ),
     );
     await settle();
     const call = elements(tree).find(

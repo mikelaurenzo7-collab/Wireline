@@ -130,7 +130,7 @@ export default function UsageMeter({
     if (!includesVoice) return null;
     return (
       <div
-        className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 wl-micro-badge font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
+        className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-border wl-micro-badge font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
         data-usage-state={usageState}
         title={loadError ? `${compactUsageTitle} (${loadError})` : compactUsageTitle}
       >
@@ -189,7 +189,7 @@ export default function UsageMeter({
             <Progress
               value={pct}
               aria-label={`Voice minutes: ${used.toLocaleString()} of ${included.toLocaleString()} used (${pct}%)`}
-              className="h-2.5 bg-white/5 shadow-inner wl-accent-progress-glow"
+              className="h-2.5 bg-muted shadow-inner wl-accent-progress-glow"
               indicatorClassName={cn(
                 "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 isBlocked ? "bg-rose-500" : hasExtraUsage || isWarn ? "bg-amber-500" : "bg-brand",
@@ -200,7 +200,7 @@ export default function UsageMeter({
       ) : null}
 
       {Number.isFinite(aiLimit) && aiLimit > 0 ? (
-        <div className="space-y-2 border-t border-white/8 pt-4">
+        <div className="space-y-2 border-t border-border pt-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
               <p className="text-sm font-semibold text-foreground">AI usage</p>
@@ -214,7 +214,7 @@ export default function UsageMeter({
           <Progress
             value={aiPct}
             aria-label={`Included AI usage: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used (${aiPct}%)`}
-            className="h-2 bg-white/5"
+            className="h-2 bg-muted"
             indicatorClassName={aiPct >= 80 ? "bg-amber-500" : "bg-brand"}
           />
         </div>
@@ -310,7 +310,7 @@ export default function UsageMeter({
       )}
 
       {showBalance && (credit !== 0 || hasExtraUsage || isBlocked) && (
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-border">
           <span className="flex items-center gap-2 wl-label text-foreground/55 font-medium">
             <Wallet className="w-3.5 h-3.5" />
             {BALANCE_TITLE}

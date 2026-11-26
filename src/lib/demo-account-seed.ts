@@ -6,6 +6,7 @@
 import { sql, eq, and, inArray, like, desc, isNull } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import { invalidateDashboard } from "./dashboard-cache";
+import type { CallOutcomeTag } from "./post-call-digest";
 import * as schema from "../db/schema";
 /** Drizzle client or an open transaction — seed helpers accept both. */
 type DemoSeedDb = typeof drizzle | Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
@@ -105,6 +106,23 @@ const SAMPLE_SUMMARIES = [
   "Knowledge gap detected. Customer asked about Slack DLP, captured to docs queue.",
 ];
 
+// What each sample call achieved, in the digest's own tags, so demo Call
+// History says "Booked" where the summary says a demo was booked.
+const SAMPLE_OUTCOME_TAGS = [
+  "booked",
+  "info",
+  "qualified",
+  "followup",
+  "unreachable",
+  "info",
+  "info",
+  "booked",
+  "info",
+  "qualified",
+  "followup",
+  "info",
+] as const satisfies readonly CallOutcomeTag[];
+
 const SAMPLE_INTENTS = [
   "buy_now",
   "schedule_demo",
@@ -163,7 +181,7 @@ const SAMPLE_EMAIL_SUBJECTS = [
   "Pro supervisor cockpit",
   "Refund for duplicate charge",
   "Integration question: Slack alerts",
-  "Can Avery handle after-hours?",
+  "Can you take calls after hours?",
   "Enterprise quote: 50 seats",
   "Thanks for the quick support",
   "Scheduling conflict on Thursday demo",
@@ -394,6 +412,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<
       .set({
         customerNumber: SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length].phone,
         summary: SAMPLE_SUMMARIES[idx],
+        outcomeTag: SAMPLE_OUTCOME_TAGS[idx],
         intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
         sentiment: SAMPLE_SENTIMENTS[idx % SAMPLE_SENTIMENTS.length],
       })
@@ -432,16 +451,26 @@ async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<
       .where(eq(appointments.id, seededAppointments[i].id));
   }
 
+  // (user_id, phone) is unique, and row ids are random, so rewriting every row
+  // in id order collides with a number a later row still holds. Only move the
+  // rows that sit outside the showcase set, onto numbers no row holds yet.
   const seededDncRows = await tx
-    .select({ id: dncList.id })
+    .select({ id: dncList.id, phone: dncList.phone })
     .from(dncList)
     .where(and(eq(dncList.userId, userId), eq(dncList.demo, true)))
     .orderBy(dncList.id);
-  for (let i = 0; i < seededDncRows.length; i++) {
-    await tx
-      .update(dncList)
-      .set({ phone: SAMPLE_CUSTOMERS[(i + 7) % SAMPLE_CUSTOMERS.length].phone })
-      .where(eq(dncList.id, seededDncRows[i].id));
+  const showcaseDncPhones = seededDncRows.map(
+    (_, i) => SAMPLE_CUSTOMERS[(i + 7) % SAMPLE_CUSTOMERS.length].phone,
+  );
+  const heldDncPhones = new Set(seededDncRows.map((row) => row.phone));
+  const freeDncPhones = [...new Set(showcaseDncPhones)].filter(
+    (phone) => !heldDncPhones.has(phone),
+  );
+  for (const row of seededDncRows) {
+    if (showcaseDncPhones.includes(row.phone)) continue;
+    const phone = freeDncPhones.shift();
+    if (!phone) break;
+    await tx.update(dncList).set({ phone }).where(eq(dncList.id, row.id));
   }
 
   for (let i = 0; i < DEMO_SMS_NUMBERS.length; i++) {
@@ -557,6 +586,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
           customerNumber: cust.phone,
           durationSeconds: 90 + Math.floor(Math.random() * 480),
           summary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
+          outcomeTag: SAMPLE_OUTCOME_TAGS[i % SAMPLE_OUTCOME_TAGS.length],
           intentLabel: SAMPLE_INTENTS[i % SAMPLE_INTENTS.length],
           sentiment: SAMPLE_SENTIMENTS[i % SAMPLE_SENTIMENTS.length],
           demo: true,
@@ -720,7 +750,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
             googleMessageId: `seed-gmail-${userPrefix}-${index}-out`,
             role: "ai",
             content:
-              "Thanks for reaching out, Avery here. " +
+              "Thanks for reaching out. " +
               SAMPLE_SUMMARIES[(index + 2) % SAMPLE_SUMMARIES.length] +
               " Let me know if you'd like to book a live demo.",
             createdAt: randomCreatedAt(9),
@@ -777,7 +807,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
 
         if (threadId) {
           const inbound = SAMPLE_SMS_SNIPPETS[i % SAMPLE_SMS_SNIPPETS.length];
-          const genericReply = `Hi ${cust.name.split(" ")[0]}, Avery from BotBound. Happy to help with that. Reply anytime.`;
+          const genericReply = `Hi ${cust.name.split(" ")[0]}, thanks for texting. Happy to help with that. Reply anytime.`;
           const outboundSid = `seed-sms-${userPrefix}-${i}-out`;
           const isStop = inbound === "STOP";
           const msgCount = await tx

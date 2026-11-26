@@ -12,6 +12,7 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
+| [2026-11-26 design and surface audit](./audits/2026-11-26-design-and-surface-audit.md) | November 26 design-system and every-surface review, cross-channel links to People, light-theme border and vendor-wording fixes, and open design follow-ups. |
 | [2026-10-30 spring-cleaning](./audits/2026-10-30-spring-cleaning.md) | Exact-source October 30 cleanup baseline, verified fixes, production observations, and remaining launch/visual gates. |
 | [2026-10-30 appearance parity](./audits/2026-10-30-appearance-parity.md) | October 30 light and dark appearance review and verification evidence. |
 | [2026-10-30 stack review](./audits/2026-10-30-stack-review.md) | October 30 dependency and application stack review. |

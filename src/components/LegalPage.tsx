@@ -58,7 +58,7 @@ function LegalLayout({
           {children}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/8 flex flex-wrap gap-x-4 gap-y-2 text-caption">
+        <div className="mt-16 pt-8 border-t border-border flex flex-wrap gap-x-4 gap-y-2 text-caption">
           <Link
             to="/privacy"
             className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"
@@ -96,7 +96,7 @@ function Section({
 }) {
   return (
     <section id={id}>
-      <h2 className="text-base font-semibold tracking-[0.01em] text-foreground mb-3 border-b border-white/8 pb-2">
+      <h2 className="text-base font-semibold tracking-[0.01em] text-foreground mb-3 border-b border-border pb-2">
         {title}
       </h2>
       <div className="space-y-3 text-sm">{children}</div>

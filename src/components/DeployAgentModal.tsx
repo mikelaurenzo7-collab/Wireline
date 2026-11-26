@@ -386,7 +386,7 @@ function GenderTile({
         <div
           className={cn(
             "w-8 h-8 rounded-md flex items-center justify-center shrink-0 border",
-            active ? "border-brand/40 bg-brand/15" : "border-border bg-white/40",
+            active ? "border-brand/40 bg-brand/15" : "border-border bg-card",
           )}
         >
           <Icon className="w-4 h-4" strokeWidth={2.2} aria-hidden={true} />

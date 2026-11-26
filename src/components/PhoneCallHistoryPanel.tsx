@@ -12,7 +12,13 @@ type CallsProbeResponse = {
   calls?: unknown[];
 };
 
-export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | null }) {
+export default function PhoneCallHistoryPanel({
+  agentId,
+  focusCallId,
+}: {
+  agentId?: string | null;
+  focusCallId?: string | null;
+}) {
   const {
     agents,
     loading: agentsLoading,
@@ -90,7 +96,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
     );
   }
 
-  if (hasCalls === true) return <CallLogsClaude agentId={agentId} />;
+  if (hasCalls === true) return <CallLogsClaude agentId={agentId} focusCallId={focusCallId} />;
 
   const scopedAgent = agentId ? agents.find((agent) => agent.id === agentId) : null;
   const relevantAgents = scopedAgent ? [scopedAgent] : agents;

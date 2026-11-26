@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SmsThreads from "../src/components/SmsThreads";
 import OutboundPurposePicker from "../src/components/outbound/OutboundPurposePicker";
 import { smsOutcomeOperations } from "../src/lib/conversation-outcome-operations";
+import { formatPhone } from "../src/lib/safe-number";
 
 const harness = vi.hoisted(() => ({
   slots: [] as Array<{
@@ -197,7 +198,7 @@ async function selectThread(index: number) {
   find(
     (element) =>
       element.type === "button" &&
-      content(element.props.children).includes(threads[index].customer_number),
+      content(element.props.children).includes(formatPhone(threads[index].customer_number)),
   ).props.onClick?.();
   await settle();
 }
@@ -340,8 +341,8 @@ describe("SMS conversation drafts", () => {
     await settle();
     labeled("Search text conversations").props.onChange?.({ target: { value: "HANDOFF" } });
     await settle();
-    expect(content(tree)).toContain(threads[0].customer_number);
-    expect(content(tree)).not.toContain(threads[1].customer_number);
+    expect(content(tree)).toContain(formatPhone(threads[0].customer_number));
+    expect(content(tree)).not.toContain(formatPhone(threads[1].customer_number));
     await selectThread(0);
     expect(content(find((node) => node.type === "summary"))).toContain("Handoff");
   });
@@ -410,7 +411,8 @@ describe("SMS conversation drafts", () => {
         await settle();
       }
       const row = find(
-        (node) => node.type === "button" && content(node).includes(threads[0].customer_number),
+        (node) =>
+          node.type === "button" && content(node).includes(formatPhone(threads[0].customer_number)),
       );
       expect(content(row)).toContain(status === "escalated" ? "Handoff" : "Resolved");
       expect(content(row)).toContain(
@@ -425,7 +427,9 @@ describe("SMS conversation drafts", () => {
       expect(
         content(
           find(
-            (node) => node.type === "button" && content(node).includes(threads[1].customer_number),
+            (node) =>
+              node.type === "button" &&
+              content(node).includes(formatPhone(threads[1].customer_number)),
           ),
         ),
       ).toContain("Needs review");

@@ -87,7 +87,7 @@ export default function CalendarPage() {
             <WorkspaceControlBand
               embedded
               ariaLabel="Calendar controls"
-              className="gap-2.5 sm:items-center px-3 sm:px-6 py-2 border-b border-border/80 bg-background/50"
+              className="gap-2.5 sm:items-center px-3 pt-2 sm:px-6"
               primary={
                 <WorkspaceTabStrip
                   tabs={CALENDAR_TABS}
@@ -101,22 +101,28 @@ export default function CalendarPage() {
                 />
               }
               secondary={
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={configured === null}
-                  onClick={() => {
-                    if (bookingRecovery || (configured && savedSettings?.enabled))
-                      setAppointmentOpen(true);
-                    else selectTab("availability");
-                  }}
-                >
-                  {bookingRecovery
-                    ? "Check booking"
-                    : configured && savedSettings?.enabled
-                      ? "New Appointment"
-                      : "Set availability"}
-                </Button>
+                // On the Availability tab, "Set availability" would only
+                // reselect the tab the owner is already on.
+                tab === "availability" &&
+                !bookingRecovery &&
+                !(configured && savedSettings?.enabled) ? undefined : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={configured === null}
+                    onClick={() => {
+                      if (bookingRecovery || (configured && savedSettings?.enabled))
+                        setAppointmentOpen(true);
+                      else selectTab("availability");
+                    }}
+                  >
+                    {bookingRecovery
+                      ? "Check booking"
+                      : configured && savedSettings?.enabled
+                        ? "New Appointment"
+                        : "Set availability"}
+                  </Button>
+                )
               }
             />
           }
@@ -156,6 +162,7 @@ export default function CalendarPage() {
                 onConfigure={() => selectTab("availability")}
                 reloadKey={agendaReload}
                 onAppointmentUpdated={() => setBookingNotice(null)}
+                focusAppointmentId={params.get("appointment")}
               />
             </>
           ) : null}

@@ -133,6 +133,22 @@ export function getPerson(personId: string, signal?: AbortSignal) {
   return call<{ person: Person }>(`/api/people/${encodeURIComponent(personId)}`, { signal });
 }
 
+/** The saved person who holds this phone or email, or null when nobody does. */
+export function lookupPerson(kind: PersonIdentifierKind, value: string, signal?: AbortSignal) {
+  const search = new URLSearchParams({ kind, value });
+  return call<{ person: Person | null }>(`/api/people/lookup?${search.toString()}`, { signal });
+}
+
+/**
+ * Opens People with the add form filled in, for a phone or email seen on a
+ * call, text, email or booking that nobody has saved yet.
+ */
+export function peopleAddHref(kind: PersonIdentifierKind, value: string, nameHint?: string | null) {
+  const search = new URLSearchParams({ add: kind, value });
+  if (nameHint?.trim()) search.set("name", nameHint.trim());
+  return `/people?${search.toString()}`;
+}
+
 export function getTimeline(personId: string, before?: string | null, signal?: AbortSignal) {
   const query = before ? `?before=${encodeURIComponent(before)}` : "";
   return call<{ items: TimelineItem[]; nextCursor: string | null }>(

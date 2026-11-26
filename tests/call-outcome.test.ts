@@ -15,6 +15,19 @@ describe("shared call outcome taxonomy", () => {
     expect(classifyCallOutcome({ outcomeTag: "other", durationSeconds: 95 })).toBe("no_request");
   });
 
+  it("reports a call as booked when the Bot booked on it, whatever the digest tag", () => {
+    // Nov 26 surface audit: a call whose booking landed on the calendar read
+    // "No request" in Call History because the digest tagged it "other".
+    expect(classifyCallOutcome({ outcomeTag: "other", hasBooking: true })).toBe("booked");
+    expect(classifyCallOutcome({ outcomeTag: "info", hasBooking: true })).toBe("booked");
+    expect(classifyCallOutcome({ hasBooking: true, durationSeconds: 60 })).toBe("booked");
+    // An email the call produced still leads, as it does for a booked tag.
+    expect(classifyCallOutcome({ emailAccepted: true, hasBooking: true })).toBe("email_sent");
+    expect(
+      classifyCallOutcome({ outcomeTag: "other", hasBooking: false, durationSeconds: 60 }),
+    ).toBe("no_request");
+  });
+
   it("maps the digest tags instead of collapsing them into no_request", () => {
     // Oct 24 audit: info/follow-up requests were labelled "No request" in
     // Call History while Insights showed the raw digest tag.
@@ -80,7 +93,9 @@ describe("message content extraction", () => {
     expect(messageContentFromTask({ payload: { message: "Running 10 minutes late." } })).toBe(
       "Running 10 minutes late.",
     );
-    expect(messageContentFromTask({ description: "Gate code is 4417." })).toBe("Gate code is 4417.");
+    expect(messageContentFromTask({ description: "Gate code is 4417." })).toBe(
+      "Gate code is 4417.",
+    );
   });
 
   it("rejects boilerplate, no-content notes, and the booking-confirm template", () => {

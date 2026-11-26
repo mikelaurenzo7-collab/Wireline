@@ -11,6 +11,7 @@ import { Router, Response } from "express";
 import { createHash } from "node:crypto";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
+import { withPersonLabels } from "../lib/people/people-labels";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -257,7 +258,7 @@ function replaySmsSendOperation(operation: SmsSendOperation) {
       duplicate: true,
       code: SMS_PRE_PROVIDER_REFUND_UNCONFIRMED,
       reason:
-        "Twilio was not called, but this send's Runtime Balance refund is still being reconciled. Do not start a new send yet.",
+        "This text never reached the carrier, but its Runtime Balance refund is still being reconciled. Do not start a new send yet.",
       provider_outcome_ambiguous: false,
       do_not_resend: true,
     };
@@ -318,7 +319,13 @@ router.get(
         .where(where)
         .orderBy(desc(schema.smsThreads.lastMessageAt))
         .limit(200);
-      res.json({ threads: mapObjectToSnake(threads || []) });
+      const labelled = await withPersonLabels(
+        req.user.id,
+        threads || [],
+        "phone",
+        (thread) => thread.customerNumber,
+      );
+      res.json({ threads: mapObjectToSnake(labelled) });
     } catch (e: any) {
       rethrowIfAppError(e);
       log.error("/api/sms/threads failed", { error: getErrorMessage(e) });
@@ -392,7 +399,7 @@ router.post(
         throw new AppError(
           409,
           "SMS_THREAD_DESTINATION_UNRESOLVED",
-          "This legacy conversation has no verified Twilio sending line yet.",
+          "BotBound can't tell which of your numbers this customer texted, so it has no line to reply from yet.",
         );
       }
       if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
@@ -471,7 +478,7 @@ router.post(
         throw new AppError(
           409,
           "SMS_THREAD_DESTINATION_UNRESOLVED",
-          "This legacy conversation has no verified Twilio sending line, so BotBound will not guess a sender.",
+          "BotBound can't tell which of your numbers this customer texted, so it will not guess a sender.",
         );
       }
 
@@ -531,7 +538,11 @@ router.post(
           );
         }
         if (gate.reason === "sales_attestation_required") {
-          throw new AppError(403, "SALES_ATTESTATION_REQUIRED", gate.customerMessage || "Confirm sales responsibility first.");
+          throw new AppError(
+            403,
+            "SALES_ATTESTATION_REQUIRED",
+            gate.customerMessage || "Confirm sales responsibility first.",
+          );
         }
         throw new AppError(
           403,
@@ -605,7 +616,7 @@ router.post(
               ok: false,
               code: SMS_PRE_PROVIDER_REFUND_UNCONFIRMED,
               reason:
-                "Twilio was not called, but this send's Runtime Balance refund is still being reconciled. Do not start a new send yet.",
+                "This text never reached the carrier, but its Runtime Balance refund is still being reconciled. Do not start a new send yet.",
               provider_outcome_ambiguous: false,
               do_not_resend: true,
             });

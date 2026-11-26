@@ -3,6 +3,7 @@ import { and, desc, eq, gte, isNotNull, sql, type SQL } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { personIdentifiers } from "../../db/people-schema";
 import { AppError } from "../api-error";
+import { appointmentWhen } from "./appointment-when";
 import { drizzle } from "../server-context";
 import {
   emailDisplayName,
@@ -372,6 +373,7 @@ async function loadAppointments(
       status: schema.appointments.status,
       notes: schema.appointments.notes,
       startAt: schema.appointments.startAt,
+      timeZone: schema.appointments.timeZone,
       date: schema.appointments.date,
       time: schema.appointments.time,
       agentId: schema.appointments.agentId,
@@ -385,7 +387,7 @@ async function loadAppointments(
   return rows.flatMap((row): TimelineItem[] => {
     const at = row.at;
     if (!at) return [];
-    const when = iso(row.startAt) ?? ([row.date, row.time].filter(Boolean).join(" ") || null);
+    const when = appointmentWhen(row);
     const label = row.serviceType?.trim() ? row.serviceType.trim().slice(0, 80) : "Appointment";
     return [
       {

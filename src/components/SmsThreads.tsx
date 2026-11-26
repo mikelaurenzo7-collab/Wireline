@@ -9,6 +9,7 @@ import {
   Send,
   Sparkles,
 } from "lucide-react";
+import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { salesContentWarning, type OutboundContactContext } from "../lib/outbound-call-purpose";
@@ -19,6 +20,7 @@ import OutboundPurposePicker, {
 } from "./outbound/OutboundPurposePicker";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { formatDate } from "../lib/safe-date";
+import { formatPhone } from "../lib/safe-number";
 import { conversationOutcomeLabel } from "../lib/conversation-outcome-display";
 import {
   smsOutcomeOperations,
@@ -28,10 +30,13 @@ import { useToast } from "../contexts/ToastContext";
 import { Button, EmptyState, Input, Skeleton } from "./atoms";
 import { ConversationMessage, SearchField, StatusNotice } from "./molecules";
 import SmsOutcomePanel from "./SmsOutcomePanel";
+import PersonLink from "./PersonLink";
 
 interface SmsThread {
   id: string;
   customer_number: string;
+  /** The saved person who holds this number, when People has one. */
+  person_name: string | null;
   destination_number: string | null;
   status: string;
   unread_count: number;
@@ -61,6 +66,7 @@ type SmsRecipientReview = {
 
 function matchesSearch(thread: SmsThread, query: string) {
   return [
+    thread.person_name,
     thread.customer_number,
     thread.destination_number,
     thread.status,
@@ -319,6 +325,7 @@ export default function SmsThreads({
         return {
           id,
           customer_number: apiStr(row, "customer_number", "Unknown number"),
+          person_name: apiStr(row, "person_name") || null,
           destination_number: apiStr(row, "destination_number") || null,
           status: apiStr(outcome, "status", "open"),
           unread_count: apiNum(row, "unread_count"),
@@ -572,7 +579,7 @@ export default function SmsThreads({
       setDraftNotice(
         body.requires_human
           ? body.reason || "This reply needs human judgment before it is sent."
-          : "Written from this Bot's saved role and knowledge. Review it, then send with Twilio.",
+          : "Written from this Bot's knowledge. Review it, then send.",
       );
     } catch (reason) {
       if (activeIdRef.current !== threadId || draftOperationRef.current !== operation) return;
@@ -717,7 +724,7 @@ export default function SmsThreads({
       if (result?.code === "SMS_PRE_PROVIDER_REFUND_UNCONFIRMED") {
         const warning =
           result.reason ||
-          "Twilio was not called. Retrying this exact message will continue the balance reconciliation without creating a second carrier send.";
+          "This text never reached the carrier. Retrying this exact message finishes the balance refund without sending it twice.";
         rememberPendingSend(threadId, {
           ...sendingRecord,
           state: "retryable",
@@ -927,26 +934,32 @@ export default function SmsThreads({
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <strong className="truncate font-mono text-sm font-semibold text-foreground">
-                        {thread.customer_number}
+                      <strong
+                        className={`truncate text-sm font-semibold text-foreground ${
+                          thread.person_name ? "" : "tabular-nums"
+                        }`}
+                      >
+                        {thread.person_name ||
+                          formatPhone(thread.customer_number, "Unknown number")}
                       </strong>
                       <span className="shrink-0 text-[10px] text-muted-foreground">
                         {formatSmsTime(thread.last_message_at)}
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      {thread.person_name ? (
+                        <span className="tabular-nums">{formatPhone(thread.customer_number)}</span>
+                      ) : null}
                       <span>{conversationOutcomeLabel(thread.status)}</span>
                       <span>
                         {thread.destination_number
-                          ? `From ${thread.destination_number}`
-                          : "Sending line unavailable"}
+                          ? `To ${formatPhone(thread.destination_number)}`
+                          : "No sending line"}
                       </span>
                       {pendingSends[thread.id]?.state === "ambiguous" ? (
                         <span className="font-semibold text-destructive">Delivery unknown</span>
                       ) : pendingSends[thread.id]?.state === "retryable" ? (
-                        <span className="font-semibold text-amber-700 dark:text-amber-300">
-                          Safe retry pending
-                        </span>
+                        <span className="font-semibold text-warning">Safe retry pending</span>
                       ) : null}
                       {thread.unread_count > 0 ? (
                         <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
@@ -972,7 +985,9 @@ export default function SmsThreads({
               withHalo={false}
             />
           ) : (
-            <div className="flex h-full min-h-0 flex-col">
+            // On a phone the reply form alone can be taller than the screen, so the
+            // conversation scrolls as one column there instead of hiding messages.
+            <div className="flex h-full min-h-0 flex-col max-lg:overflow-y-auto">
               <header className="border-b border-border px-4 py-3 sm:px-5">
                 <button
                   type="button"
@@ -982,14 +997,33 @@ export default function SmsThreads({
                   <ArrowLeft className="size-4" aria-hidden="true" />
                   Texts
                 </button>
-                <h2 className="font-mono text-base font-semibold text-foreground">
-                  {activeThread.customer_number}
-                </h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {activeThread.destination_number
-                    ? `Replies send from ${activeThread.destination_number}`
-                    : "No verified sending line is attached to this conversation."}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h2
+                      className={`text-base font-semibold text-foreground ${
+                        activeThread.person_name ? "" : "tabular-nums"
+                      }`}
+                    >
+                      {activeThread.person_name ||
+                        formatPhone(activeThread.customer_number, "Unknown number")}
+                    </h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {activeThread.person_name ? (
+                        <span className="tabular-nums">
+                          {formatPhone(activeThread.customer_number)} ·{" "}
+                        </span>
+                      ) : null}
+                      {activeThread.destination_number
+                        ? `Replies send from ${formatPhone(activeThread.destination_number)}`
+                        : "No sending line is attached to this conversation."}
+                    </p>
+                  </div>
+                  <PersonLink
+                    kind="phone"
+                    value={activeThread.customer_number}
+                    nameShown={Boolean(activeThread.person_name)}
+                  />
+                </div>
               </header>
 
               {threadErr ? (
@@ -1009,7 +1043,7 @@ export default function SmsThreads({
                 </StatusNotice>
               ) : null}
 
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-5">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 max-lg:min-h-48 sm:p-5">
                 {messagesLoading ? (
                   <div
                     className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground"
@@ -1098,9 +1132,17 @@ export default function SmsThreads({
                     until the conversation is assigned to a specific destination line.
                   </StatusNotice>
                 ) : missingDestination ? (
-                  <StatusNotice tone="warning" title="Sending Line Unavailable">
-                    This conversation has no verified destination number. BotBound will not draft or
-                    send until a specific Twilio line is attached.
+                  <StatusNotice
+                    tone="warning"
+                    title="Sending Line Unavailable"
+                    action={
+                      <Button asChild variant="secondary" size="sm">
+                        <Link to="/phone?tab=lines">Open Lines</Link>
+                      </Button>
+                    }
+                  >
+                    BotBound can't tell which of your numbers this customer texted, so it won't
+                    draft or send a reply here. Check that the number they texted is on Lines.
                   </StatusNotice>
                 ) : null}
                 <OutboundPurposePicker

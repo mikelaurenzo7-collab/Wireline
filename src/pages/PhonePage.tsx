@@ -163,7 +163,7 @@ export default function PhonePage() {
             <WorkspaceControlBand
               embedded
               ariaLabel="Call controls"
-              className="gap-2.5 sm:items-center px-3 sm:px-6 py-2 border-b border-border/80 bg-background/50"
+              className="gap-2.5 sm:items-center px-3 pt-2 sm:px-6"
               primary={
                 <WorkspaceTabStrip
                   tabs={[...PHONE_TABS]}
@@ -223,7 +223,10 @@ export default function PhonePage() {
           ) : null}
           {primaryTab === "logs" && !scopeBlocked && (
             <div className="contents" data-visual-qa-state="primary-logs">
-              <PhoneCallHistoryPanel agentId={activeAgentId || null} />
+              <PhoneCallHistoryPanel
+                agentId={activeAgentId || null}
+                focusCallId={searchParams.get("call")}
+              />
             </div>
           )}
           {primaryTab === "settings" && !scopeBlocked && (

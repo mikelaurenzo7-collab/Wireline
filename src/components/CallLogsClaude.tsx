@@ -22,6 +22,7 @@ import { normalizeOutboundRecipient } from "../lib/dialer-compliance";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Button, EmptyState, Skeleton } from "./atoms";
 import OutboundDialDialog from "./OutboundDialDialog";
+import PersonLink from "./PersonLink";
 import { SearchField, StatusNotice } from "./molecules";
 import WorkspaceResizablePanel from "./layout/WorkspaceResizablePanel";
 
@@ -31,6 +32,8 @@ type Call = {
   agent_name?: string | null;
   direction?: string | null;
   customer_number?: string | null;
+  /** The saved person who holds this number, when People has one. */
+  person_name?: string | null;
   duration_seconds?: number | null;
   summary?: string | null;
   transcript?: string | null;
@@ -174,7 +177,17 @@ export function parseDialogue(
   return turns;
 }
 
-export default function CallLogsClaude({ agentId }: { agentId?: string | null }) {
+// A link from People or a channel can name one call. It may sit past the first
+// page, so look a few pages deep before settling for the newest call.
+const FOCUS_CALL_PAGE_LIMIT = 5;
+
+export default function CallLogsClaude({
+  agentId,
+  focusCallId,
+}: {
+  agentId?: string | null;
+  focusCallId?: string | null;
+}) {
   const callLabel = "New Call";
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
@@ -300,6 +313,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     if (!normalized) return calls;
     return calls.filter((call) =>
       [
+        call.person_name,
         call.customer_number,
         call.agent_name,
         call.summary,
@@ -318,6 +332,23 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     if (!desktop || selectedId || !visibleCalls.length) return;
     setSelectedId(visibleCalls[0].id);
   }, [desktop, selectedId, visibleCalls]);
+
+  const focusSettled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusCallId || focusSettled.current === focusCallId || loading || loadingMore) return;
+    const match = calls.find((call) => String(call.id) === focusCallId);
+    if (match) {
+      focusSettled.current = focusCallId;
+      setQuery("");
+      setSelectedId(match.id);
+      return;
+    }
+    if (hasMore && !loadMoreError && calls.length < CALL_PAGE_SIZE * FOCUS_CALL_PAGE_LIMIT) {
+      void loadMore();
+      return;
+    }
+    focusSettled.current = focusCallId;
+  }, [calls, focusCallId, hasMore, loadMore, loadMoreError, loading, loadingMore]);
 
   const paginationControl =
     hasMore || loadMoreError ? (
@@ -394,6 +425,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               // talk time the call never had. The outcome is the taxonomy's
               // (reportHappened, same row) — suppress on the missed set.
               const meta = [
+                call.person_name ? formatPhone(call.customer_number) : "",
                 call.agent_name,
                 reportHappened(call) === "missed" ? "" : formatDuration(call.duration_seconds),
               ]
@@ -413,11 +445,11 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                   >
                     <div className="flex items-center justify-between gap-2">
                       <strong
-                        className={`truncate font-mono text-xs font-semibold ${
-                          active ? "text-primary" : "text-foreground"
-                        }`}
+                        className={`truncate text-xs font-semibold ${
+                          call.person_name ? "" : "tabular-nums"
+                        } ${active ? "text-primary" : "text-foreground"}`}
                       >
-                        {formatPhone(call.customer_number, "Unknown caller")}
+                        {call.person_name || formatPhone(call.customer_number, "Unknown caller")}
                       </strong>
                       <span className="shrink-0 text-[10px] text-muted-foreground/75">
                         {formatTime(call.created_at)}
@@ -468,11 +500,21 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         <p className="text-xs font-semibold text-primary">Call report</p>
         <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h2 className="break-words font-mono text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {formatPhone(selected.customer_number, "Unknown Caller")}
+            <h2
+              className={`break-words text-xl font-bold tracking-tight text-foreground sm:text-2xl ${
+                selected.person_name ? "" : "tabular-nums"
+              }`}
+            >
+              {selected.person_name || formatPhone(selected.customer_number, "Unknown Caller")}
             </h2>
-            <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
-              {[selected.agent_name, formatTime(selected.created_at)].filter(Boolean).join(" · ")}
+            <p className="wl-preserve-case mt-1 text-xs text-muted-foreground tabular-nums">
+              {[
+                selected.person_name ? formatPhone(selected.customer_number) : "",
+                selected.agent_name,
+                formatTime(selected.created_at),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -482,15 +524,15 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               {callOutcomeLabelFor(reportHappened(selected), selected.direction)}
             </span>
             {reportHappened(selected) !== "missed" && (selected.duration_seconds ?? 0) > 0 ? (
-              <span className="inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 font-mono text-xs font-medium text-muted-foreground">
+              <span className="inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium tabular-nums text-muted-foreground">
                 {formatDuration(selected.duration_seconds)}
               </span>
             ) : null}
           </div>
         </div>
 
-        {reviewNumber || selected.recording_url ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+        {reviewNumber || selected.recording_url || selected.customer_number ? (
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3 empty:hidden">
             {reviewNumber ? (
               <Button
                 type="button"
@@ -513,14 +555,20 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               </Button>
             ) : null}
             {selected.recording_url ? (
-              <a
-                href={selected.recording_url}
-                download
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-              >
-                <Download className="size-3.5" aria-hidden="true" />
-                Download Audio
-              </a>
+              <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs">
+                <a href={selected.recording_url} download>
+                  <Download className="size-3.5" aria-hidden="true" />
+                  Download Audio
+                </a>
+              </Button>
+            ) : null}
+            {selected.customer_number ? (
+              <PersonLink
+                kind="phone"
+                value={selected.customer_number}
+                nameShown={Boolean(selected.person_name)}
+                className="text-xs"
+              />
             ) : null}
           </div>
         ) : null}

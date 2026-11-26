@@ -241,7 +241,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                 <div
                   className={cn(
                     "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5 transition-all",
-                    on ? "bg-brand border-brand text-on-brand" : "border-white/30",
+                    on ? "bg-brand border-brand text-on-brand" : "border-input",
                   )}
                 >
                   {on && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
@@ -604,7 +604,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                   return (
                     <div
                       key={d.id}
-                      className="rounded-md bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[length:var(--wireline-typography-overline-size)]"
+                      className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 flex items-center gap-3 flex-wrap text-[length:var(--wireline-typography-overline-size)]"
                     >
                       <span
                         className={cn(
