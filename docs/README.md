@@ -35,7 +35,7 @@ Repository workflow: [repo conventions](./REPO_CONVENTIONS.md).
 | ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                                    |
 | Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.app/mcp`                                              | **Early access** directory submission of the same remote MCP server.                                               |
 | Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first Bot.               |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                 | **Retired live talking-head.** Identity badges only.                                                               |
+| Video presenters | `src/lib/video-presenter/`                                                                          | **Retired live talking-head.** Identity badges only.                                                               |
 
 ## Product interface rules
 

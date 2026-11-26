@@ -16,27 +16,10 @@ describe("HeyGen and LiveAvatar talking-head paths are gone", () => {
     expect(existsSync(resolve(process.cwd(), "src/lib/xai-imagine-video.ts"))).toBe(false);
   });
 
-  it("keeps live session owners off HeyGen and Imagine file generation", () => {
-    for (const path of [
-      "src/lib/video-presenter/liveavatar-service.ts",
-      "src/routes/video-presenter-routes-base.ts",
-      "src/pages/LiveVideoStudioPage.tsx",
-      "src/components/LiveVideoPresenter.tsx",
-    ]) {
-      const source = read(path);
-      expect(source, path).not.toContain("/v3/video-agents");
-      expect(source, path).not.toContain("https://api.heygen.com");
-      expect(source, path).not.toContain("https://api.liveavatar.com");
-    }
-  });
-
-  it("does not let clients write consent on PATCH", () => {
-    const routes = read("src/routes/video-presenter-routes-base.ts");
-    const schema = routes.slice(
-      routes.indexOf("const patchPresenterSchema"),
-      routes.indexOf("async function ownedAgent"),
-    );
-    expect(schema).not.toContain("consentStatus");
-    expect(schema).not.toContain("videoPresenterConsentStatus");
+  it("keeps the remaining presenter service off HeyGen and Imagine file generation", () => {
+    const source = read("src/lib/video-presenter/liveavatar-service.ts");
+    expect(source).not.toContain("/v3/video-agents");
+    expect(source).not.toContain("https://api.heygen.com");
+    expect(source).not.toContain("https://api.liveavatar.com");
   });
 });

@@ -37,20 +37,6 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(recommendedPlanFromIntent(intent)).toBe("personal");
   });
 
-  it("retires live-video session mint and keeps sample behind auth", () => {
-    const routes = read("src/routes/video-presenter-routes-base.ts");
-    const sessionIdx = routes.indexOf("/api/agents/:id/video-presenter/session");
-    const sampleIdx = routes.indexOf("/api/agents/:id/video-presenter/sample");
-    expect(sessionIdx).toBeGreaterThan(-1);
-    expect(sampleIdx).toBeGreaterThan(-1);
-    expect(routes.slice(sessionIdx, sampleIdx)).toContain("throwLiveVideoRetired");
-    const retiredSample = routes.slice(sampleIdx);
-    expect(retiredSample).toContain("authenticateUser");
-    expect(retiredSample).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
-    expect(retiredSample).toContain("res.status(410).json");
-    expect(retiredSample).not.toContain("mintLiveAvatarLiteSessionToken");
-  });
-
   it("clears live-video provider opt-in when the add-on subscription ends", () => {
     const billing = read("src/routes/billing-routes.ts");
     expect(billing).toContain('videoPresenterProvider: "synthetic"');

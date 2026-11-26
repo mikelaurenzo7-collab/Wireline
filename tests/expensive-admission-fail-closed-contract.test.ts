@@ -32,7 +32,6 @@ describe("expensive admission boundaries", () => {
       "src/routes/daily-brief-routes.ts": 'bucket: "api:daily-brief-send-now"',
       "src/routes/openai-realtime-routes.ts": 'bucket: "api:openai-realtime"',
       "src/routes/live-voice-routes.ts": 'bucket: "api:live-voice-session"',
-      "src/routes/video-presenter-routes-base.ts": 'bucket: "api:video-presenter-session"',
     } as const;
 
     for (const [path, bucket] of Object.entries(files)) {

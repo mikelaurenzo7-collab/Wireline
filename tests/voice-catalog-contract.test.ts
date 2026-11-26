@@ -47,8 +47,6 @@ describe("voice catalog", () => {
     expect(read("src/lib/video-presenter/liveavatar-service.ts")).not.toContain(
       "process.env.HEYGEN_API_KEY",
     );
-    expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
-    expect(read("src/routes/video-presenter-routes-base.ts")).toContain("throwLiveVideoRetired");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     expect(runtime).toContain("runtime.agent.phoneVoiceId");
     expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
