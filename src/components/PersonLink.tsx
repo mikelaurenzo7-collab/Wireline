@@ -18,7 +18,9 @@ type Lookup =
   | { status: "found"; person: Pick<Person, "id" | "displayName"> };
 
 // One call report, text thread or email thread is open at a time, and owners
-// flip between them. A short memory keeps flipping back from re-asking.
+// flip between them. A short memory keeps flipping back from re-asking. Only
+// found people are remembered: someone saved a moment ago must not still read
+// "Save to People" when the owner comes back.
 const LOOKUP_TTL_MS = 30_000;
 const recent = new Map<string, { at: number; result: Lookup }>();
 
@@ -31,11 +33,14 @@ export default function PersonLink({
   kind,
   value,
   nameHint,
+  nameShown = false,
   className,
 }: {
   kind: PersonIdentifierKind;
   value: string | null | undefined;
   nameHint?: string | null;
+  /** The header beside this link already names the person, so don't repeat it. */
+  nameShown?: boolean;
   className?: string;
 }) {
   const identifier = value?.trim() || "";
@@ -68,7 +73,7 @@ export default function PersonLink({
                 },
               }
             : { status: "missing" };
-        if (result.status !== "unavailable") recent.set(key, { at: Date.now(), result });
+        if (result.status === "found") recent.set(key, { at: Date.now(), result });
         setLookup(result);
       })
       .catch(() => {});
@@ -88,7 +93,7 @@ export default function PersonLink({
           aria-label={name ? `Open ${name} in People` : "Open this person in People"}
         >
           <UserRound aria-hidden="true" />
-          {name || "View Person"}
+          {nameShown || !name ? "View in People" : name}
         </Link>
       </Button>
     );

@@ -35,6 +35,8 @@ import PersonLink from "./PersonLink";
 interface SmsThread {
   id: string;
   customer_number: string;
+  /** The saved person who holds this number, when People has one. */
+  person_name: string | null;
   destination_number: string | null;
   status: string;
   unread_count: number;
@@ -64,6 +66,7 @@ type SmsRecipientReview = {
 
 function matchesSearch(thread: SmsThread, query: string) {
   return [
+    thread.person_name,
     thread.customer_number,
     thread.destination_number,
     thread.status,
@@ -322,6 +325,7 @@ export default function SmsThreads({
         return {
           id,
           customer_number: apiStr(row, "customer_number", "Unknown number"),
+          person_name: apiStr(row, "person_name") || null,
           destination_number: apiStr(row, "destination_number") || null,
           status: apiStr(outcome, "status", "open"),
           unread_count: apiNum(row, "unread_count"),
@@ -930,14 +934,22 @@ export default function SmsThreads({
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <strong className="truncate text-sm font-semibold tabular-nums text-foreground">
-                        {formatPhone(thread.customer_number, "Unknown number")}
+                      <strong
+                        className={`truncate text-sm font-semibold text-foreground ${
+                          thread.person_name ? "" : "tabular-nums"
+                        }`}
+                      >
+                        {thread.person_name ||
+                          formatPhone(thread.customer_number, "Unknown number")}
                       </strong>
                       <span className="shrink-0 text-[10px] text-muted-foreground">
                         {formatSmsTime(thread.last_message_at)}
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      {thread.person_name ? (
+                        <span className="tabular-nums">{formatPhone(thread.customer_number)}</span>
+                      ) : null}
                       <span>{conversationOutcomeLabel(thread.status)}</span>
                       <span>
                         {thread.destination_number
@@ -987,16 +999,30 @@ export default function SmsThreads({
                 </button>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-semibold tabular-nums text-foreground">
-                      {formatPhone(activeThread.customer_number, "Unknown number")}
+                    <h2
+                      className={`text-base font-semibold text-foreground ${
+                        activeThread.person_name ? "" : "tabular-nums"
+                      }`}
+                    >
+                      {activeThread.person_name ||
+                        formatPhone(activeThread.customer_number, "Unknown number")}
                     </h2>
                     <p className="mt-0.5 text-xs text-muted-foreground">
+                      {activeThread.person_name ? (
+                        <span className="tabular-nums">
+                          {formatPhone(activeThread.customer_number)} ·{" "}
+                        </span>
+                      ) : null}
                       {activeThread.destination_number
                         ? `Replies send from ${formatPhone(activeThread.destination_number)}`
                         : "No sending line is attached to this conversation."}
                     </p>
                   </div>
-                  <PersonLink kind="phone" value={activeThread.customer_number} />
+                  <PersonLink
+                    kind="phone"
+                    value={activeThread.customer_number}
+                    nameShown={Boolean(activeThread.person_name)}
+                  />
                 </div>
               </header>
 

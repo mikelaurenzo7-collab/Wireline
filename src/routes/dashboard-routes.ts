@@ -10,6 +10,7 @@ import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { annotateCallsWithHappened } from "../lib/call-report";
 import { presentCallAnalysis, presentCallReport } from "../lib/call-review-note";
+import { withPersonLabels } from "../lib/people/people-labels";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { getCachedDashboard, setCachedDashboard } from "../lib/dashboard-cache";
 import { getCachedNavCounts, setCachedNavCounts } from "../lib/nav-counts-cache";
@@ -162,10 +163,15 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     // metadata, recording URL — everything beyond the few fields that
     // happened to match by coincidence (id, summary, transcript, direction).
     const reported = await annotateCallsWithHappened(req.user.id, calls || []);
-    const safeCalls = reported.map((call) => ({
-      ...presentCallReport(call),
-      recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
-    }));
+    const safeCalls = await withPersonLabels(
+      req.user.id,
+      reported.map((call) => ({
+        ...presentCallReport(call),
+        recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
+      })),
+      "phone",
+      (call) => call.customerNumber,
+    );
 
     res.json({
       calls: mapObjectToSnake(safeCalls),

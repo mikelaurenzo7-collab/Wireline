@@ -55,6 +55,28 @@ describe("cross-surface links between channels and People", () => {
     const link = read("src/components/PersonLink.tsx");
     expect(link).toContain("lookupPerson(kind, identifier");
     expect(link).toContain("peopleAddHref(kind, identifier, nameHint)");
+    // Only found people are remembered, so a person saved a moment ago never
+    // still reads "Save to People".
+    expect(link).toContain('if (result.status === "found") recent.set(');
+  });
+
+  it("names saved customers in the Calls and Texts lists, not just bare numbers", () => {
+    for (const path of [
+      "src/routes/dashboard-routes.ts",
+      "src/routes/agent-call-routes.ts",
+      "src/routes/sms-routes.ts",
+    ]) {
+      expect(read(path), path).toMatch(/withPersonLabels\([\s\S]{0,400}?"phone"/);
+    }
+    const calls = read("src/components/CallLogsClaude.tsx");
+    expect(calls).toContain(
+      'call.person_name || formatPhone(call.customer_number, "Unknown caller")',
+    );
+    expect(calls).toContain("nameShown={Boolean(selected.person_name)}");
+    const texts = read("src/components/SmsThreads.tsx");
+    expect(texts).toContain('person_name: apiStr(row, "person_name") || null');
+    expect(texts).toContain("thread.person_name ||");
+    expect(texts).toContain("nameShown={Boolean(activeThread.person_name)}");
   });
 
   it("writes booked times the way the Calendar does", () => {

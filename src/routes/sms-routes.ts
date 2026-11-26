@@ -11,6 +11,7 @@ import { Router, Response } from "express";
 import { createHash } from "node:crypto";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
+import { withPersonLabels } from "../lib/people/people-labels";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -318,7 +319,13 @@ router.get(
         .where(where)
         .orderBy(desc(schema.smsThreads.lastMessageAt))
         .limit(200);
-      res.json({ threads: mapObjectToSnake(threads || []) });
+      const labelled = await withPersonLabels(
+        req.user.id,
+        threads || [],
+        "phone",
+        (thread) => thread.customerNumber,
+      );
+      res.json({ threads: mapObjectToSnake(labelled) });
     } catch (e: any) {
       rethrowIfAppError(e);
       log.error("/api/sms/threads failed", { error: getErrorMessage(e) });

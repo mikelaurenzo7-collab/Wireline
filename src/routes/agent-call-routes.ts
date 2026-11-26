@@ -4,6 +4,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { annotateCallsWithHappened } from "../lib/call-report";
 import { presentCallReport } from "../lib/call-review-note";
+import { withPersonLabels } from "../lib/people/people-labels";
 import { authenticateUser } from "../middleware/auth";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -75,11 +76,16 @@ router.get(
         .offset(offset);
 
       const reported = await annotateCallsWithHappened(req.user.id, calls || []);
-      const safeCalls = reported.map((call) => ({
-        ...presentCallReport(call),
-        agentName: agent.name,
-        recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
-      }));
+      const safeCalls = await withPersonLabels(
+        req.user.id,
+        reported.map((call) => ({
+          ...presentCallReport(call),
+          agentName: agent.name,
+          recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
+        })),
+        "phone",
+        (call) => call.customerNumber,
+      );
 
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
       res.json({

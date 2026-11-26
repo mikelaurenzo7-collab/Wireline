@@ -164,6 +164,26 @@ describe("People service against Postgres", () => {
       people.findPersonByIdentifier(owner, "email", "A.Lee@example.com"),
     );
     expect(found?.id).toBe(c.id);
+    // A list labels every spelling of B's number with the survivor, in one
+    // round trip, and skips numbers nobody holds or values that aren't numbers.
+    const labels = await asOwner(() =>
+      people.findPeopleByIdentifiers(owner, "phone", [
+        "(206) 555-0111",
+        "+12065550111",
+        "2065550199",
+        42,
+        "",
+      ]),
+    );
+    expect(Object.fromEntries(labels)).toEqual({
+      "(206) 555-0111": { id: c.id, displayName: "C Lee" },
+      "+12065550111": { id: c.id, displayName: "C Lee" },
+    });
+    // Another tenant asking for the same number learns nothing.
+    const elsewhere = await tenantStore.run(other, () =>
+      people.findPeopleByIdentifiers(other, "phone", ["(206) 555-0111"]),
+    );
+    expect(elsewhere.size).toBe(0);
     // A merged person cannot be merged again, and nobody merges into themselves.
     await expect(asOwner(() => people.mergePeople(owner, a.id, c.id))).rejects.toMatchObject({
       code: "PERSON_MERGE_INVALID",
