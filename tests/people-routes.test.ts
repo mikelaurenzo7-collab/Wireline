@@ -190,3 +190,23 @@ describe("People store availability", () => {
     );
   });
 });
+
+describe("People identifier sources", () => {
+  it("keeps the bot source for Bot actions and lets owners record where they saw a value", async () => {
+    const actual = await vi.importActual<typeof import("../src/lib/people/people-service")>(
+      "../src/lib/people/people-service",
+    );
+    expect(
+      actual.parseIdentifierInput({ kind: "phone", value: "3125550101", source: "bot" }, "owner"),
+    ).toMatchObject({ value: "+13125550101", source: "owner", verified: false });
+    expect(
+      actual.parseIdentifierInput({ kind: "email", value: "a@b.co", source: "call" }, "owner"),
+    ).toMatchObject({ source: "call", verified: false });
+    expect(
+      actual.parseIdentifierInput({ kind: "email", value: "a@b.co", source: "bot" }, "bot"),
+    ).toMatchObject({ source: "bot" });
+    expect(() =>
+      actual.parseIdentifierInput({ kind: "email", value: "a@b.co", source: "crm" }, "owner"),
+    ).toThrow(expect.objectContaining({ status: 400 }));
+  });
+});

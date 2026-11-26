@@ -247,6 +247,9 @@ function parseSource(value: unknown, fallback: PersonIdentifierSource): PersonId
     typeof value === "string" &&
     (PERSON_IDENTIFIER_SOURCES as readonly string[]).includes(value)
   ) {
+    // "bot" records that a Bot action supplied the value; an owner request
+    // cannot claim it. Channel sources say where the owner saw the value.
+    if (value === "bot" && fallback !== "bot") return fallback;
     return value as PersonIdentifierSource;
   }
   throw AppError.badRequest("Unknown identifier source.");
