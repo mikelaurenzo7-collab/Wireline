@@ -789,3 +789,40 @@ test("leaving while a relayed rehearsal is being accepted releases its late tick
   expect(relayConnections).toBe(0);
   expect(await microphoneCount(page)).toMatchObject({ microphones: 1, tracksStopped: 1 });
 });
+
+test("after a rehearsal in which the Bot answered, Studio offers a real call to the owner's phone", async ({
+  page,
+}) => {
+  await mockRehearsal(page);
+  await page.route("**/api/voice/live/session", (route) =>
+    route.fulfill({ json: { ...RELAY_SESSION, cleanupToken: "relay-cleanup" } }),
+  );
+  let relay!: { send: (message: string) => void };
+  await page.routeWebSocket("**/api/voice/live/relay", (socket) => {
+    relay = socket;
+    socket.send(JSON.stringify({ type: "ready", maxDurationSeconds: 120 }));
+  });
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  const nextStep = page.getByTestId("rehearsal-next-step");
+
+  // A rehearsal that ends before the Bot answers offers nothing yet.
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
+  await expect(nextStep).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  relay.send(
+    JSON.stringify({ type: "bot_text", id: "r1", text: "We open at eight.", final: true }),
+  );
+  relay.send(JSON.stringify({ type: "turn_done", completed: true }));
+  await expect(nextStep).toHaveCount(0);
+  await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
+  await expect(nextStep).toBeVisible();
+  await expect(nextStep).toContainText("Hear It on a Real Call");
+
+  await nextStep.getByRole("button", { name: "Call My Phone", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Phone Test", exact: true })).toBeVisible();
+  await expect(nextStep).toHaveCount(0);
+});

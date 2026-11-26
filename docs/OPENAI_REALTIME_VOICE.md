@@ -90,6 +90,17 @@ and funding controls.
    rejects late verification/SIP admission and schedules carrier termination.
 5. **End call** keeps an unconfirmed stop pending until carrier evidence confirms
    termination. Closing the dialog does not redial or silently claim a call ended.
+6. Studio shows the call's transcript in the dialog. While the test runs, the voice
+   worker records the transcript so far on the test's own call log at most every
+   1.5 seconds; each write requires that call's running claim and owner token, so
+   it can never replace the final transcript written when the call ends. The
+   status check returns those lines only to the owner, for that Bot and the exact
+   carrier call the test placed, and only after verification. After the call ends
+   the dialog checks four more times for the final record. Ordinary calls record
+   no live transcript.
+
+After a voice rehearsal in which the Bot answered, Studio offers **Call My Phone**
+as the next step when the account can place the test.
 
 Verification and AI conversation share one canonical funding and usage identity.
 Completed verification and conversation use the carrier parent's terminal duration,

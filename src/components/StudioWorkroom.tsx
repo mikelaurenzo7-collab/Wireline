@@ -675,6 +675,7 @@ const StudioWorkroom = forwardRef<
               agentName={agentName}
               markKey={markKey}
               phoneNumber={phoneNumber}
+              onCallMyPhone={allowOutbound ? () => setShowPhoneTest(true) : undefined}
             />
           ) : null}
         </div>

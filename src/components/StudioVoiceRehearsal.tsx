@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import { Pause, Phone, Play } from "lucide-react";
 
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
@@ -41,16 +41,21 @@ export default function StudioVoiceRehearsal({
   agentName,
   markKey,
   phoneNumber,
+  onCallMyPhone,
 }: {
   agentId: string;
   agentName: string;
   markKey?: BotMarkKey | null;
   phoneNumber?: string | null;
+  /** Opens the owner phone test; offered as the next step after a rehearsal. */
+  onCallMyPhone?: () => void;
 }) {
   const ownerId = useAuth().user?.id;
   const phone = phoneNumber?.trim();
   const dialable = phone && /^\+?[\d ().-]{7,32}$/.test(phone) ? phone : null;
   const clone = useActiveClone(agentId);
+  // Shown once a rehearsal in which the Bot answered has ended.
+  const [suggestPhoneTest, setSuggestPhoneTest] = useState(false);
   const [playing, setPlaying] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const url = useRef<string | null>(null);
@@ -150,7 +155,45 @@ export default function StudioVoiceRehearsal({
         historyOwnerId={ownerId}
         compact
         startButtonId={studioVoiceStartId(agentId)}
+        onTestStarted={() => setSuggestPhoneTest(false)}
+        onTestEnded={({ replied }) => {
+          if (replied) setSuggestPhoneTest(true);
+        }}
       />
+      {suggestPhoneTest && onCallMyPhone ? (
+        <div
+          className="space-y-3 rounded-xl border border-border bg-card px-4 py-3"
+          data-testid="rehearsal-next-step"
+        >
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">Hear It on a Real Call</p>
+            <p className="break-words text-sm leading-5 text-muted-foreground [overflow-wrap:anywhere]">
+              <span className="wl-preserve-case">{agentName}</span> calls your phone from its line,
+              so you hear exactly what callers hear. Studio shows the call&apos;s transcript.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSuggestPhoneTest(false);
+                onCallMyPhone();
+              }}
+              className="studio-primary-button"
+            >
+              <Phone size={16} aria-hidden="true" />
+              Call My Phone
+            </button>
+            <button
+              type="button"
+              onClick={() => setSuggestPhoneTest(false)}
+              className="studio-secondary-button"
+            >
+              Not Now
+            </button>
+          </div>
+        </div>
+      ) : null}
       {dialable ? (
         <div className="space-y-2 rounded-xl border border-border bg-card px-4 py-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">

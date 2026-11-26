@@ -203,6 +203,7 @@ export default function OpenAILiveVoiceSandbox({
   onAgentAudioEnd,
   onTestStarted,
   onTestCompleted,
+  onTestEnded,
 }: {
   agentId: string;
   agentName: string;
@@ -214,6 +215,8 @@ export default function OpenAILiveVoiceSandbox({
   onAgentAudioEnd?: () => void;
   onTestStarted?: () => void;
   onTestCompleted?: () => void;
+  /** A started voice rehearsal ended; `replied` when the Bot finished a reply in it. */
+  onTestEnded?: (result: { replied: boolean }) => void;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [muted, setMuted] = useState(false);
@@ -251,6 +254,9 @@ export default function OpenAILiveVoiceSandbox({
   const relayPlayback = useRef<RelayPlayback | null>(null);
   const relayReady = useRef(false);
   const relayEnd = useRef<{ reason: string; message: string } | null>(null);
+  // Teardown callbacks are stable, so they read the latest handler from here.
+  const testEnded = useRef(onTestEnded);
+  testEnded.current = onTestEnded;
 
   function clearTranscript() {
     completedText.current = [];
@@ -353,6 +359,10 @@ export default function OpenAILiveVoiceSandbox({
     knowledgeChecks.current = 0;
     assistantLineId.current = null;
     userLineId.current = null;
+    if (reportedStarted.current) {
+      reportedStarted.current = false;
+      testEnded.current?.({ replied: reportedCompleted.current });
+    }
   }, [releaseServerCall]);
 
   const stop = useCallback(() => {

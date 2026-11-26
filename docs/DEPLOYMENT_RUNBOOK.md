@@ -510,6 +510,8 @@ Cutover, on the release commit:
 
 Studio rehearsals move with the phone provider. The relay runs on botbound-api only, so it ships with an API deploy and needs no voice-worker release. Set `WIRELINE_REHEARSAL_VOICE_PROVIDER=openai` on botbound-api to move rehearsals alone back to OpenAI without a deploy of new code; a rehearsal already running finishes where it started. After a release, run one Studio rehearsal on speakers (no headphones) and confirm the opening and disclosure, a knowledge answer, an interruption that stops the Bot at once without it interrupting itself, a typed line, and End. Logs show `xAI voice rehearsal opened` and `xAI voice rehearsal ended` with reply latency, or `Voice rehearsal fell back to OpenAI Realtime` with its reason.
 
+The phone test's live transcript is written by the voice worker, so it starts with the next drained botbound-voice release; until then Studio shows the transcript once the test call ends. After that release, run one **Call My Phone** test and confirm the lines appear during the call and the final transcript remains after it.
+
 A number that is not registered keeps answering on OpenAI, so the cutover never strands a line. New lines register automatically when xAI is on, and released lines are deregistered. To roll back, set `WIRELINE_PHONE_VOICE_PROVIDER=openai` and follow the drain/deploy procedure; leaving it unset selects xAI. Calls already running on xAI finish there.
 
 The persistent worker is required for production SIP admission. Full business calls default to 60 minutes; private rehearsals and message-taking retain their documented shorter limits. Check both deployed duration settings and an actual long call before advertising the longer runtime as available.

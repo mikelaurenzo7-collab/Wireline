@@ -11,8 +11,10 @@ import { enqueue } from "../job-queue";
 import { evaluateOutboundDialGate } from "../outbound-dial-gate";
 import {
   phoneTestIsTerminal,
+  phoneTestTranscriptLines,
   type PhoneTestReceipt,
   type PhoneTestStatus,
+  type PhoneTestTranscriptLine,
 } from "../phone-test-contract";
 import { drizzle, tenantStore } from "../server-context";
 import { inferStateFromPhone } from "../tcpa-consent";
@@ -289,6 +291,34 @@ export async function getPhoneTest(
       )
     : undefined;
   return receipt(lead, terminal ? record(terminal.metadata) : undefined);
+}
+/**
+ * The owner's own test call, turn by turn, from the call log of its SIP leg.
+ * The voice worker records it while the test is live and the final record
+ * replaces it when the call ends. Scoped to the owner, the Bot and the exact
+ * carrier call this test placed.
+ */
+export async function readPhoneTestTranscript(
+  userId: string,
+  agentId: string,
+  requestKey: string,
+): Promise<PhoneTestTranscriptLine[]> {
+  phoneTestFundingId(requestKey);
+  const lead = await findTest(drizzle, userId, requestKey);
+  const callSid = lead?.callId ?? "";
+  if (!lead || lead.agentId !== agentId || !CALL_SID.test(callSid)) return [];
+  const [call] = await drizzle
+    .select({ transcript: schema.callLogs.transcript })
+    .from(schema.callLogs)
+    .where(
+      and(
+        eq(schema.callLogs.userId, userId),
+        eq(schema.callLogs.agentId, agentId),
+        eq(schema.callLogs.twilioParentCallSid, callSid),
+      ),
+    )
+    .limit(1);
+  return phoneTestTranscriptLines(call?.transcript);
 }
 export function phoneTestWebhookUrl(
   kind: "answer" | "gather" | "status" | "fallback",
