@@ -38,31 +38,32 @@ export type SmsSenderRegistration =
     }
   | { status: "unknown"; kind: SmsSenderKind | null; reason: string };
 
+/** Every list call names both its total and its page size. */
+export type SmsRegistrationListOptions = { limit: number; pageSize: number };
+
 /** Minimal read surface, so tests can supply a fake without the SDK. */
 export interface SmsRegistrationClient {
   incomingPhoneNumbers: {
-    list(options: { limit: number }): Promise<Array<{ sid: string; phoneNumber: string }>>;
+    list(options: SmsRegistrationListOptions): Promise<Array<{ sid: string; phoneNumber: string }>>;
   };
   messaging: {
     v1: {
       services: ((sid: string) => {
         phoneNumbers: {
-          list(options: { limit: number }): Promise<Array<{ phoneNumber: string }>>;
+          list(options: SmsRegistrationListOptions): Promise<Array<{ phoneNumber: string }>>;
         };
         usAppToPerson: {
-          list(options: {
-            limit: number;
-          }): Promise<
-            Array<{ campaignStatus: string; description?: string; messageFlow?: string }>
-          >;
+          list(
+            options: SmsRegistrationListOptions,
+          ): Promise<Array<{ campaignStatus: string; description?: string; messageFlow?: string }>>;
         };
       }) & {
-        list(options: { limit: number }): Promise<Array<{ sid: string }>>;
+        list(options: SmsRegistrationListOptions): Promise<Array<{ sid: string }>>;
       };
       tollfreeVerifications: {
-        list(options: {
-          limit: number;
-        }): Promise<Array<{ tollfreePhoneNumberSid: string; status: string }>>;
+        list(
+          options: SmsRegistrationListOptions,
+        ): Promise<Array<{ tollfreePhoneNumberSid: string; status: string }>>;
       };
     };
   };
@@ -99,7 +100,15 @@ const NANP_E164 = /^\+1\d{10}$/;
 const SNAPSHOT_TTL_MS = 10 * 60_000;
 /** A recent good snapshot outlives a transient read failure. */
 const STALE_SNAPSHOT_MAX_MS = 60 * 60_000;
-const LIST_LIMIT = 1000;
+/**
+ * The SDK sends `limit` as the page size when no page size is given, and
+ * Twilio refuses a page size above 50 on some of these lists ("Page size must
+ * be between 1 and 50"), which failed every snapshot read and left every
+ * sender `unknown`. A fixed page of 50 lets the SDK page up to the limit.
+ */
+const LIST_PAGE_SIZE = 50;
+const LIST_OPTIONS: SmsRegistrationListOptions = { limit: 1000, pageSize: LIST_PAGE_SIZE };
+const CAMPAIGN_LIST_OPTIONS: SmsRegistrationListOptions = { limit: 20, pageSize: 20 };
 
 const PENDING_CAMPAIGN_STATUSES = new Set(["IN_PROGRESS", "PENDING"]);
 const FAILED_CAMPAIGN_STATUSES = new Set(["FAILED", "SUSPENDED", "EXPIRED"]);
@@ -115,9 +124,9 @@ export async function readSmsRegistrationSnapshot(
   nowMs: number = Date.now(),
 ): Promise<SmsRegistrationSnapshot> {
   const [numbers, services, verifications] = await Promise.all([
-    client.incomingPhoneNumbers.list({ limit: LIST_LIMIT }),
-    client.messaging.v1.services.list({ limit: LIST_LIMIT }),
-    client.messaging.v1.tollfreeVerifications.list({ limit: LIST_LIMIT }),
+    client.incomingPhoneNumbers.list(LIST_OPTIONS),
+    client.messaging.v1.services.list(LIST_OPTIONS),
+    client.messaging.v1.tollfreeVerifications.list(LIST_OPTIONS),
   ]);
 
   const numberSids = new Map<string, string>();
@@ -131,8 +140,8 @@ export async function readSmsRegistrationSnapshot(
       if (!service?.sid) return;
       const context = client.messaging.v1.services(service.sid);
       const [senders, campaigns] = await Promise.all([
-        context.phoneNumbers.list({ limit: LIST_LIMIT }),
-        context.usAppToPerson.list({ limit: 20 }),
+        context.phoneNumbers.list(LIST_OPTIONS),
+        context.usAppToPerson.list(CAMPAIGN_LIST_OPTIONS),
       ]);
       const pooled: PooledService = {
         serviceSid: service.sid,
