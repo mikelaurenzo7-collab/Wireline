@@ -197,7 +197,8 @@ describe("SMS sender registration", () => {
       0,
     );
     expect(classifySmsSender(LOCAL_REGISTERED, snapshot)).toMatchObject({
-      status: "registered", coversInboundReplies: true,
+      status: "registered",
+      coversInboundReplies: true,
     });
     expect(classifySmsSender(LOCAL_PENDING, snapshot)).toMatchObject({
       status: "unregistered",
@@ -283,12 +284,16 @@ describe("SMS sender registration", () => {
 
 describe("inbound automation campaign coverage", () => {
   it("does not treat call-requested texts as an approved inbound reply program", () => {
-    expect(INBOUND_REPLY_COVERAGE.test(
-      "During a customer-care call, the customer asks for a text. After verbal permission we send the requested information.",
-    )).toBe(false);
-    expect(INBOUND_REPLY_COVERAGE.test(
-      "Customers text us for support after seeing the published number and consent disclosures. The Bot automatically replies to incoming customer texts.",
-    )).toBe(true);
+    expect(
+      INBOUND_REPLY_COVERAGE.test(
+        "During a customer-care call, the customer asks for a text. After verbal permission we send the requested information.",
+      ),
+    ).toBe(false);
+    expect(
+      INBOUND_REPLY_COVERAGE.test(
+        "Customers text us for support after seeing the published number and consent disclosures. The Bot automatically replies to incoming customer texts.",
+      ),
+    ).toBe(true);
   });
 });
 
@@ -319,5 +324,54 @@ describe("first-contact SMS composition", () => {
     expect(composeFirstContactSmsBody({ body: "Feel free to stop by Tuesday." })).toBe(
       `Feel free to stop by Tuesday. ${FIRST_CONTACT_OPT_OUT}`,
     );
+  });
+});
+
+describe("registration snapshot paging", () => {
+  it("asks Twilio for pages of at most 50 on every list", async () => {
+    const seen: Array<{ list: string; limit: number; pageSize: number }> = [];
+    const record =
+      <T>(list: string, rows: T[]) =>
+      async (options: { limit: number; pageSize: number }) => {
+        seen.push({ list, ...options });
+        return rows;
+      };
+    const client: SmsRegistrationClient = {
+      incomingPhoneNumbers: {
+        list: record("incomingPhoneNumbers", [{ sid: "PN0", phoneNumber: LOCAL_REGISTERED }]),
+      },
+      messaging: {
+        v1: {
+          services: Object.assign(
+            () => ({
+              phoneNumbers: {
+                list: record("services.phoneNumbers", [{ phoneNumber: LOCAL_REGISTERED }]),
+              },
+              usAppToPerson: {
+                list: record("services.usAppToPerson", [{ campaignStatus: "VERIFIED" }]),
+              },
+            }),
+            { list: record("services", [{ sid: "MGapproved" }]) },
+          ),
+          tollfreeVerifications: { list: record("tollfreeVerifications", []) },
+        },
+      },
+    };
+
+    const snapshot = await readSmsRegistrationSnapshot(client, 1_000);
+
+    expect(classifySmsSender(LOCAL_REGISTERED, snapshot).status).toBe("registered");
+    expect(seen.map((call) => call.list).sort()).toEqual([
+      "incomingPhoneNumbers",
+      "services",
+      "services.phoneNumbers",
+      "services.usAppToPerson",
+      "tollfreeVerifications",
+    ]);
+    for (const call of seen) {
+      expect(call.pageSize, call.list).toBeGreaterThanOrEqual(1);
+      expect(call.pageSize, call.list).toBeLessThanOrEqual(50);
+      expect(call.limit, call.list).toBeGreaterThanOrEqual(call.pageSize);
+    }
   });
 });
