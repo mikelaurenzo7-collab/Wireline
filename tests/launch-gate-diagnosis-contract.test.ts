@@ -124,7 +124,16 @@ describe("migration drift is answerable, and the tool is honest about its covera
     expect(script).toContain('mustNotContain: ["wireline_webhooks", "wireline_intake_keys"]');
     expect(script).toContain("EXCEPTION\\s+WHEN\\s+OTHERS");
     expect(script).toContain("v_rows_deleted\\s*:=\\s*0");
-    expect(script).toContain("0149_retention_purge_fails_closed");
+    // The newest body owns the routine's semantics: 0149's fail-closed rule
+    // plus 0198's activity-based thread purge, its guard and SMS history.
+    expect(script).toContain("0198_retention_purge_thread_activity");
+    expect(script).not.toContain('migration: "0149_retention_purge_fails_closed"');
+    expect(script).toContain("('wireline_email_threads', 'user_id', 'last_message_at'");
+    expect(script).toContain("('wireline_sms_threads', 'user_id', 'last_message_at'");
+    expect(script).toContain("('wireline_sms_messages', 'user_id', 'created_at'");
+    expect(script).toContain("('wireline_sms_send_operations', 'user_id', 'created_at'");
+    expect(script).toContain("child.thread_id = target.id");
+    expect(script).toContain("people|person_identifiers|person_events|outbound_purpose_audit");
     expect(script).toContain("pg_get_functiondef");
   });
 });
