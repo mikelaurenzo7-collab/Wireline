@@ -73,7 +73,7 @@ describe("inbound/outbound runtime parity contract", () => {
     expect(bridge).not.toContain("voicemailTwiml");
     expect(bridge).not.toContain("openai-static-prompts");
     expect(bridge).toContain("AnsweredBy");
-    expect(read("src/lib/voice/native-outbound-amd.ts")).toContain("DetectMessageEnd");
+    expect(read("src/lib/voice/native-outbound-amd.ts")).toContain("resolveNativeAsyncAmdAction");
   });
 
   it("retains reproducible future OpenAI prompt copy without activating it", () => {

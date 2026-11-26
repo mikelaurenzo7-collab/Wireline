@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   OUTBOUND_CONSENT_VERSION,
   classifyUntrustedDirectDial,
@@ -6,6 +6,7 @@ import {
   isOutboundCallPurpose,
   normalizedExpressConsent,
   outboundCallingEnabledFor,
+  outboundCallingPaused,
   outboundConsentMetadata,
   resolveEffectiveOutboundPurpose,
   salesContentWarning,
@@ -80,6 +81,36 @@ describe("screened direct outbound", () => {
       "appointment_service",
     );
     expect(outboundCallingEnabledFor("sales", { general: false, nonMarketing: false })).toBe(true);
+  });
+});
+
+describe("outbound pause", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const availability = { general: true, nonMarketing: true };
+
+  it("is off unless the flag is exactly true, so an unset or mistyped value never hides calling", () => {
+    for (const value of [undefined, "", "false", "1", "TRUE", "yes"]) {
+      vi.stubEnv("BOTBOUND_OUTBOUND_CALLS_PAUSED", value as string);
+      expect(outboundCallingPaused()).toBe(false);
+      expect(outboundCallingEnabledFor("callback", availability)).toBe(true);
+    }
+  });
+
+  it("refuses every outbound purpose while paused, whatever the activation flags say", () => {
+    vi.stubEnv("BOTBOUND_OUTBOUND_CALLS_PAUSED", "true");
+    expect(outboundCallingPaused()).toBe(true);
+    for (const purpose of [
+      "personal",
+      "returning_contact",
+      "appointment_service",
+      "existing_customer",
+      "sales",
+      "callback",
+      "service_or_requested",
+      "marketing_or_sales",
+    ] as const) {
+      expect(outboundCallingEnabledFor(purpose, availability)).toBe(false);
+    }
   });
 });
 

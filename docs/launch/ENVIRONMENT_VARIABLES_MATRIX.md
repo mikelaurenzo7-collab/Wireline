@@ -139,6 +139,7 @@ This matrix defines every environment variable and secret required across the 10
 | `SENTRY_DSN` | `RECOMMENDED`| `SECRET` | API, Voice | Backend error tracking DSN | Valid Sentry DSN URI | None |
 | `BOTBOUND_TRAFFIC_ENABLED` | `REQUIRED` | `PUBLIC` | API | Global release switch permitting public HTTP traffic | Must be `true` | `true` |
 | `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED`| `REQUIRED`| `PUBLIC`| API, Voice | Permits operational outbound calls and SMS notifications | Must be `true` | `true` |
+| `BOTBOUND_OUTBOUND_CALLS_PAUSED` | `OPTIONAL` | `PUBLIC` | API | Emergency stop for new outbound calls only; inbound keeps working | Only the exact string `true` pauses | Unset |
 | `WIRELINE_LAUNCH_DEMO_MODE` | `REQUIRED` | `PUBLIC` | API | Telemetry tagging flag | Must be `false` in production | `false` |
 | `LAUNCH_HARD_GATE` | `REQUIRED` | `PUBLIC` | API | Pre-launch blocking gate | Unset or empty in production (Score=100) | Unset |
 

@@ -15,15 +15,20 @@ Non-marketing service, coordination, and requested callbacks for personal and bu
 placed when paid voice, line ownership, captured recipient permission, United States jurisdiction,
 quiet hours, funding, and duplicate suppression all pass. Bot audience does not determine eligibility.
 
-**The outbound switches do not currently stop placements.** `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED`
+**The outbound activation switches do not stop placements.** `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED`
 and `BOTBOUND_GENERAL_OUTBOUND_ENABLED` are read into `outboundCallingAvailability()`, but
-`outboundCallingEnabledFor()` in `src/lib/outbound-call-purpose.ts` returns `true` for every
-purpose, and `tests/outbound-call-purpose.test.ts` pins that. Setting either flag to `false` does
-not stop new outbound calls (verified November 26, 2026). Until an outbound-only stop is restored,
-the emergency levers are broader: `WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED=false` on the voice
-service stops the worker admitting new calls, inbound included, and `BOTBOUND_TRAFFIC_ENABLED=false`
-stops traffic entirely. Marketing and campaign outbound still fail closed without federal DNC
-screening.
+`outboundCallingEnabledFor()` in `src/lib/outbound-call-purpose.ts` ignores them, and
+`tests/outbound-call-purpose.test.ts` pins that. Setting either flag to `false` does not stop new
+outbound calls (verified November 26, 2026).
+
+**To stop outbound calls only, set `BOTBOUND_OUTBOUND_CALLS_PAUSED=true` on `botbound-api`.** Every
+placement path (owner dial, prepared call, callback, cadence, intake auto-dial, and the campaign
+dialer) runs in the API service and refuses with `OUTBOUND_UNAVAILABLE` before permission, funding,
+or the carrier. Inbound calls, browser rehearsal, the owner phone test, and texting are not
+affected. Unset, or any value other than the exact string `true`, means not paused. The broader
+emergency levers remain: `WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED=false` on the voice service
+stops the worker admitting new calls, inbound included, and `BOTBOUND_TRAFFIC_ENABLED=false` stops
+traffic entirely. Marketing and campaign outbound still fail closed without federal DNC screening.
 MCP proposals remain private records until the account holder reviews and places a call.
 
 The current recipient-permission resolver accepts the hosted capture flow. This is an

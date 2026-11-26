@@ -42,6 +42,24 @@ describe("People migration 0197", () => {
     );
   });
 
+  it("revokes the UPDATE on events that default privileges leave behind (0200)", () => {
+    // A GRANT cannot narrow a privilege the database already gives by default,
+    // so 0197's shorter grant list did not make events append-or-delete.
+    const fix = read("drizzle/migrations/0200_person_events_no_update.sql");
+    const statements = fix.replace(/^--.*$/gm, "");
+    expect(statements).toContain(
+      "REVOKE UPDATE ON public.wireline_person_events FROM wireline_server;",
+    );
+    expect(statements.match(/\bREVOKE\b/g)).toHaveLength(1);
+    expect(statements).not.toMatch(/\b(GRANT|DROP|ALTER|DELETE|TRUNCATE)\b/);
+    const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json"));
+    expect(
+      journal.entries.some(
+        (entry: { tag: string }) => entry.tag === "0200_person_events_no_update",
+      ),
+    ).toBe(true);
+  });
+
   it("keeps identifiers, events and merge pointers inside one tenant with composite keys", () => {
     expect(migration).toContain('CONSTRAINT "wireline_people_id_user_key" UNIQUE("id","user_id")');
     expect(migration).toContain(

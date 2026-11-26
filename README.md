@@ -21,7 +21,7 @@ optional live-transfer destination without using setup chat.
 
 ## Product surface
 
-BotBound is one product. Role templates configure the same Bot; browser, MCP and native surfaces are clients of the same server-owned policy. Prioritize the web workspace and completed call, email and supervised browser workflows. Extend another client only when it solves a verified customer need and passes its release checks in [Client surfaces](docs/CLIENT_SURFACES.md). A prototype, fixture or integration adapter is not evidence of a connected service.
+BotBound is one product. One Bot per business holds every capability it is allowed to use, and its business profile, knowledge and rules shape the work; browser, MCP and native surfaces are clients of the same server-owned policy. Prioritize the web workspace and completed call, email and supervised browser workflows. Extend another client only when it solves a verified customer need and passes its release checks in [Client surfaces](docs/CLIENT_SURFACES.md). A prototype, fixture or integration adapter is not evidence of a connected service.
 
 - **Web/API - core product:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime. Availability and pilot admission depend on the release gates in `docs/DEPLOYMENT_RUNBOOK.md`.
 - **BotBound Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks. Technical package paths retain the `wireline` namespace for compatibility.
@@ -48,7 +48,7 @@ Channel-plan call minutes and managed AI allowances reset on the paid monthly su
 
 People at `/people` is the customer record: one person per customer with their phones and email, notes, details, and a timeline of every call, text, email thread and booking with them, built at read time from those channel records. Recent contacts that nobody in People holds are listed for the owner to save. Duplicates merge reversibly; a phone or email already on someone else is a conflict to resolve, never an automatic merge.
 
-Calendar owns appointments, weekly availability, timezone, and booking rules at `/calendar`. Save availability to enable native booking; appointments then confirm automatically unless the owner selects approval mode. Requested appointments hold their time until confirmed or cancelled. Google and Outlook connections are optional busy-time imports refreshed by calendar sync; new native bookings are not exported to those providers. Pausing native booking does not silently fall back to them. Existing `/phone?tab=appointments` links redirect to Calendar.
+Calendar owns appointments, weekly availability, timezone, and booking rules at `/calendar`. Save availability to enable native booking; appointments then confirm automatically unless the owner selects approval mode. Requested appointments hold their time until confirmed or cancelled. Google and Outlook connections are optional. Calendar sync imports their busy times, and a confirmed native booking is copied to the owner's connected calendar: a reschedule moves the same event, a cancellation removes it, and caller notes are never copied. BotBound stays the record, so a provider failure never changes the appointment. Pausing native booking does not silently fall back to those providers. Existing `/phone?tab=appointments` links redirect to Calendar.
 
 ## Technology and ownership
 

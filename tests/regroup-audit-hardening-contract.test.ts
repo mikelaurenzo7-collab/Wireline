@@ -43,7 +43,9 @@ describe("outbound engine hardening", () => {
     expect(failure).toContain("if (!restorePreClaim) return;");
     expect(failure).toMatch(/input\.doNotRetry\s*\?\s*LEAD_STATUS\.ERROR\s*:\s*input\.priorStatus/);
     const placement = read("src/lib/voice/openai-outbound-placement.ts");
-    expect(placement).toContain("resolveRetryableLeadStatus(lead.attempts, maxAttempts)");
+    expect(placement).toContain(
+      "resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId)",
+    );
     expect(placement).toContain("voice_outbound_dispatched:");
     expect(dial).toContain(
       "result.doNotRetry === true || result.providerOutcomeAmbiguous === true",

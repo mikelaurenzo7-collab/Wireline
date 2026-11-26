@@ -5,8 +5,12 @@ import { adminPool, asTenant, createUser } from "./helpers";
 
 // The lane builds tables with drizzle-kit push, which carries no row security.
 // Apply migration 0197 itself so these tests exercise its real RLS, grants and
-// composite keys. Every statement in it is idempotent.
-const migration = readFileSync(path.resolve("drizzle/migrations/0197_people.sql"), "utf8");
+// composite keys, then 0200, which removes the UPDATE on events that
+// production's default privileges (mirrored by the fixture) leave behind.
+// Every statement in both is idempotent.
+const migration = ["0197_people", "0200_person_events_no_update"]
+  .map((tag) => readFileSync(path.resolve(`drizzle/migrations/${tag}.sql`), "utf8"))
+  .join("\n");
 
 const { tenantStore } = await import("../../src/lib/server-context");
 const people = await import("../../src/lib/people/people-service");
@@ -25,7 +29,7 @@ afterAll(() => pool.end());
 
 const asOwner = <T>(work: () => Promise<T>) => tenantStore.run(owner, work);
 
-describe("People tables: row security and grants from migration 0197", () => {
+describe("People tables: row security and grants from migrations 0197 and 0200", () => {
   it("enables RLS and leaves no grants to browser roles", async () => {
     const { rows } = await pool.query(
       `SELECT relname, relrowsecurity FROM pg_class

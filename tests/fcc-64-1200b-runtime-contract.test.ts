@@ -135,7 +135,15 @@ describe("(b)(3) applies to answering machines", () => {
 
   it("classifies the call before recording the truthful no-message outcome", () => {
     expect(placement).toContain("machineDetection");
-    expect(amd).toContain('machineDetection: telemarketing ? "Enable" : "DetectMessageEnd"');
+    // Marketing still classifies before any TwiML: its branch returns no
+    // asynchronous parameters, so the Bot cannot greet a mailbox.
+    const marketingBranch = amd.slice(
+      amd.indexOf("if (isMarketingCallPurpose(callPurpose)) {"),
+      amd.indexOf('asyncAmd: "true"'),
+    );
+    expect(marketingBranch).toContain(
+      'return { machineDetection: "Enable", machineDetectionTimeout: MARKETING_AMD_TIMEOUT_SECONDS };',
+    );
     expect(amd).toContain('return telemarketing ? "drop" : "bridge"');
     expect(bridge).toContain("nativeCallPurposeFromMetadata(nativeVoice.call_purpose)");
     expect(bridge).toContain("resolveNativeAmdBridgeAction({ answeredBy, callPurpose })");
@@ -147,6 +155,40 @@ describe("(b)(3) applies to answering machines", () => {
     expect(bridge).toContain("IN_FLIGHT_LEAD_STATUSES");
     expect(read("src/lib/outbound-status.ts")).toContain(
       "export function resolveRetryableLeadStatus",
+    );
+  });
+
+  it("ends a service call on a background machine result without leaving a message", () => {
+    expect(placement).toContain("twilioOpenAIOutboundAmdUrl(token)");
+    expect(placement).toContain("...amd,");
+    const route = bridge.slice(bridge.indexOf('"/api/twilio-webhook/openai-outbound-amd"'));
+    expect(route).toContain("evaluateTwilioWebhookAuth(req)");
+    expect(route).toContain("verifyOpenAIOutboundToken(token)");
+    expect(route).toContain("openAIOutboundPlacementMatches(nativeVoice, verification.claims)");
+    expect(route).toContain(
+      "isMarketingCallPurpose(nativeCallPurposeFromMetadata(nativeVoice.call_purpose))",
+    );
+    expect(route).toContain("resolveNativeAsyncAmdAction(answeredBy)");
+    expect(route).toContain("endOutboundCarrierCall(callSid)");
+    expect(route).toContain("no voicemail was left");
+    expect(route).not.toContain("<Say");
+    expect(route).not.toContain("<Play");
+    expect(route).not.toContain("LEAD_STATUS.VOICEMAIL_LEFT");
+    // `Enable` reports a machine at the start of its greeting, before the beep.
+    expect(amd).not.toContain('machineDetection: "DetectMessageEnd"');
+    expect(session).toContain('nativeVoice.amd_async_action === "hangup"');
+  });
+
+  it("keeps a background machine result when the worker or carrier reports later", () => {
+    // A late worker cannot start a conversation on a call the result ended.
+    const attach = session.slice(session.indexOf("This outbound call is no longer attachable."));
+    expect(attach.slice(0, 400)).toContain('nativeVoice.amd_async_action === "hangup"');
+    expect(attach.slice(0, 400)).toContain("reached a machine and was ended");
+    // The worker's end-of-call settlement leaves the recorded outcome alone.
+    expect(session).toContain("const settleOutcome = currentlyActive && !machineEnded;");
+    // The carrier's final status does not turn the outcome into Error.
+    expect(read("src/lib/voice/outbound-placement-funding.ts")).toContain(
+      'voice.amd_action === "drop" || voice.amd_async_action === "hangup"',
     );
   });
 

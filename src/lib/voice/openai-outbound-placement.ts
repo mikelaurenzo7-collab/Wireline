@@ -794,7 +794,7 @@ export async function markNativeOutboundPlacementFailure(input: {
           maxAttempts = campaign.maxAttempts;
       }
       // A definitely rejected provider request still consumed its marked attempt.
-      failureStatus = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+      failureStatus = resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId);
     }
 
     const now = new Date();

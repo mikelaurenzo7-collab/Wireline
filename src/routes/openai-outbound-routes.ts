@@ -16,7 +16,9 @@ import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import {
   nativeCallPurposeFromMetadata,
   resolveNativeAmdBridgeAction,
+  resolveNativeAsyncAmdAction,
 } from "../lib/voice/native-outbound-amd";
+import { endOutboundCarrierCall } from "../lib/voice/outbound-call-service";
 import {
   verifyOpenAIOutboundToken,
   openAIOutboundPlacementMatches,
@@ -390,7 +392,7 @@ async function resolveBridgeContext(
       const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
       const dropStatus = fax
         ? LEAD_STATUS.FAILED
-        : resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+        : resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId);
       const [dropped] = await tx
         .update(schema.outboundLeads)
         .set({
@@ -666,7 +668,7 @@ router.post(
       if (isMonotonic && (carrierStatus === "initiated" || carrierStatus === "ringing")) {
         if (lead.status !== LEAD_STATUS.CONNECTED) patch.status = LEAD_STATUS.DIALING;
       } else if (isMonotonic && (carrierStatus === "in-progress" || carrierStatus === "answered")) {
-        // Customer answer is not yet a live conversation: synchronous AMD may
+        // Customer answer is not yet a live conversation: marketing AMD may
         // still be classifying the called party. CONNECTED is reserved for the
         // SIP bridge (human/unknown) or later OpenAI attachment.
         if (lead.status !== LEAD_STATUS.CONNECTED) patch.status = LEAD_STATUS.DIALING;
@@ -692,7 +694,7 @@ router.post(
           nextNativeVoice.state = "carrier_completed_without_openai_confirmation";
         } else {
           const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
-          patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+          patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId);
           patch.lastContactSummary = `Carrier outcome: ${carrierStatus}.`;
           nextNativeVoice.state = "carrier_failed";
           meterUnanswered = true;
@@ -705,7 +707,7 @@ router.post(
             // AMD already applied Retrying/Failed/Max-Attempts. Do not stamp Error.
           } else if (neverBridgedNativeVoice(nativeVoice)) {
             const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
-            patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+            patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId);
             patch.lastContactSummary = "The customer leg ended before native voice was confirmed.";
             nextNativeVoice.state = "carrier_completed_without_openai_confirmation";
           } else {
@@ -733,6 +735,98 @@ router.post(
         : null;
     });
     if (meter) await meterNativeCarrierAttempt(meter.userId, meter.callSid);
+    res.status(204).end();
+  }),
+);
+
+/**
+ * Asynchronous answering-machine result for service, personal and requested
+ * calls. Their bridge already ran at answer, so a person never waits in
+ * silence for detection. A machine or fax ends the carrier call before the
+ * beep and records a truthful no-message outcome; `human` and `unknown` only
+ * record the result. Marketing calls detect synchronously and never use this.
+ */
+router.post(
+  "/api/twilio-webhook/openai-outbound-amd",
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!evaluateTwilioWebhookAuth(req).ok) {
+      res.status(403).end();
+      return;
+    }
+    const token = tokenFromRequest(req);
+    const callSid = callSidFromRequest(req);
+    const verification = verifyOpenAIOutboundToken(token);
+    if (!verification.ok || !callSid) {
+      res.status(400).end();
+      return;
+    }
+
+    const leadId = BigInt(verification.claims.leadId);
+    const answeredBy = answeredByFromRequest(req);
+    const hangup = await drizzle.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(leadId)}`}))`,
+      );
+      const [lead] = await tx
+        .select()
+        .from(schema.outboundLeads)
+        .where(eq(schema.outboundLeads.id, leadId))
+        .limit(1);
+      if (!lead) return false;
+      const metadata = asRecord(lead.metadata);
+      const nativeVoice = asRecord(metadata.native_voice);
+      if (
+        !openAIOutboundPlacementMatches(nativeVoice, verification.claims) ||
+        (lead.callId && lead.callId !== callSid) ||
+        isMarketingCallPurpose(nativeCallPurposeFromMetadata(nativeVoice.call_purpose))
+      ) {
+        return false;
+      }
+      // A provider retry repeats the first decision instead of making a new one.
+      if (nativeVoice.amd_async_action) return nativeVoice.amd_async_action === "hangup";
+
+      const action = resolveNativeAsyncAmdAction(answeredBy);
+      const now = new Date();
+      const inFlight = (IN_FLIGHT_LEAD_STATUSES as readonly string[]).includes(lead.status || "");
+      const fax = answeredBy.trim().toLowerCase() === "fax";
+      const patch: Partial<typeof schema.outboundLeads.$inferInsert> = {
+        metadata: {
+          ...metadata,
+          native_voice: {
+            ...nativeVoice,
+            answered_by: answeredBy || "unknown",
+            amd_async_action: action,
+            amd_async_at: now.toISOString(),
+            updated_at: now.toISOString(),
+          },
+        },
+      };
+      // A call that already settled keeps its recorded outcome.
+      if (action === "hangup" && inFlight) {
+        const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
+        patch.status = fax
+          ? LEAD_STATUS.FAILED
+          : resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId);
+        patch.lastContactSummary = fax
+          ? "Fax detected; the call was ended."
+          : "Answering machine detected; the call was ended and no voicemail was left.";
+      }
+      await tx
+        .update(schema.outboundLeads)
+        .set(patch)
+        .where(
+          and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, lead.userId)),
+        );
+      return action === "hangup";
+    });
+    if (hangup) {
+      const ended = await endOutboundCarrierCall(callSid);
+      log.info("Native outbound call ended on an asynchronous machine result", {
+        callSidSuffix: callSid.slice(-8),
+        answeredBy: answeredBy || "unknown",
+        ended,
+      });
+    }
     res.status(204).end();
   }),
 );

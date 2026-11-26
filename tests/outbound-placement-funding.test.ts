@@ -594,6 +594,8 @@ describe("durable ordinary outbound carrier admission", () => {
     "records %s only with exact zero/unanswered proof",
     async (status) => {
       const db = database();
+      db.lead.campaignId = "campaign-a";
+      db.rows.wireline_outbound_campaigns.push({ id: "campaign-a", userId, maxAttempts: 3 });
       await admitted(db);
       await handleFundedOutboundCarrierEvent(event(status, "0"));
       expect(db.ledger.find((r) => r.refType === "voice_outbound_terminal").metadata).toMatchObject(
@@ -618,6 +620,16 @@ describe("durable ordinary outbound carrier admission", () => {
       expect(db.ledger.filter((r) => r.refType === "voice_outbound_terminal")).toHaveLength(1);
     },
   );
+  it("ends a single unanswered call with no campaign as Failed, because nothing redials it", async () => {
+    const db = database();
+    await admitted(db);
+    await handleFundedOutboundCarrierEvent(event("busy", "0"));
+    expect(db.lead.status).toBe("Failed");
+    expect(db.lead.metadata.native_voice).toMatchObject({
+      state: "carrier_failed",
+      do_not_retry: true,
+    });
+  });
   it("honors campaign attempt exhaustion for a definite terminal carrier outcome", async () => {
     const db = database();
     db.lead.campaignId = "campaign-a";
@@ -630,6 +642,8 @@ describe("durable ordinary outbound carrier admission", () => {
   });
   it("keeps completed-before-bridge retryable without treating answered carrier time as free", async () => {
     const db = database();
+    db.lead.campaignId = "campaign-a";
+    db.rows.wireline_outbound_campaigns.push({ id: "campaign-a", userId, maxAttempts: 3 });
     await admitted(db);
     await handleFundedOutboundCarrierEvent(event("completed", "7"));
     expect(db.lead.status).toBe("Retrying");

@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 457
+**Routes scanned:** 458
 **Protected:** 376
-**Public (allowlisted):** 81
+**Public (allowlisted):** 82
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -63,6 +63,7 @@
 | `POST /api/twilio-webhook/openai-inbound` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-inbound-dial-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-inbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/openai-outbound-amd` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-outbound-bridge` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-outbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-outbound-status` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -417,6 +418,7 @@
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound` | — | — | yes | Public (allowlisted) |
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound-dial-complete` | — | — | yes | Public (allowlisted) |
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound-fallback` | — | — | yes | Public (allowlisted) |
+| openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-amd` | — | — | yes | Public (allowlisted) |
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-bridge` | — | — | yes | Public (allowlisted) |
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-fallback` | — | — | yes | Public (allowlisted) |
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-status` | — | — | yes | Public (allowlisted) |

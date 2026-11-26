@@ -138,6 +138,8 @@ At minimum verify:
 - internal trigger functions are not executable by `PUBLIC`;
 - account deletion covers the new table.
 
+**A shorter `GRANT` list does not restrict `wireline_server`.** The shared database carries default privileges that give `wireline_server` `SELECT, INSERT, UPDATE, DELETE` on every table the migration owner creates, and a `GRANT` never removes a privilege. A migration that means "append only" must `REVOKE` what it does not want, then prove it with `has_table_privilege` on the live catalog. `0200_person_events_no_update` corrects this for `wireline_person_events`. Found the same way on November 26, 2026 and not yet corrected: `wireline_outbound_purpose_audit` and `wireline_voice_clone_events` were granted only `SELECT, INSERT` by their migrations but hold all four privileges in production. Account deletion deletes from both by `user_id`, so a correction there may revoke `UPDATE` only after checking that no code path edits those rows.
+
 Supabase advisor output is evidence, not the only source of truth. Confirm the underlying `pg_policies`, privilege, trigger, constraint, and table definitions when an advisor result is stale or ambiguous.
 
 ## Account-environment classification
@@ -179,7 +181,7 @@ Start any local Postgres 16 (for example `docker run -p 55432:5432 -e POSTGRES_H
 TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/wireline_test npm run test:db
 ```
 
-`scripts/prepare-test-database.mjs` refuses any host other than localhost, removes `DATABASE_URL` from the push environment, creates the roles production policies name, pushes the Drizzle schema, then applies `tests/db/fixtures/production-security.sql`. Pass `--fresh` to it to drop and recreate `public` first. The fixture mirrors production as of its header date: row security on every table, the 110 policies, `wireline_server` table and sequence grants, and the unique indexes the Drizzle schema does not declare. Refresh it with the read-only queries in `scripts/db/export-security-fixture.sql` whenever production policies, grants or unique indexes change.
+`scripts/prepare-test-database.mjs` refuses any host other than localhost, removes `DATABASE_URL` from the push environment, creates the roles production policies name, pushes the Drizzle schema, then applies `tests/db/fixtures/production-security.sql`. Pass `--fresh` to it to drop and recreate `public` first. The fixture mirrors production as of its header date: row security on every table, every policy, `wireline_server` table and sequence grants, and the unique indexes the Drizzle schema does not declare. Refresh it with the read-only queries in `scripts/db/export-security-fixture.sql` whenever production policies, grants or unique indexes change.
 
 Known drift, found by building this lane: 30 of production's 64 unique indexes are not declared in `src/db/schema.ts` (several appear there only as raw `sql` strings, which `drizzle-kit` ignores). Production has them, and code relies on them: `ON CONFLICT (user_id, phone)` for DNC, the inbound-SMS and consent replay dedupes by Twilio message SID. A database rebuilt from the Drizzle schema alone would silently lose those guarantees. Do not repair this with `db:generate` against the current snapshot, which would emit migrations recreating indexes that already exist; declaring them needs a reviewed snapshot change verified against the live catalog.
 

@@ -41,10 +41,30 @@ import { issueOpenAIOutboundToken, openAIOutboundTokenReady } from "./openai-out
 import {
   normalizeOpenAIPhoneNumber,
   openAISipConfigured,
+  twilioOpenAIOutboundAmdUrl,
   twilioOpenAIOutboundBridgeUrl,
   twilioOpenAIOutboundFallbackUrl,
   twilioOpenAIOutboundStatusUrl,
 } from "./openai-sip-config";
+
+/**
+ * Ends an answered outbound carrier call, for example when asynchronous
+ * detection reports a machine. A call that already ended is not an error.
+ */
+export async function endOutboundCarrierCall(callSid: string): Promise<boolean> {
+  const twilio = getTwilioClient();
+  if (!twilio) return false;
+  try {
+    await twilio.calls(callSid).update({ status: "completed" });
+    return true;
+  } catch (error) {
+    log.warn("Outbound carrier call could not be ended", {
+      callSidSuffix: callSid.slice(-8),
+      errorClass: error instanceof Error ? error.name : typeof error,
+    });
+    return false;
+  }
+}
 
 export const OUTBOUND_CALL_OUTCOME_UNCERTAIN =
   "Voice carrier unavailable after retries: outbound call outcome is uncertain.";
@@ -185,7 +205,7 @@ async function placeOutboundCallAfterDeletionFence(
       ok: false,
       status: 503,
       code: "OUTBOUND_UNAVAILABLE",
-      error: "Calling is currently available for service, coordination, and requested callbacks.",
+      error: "Outbound calling is paused right now. Incoming calls are not affected.",
     };
   const fromNumber = normalizeOpenAIPhoneNumber(line?.phoneNumber);
   // The legacy column is retained for append-only schema compatibility; an
@@ -224,7 +244,7 @@ async function placeOutboundCallAfterDeletionFence(
   }
   const { token } = issueOpenAIOutboundToken({ leadId: lead.id, placementId });
   const telemarketing = isMarketingCallPurpose(input.callPurpose);
-  const amd = nativeOutboundAmdParams(input.callPurpose);
+  const amd = nativeOutboundAmdParams(input.callPurpose, twilioOpenAIOutboundAmdUrl(token));
 
   let acceptedCallSid: string | null = null;
   let providerAttempted = false;
@@ -300,8 +320,9 @@ async function placeOutboundCallAfterDeletionFence(
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
       timeout: 30,
       timeLimit: remainingSeconds - 36,
-      machineDetection: amd.machineDetection,
-      machineDetectionTimeout: amd.machineDetectionTimeout,
+      // Marketing detects before any TwiML; service calls bridge at answer and
+      // receive the result on the signed AMD callback.
+      ...amd,
     });
     const callSid = String(call.sid || "").trim();
     if (!/^CA[a-f0-9]{32}$/i.test(callSid)) {
@@ -354,6 +375,7 @@ async function placeOutboundCallAfterDeletionFence(
       customerSuffix: customerNumber.slice(-4),
       telemarketing,
       machineDetection: amd.machineDetection,
+      asyncAmd: amd.asyncAmd === "true",
     });
     return { ok: true, status: 200, callId: callSid, leadId: String(lead.id) };
   } catch (error) {
