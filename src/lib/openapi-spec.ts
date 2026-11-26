@@ -857,6 +857,103 @@ const PATHS: Record<string, PathItem> = {
     },
   },
 
+  // ── People ────────────────────────────────────────────────────────
+  "/api/people": {
+    get: {
+      summary: "List people in the caller's customer record",
+      description:
+        "Surviving (unmerged) people owned by the calling tenant, newest change first. `q` matches name, company, email or phone digits.",
+      operationId: "listPeople",
+      tags: ["People"],
+      security: auth.bearer,
+      parameters: [
+        { name: "q", in: "query", required: false, schema: { type: "string", maxLength: 120 } },
+        {
+          name: "status",
+          in: "query",
+          required: false,
+          schema: { type: "string", enum: ["active", "archived"] },
+        },
+        { name: "cursor", in: "query", required: false, schema: { type: "string" } },
+        {
+          name: "limit",
+          in: "query",
+          required: false,
+          schema: { type: "integer", minimum: 1, maximum: 50 },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "A page of people and the cursor for the next page.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+      },
+    },
+    post: {
+      summary: "Add a person",
+      description:
+        "Creates a person with optional phones (E.164 after normalization) and emails. A phone or email already held by someone else returns 409 PERSON_IDENTIFIER_CONFLICT with that person's id; nothing is merged automatically.",
+      operationId: "createPerson",
+      tags: ["People"],
+      security: auth.bearer,
+      responses: {
+        "201": {
+          description: "The new person.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+      },
+    },
+  },
+  "/api/people/{personId}": {
+    get: {
+      summary: "Get one person",
+      description:
+        "A person with every identifier in its merge family and the people merged into it.",
+      operationId: "getPerson",
+      tags: ["People"],
+      security: auth.bearer,
+      parameters: [{ name: "personId", in: "path", required: true, schema: { type: "string" } }],
+      responses: {
+        "200": {
+          description: "The person.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+      },
+    },
+  },
+  "/api/people/{personId}/timeline": {
+    get: {
+      summary: "A person's timeline",
+      description:
+        "Calls, texts, email threads, bookings and People history for this person, newest first. Read-time union over the channel records; `before` pages back.",
+      operationId: "getPersonTimeline",
+      tags: ["People"],
+      security: auth.bearer,
+      parameters: [
+        { name: "personId", in: "path", required: true, schema: { type: "string" } },
+        { name: "before", in: "query", required: false, schema: { type: "string" } },
+      ],
+      responses: {
+        "200": {
+          description: "Timeline items and the cursor for older items.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+      },
+    },
+  },
+
   // ── Outbound ──────────────────────────────────────────────────────
   "/api/outbound/dial": {
     post: {
@@ -1428,6 +1525,10 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
         description: "Configured voice + email agents owned by the calling tenant.",
       },
       { name: "Calls", description: "Enriched call logs." },
+      {
+        name: "People",
+        description: "The tenant's customer record: people, identifiers, history and timeline.",
+      },
       {
         name: "Outbound",
         description: "Tenant-scoped outbound dialing with DNC/TCPA consent gates.",

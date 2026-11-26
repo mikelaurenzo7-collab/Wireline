@@ -616,3 +616,17 @@ export function createIpRateLimiter(opts: IpRateLimiterOpts): RateLimitMiddlewar
     }
   };
 }
+
+/** People reads: list, search, detail, timeline and recent contacts. */
+export const peopleReadRateLimit = createRateLimiter({
+  bucket: "api:people-read",
+  windowMs: 60 * 1000,
+  max: 120,
+});
+
+/** People writes: create, edit, identifiers, notes, merge and delete. */
+export const peopleWriteRateLimit = createRateLimiter({
+  bucket: "api:people-write",
+  windowMs: 60 * 1000,
+  max: 60,
+});

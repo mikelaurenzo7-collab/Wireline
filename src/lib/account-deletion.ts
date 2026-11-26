@@ -86,6 +86,11 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
     organizationColumns: ["organization_id"],
   },
   { table: "wireline_dnc_list", userColumns: ["user_id"] },
+  // People: history and identifiers before the person rows they reference.
+  // One DELETE per table also clears same-tenant merge pointers together.
+  { table: "wireline_person_events", userColumns: ["user_id"] },
+  { table: "wireline_person_identifiers", userColumns: ["user_id"] },
+  { table: "wireline_people", userColumns: ["user_id"] },
   { table: "wireline_contact_outbound_consent", userColumns: ["user_id"] },
   { table: "wireline_outbound_purpose_audit", userColumns: ["user_id"] },
   { table: "wireline_phone_numbers", userColumns: ["user_id"] },

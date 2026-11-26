@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 442
-**Protected:** 361
+**Routes scanned:** 456
+**Protected:** 375
 **Public (allowlisted):** 81
 **Violations:** 0
 
@@ -439,6 +439,20 @@
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound/dial/:requestKey` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial/:requestKey/cancel-missing` | inline | — | — | Protected |
+| people-routes.ts | GET | `/api/people` | inline | — | — | Protected |
+| people-routes.ts | POST | `/api/people` | inline | — | — | Protected |
+| people-routes.ts | GET | `/api/people/:personId` | inline | — | — | Protected |
+| people-routes.ts | PATCH | `/api/people/:personId` | inline | — | — | Protected |
+| people-routes.ts | DELETE | `/api/people/:personId` | inline | — | — | Protected |
+| people-routes.ts | POST | `/api/people/:personId/identifiers` | inline | — | — | Protected |
+| people-routes.ts | DELETE | `/api/people/:personId/identifiers/:identifierId` | inline | — | — | Protected |
+| people-routes.ts | POST | `/api/people/:personId/merge` | inline | — | — | Protected |
+| people-routes.ts | POST | `/api/people/:personId/notes` | inline | — | — | Protected |
+| people-routes.ts | DELETE | `/api/people/:personId/notes/:noteId` | inline | — | — | Protected |
+| people-routes.ts | GET | `/api/people/:personId/timeline` | inline | — | — | Protected |
+| people-routes.ts | POST | `/api/people/:personId/unmerge` | inline | — | — | Protected |
+| people-routes.ts | GET | `/api/people/lookup` | inline | — | — | Protected |
+| people-routes.ts | GET | `/api/people/suggestions` | inline | — | — | Protected |
 | phone-test-routes.ts | POST | `/api/agents/:agentId/phone-test` | inline | — | — | Protected |
 | phone-test-routes.ts | GET | `/api/agents/:agentId/phone-test/:requestKey` | inline | — | — | Protected |
 | phone-test-routes.ts | DELETE | `/api/agents/:agentId/phone-test/:requestKey` | inline | — | — | Protected |

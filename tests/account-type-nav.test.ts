@@ -22,6 +22,7 @@ describe("legacy account-type navigation compatibility", () => {
     expect(paths).toContain("/inbox");
     expect(paths).toContain("/phone");
     expect(paths).toContain("/calendar");
+    expect(paths).toContain("/people");
     expect(paths).toContain("/connections");
     expect(paths).toContain("/settings");
     expect(paths).toContain("/insights");
@@ -37,6 +38,7 @@ describe("legacy account-type navigation compatibility", () => {
       "/inbox",
       "/phone",
       "/calendar",
+      "/people",
     ]);
     expect(
       groups.find((group) => group.label === "Manage")?.items.map((item) => item.path),
@@ -60,6 +62,7 @@ describe("legacy account-type navigation compatibility", () => {
     ]);
     expect(MOBILE_MORE_NAV.map((item) => item.href)).toEqual([
       "/calendar",
+      "/people",
       "/connections",
       "/insights",
       "/settings",

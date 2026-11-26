@@ -21,6 +21,7 @@ export type NavIconName =
   | "MoreHorizontal"
   | "Phone"
   | "Settings"
+  | "Users"
   | "Workflow";
 
 export type WorkspaceSection = "Build" | "Operate" | "System";
@@ -144,6 +145,18 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     desktop: { group: "work", order: 40 },
     mobile: { placement: "more", group: "Operate", order: 15 },
     shortcut: { key: "C", hint: "g c" },
+  },
+  {
+    href: "/people",
+    title: "People",
+    label: "People",
+    eyebrow: "Operate",
+    description:
+      "Everyone your Bot talks to, with every call, text, email and booking in one place.",
+    icon: "Users",
+    desktop: { group: "work", order: 50 },
+    mobile: { placement: "more", group: "Operate", order: 20 },
+    shortcut: { key: "E", hint: "g e" },
   },
   {
     href: "/computer",
@@ -311,7 +324,7 @@ function byMobilePlacement(placement: MobileNavPlacement) {
 
 /** The Bot's Workspace and the channels it works in share the primary rail. */
 export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
-/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone"; href: "/calendar". */
+/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone"; href: "/calendar"; href: "/people". */
 
 /** Lower-frequency visibility and setup destinations stay secondary. */
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");

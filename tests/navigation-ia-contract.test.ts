@@ -22,6 +22,7 @@ describe("BotBound workspace information architecture", () => {
       "/inbox",
       "/phone",
       "/calendar",
+      "/people",
     ]);
     expect(OPERATE_NAV.map((item) => item.href)).toEqual([
       "/knowledge",
@@ -52,6 +53,8 @@ describe("BotBound workspace information architecture", () => {
       "/connections",
       "/settings/billing",
       "/apps",
+      "/people",
+      "/people/11111111-1111-4111-8111-111111111111",
     ]) {
       const active = MOBILE_PRIMARY_NAV.filter((item) =>
         isMobilePrimaryActive(pathname, item.href),
@@ -80,6 +83,8 @@ describe("BotBound workspace information architecture", () => {
 
   it("makes More exclusive for configuration and governance routes", () => {
     expect(isMobileMoreActive("/calendar")).toBe(true);
+    expect(isMobileMoreActive("/people")).toBe(true);
+    expect(isMobileMoreActive("/people/11111111-1111-4111-8111-111111111111")).toBe(true);
     expect(isMobileMoreActive("/connections")).toBe(true);
     expect(isMobileMoreActive("/settings/team")).toBe(true);
     expect(isMobileMoreActive("/apps")).toBe(true);
@@ -99,7 +104,7 @@ describe("BotBound workspace information architecture", () => {
   it("groups the More sheet by task instead of exposing a flat admin list", () => {
     expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
-      ["/calendar", "/insights"],
+      ["/calendar", "/people", "/insights"],
       ["/connections", "/settings"],
     ]);
   });
@@ -130,6 +135,7 @@ describe("BotBound workspace information architecture", () => {
       I: "/inbox",
       P: "/phone",
       C: "/calendar",
+      E: "/people",
       M: "/computer",
       A: "/studio",
       W: "/connections",
