@@ -108,7 +108,7 @@ export default function WebhooksManager() {
           size="sm"
           disableAnimations
           onClick={() => setShowForm(!showForm)}
-          className="!py-2.5 !px-5 !text-[length:var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
+          className="!py-2.5 !px-5 !text-[length:var(--wireline-typography-overline-size)] !tracking-widest uppercase"
         >
           {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {showForm ? "Cancel" : "Add Webhook"}
@@ -288,7 +288,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         disableAnimations
         onClick={submit}
         disabled={busy || !name || !url || picked.size === 0}
-        className="w-full !py-3 !text-[length:var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
+        className="w-full !py-3 !text-[length:var(--wireline-typography-overline-size)] !tracking-widest uppercase"
       >
         {busy ? (
           <>
@@ -474,12 +474,12 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           )}
           {hook.secret_last_four && (
             <div className="flex items-center gap-2 mt-2 wl-micro-meta--muted">
-              <span className="uppercase tracking-[0.3em]">Secret</span>
+              <span className="uppercase tracking-widest">Secret</span>
               <code className="font-mono text-foreground/70">
                 {"•".repeat(12)}
                 {hook.secret_last_four}
               </code>
-              <span className="uppercase tracking-[0.3em] text-muted-foreground">· last 4</span>
+              <span className="uppercase tracking-widest text-muted-foreground">· last 4</span>
             </div>
           )}
         </div>

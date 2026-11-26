@@ -44,7 +44,9 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps shared workspace tabs comfortable at compact density", () => {
     const tabs = read("src/components/layout/WorkspaceTabStrip.tsx");
-    expect(tabs).toContain('"min-h-[44px] px-3 text-[13px] sm:min-h-10 sm:px-3.5"');
+    expect(tabs).toContain(
+      '"min-h-[44px] px-3 text-[length:var(--wireline-typography-caption-size)] sm:min-h-10 sm:px-3.5"',
+    );
     expect(tabs).toContain("overflow-x-auto overscroll-x-contain");
     expect(tabs).toContain("focus-visible:outline-offset-2");
   });
@@ -52,7 +54,7 @@ describe("E2E design and BotBound brand polish", () => {
   it("keeps modal titles contained and body copy readable", () => {
     const dialog = read("src/components/atoms/Dialog.tsx");
     expect(dialog).toContain("text-xl font-semibold leading-[1.15]");
-    expect(dialog).toContain("text-[15px] leading-6");
+    expect(dialog).toContain("text-base leading-6");
     expect(dialog).toContain("size-11");
     expect(dialog).toContain("max-h-[calc(100dvh-2rem)]");
     expect(dialog).toContain("overflow-y-auto overscroll-contain");

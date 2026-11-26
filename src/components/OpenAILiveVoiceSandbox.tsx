@@ -945,7 +945,7 @@ export default function OpenAILiveVoiceSandbox({
               className={
                 compact
                   ? "break-words text-lg font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]"
-                  : "mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground"
+                  : "mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-tight text-foreground"
               }
             >
               Speak With <span className="wl-preserve-case">{agentName}</span>
@@ -1053,7 +1053,7 @@ export default function OpenAILiveVoiceSandbox({
             <div className="grid min-h-[96px] place-items-center text-center">
               <p className="max-w-md text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
                 Ask a real question and interrupt naturally. This private rehearsal can search
-                approved Training facts but cannot perform external actions.
+                approved Knowledge but cannot perform external actions.
               </p>
             </div>
           )}

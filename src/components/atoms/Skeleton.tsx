@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 export const skeletonVariants = cva("wl-skeleton", {
   variants: {
     shape: {
-      default: "rounded-[var(--wireline-radius-md)]",
+      default: "rounded-md",
       circle: "rounded-full",
-      control: "rounded-[var(--wireline-radius-md)]",
-      text: "h-4 rounded-[var(--wireline-radius-sm)]",
-      surface: "rounded-[var(--wireline-radius-lg)]",
-      paper: "rounded-[var(--wireline-radius-xl)]",
+      control: "rounded-md",
+      text: "h-4 rounded-sm",
+      surface: "rounded-lg",
+      paper: "rounded-xl",
     },
   },
   defaultVariants: {

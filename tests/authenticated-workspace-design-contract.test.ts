@@ -108,11 +108,20 @@ describe("authenticated workspace design architecture", () => {
     for (const path of [
       "src/pages/EmailPage.tsx",
       "src/pages/PhonePage.tsx",
-      "src/pages/KnowledgePage.tsx",
       "src/pages/InsightsPage.tsx",
       "src/components/settings/SettingsTabs.tsx",
     ]) {
       expect(read(path), path).toContain("WorkspaceControlBand");
+    }
+
+    // Pages without a tab strip put their title in the same band.
+    expect(read("src/components/layout/WorkspacePageFrame.tsx")).toContain("<WorkspaceControlBand");
+    for (const path of [
+      "src/pages/KnowledgePage.tsx",
+      "src/pages/ConnectionsPage.tsx",
+      "src/pages/ApprovalsPage.tsx",
+    ]) {
+      expect(read(path), path).toMatch(/<WorkspacePageIntro\s[^>]*?size="compact"/);
     }
   });
 
@@ -235,7 +244,7 @@ describe("authenticated workspace design architecture", () => {
 
   it("offers reviewed calls and campaign preparation without dropping recipient permissions", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
-    expect(hub).toContain('title="Call"');
+    expect(hub).toContain('title="Place a Call"');
     expect(hub).toContain('aria-label="New Call"');
     expect(hub).toContain("RecipientVoicePermissions");
     expect(hub).not.toContain("CAMPAIGN_CALLING_TITLE");

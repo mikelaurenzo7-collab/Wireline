@@ -389,7 +389,7 @@ export default function TeamSettings() {
               <h2
                 data-slot="dialog-title"
                 id="team-invite-title"
-                className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground"
+                className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-tight text-foreground"
               >
                 Invite Teammate
               </h2>

@@ -4,6 +4,7 @@ import SmsThreads from "../src/components/SmsThreads";
 import OutboundPurposePicker from "../src/components/outbound/OutboundPurposePicker";
 import { smsOutcomeOperations } from "../src/lib/conversation-outcome-operations";
 import { formatPhone } from "../src/lib/safe-number";
+import { formatActivityTime } from "../src/lib/safe-date";
 
 const harness = vi.hoisted(() => ({
   slots: [] as Array<{
@@ -415,14 +416,7 @@ describe("SMS conversation drafts", () => {
           node.type === "button" && content(node).includes(formatPhone(threads[0].customer_number)),
       );
       expect(content(row)).toContain(status === "escalated" ? "Handoff" : "Resolved");
-      expect(content(row)).toContain(
-        new Intl.DateTimeFormat("en-US", {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        }).format(new Date(latest.last_message_at)),
-      );
+      expect(content(row)).toContain(formatActivityTime(latest.last_message_at));
       expect(content(row)).toContain("7");
       expect(
         content(

@@ -20,6 +20,7 @@ import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter, emailReplyRateLimiter } from "../middleware/api-rate-limits";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
+import { withPersonLabels } from "../lib/people/people-labels";
 
 const router = Router();
 
@@ -267,10 +268,18 @@ router.get(
               } satisfies EmailHistoryCursor),
             ).toString("base64url")
           : null;
+      // Name saved customers in the list, the same way Calls and Texts do.
+      const labelled = await withPersonLabels(
+        req.user.id,
+        page.map(({ snapshotActivity, ...thread }) => ({
+          ...thread,
+          activityAt: snapshotActivity,
+        })),
+        "email",
+        (thread) => thread.customerEmail,
+      );
       res.json({
-        threads: mapObjectToSnake(
-          page.map(({ snapshotActivity, ...thread }) => ({ ...thread, activityAt: snapshotActivity })),
-        ),
+        threads: mapObjectToSnake(labelled),
         hasMore,
         nextCursor,
       });

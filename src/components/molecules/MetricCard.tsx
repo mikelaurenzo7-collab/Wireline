@@ -60,13 +60,13 @@ export function MetricCard({
       {...props}
     >
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <p className="min-w-0 text-[13px] font-medium tracking-[0.005em] text-muted-foreground">
+        <p className="min-w-0 text-[length:var(--wireline-typography-caption-size)] font-medium tracking-normal text-muted-foreground">
           {label}
         </p>
         {icon ? <span className="shrink-0 text-muted-foreground">{icon}</span> : null}
       </div>
       <div className="flex min-w-0 items-end justify-between gap-3">
-        <output className="min-w-0 truncate text-[26px] font-semibold tracking-[-0.025em] text-foreground tabular-nums">
+        <output className="min-w-0 truncate text-[26px] font-semibold tracking-tight text-foreground tabular-nums">
           {value}
         </output>
         {delta ? (
@@ -82,7 +82,7 @@ export function MetricCard({
         ) : null}
       </div>
       {footer ? (
-        <div className="border-t border-border/70 pt-2.5 text-[12px] text-muted-foreground">
+        <div className="border-t border-border/70 pt-2.5 text-xs text-muted-foreground">
           {footer}
         </div>
       ) : null}

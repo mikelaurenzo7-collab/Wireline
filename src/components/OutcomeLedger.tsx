@@ -257,21 +257,21 @@ export default function OutcomeLedger({
         <article key={row.id} className="rounded-xl border border-border bg-card px-3 py-3 sm:px-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-bold uppercase tracking-wide text-primary">
                 {formatOutcomeLabel(row.outcome_tag)}
               </span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wide text-muted-foreground">
                 {formatLifecycleLabel(row.lifecycle_status)}
               </span>
             </div>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
               {row.direction} · {row.duration_seconds ?? 0}s
             </span>
           </div>
           <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-foreground sm:line-clamp-2">
             {summarizeOutcomeRow(row)}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
             {row.owner_label ? <span>Owner: {row.owner_label}</span> : null}
             {row.campaign_source ? <span>Source: {row.campaign_source}</span> : null}
             {row.compliance_state && row.compliance_state !== "clear" ? (
@@ -312,7 +312,7 @@ export default function OutcomeLedger({
             <div className="mt-3 grid gap-3 rounded-lg bg-muted/35 p-3">
               {row.transcript?.trim() ? (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wide text-muted-foreground">
                     Transcript
                   </p>
                   <p className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-foreground">
@@ -326,7 +326,7 @@ export default function OutcomeLedger({
               )}
               {row.coaching_note?.trim() ? (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wide text-muted-foreground">
                     Review Note
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-foreground">

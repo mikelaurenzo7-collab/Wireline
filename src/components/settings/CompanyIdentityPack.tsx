@@ -224,7 +224,7 @@ function ChannelCard({
         </div>
         <span
           className={cn(
-            "inline-flex min-h-7 shrink-0 items-center rounded-full border px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em]",
+            "inline-flex min-h-7 shrink-0 items-center rounded-full border px-2.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-widest",
             selected
               ? statusTone(meta.provider_status, ready)
               : "border-border bg-muted/35 text-muted-foreground",
@@ -253,7 +253,7 @@ function ChannelCard({
           Ready for review
         </p>
       ) : null}
-      <p className="mt-3 border-t border-border pt-3 text-[11px] leading-5 text-muted-foreground">
+      <p className="mt-3 border-t border-border pt-3 text-[length:var(--wireline-typography-overline-size)] leading-5 text-muted-foreground">
         {meta.display_scope}
       </p>
     </article>
@@ -420,7 +420,7 @@ export default function CompanyIdentityPack() {
         {summary && summary.label !== "Review requested" ? (
           <span
             className={cn(
-              "mb-4 inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[11px] font-semibold",
+              "mb-4 inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[length:var(--wireline-typography-overline-size)] font-semibold",
               summary.className,
             )}
           >
@@ -489,7 +489,7 @@ export default function CompanyIdentityPack() {
                   maxLength={15}
                   placeholder="LAURENZO SVCS"
                 />
-                <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                <span className="mt-1 block text-[length:var(--wireline-typography-overline-size)] font-normal text-muted-foreground">
                   Maximum 15 characters for traditional CNAM fallback.
                 </span>
               </label>
@@ -514,7 +514,7 @@ export default function CompanyIdentityPack() {
                   placeholder="support@example.com"
                   autoComplete="email"
                 />
-                <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                <span className="mt-1 block text-[length:var(--wireline-typography-overline-size)] font-normal text-muted-foreground">
                   Email identity review requires this address to match the company website domain.
                 </span>
               </label>
@@ -528,7 +528,7 @@ export default function CompanyIdentityPack() {
                   placeholder="123 Main St, Suite 200, Chicago, IL 60601"
                   autoComplete="street-address"
                 />
-                <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                <span className="mt-1 block text-[length:var(--wireline-typography-overline-size)] font-normal text-muted-foreground">
                   Required for commercial email. Use your current street address or a registered
                   PO/private mailbox that identifies your business.
                 </span>
@@ -552,7 +552,7 @@ export default function CompanyIdentityPack() {
                   maxLength={64}
                   placeholder="Appointment confirmation"
                 />
-                <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                <span className="mt-1 block text-[length:var(--wireline-typography-overline-size)] font-normal text-muted-foreground">
                   Enhanced branded calling may show this on supported mobile networks after
                   approval.
                 </span>

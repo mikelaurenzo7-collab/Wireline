@@ -241,7 +241,7 @@ function OwnedRecipientVoicePermissions() {
             onClick={() => setEditing(!editing)}
             disabled={!!pending}
           >
-            <Plus aria-hidden /> New permission
+            <Plus aria-hidden /> New Permission
           </Button>
         </div>
       </div>

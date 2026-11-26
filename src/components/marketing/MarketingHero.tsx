@@ -155,7 +155,7 @@ export default function MarketingHero({
                 {metrics.map((metric) => (
                   <div
                     key={metric.label}
-                    className="rounded-[var(--wireline-radius-lg)] border border-border bg-card/70 p-4 text-center"
+                    className="rounded-lg border border-border bg-card/70 p-4 text-center"
                   >
                     <p className="font-[var(--wireline-font-family-display)] text-3xl font-semibold leading-none tracking-[-.035em] text-foreground">
                       {metric.value}
@@ -171,10 +171,7 @@ export default function MarketingHero({
         ) : metrics.length ? (
           <div className="mx-auto mt-12 grid max-w-4xl gap-3 sm:grid-cols-3">
             {metrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="wl-paper rounded-[var(--wireline-radius-lg)] p-5 text-center"
-              >
+              <div key={metric.label} className="wl-paper rounded-lg p-5 text-center">
                 <p className="font-[var(--wireline-font-family-display)] text-3xl font-semibold leading-none tracking-[-.035em] text-foreground">
                   {metric.value}
                 </p>

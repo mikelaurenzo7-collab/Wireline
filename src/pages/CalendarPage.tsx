@@ -101,7 +101,7 @@ export default function CalendarPage() {
                 />
               }
               secondary={
-                // On the Availability tab, "Set availability" would only
+                // On the Availability tab, "Set Availability" would only
                 // reselect the tab the owner is already on.
                 tab === "availability" &&
                 !bookingRecovery &&
@@ -117,10 +117,10 @@ export default function CalendarPage() {
                     }}
                   >
                     {bookingRecovery
-                      ? "Check booking"
+                      ? "Check Booking"
                       : configured && savedSettings?.enabled
                         ? "New Appointment"
-                        : "Set availability"}
+                        : "Set Availability"}
                   </Button>
                 )
               }

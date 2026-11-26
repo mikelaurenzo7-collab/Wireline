@@ -162,13 +162,13 @@ for (const width of [320, 1440]) {
     await page.getByText("More details", { exact: true }).click();
     await page.getByLabel("Appointment type", { exact: true }).fill("QA consultation");
     await page.getByLabel("Notes", { exact: true }).fill("Private QA note retained across retry.");
-    await page.getByRole("button", { name: "Request appointment", exact: true }).click();
+    await page.getByRole("button", { name: "Request Appointment", exact: true }).click();
     await expect(page.getByText("Retry this booking before starting another.")).toBeVisible();
     await expect(page.getByLabel("Customer name", { exact: true })).toBeDisabled();
     await dialog.getByRole("button", { name: "Close", exact: true }).last().click();
     await expect(dialog).toHaveCount(0);
-    await page.getByRole("button", { name: "Check booking", exact: true }).click();
-    await expect(dialog.getByRole("button", { name: "Check booking", exact: true })).toBeFocused();
+    await page.getByRole("button", { name: "Check Booking", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: "Check Booking", exact: true })).toBeFocused();
     await expect(page.getByLabel("Customer name", { exact: true })).toHaveValue("QA Owner Booking");
     await expect(page.getByLabel("Notes", { exact: true })).toHaveValue(
       "Private QA note retained across retry.",
@@ -213,7 +213,7 @@ for (const width of [320, 1440]) {
     await page.screenshot({
       path: `output/proofs/calendar-create-${width}px${width === 320 ? "-text200" : ""}.png`,
     });
-    await dialog.getByRole("button", { name: "Check booking", exact: true }).click();
+    await dialog.getByRole("button", { name: "Check Booking", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(
       page.getByText("Appointment requested. Confirm it in Calendar.", { exact: true }),
@@ -232,8 +232,10 @@ for (const width of [320, 1440]) {
       const notice = page.getByText("Appointment requested. Confirm it in Calendar.", {
         exact: true,
       });
-      await page.route("**/api/appointments/11111111-1111-4111-8111-111111111111", (route) =>
-        route.fulfill({ status: 503, json: { error: "Could not confirm appointment." } }),
+      await page.route(
+        "**/api/appointments/11111111-1111-4111-8111-111111111111",
+        (route) =>
+          route.fulfill({ status: 503, json: { error: "Could not confirm appointment." } }),
         { times: 1 },
       );
       await page.getByRole("button", { name: "Confirm", exact: true }).click();
@@ -259,12 +261,12 @@ test("a definite slot conflict preserves the draft and allows a different availa
   await page.getByRole("button", { name: "New Appointment", exact: true }).click();
   await page.getByLabel("Customer name", { exact: true }).fill("QA Conflict Draft");
   await page.getByLabel("Available time", { exact: true }).selectOption("09:00");
-  await page.getByRole("button", { name: "Request appointment", exact: true }).click();
+  await page.getByRole("button", { name: "Request Appointment", exact: true }).click();
   await expect(page.getByText("That time is no longer available.", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Customer name", { exact: true })).toHaveValue("QA Conflict Draft");
   await expect(page.getByLabel("Customer name", { exact: true })).toBeEnabled();
   await page.getByLabel("Available time", { exact: true }).selectOption("10:00");
-  await page.getByRole("button", { name: "Request appointment", exact: true }).click();
+  await page.getByRole("button", { name: "Request Appointment", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(writes).toHaveLength(2);
   expect(writes[0].time).toBe("09:00");
@@ -274,7 +276,7 @@ test("a definite slot conflict preserves the draft and allows a different availa
 test("an unconfigured calendar directs its owner to availability", async ({ page }) => {
   await mockCalendar(page, false);
   await page.goto("/calendar");
-  await page.getByRole("button", { name: "Set availability", exact: true }).first().click();
+  await page.getByRole("button", { name: "Set Availability", exact: true }).first().click();
   await expect(page).toHaveURL(/tab=availability/);
   await expect(page.getByRole("heading", { name: "Weekly Hours", exact: true })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -307,7 +309,7 @@ test("pending creation ignores repeated clicks and cannot be dismissed", async (
   await page.getByRole("button", { name: "New Appointment", exact: true }).click();
   await page.getByLabel("Customer name", { exact: true }).fill("QA Pending");
   await page.getByLabel("Available time", { exact: true }).selectOption("09:00");
-  const create = page.getByRole("button", { name: "Request appointment", exact: true });
+  const create = page.getByRole("button", { name: "Request Appointment", exact: true });
   await create.evaluate((button: HTMLButtonElement) => {
     button.click();
     button.click();
@@ -335,12 +337,12 @@ test("a conflict after an uncertain write retains the original frozen request", 
   await page.getByRole("button", { name: "New Appointment", exact: true }).click();
   await page.getByLabel("Customer name", { exact: true }).fill("QA Original Request");
   await page.getByLabel("Available time", { exact: true }).selectOption("09:00");
-  await page.getByRole("button", { name: "Request appointment", exact: true }).click();
+  await page.getByRole("button", { name: "Request Appointment", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "Check booking", exact: true }).click();
+  await dialog.getByRole("button", { name: "Check Booking", exact: true }).click();
   await expect(page.getByText("Check Calendar, then retry this booking.")).toBeVisible();
   await expect(page.getByLabel("Customer name", { exact: true })).toBeDisabled();
-  await dialog.getByRole("button", { name: "Check booking", exact: true }).click();
+  await dialog.getByRole("button", { name: "Check Booking", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(writes).toHaveLength(3);
   expect(writes[0]).toEqual(writes[1]);

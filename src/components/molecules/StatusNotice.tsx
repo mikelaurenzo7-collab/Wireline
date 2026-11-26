@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const statusNoticeVariants = cva(
-  "rounded-[var(--wireline-radius-lg)] border px-4 py-3 text-left text-sm text-[var(--wireline-color-text-primary)]",
+  "rounded-lg border px-4 py-3 text-left text-sm text-[var(--wireline-color-text-primary)]",
   {
     variants: {
       tone: {

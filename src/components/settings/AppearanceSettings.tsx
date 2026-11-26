@@ -15,7 +15,7 @@ export default function AppearanceSettings() {
 
   return (
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-      <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
+      <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-tight text-foreground">
         Theme
       </h2>
       <div

@@ -363,7 +363,7 @@ export default function IntakeKeysManager() {
                   disableAnimations
                   onClick={create}
                   disabled={creating || pendingKey !== null || !name.trim()}
-                  className="touch-press h-11 px-5 rounded-md text-xs uppercase tracking-[0.25em] font-medium bg-gradient-to-r from-brand to-brand-deep text-on-brand hover:opacity-90"
+                  className="touch-press h-11 px-5 rounded-md text-xs uppercase tracking-widest font-medium bg-gradient-to-r from-brand to-brand-deep text-on-brand hover:opacity-90"
                 >
                   {creating ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

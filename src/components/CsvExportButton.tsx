@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Download, Loader2, Check } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { clientLog } from "../lib/client-log";
-import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
-import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Button } from "./atoms";
 
 export type CsvExportType = "calls" | "leads" | "appointments" | "tasks";
 
@@ -13,15 +12,7 @@ export type CsvExportType = "calls" | "leads" | "appointments" | "tasks";
  * a browser download. Uses fetch+Blob so the bearer token is sent —
  * a plain <a href> wouldn't authenticate.
  */
-export default function CsvExportButton({
-  type,
-  label,
-  variant = "default",
-}: {
-  type: CsvExportType;
-  label?: string;
-  variant?: "default" | "ghost";
-}) {
+export default function CsvExportButton({ type, label }: { type: CsvExportType; label?: string }) {
   const { error: toastError } = useToast();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -45,36 +36,23 @@ export default function CsvExportButton({
       setTimeout(() => setDone(false), 2000);
     } catch (err) {
       clientLog.error("csv-export", err);
-      toastError("Export failed", "Could not generate the CSV. Please try again.");
+      toastError("Export Failed", "Could not generate the CSV. Please try again.");
     } finally {
       setBusy(false);
     }
   };
 
-  const styles = {
-    default:
-      "rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-foreground/80 hover:text-brand hover:border-brand/40",
-    ghost: "rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5",
-  };
-
+  // The standard secondary button, so it sits level with the controls beside it.
   return (
-    <ShadButton
-      type="button"
-      disableAnimations
-      variant={variant === "ghost" ? "ghost" : "outline"}
-      size="sm"
-      onClick={onClick}
-      disabled={busy}
-      className={cn(styles[variant])}
-    >
+    <Button type="button" variant="secondary" size="sm" onClick={onClick} disabled={busy}>
       {busy ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
       ) : done ? (
-        <Check className="w-3.5 h-3.5 wl-text-success" />
+        <Check className="size-3.5 wl-text-success" aria-hidden="true" />
       ) : (
-        <Download className="w-3.5 h-3.5" />
+        <Download className="size-3.5" aria-hidden="true" />
       )}
       {label ?? "Export CSV"}
-    </ShadButton>
+    </Button>
   );
 }

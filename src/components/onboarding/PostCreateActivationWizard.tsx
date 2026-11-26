@@ -271,14 +271,14 @@ export default function PostCreateActivationWizard({
       aria-modal="true"
       aria-labelledby="post-create-wizard-title"
     >
-      <div className="flex max-h-[min(92dvh,880px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[var(--radius-xl)] border border-border bg-background shadow-[var(--wireline-elevation-lg)] sm:rounded-[var(--radius-xl)]">
+      <div className="flex max-h-[min(92dvh,880px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl border border-border bg-background shadow-[var(--wireline-elevation-lg)] sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <p className={WL_APP_CLASSES.wiredEyebrow}>{POST_CREATE_WIZARD_COPY.eyebrow}</p>
             <h2
               id="post-create-wizard-title"
               data-slot="dialog-title"
-              className="mt-1 font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground sm:text-2xl"
+              className="mt-1 font-[var(--wireline-font-family-display)] text-xl tracking-tight text-foreground sm:text-2xl"
             >
               {POST_CREATE_WIZARD_COPY.title}{" "}
               <span className="wl-preserve-case">{payload.agentName}</span>
@@ -345,7 +345,8 @@ export default function PostCreateActivationWizard({
                   {POST_CREATE_WIZARD_COPY.steps.train.detail}
                 </p>
                 <p className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs leading-relaxed text-foreground">
-                  Train what matters, then rehearse privately before connecting your channels.
+                  Add what matters to Knowledge, then rehearse privately before connecting your
+                  channels.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

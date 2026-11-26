@@ -19,7 +19,7 @@ import OutboundPurposePicker, {
   type OutboundPurposeChoice,
 } from "./outbound/OutboundPurposePicker";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
-import { formatDate } from "../lib/safe-date";
+import { formatActivityTime } from "../lib/safe-date";
 import { formatPhone } from "../lib/safe-number";
 import { conversationOutcomeLabel } from "../lib/conversation-outcome-display";
 import {
@@ -167,15 +167,6 @@ function smsBodyFingerprint(value: string): string {
     hash = Math.imul(hash, 16777619);
   }
   return `${value.length}:${(hash >>> 0).toString(16)}`;
-}
-
-function formatSmsTime(value: string) {
-  return formatDate(
-    value,
-    { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
-    "",
-    "en-US",
-  );
 }
 
 export default function SmsThreads({
@@ -942,8 +933,8 @@ export default function SmsThreads({
                         {thread.person_name ||
                           formatPhone(thread.customer_number, "Unknown number")}
                       </strong>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
-                        {formatSmsTime(thread.last_message_at)}
+                      <span className="shrink-0 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
+                        {formatActivityTime(thread.last_message_at)}
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
@@ -962,7 +953,7 @@ export default function SmsThreads({
                         <span className="font-semibold text-warning">Safe retry pending</span>
                       ) : null}
                       {thread.unread_count > 0 ? (
-                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold text-primary-foreground">
                           {thread.unread_count}
                         </span>
                       ) : null}
@@ -1069,7 +1060,7 @@ export default function SmsThreads({
                             : "Customer"
                         }
                         channel="text"
-                        timestamp={formatSmsTime(message.created_at)}
+                        timestamp={formatActivityTime(message.created_at)}
                       >
                         {message.body}
                       </ConversationMessage>

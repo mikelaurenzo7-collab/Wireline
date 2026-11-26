@@ -56,7 +56,7 @@ export default function About() {
             </a>
           </div>
 
-          <ol className="grid content-center gap-px overflow-hidden rounded-[16px] border border-border bg-border">
+          <ol className="grid content-center gap-px overflow-hidden rounded-2xl border border-border bg-border">
             {POSITIONS.map(({ heading, copy }, index) => (
               <li key={heading} className="grid gap-1 bg-card px-6 py-5 sm:grid-cols-[3rem_1fr]">
                 <span className="font-mono text-xs font-semibold tracking-[.08em] text-primary">

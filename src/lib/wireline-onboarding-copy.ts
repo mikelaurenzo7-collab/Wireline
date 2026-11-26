@@ -27,17 +27,18 @@ export const ACTIVATION_NUDGE_COPY = {
   cta: "Call your Bot",
 } as const;
 
-/** Guided steps after create — Train → Voice → Rehearse → Launch. */
+/** Guided steps after create — Knowledge → Voice → Rehearse → Launch. */
 export const POST_CREATE_WIZARD_COPY = {
   eyebrow: "Setup",
   title: "Next Up for",
   steps: {
     train: {
-      label: "Train",
+      label: "Knowledge",
       title: "Teach It the Job",
       detail: "Review its instructions. Add a site, document, or policy when needed.",
-      salesHint: "Train what matters on day one, hear it privately, then put it on a live number.",
-      primary: "Open training",
+      salesHint:
+        "Teach it what matters on day one, hear it privately, then put it on a live number.",
+      primary: "Open Knowledge",
       secondary: "Choose Voice",
     },
     voice: {
@@ -50,8 +51,8 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Launch",
       title: "Put It on the Line",
       detail: "Connect a dedicated number so callers can reach this Bot directly.",
-      primary: "Choose a number",
-      skip: "Launch later",
+      primary: "Choose a Number",
+      skip: "Launch Later",
     },
     test: {
       label: "Rehearse",
@@ -70,7 +71,7 @@ export const POST_CREATE_WIZARD_COPY = {
     deferredDetail: (agentName: string) =>
       `${agentName} is saved. Connect a number under Phone when you want it live.`,
     studioCta: "Continue in Workspace",
-    phoneCta: "Get a number",
+    phoneCta: "Get a Number",
   },
 } as const;
 

@@ -293,7 +293,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       expect(knowledgePage).toContain("<WebsiteKnowledgeImport");
       expect(knowledgePage).toContain("<KnowledgeBaseClaude");
       expect(knowledgePage).toContain("Choose a Bot");
-      expect(knowledgePage).toContain("<WorkspaceControlBand");
+      expect(knowledgePage).toContain('<WorkspacePageIntro title="Knowledge" size="compact"');
 
       // Ingestion drop zone and source document grounding
       expect(knowledgeEditor).toContain("Add Documents");

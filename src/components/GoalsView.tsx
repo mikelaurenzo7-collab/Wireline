@@ -186,7 +186,7 @@ function GoalEditor({
           disableAnimations
           onClick={() => valid && onSave(Math.round(parsed), label)}
           disabled={!valid || saving}
-          className="flex-1 min-h-11 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
+          className="flex-1 min-h-11 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest"
         >
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -201,7 +201,7 @@ function GoalEditor({
           disableAnimations
           onClick={onCancel}
           disabled={saving}
-          className="min-h-11 px-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
+          className="min-h-11 px-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest"
         >
           Cancel
         </ShadButton>
@@ -374,7 +374,7 @@ function EmptyMetricCard({
         variant="outline"
         disableAnimations
         onClick={onCreate}
-        className="mt-auto min-h-11 w-full rounded-md text-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em] hover:bg-brand/5"
+        className="mt-auto min-h-11 w-full rounded-md text-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest hover:bg-brand/5"
       >
         <Plus className="w-3.5 h-3.5" />
         Set a Target

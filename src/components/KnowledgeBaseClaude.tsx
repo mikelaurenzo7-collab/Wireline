@@ -731,7 +731,7 @@ export default function KnowledgeBaseClaude({
                     maxLength={12_000}
                     rows={3}
                     disabled={busy}
-                    className="w-full resize-y rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none focus:border-[var(--wireline-color-action-primary-default)]"
+                    className="w-full resize-y rounded-md border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none focus:border-[var(--wireline-color-action-primary-default)]"
                   />
                   <div className="mt-2 flex flex-wrap justify-end gap-2">
                     <Button
@@ -921,7 +921,7 @@ export default function KnowledgeBaseClaude({
       {error ? (
         <div
           role="alert"
-          className="rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-status-error)]"
+          className="rounded-md border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-4 py-2.5 text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-status-error)]"
         >
           {error}
         </div>
@@ -929,7 +929,7 @@ export default function KnowledgeBaseClaude({
       {notice ? (
         <div
           role="status"
-          className="rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-action-primary-pressed)]"
+          className="rounded-md border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-action-primary-pressed)]"
         >
           {notice}
         </div>
@@ -939,7 +939,7 @@ export default function KnowledgeBaseClaude({
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={`flex rounded-[var(--wireline-radius-lg)] border-2 border-dashed text-center transition-colors ${
+        className={`flex rounded-lg border-2 border-dashed text-center transition-colors ${
           compactUpload
             ? "min-h-[72px] flex-col items-stretch justify-center gap-3 px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:px-5"
             : "min-h-[96px] flex-col items-center justify-center px-6 py-5"
@@ -987,7 +987,7 @@ export default function KnowledgeBaseClaude({
           Array.from({ length: 3 }, (_, index) => (
             <div
               key={index}
-              className="h-[68px] animate-pulse rounded-[var(--wireline-radius-lg)] bg-[var(--wireline-color-surface-subtle)]"
+              className="h-[68px] animate-pulse rounded-lg bg-[var(--wireline-color-surface-subtle)]"
             />
           ))
         ) : knowledge.length === 0 ? null : (
@@ -1006,7 +1006,7 @@ export default function KnowledgeBaseClaude({
                   return (
                     <article
                       key={entry.id ?? `k-${index}`}
-                      className="rounded-[var(--wireline-radius-lg)] border border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-surface-default)] p-4"
+                      className="rounded-lg border border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-surface-default)] p-4"
                     >
                       <label
                         className="mb-2 block text-xs font-semibold text-[var(--wireline-color-text-primary)]"
@@ -1022,7 +1022,7 @@ export default function KnowledgeBaseClaude({
                         maxLength={10_000}
                         rows={5}
                         disabled={busy}
-                        className="w-full resize-y rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none focus:border-[var(--wireline-color-action-primary-default)]"
+                        className="w-full resize-y rounded-md border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none focus:border-[var(--wireline-color-action-primary-default)]"
                       />
                       <div className="mt-3 flex flex-wrap justify-end gap-2">
                         <Button
@@ -1055,10 +1055,10 @@ export default function KnowledgeBaseClaude({
                 return (
                   <article
                     key={entry.id ?? `k-${index}`}
-                    className="flex flex-wrap items-center gap-3.5 rounded-[var(--wireline-radius-lg)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-4 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)] sm:flex-nowrap sm:px-5"
+                    className="flex flex-wrap items-center gap-3.5 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-4 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)] sm:flex-nowrap sm:px-5"
                   >
                     <div
-                      className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] font-[var(--wireline-font-mono)] text-[11px] font-bold"
+                      className="grid size-9 shrink-0 place-items-center rounded-md font-[var(--wireline-font-mono)] text-[length:var(--wireline-typography-overline-size)] font-bold"
                       style={{ background: SUCCESS_SURFACE, color: SUCCESS_TEXT }}
                     >
                       {badge}
@@ -1138,7 +1138,7 @@ export default function KnowledgeBaseClaude({
                       )
                     ) : (
                       <span
-                        className="rounded-[var(--wireline-radius-xs)] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
+                        className="rounded-[var(--wireline-radius-xs)] px-2 py-1 font-[var(--wireline-font-mono)] text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest"
                         style={{
                           background: SUCCESS_SURFACE,
                           color: "var(--wireline-color-status-success)",
@@ -1155,7 +1155,7 @@ export default function KnowledgeBaseClaude({
               <button
                 type="button"
                 onClick={() => setShowAllKnowledge((value) => !value)}
-                className="self-start text-[12px] font-semibold text-[var(--wireline-color-action-primary-default)] hover:underline"
+                className="self-start text-xs font-semibold text-[var(--wireline-color-action-primary-default)] hover:underline"
               >
                 {showAllKnowledge ? "Show Less" : `Show All ${knowledge.length}`}
               </button>

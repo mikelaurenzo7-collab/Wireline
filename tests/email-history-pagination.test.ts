@@ -158,6 +158,9 @@ vi.mock("../src/lib/server-utils", () => ({
   mapObjectToSnake: (value: unknown) => value,
 }));
 vi.mock("../src/lib/nav-counts-invalidate", () => ({ touchNavCounts: h.touchNavCounts }));
+vi.mock("../src/lib/people/people-labels", () => ({
+  withPersonLabels: vi.fn(async (_userId: string, rows: unknown[]) => rows),
+}));
 
 import router from "../src/routes/email-routes";
 import outcomeRouter from "../src/routes/email-outcome-routes";
@@ -415,7 +418,10 @@ describe("tenant-scoped email history pages", () => {
       ],
     ];
     const page = await list({ limit: "2" });
-    expect(page.threads).toEqual([{ id: IDS[0], activityAt: time }, { id: IDS[1], activityAt: time }]);
+    expect(page.threads).toEqual([
+      { id: IDS[0], activityAt: time },
+      { id: IDS[1], activityAt: time },
+    ]);
     expect(page.hasMore).toBe(true);
     expect(decode(page.nextCursor)).toMatchObject({
       asOf: AS_OF,
