@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock3, ExternalLink, RefreshCw } from "lucide-react";
 
+import { Link } from "react-router";
+
 import { authFetch } from "../lib/api";
 import { addDaysToIsoDate } from "../lib/calendar-time";
 import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
@@ -209,6 +211,7 @@ export function AppointmentRow({
 function GoogleCalendarCard() {
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState<boolean | null>(null);
+  const [otherCalendarConnected, setOtherCalendarConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [connectionRevision, setConnectionRevision] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -227,6 +230,7 @@ function GoogleCalendarCard() {
         if (!Array.isArray(body?.accounts)) throw new Error("Calendar connection unavailable.");
         const hasGoogle = body.accounts.some((a) => a.provider === "google");
         setConnected(hasGoogle);
+        setOtherCalendarConnected(!hasGoogle && body.accounts.length > 0);
       })
       .catch(() => {
         if (!cancelled) setConnectionError(true);
@@ -265,20 +269,6 @@ function GoogleCalendarCard() {
     } finally {
       syncingRef.current = false;
       setSyncing(false);
-    }
-  }
-
-  async function handleConnect() {
-    try {
-      const res = await authFetch("/api/oauth/google/url?purpose=calendar");
-      const data = (await res.json().catch(() => null)) as { url?: string } | null;
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        window.location.href = "/connections";
-      }
-    } catch {
-      window.location.href = "/connections";
     }
   }
 
@@ -361,27 +351,20 @@ function GoogleCalendarCard() {
     );
   }
 
+  // Calendars are connected in one place, Connections. This page only says
+  // where busy times come from, so the same connect step is not offered twice.
   return (
-    <div className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-2xs">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
-            <CalendarDays className="size-4" aria-hidden="true" />
-          </span>
-          <div>
-            <strong className="text-sm font-semibold text-foreground">Google Calendar</strong>
-            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-              Import busy times to help avoid scheduling conflicts.
-            </p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button type="button" size="sm" onClick={handleConnect} className="text-xs">
-            Connect Google Calendar
-          </Button>
-        </div>
-      </div>
-    </div>
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      {otherCalendarConnected
+        ? "Your connected calendar's busy times are checked before your Bot books. "
+        : "Your Bot books within the hours you set in Availability. To also avoid conflicts with your own calendar, connect Google or Outlook. "}
+      <Link
+        to="/connections"
+        className="font-medium text-foreground underline underline-offset-2 wl-focus-ring-halo"
+      >
+        {otherCalendarConnected ? "Manage in Connections" : "Open Connections"}
+      </Link>
+    </p>
   );
 }
 

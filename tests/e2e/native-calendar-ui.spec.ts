@@ -116,9 +116,7 @@ test("Calendar connection failure offers retry instead of claiming Google is dis
   );
   await page.goto("/calendar");
   await expect(page.getByText("Couldn’t check connected calendars", { exact: true })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Connect Google Calendar", exact: true }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Open Connections", exact: true })).toHaveCount(0);
   retry = true;
   await page.getByRole("button", { name: "Retry", exact: true }).click();
   await expect(page.getByText("Google Calendar connected", { exact: true })).toBeVisible();
