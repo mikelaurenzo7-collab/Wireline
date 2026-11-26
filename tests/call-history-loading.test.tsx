@@ -208,6 +208,24 @@ describe("a link to a call that is answered", () => {
     expect(rows().map((node) => node.props["aria-pressed" as keyof Props])).toEqual([false, true]);
   });
 
+  it("keeps the link when the list fails to load, and opens the call once it loads", async () => {
+    focusCallId = "77";
+    onFocusSettled = vi.fn();
+    h.fetch
+      .mockResolvedValueOnce(json([], 0, 503))
+      .mockResolvedValueOnce(json([{ id: "78" }, { id: "77" }], 2));
+    await settle();
+    // Nothing was learned about call 77, so the link stays and nothing is claimed.
+    expect(onFocusSettled).not.toHaveBeenCalled();
+    expect(elements(tree).some((node) => node.props.title === "Call Not in This List")).toBe(false);
+
+    button("Refresh calls").props.onClick!();
+    await settle();
+    expect(onFocusSettled).toHaveBeenCalledOnce();
+    expect(elements(tree).some((node) => node.props.title === "Call Not in This List")).toBe(false);
+    expect(rows().map((node) => node.props["aria-pressed" as keyof Props])).toEqual([false, true]);
+  });
+
   it("keeps the call the owner opened while a deeper page was still loading", async () => {
     focusCallId = "37";
     const second = deferred();

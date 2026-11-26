@@ -12,6 +12,19 @@ export type NormalizedIdentifier = { kind: PersonIdentifierKind; value: string }
 
 const EMAIL_PATTERN = /^[^\s@,;<>"]+@[^\s@,;<>"]+\.[^\s@,;<>"]+$/;
 
+/**
+ * What the carrier reports in place of a number the caller withheld:
+ * ANONYMOUS, RESTRICTED, BLOCKED, UNKNOWN and UNAVAILABLE spelled on a keypad.
+ * Every withheld caller shares them, so they identify nobody.
+ */
+const WITHHELD_CALLER_PLACEHOLDERS = new Set([
+  "+266696687",
+  "+7378742833",
+  "+2562533",
+  "+8656696",
+  "+86282452253",
+]);
+
 export function normalizePersonPhone(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const trimmed = raw.trim();
@@ -23,6 +36,7 @@ export function normalizePersonPhone(raw: unknown): string | null {
   // Brazil, not a North American number that happens to have ten digits.
   if (trimmed.startsWith("+")) {
     const e164 = `+${digits}`;
+    if (WITHHELD_CALLER_PLACEHOLDERS.has(e164)) return null;
     return /^\+[1-9]\d{6,14}$/.test(e164) ? e164 : null;
   }
   if (digits.length === 10) return `+1${digits}`;

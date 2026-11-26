@@ -25,6 +25,8 @@ export { callHappenedDetail, callHappenedLabel, classifyCallHappened } from "./c
 /**
  * The appointment states that mean the call ended in a booking. "Requested" is
  * left out on purpose: it is waiting for the owner to confirm or decline.
+ * This decides calls the digest did not tag. A call the digest tagged booked
+ * stays Booked if the appointment is cancelled later: the call did book it.
  */
 export const BOOKED_APPOINTMENT_STATUSES = [
   "Scheduled",

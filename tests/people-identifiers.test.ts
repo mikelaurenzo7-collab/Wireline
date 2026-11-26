@@ -41,6 +41,20 @@ describe("People phone normalization", () => {
     expect(normalizePersonPhone(raw)).toBeNull();
   });
 
+  it.each(["+266696687", "+7378742833", "+2562533", "+8656696", "+86282452253"])(
+    "refuses %s, which the carrier reports for every caller who withheld their number",
+    (placeholder) => {
+      expect(normalizePersonPhone(placeholder)).toBeNull();
+      expect(normalizeIdentifier("phone", placeholder)).toBeNull();
+    },
+  );
+
+  it("still accepts the real North American number that shares a placeholder's digits", () => {
+    // 737 is an Austin area code; only the + form without a country code is the placeholder.
+    expect(normalizePersonPhone("(737) 874-2833")).toBe("+17378742833");
+    expect(normalizePersonPhone("+1 737 874 2833")).toBe("+17378742833");
+  });
+
   it("matches stored numbers with or without the North American 1, and other countries exactly", () => {
     expect(phoneDigitCandidates("+13125550101")).toEqual(["13125550101", "3125550101"]);
     expect(phoneDigitCandidates("+442079460958")).toEqual(["442079460958"]);

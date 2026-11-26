@@ -76,12 +76,30 @@ export const PRODUCTION_VISUAL_AUTHENTICATED_EXPECTATIONS = Object.freeze([
   visualExpectation("/settings/apps", "settings", ["apps"]),
   visualExpectation("/settings/apps/command", "settings", ["apps-command"]),
   visualExpectation("/settings/not-a-route", "authenticated-not-found", ["not-found"]),
-  visualExpectation("/admin", "admin", ["panel-accounts"]),
-  visualExpectation("/admin?tab=subscription", "admin", ["panel-subscription"]),
+  // /admin is the platform-admin console. The capture account is an ordinary
+  // workspace, so each tab lands on the owner page that holds the same control.
+  visualExpectation("/admin", "settings", ["account"]),
+  visualExpectation("/admin?tab=subscription", "settings", ["billing"]),
   visualExpectation("/admin?tab=team", "settings", ["team"]),
-  visualExpectation("/admin?tab=branding", "admin", ["panel-branding"]),
-  visualExpectation("/admin?tab=carrier", "admin", ["panel-carrier"]),
+  visualExpectation("/admin?tab=branding", "settings", ["customization"]),
+  visualExpectation("/admin?tab=carrier", "phone", ["primary-lines"]),
 ]);
+
+/** Mirrors settingsPathForAdminTab in src/lib/admin-access.ts; a test keeps them equal. */
+export const ADMIN_TAB_OWNER_PAGES = new Map([
+  ["subscription", "/settings/billing"],
+  ["team", "/settings/team"],
+  ["branding", "/settings/customization"],
+  ["carrier", "/phone?tab=lines"],
+  ["activity", "/settings/compliance"],
+  ["dnc", "/settings/compliance"],
+  ["audit", "/settings/compliance"],
+  ["voices", "/knowledge?tab=voice"],
+]);
+
+export function adminTabOwnerPage(tab) {
+  return ADMIN_TAB_OWNER_PAGES.get(tab ?? "") ?? "/settings";
+}
 
 export const PRODUCTION_VISUAL_COMPATIBILITY_EXPECTATIONS = Object.freeze([
   visualExpectation("/overview", "studio"),
@@ -254,9 +272,13 @@ export function routeReachedExactly(
       expectedSearch = "";
       expectedHash = "";
     }
-    if (requested.pathname === "/admin" && requested.searchParams.get("tab") === "team") {
-      expectedPath = "/settings/team";
-      expectedSearch = "";
+    if (requested.pathname === "/admin") {
+      const ownerPage = new URL(
+        adminTabOwnerPage(requested.searchParams.get("tab")),
+        `${base.origin}/`,
+      );
+      expectedPath = ownerPage.pathname;
+      expectedSearch = ownerPage.search;
       expectedHash = "";
     }
     if (requested.pathname === "/computer" && opensComputerBesideChat(viewportName)) {

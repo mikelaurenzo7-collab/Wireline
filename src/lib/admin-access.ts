@@ -8,9 +8,11 @@ export function isWirelineAccountHolder(user: { is_owner?: boolean } | null | un
 }
 
 /**
- * `/admin` is the console for BotBound's own platform admins. Every other
- * account has the same controls in Settings, Lines and Compliance, so an old
- * Admin link lands on the matching page instead of a second copy of it.
+ * `/admin` is the console for BotBound's own platform admins. An owner has
+ * billing, team, brand, lines and compliance controls in Settings and Lines,
+ * so an old Admin link lands on the matching page instead of a second copy.
+ * The accounts list and the audit trail exist only in the console: an owner
+ * who follows one of those links lands on Settings or Compliance.
  */
 export function settingsPathForAdminTab(tab: string | null | undefined): string {
   switch (tab) {

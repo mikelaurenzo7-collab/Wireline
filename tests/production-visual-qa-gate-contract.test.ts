@@ -4,7 +4,9 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { settingsPathForAdminTab } from "../src/lib/admin-access";
 import {
+  adminTabOwnerPage,
   CANONICAL_PRODUCTION_VISUAL_BASE_URL,
   optionalProductionVisualArtifactNames,
   productionVisualRouteExpectation,
@@ -287,6 +289,39 @@ describe("production visual QA safety gate", () => {
       expect(routeReachedExactly(origin, route, origin + destination, viewport, roster)).toBe(
         accepted,
       );
+    }
+  });
+
+  it("expects each Admin link where the app sends an ordinary workspace", () => {
+    const origin = CANONICAL_PRODUCTION_VISUAL_BASE_URL;
+    for (const tab of [
+      null,
+      "accounts",
+      "subscription",
+      "team",
+      "branding",
+      "carrier",
+      "activity",
+      "dnc",
+      "audit",
+      "voices",
+      "not-a-tab",
+    ]) {
+      expect(adminTabOwnerPage(tab), String(tab)).toBe(settingsPathForAdminTab(tab));
+    }
+    for (const [route, destination, page, states] of [
+      ["/admin", "/settings", "settings", ["account"]],
+      ["/admin?tab=subscription", "/settings/billing", "settings", ["billing"]],
+      ["/admin?tab=team", "/settings/team", "settings", ["team"]],
+      ["/admin?tab=branding", "/settings/customization", "settings", ["customization"]],
+      ["/admin?tab=carrier", "/phone?tab=lines", "phone", ["primary-lines"]],
+    ] as const) {
+      expect(routeReachedExactly(origin, route, origin + destination, "desktop"), route).toBe(true);
+      // The console itself is not where the capture account ends up.
+      expect(routeReachedExactly(origin, route, origin + route, "desktop"), route).toBe(false);
+      const expectation = productionVisualRouteExpectation("authenticated", route, "desktop");
+      expect(expectation?.page, route).toBe(page);
+      expect(expectation?.states, route).toEqual(states);
     }
   });
 

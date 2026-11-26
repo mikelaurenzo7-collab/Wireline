@@ -343,6 +343,8 @@ export default function CallLogsClaude({
 
   useEffect(() => {
     if (!focusCallId || focusSettled.current === focusCallId || loading || loadingMore) return;
+    // A list that failed to load says nothing about the call. The link waits for the next load.
+    if (error && !calls.length) return;
     const match = calls.find((call) => String(call.id) === focusCallId);
     if (match) {
       focusSettled.current = focusCallId;
@@ -362,7 +364,7 @@ export default function CallLogsClaude({
     // Say so, instead of leaving another customer's call where theirs should be.
     setFocusMissing(!pickedByOwner.current);
     settled.current?.();
-  }, [calls, focusCallId, hasMore, loadMore, loadMoreError, loading, loadingMore]);
+  }, [calls, error, focusCallId, hasMore, loadMore, loadMoreError, loading, loadingMore]);
 
   const paginationControl =
     hasMore || loadMoreError ? (

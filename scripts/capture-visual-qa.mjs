@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  adminTabOwnerPage,
   PRODUCTION_VISUAL_MARKETING_ROUTES,
   productionVisualRouteExpectation,
   productionVisualSemanticKey,
@@ -148,6 +149,11 @@ function routeReached(base, requestedRoute, finalUrl) {
   ]);
   const expectedPath = expectedRedirects.get(requestedPath);
   if (expectedPath && finalUrl.startsWith(`${base}${expectedPath}`)) return true;
+  // An ordinary workspace is sent from the platform-admin console to its owner page.
+  if (requestedPath === "/admin") {
+    const tab = new URL(requestedRoute, `${base}/`).searchParams.get("tab");
+    if (finalUrl.startsWith(`${base}${adminTabOwnerPage(tab)}`)) return true;
+  }
   if (finalUrl.startsWith(`${base}${requestedPath}`)) return true;
   if (LEGACY_ROUTE_PREFIXES.has(requestedPath)) return true;
   return false;

@@ -788,7 +788,7 @@ function toolDefinitions() {
       name: "train_botbound_agent",
       title: "Train a BotBound agent",
       description:
-        "Saves a confirmed Training fact or operating rule into the connected user’s BotBound workspace so it is live in Training. The account holder must enable connected-app Training writes in BotBound Apps first. This does not launch the agent, attach a number, or contact a customer.",
+        "Saves a confirmed Training fact or operating rule into the connected user’s BotBound workspace so it is live in Training. The account holder must first turn on Save to Knowledge in BotBound under Settings, Apps. This does not launch the agent, attach a number, or contact a customer.",
       inputSchema: {
         type: "object",
         properties: {
