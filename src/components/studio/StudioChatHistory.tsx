@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FolderInput, History } from "lucide-react";
 import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger, Input } from "../atoms";
 import { authFetch } from "../../lib/api";
+import { notifyStudioChatsChanged } from "../../lib/studio-active-chat";
 
 type Chat = { id: string; title: string; project: string | null; updatedAt: string };
 
@@ -71,6 +72,7 @@ export default function StudioChatHistory({
         previous.map((chat) => (chat.id === id ? { ...chat, project: saved.project } : chat)),
       );
       setEditing(null);
+      notifyStudioChatsChanged();
     } catch {
       setError("The project could not be saved. Try again.");
     } finally {

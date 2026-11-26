@@ -79,6 +79,7 @@ export default function BillingSettings() {
   const { search } = useLocation();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
+  const [usageTierName, setUsageTierName] = useState<string | null>(null);
   const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
   const [balanceEntries, setBalanceEntries] = useState<RuntimeBalanceEntry[] | null>(null);
   const [activityUnavailable, setActivityUnavailable] = useState(false);
@@ -446,6 +447,7 @@ export default function BillingSettings() {
           refreshKey={refreshKey}
           onRetry={retryBilling}
           onCheckoutAvailabilityChange={setCheckoutAvailability}
+          usageTierName={usageTierName}
         />
 
         {showRuntimeBalance && (
@@ -543,6 +545,7 @@ export default function BillingSettings() {
         )}
 
         <UsageSpendCard
+          onTierName={setUsageTierName}
           refreshKey={refreshKey}
           hasSubscription={Boolean(subscription?.has_subscription)}
           checkoutReady={billingReady && liveChannels !== null && !statusUnavailable}

@@ -30,11 +30,14 @@ export default function UsageSpendCard({
   hasSubscription = false,
   checkoutReady = true,
   grantedPlanName,
+  onTierName,
 }: {
   refreshKey?: number;
   hasSubscription?: boolean;
   checkoutReady?: boolean;
   grantedPlanName?: string;
+  /** Reports the owner's plan tier ("Lite", "Starter", "Plus") once usage loads. */
+  onTierName?: (name: string | null) => void;
 }) {
   const [state, setState] = useState<UsageSpendResponse | null>(null);
   const [capDraft, setCapDraft] = useState("");
@@ -59,13 +62,14 @@ export default function UsageSpendCard({
       .then((next) => {
         if (!active || !next) return;
         setState(next);
+        onTierName?.(next.enabled && next.usage_account ? usageTier(next.tier).name : null);
         if (next.enabled && next.usage_account) setCapDraft(String(next.cap_usd));
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [refreshKey]);
+  }, [refreshKey, onTierName]);
 
   if (!state || !state.enabled) return null;
 

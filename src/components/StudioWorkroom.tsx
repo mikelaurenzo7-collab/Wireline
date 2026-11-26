@@ -41,6 +41,7 @@ import { retainStudioConversationMessages } from "../lib/studio-session-state";
 import LinkifiedText from "./ui/LinkifiedText";
 import BotMark from "./BotMark";
 import StudioChatHistory from "./studio/StudioChatHistory";
+import { notifyStudioChatsChanged } from "../lib/studio-active-chat";
 import StudioHandsFree from "./studio/StudioHandsFree";
 import { useStudioTaskComposer } from "../hooks/useStudioTaskComposer";
 
@@ -443,6 +444,7 @@ const StudioWorkroom = forwardRef<
       ]);
       setSending(false);
       resetStream();
+      notifyStudioChatsChanged();
       if (!handsFreeActive.current) requestAnimationFrame(() => inputRef.current?.focus());
     },
     onError: (message) => {
@@ -588,6 +590,7 @@ const StudioWorkroom = forwardRef<
       setEarlierError("");
       updateSession({ messages: [], interrupted: false });
       session.operations.clear();
+      notifyStudioChatsChanged();
     } catch (reason) {
       updateSession({
         clearError: reason instanceof Error ? reason.message : "Conversation could not be cleared.",

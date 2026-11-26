@@ -13,6 +13,11 @@ import { useStudioSessionState } from "../contexts/StudioSessionContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { hasUnfinishedConversation } from "../lib/studio-session-state";
+import {
+  STUDIO_THREAD_PARAM,
+  parseStudioThreadParam,
+  setActiveStudioChat,
+} from "../lib/studio-active-chat";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import {
   clearStudioInspectorSectionParams,
@@ -382,6 +387,48 @@ function StudioWorkspaceContent() {
     if (splitWorkspace) setPanelCollapsed(false);
     requestBrowserTask();
   }, [requestBrowserTask, setPanelCollapsed, splitWorkspace]);
+
+  // The workspace rail lists saved chats; it tells Studio which one is open
+  // through this page-session store rather than owning conversation state.
+  const openThreadId = thread.scope === threadScope ? thread.id : "";
+  useEffect(() => {
+    setActiveStudioChat(
+      activeAgentId && openThreadId ? { agentId: activeAgentId, threadId: openThreadId } : null,
+    );
+    return () => setActiveStudioChat(null);
+  }, [activeAgentId, openThreadId]);
+
+  // Rail and deep links open a chat with `?conversation=`. Studio applies it
+  // once, with the same unsent-draft guard as the in-page controls, then
+  // removes it so a refresh opens a fresh chat again.
+  const conversationParam = params.get(STUDIO_THREAD_PARAM);
+  useEffect(() => {
+    if (!conversationParam || !activeAgentId || !openThreadId) return;
+    const target = parseStudioThreadParam(conversationParam);
+    const draftKey = `${activeAgentId}:configure`;
+    if (
+      target !== undefined &&
+      target !== openThreadId &&
+      (!workroomDrafts.get(draftKey)?.text.trim() || window.confirm("Leave this unsent draft?"))
+    ) {
+      setThread({
+        scope: threadScope,
+        id: target || crypto.randomUUID(),
+        saved: Boolean(target),
+        openedAt: Date.now(),
+      });
+      requestAnimationFrame(() => workroomRef.current?.focusComposer());
+    }
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete(STUDIO_THREAD_PARAM);
+        if (next.get("chat") === "computer") next.set("chat", "setup");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [conversationParam, activeAgentId, openThreadId, threadScope, workroomDrafts, setParams]);
 
   const requestMessage = useCallback(() => {
     setParams(

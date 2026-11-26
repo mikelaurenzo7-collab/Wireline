@@ -771,3 +771,74 @@
     color: CanvasText;
   }
 }
+
+/* Saved chats for the selected Bot, under the roster. */
+.wl-shell-chat-rail {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0.25rem 0 0.375rem;
+  padding-left: 0.625rem;
+}
+
+.wl-workspace-shell .wl-shell-chat-new,
+.wl-workspace-shell .wl-shell-chat-link {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--wireline-radius-sm);
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.wl-workspace-shell .wl-shell-chat-new {
+  color: var(--wireline-color-text-primary);
+  font-weight: 500;
+}
+
+.wl-workspace-shell .wl-shell-chat-link {
+  display: block;
+  min-height: 2.25rem;
+  overflow: hidden;
+  padding-block: 0.5rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-workspace-shell .wl-shell-chat-new:hover,
+.wl-workspace-shell .wl-shell-chat-link:hover,
+.wl-workspace-shell .wl-shell-chat-link[data-wireline-chat-open="true"] {
+  background: var(--bb-shell-active);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-shell-chat-list {
+  display: flex;
+  max-height: 14rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.wl-shell-chat-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+}
+
+.wl-shell-chat-project {
+  padding: 0.375rem 0.625rem 0.125rem;
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -75,7 +75,12 @@ requireText(
 );
 requireText(
   sipTarget,
-  'configuredPhoneVoiceProvider() !== "xai" || !xaiSipConfigured()',
+  'if (configuredPhoneVoiceProvider() !== "xai") {',
+  "xAI SIP targets must honor the operator opt-out and require configuration.",
+);
+requireText(
+  sipTarget,
+  "if (!xaiSipConfigured()) {",
   "xAI SIP targets must honor the operator opt-out and require configuration.",
 );
 requireText(

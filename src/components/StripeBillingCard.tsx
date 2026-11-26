@@ -87,6 +87,11 @@ type StripeBillingCardProps = {
   /** Coordinate recovery with a page that also owns billing status/balance. */
   refreshKey?: number;
   onRetry?: () => void;
+  /**
+   * The owner's usage tier ("Lite", "Starter", "Plus"). Every usage account
+   * shares one plan id, so without this the card can only say "Usage".
+   */
+  usageTierName?: string | null;
 };
 
 export default function StripeBillingCard({
@@ -97,6 +102,7 @@ export default function StripeBillingCard({
   onCheckoutAvailabilityChange,
   refreshKey = 0,
   onRetry,
+  usageTierName,
 }: StripeBillingCardProps = {}) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
@@ -411,6 +417,7 @@ export default function StripeBillingCard({
           agentCount={agentCount}
           busy={busy === "portal"}
           onPortal={openPortal}
+          usageTierName={usageTierName}
         />
       ) : hasGrantedPlanAccess ? (
         <GrantedPlanAccessCard
@@ -783,11 +790,13 @@ function ActiveSubCard({
   agentCount,
   busy,
   onPortal,
+  usageTierName,
 }: {
   sub: BillingSubscriptionState;
   agentCount: number;
   busy: boolean;
   onPortal: () => void;
+  usageTierName?: string | null;
 }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
   const periodEnd = safeDate(sub.current_period_end);
@@ -830,7 +839,9 @@ function ActiveSubCard({
               )}
             </div>
             <h3 className="wl-display-mark break-words text-2xl sm:text-3xl text-foreground">
-              {getPlanDisplayLabel({ id: sub.plan, name: sub.plan_name })}
+              {sub.plan === "usage" && usageTierName
+                ? usageTierName
+                : getPlanDisplayLabel({ id: sub.plan, name: sub.plan_name })}
             </h3>
             <p className="text-sm tabular-nums text-muted-foreground">
               <span>

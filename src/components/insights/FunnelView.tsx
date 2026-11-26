@@ -5,6 +5,8 @@ import type { InsightsFunnelResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { cn } from "../../lib/utils";
 
+const ZERO_HIDDEN_TOTALS = new Set(["Queued", "Qualified", "High intent"]);
+
 export default function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<InsightsFunnelResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,11 @@ export default function FunnelView({ days }: { days: number }) {
   if (!data) return null;
 
   // These totals span different workflows. They are not successive funnel stages.
-  const totals = data.stages || [];
+  // Call scoring is retired and queued leads exist only with outbound campaigns,
+  // so those three totals show only where an account has real numbers for them.
+  const totals = (data.stages || []).filter(
+    (item) => item.count > 0 || !ZERO_HIDDEN_TOTALS.has(item.name),
+  );
 
   if (totals.length === 0 || totals.every((item) => item.count === 0)) {
     return <InsightEmpty configKey="funnel" icon={TrendingUp} />;
