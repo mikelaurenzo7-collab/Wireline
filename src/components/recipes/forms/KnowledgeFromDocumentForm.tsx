@@ -149,7 +149,7 @@ export function KnowledgeFromDocumentForm({
               event.preventDefault();
               acceptFile(event.dataTransfer.files[0]);
             }}
-            className="relative flex min-h-36 flex-col items-center justify-center gap-3 rounded-md border-2 border-dashed border-white/15 px-6 py-8 text-center transition-all hover:border-brand/40"
+            className="relative flex min-h-36 flex-col items-center justify-center gap-3 rounded-md border-2 border-dashed border-border px-6 py-8 text-center transition-all hover:border-brand/40"
           >
             <Input
               type="file"

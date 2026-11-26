@@ -121,6 +121,11 @@ export interface CallOutcomeInput {
   messageContent?: string | null;
   /** A follow-up task exists for this call but carries no message content. */
   hasFollowUpTask?: boolean;
+  /**
+   * The Bot put an appointment on the calendar during this call. The booking
+   * row is the truth even when the digest tagged the call something else.
+   */
+  hasBooking?: boolean;
   hasTranscript?: boolean;
   hasSummary?: boolean;
   durationSeconds?: number | null;
@@ -180,7 +185,7 @@ export function classifyCallOutcome(input: CallOutcomeInput): CallOutcome {
   if (emailState === "pending") return "email_pending";
   if (emailState === "failed") return "email_failed";
   if (emailState === "sent") return "email_sent";
-  if (tag === "booked") return "booked";
+  if (tag === "booked" || input.hasBooking) return "booked";
   if (isMessageContent(input.messageContent)) return "message_taken";
   // A voicemail is a message when its transcription was saved with the call.
   if (tag === "voicemail" && input.hasTranscript) return "message_taken";

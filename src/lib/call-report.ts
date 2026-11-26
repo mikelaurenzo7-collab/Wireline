@@ -55,71 +55,89 @@ export async function annotateCallsWithHappened<T extends CallFactRow>(
   const followUpCalls = new Set<string>();
   const emailTaskStatuses = new Map<string, Array<string | null>>();
   const emailExecutions = new Map<string, CallEmailExecution[]>();
+  const bookedCalls = new Set<string>();
   if (ids.length) {
-    const [emailRows, taskRows, emailTaskRows, emailExecutionRows] = await Promise.all([
-      drizzle
-        .select({ metadata: schema.auditLog.metadata })
-        .from(schema.auditLog)
-        .where(
-          and(
-            eq(schema.auditLog.userId, userId),
-            eq(schema.auditLog.action, "agent_tool.send_email"),
-            eq(schema.auditLog.eventType, "voice.tool_call"),
-            sql`${schema.auditLog.metadata}->>'status' = 'completed'`,
-            sql`${schema.auditLog.metadata}->>'callId' in (${sql.join(
-              ids.map((id) => sql`${id}`),
-              sql`, `,
-            )})`,
+    const [emailRows, taskRows, emailTaskRows, emailExecutionRows, bookingRows] = await Promise.all(
+      [
+        drizzle
+          .select({ metadata: schema.auditLog.metadata })
+          .from(schema.auditLog)
+          .where(
+            and(
+              eq(schema.auditLog.userId, userId),
+              eq(schema.auditLog.action, "agent_tool.send_email"),
+              eq(schema.auditLog.eventType, "voice.tool_call"),
+              sql`${schema.auditLog.metadata}->>'status' = 'completed'`,
+              sql`${schema.auditLog.metadata}->>'callId' in (${sql.join(
+                ids.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            ),
           ),
-        ),
-      drizzle
-        .select({
-          sourceId: schema.followUpTasks.sourceId,
-          description: schema.followUpTasks.description,
-          payload: schema.followUpTasks.payload,
-        })
-        .from(schema.followUpTasks)
-        .where(
-          and(
-            eq(schema.followUpTasks.userId, userId),
-            eq(schema.followUpTasks.sourceType, "phone_call"),
-            inArray(schema.followUpTasks.sourceId, ids),
-            inArray(schema.followUpTasks.taskType, ["internal_task", "send_email"]),
+        drizzle
+          .select({
+            sourceId: schema.followUpTasks.sourceId,
+            description: schema.followUpTasks.description,
+            payload: schema.followUpTasks.payload,
+          })
+          .from(schema.followUpTasks)
+          .where(
+            and(
+              eq(schema.followUpTasks.userId, userId),
+              eq(schema.followUpTasks.sourceType, "phone_call"),
+              inArray(schema.followUpTasks.sourceId, ids),
+              inArray(schema.followUpTasks.taskType, ["internal_task", "send_email"]),
+            ),
           ),
-        ),
-      // The approval record for emails this call produced: a send_email task
-      // stays the truth until it completes (sent) or is withdrawn.
-      drizzle
-        .select({ sourceId: schema.followUpTasks.sourceId, status: schema.followUpTasks.status })
-        .from(schema.followUpTasks)
-        .where(
-          and(
-            eq(schema.followUpTasks.userId, userId),
-            eq(schema.followUpTasks.sourceType, "phone_call"),
-            inArray(schema.followUpTasks.sourceId, ids),
-            eq(schema.followUpTasks.taskType, "send_email"),
+        // The approval record for emails this call produced: a send_email task
+        // stays the truth until it completes (sent) or is withdrawn.
+        drizzle
+          .select({ sourceId: schema.followUpTasks.sourceId, status: schema.followUpTasks.status })
+          .from(schema.followUpTasks)
+          .where(
+            and(
+              eq(schema.followUpTasks.userId, userId),
+              eq(schema.followUpTasks.sourceType, "phone_call"),
+              inArray(schema.followUpTasks.sourceId, ids),
+              eq(schema.followUpTasks.taskType, "send_email"),
+            ),
           ),
-        ),
-      // The execution ledger for those approvals: an approved send records
-      // its real outcome here, including failures the task row cannot show.
-      drizzle
-        .select({ metadata: schema.auditLog.metadata })
-        .from(schema.auditLog)
-        .where(
-          and(
-            eq(schema.auditLog.userId, userId),
-            eq(schema.auditLog.eventType, "action.execution"),
-            eq(schema.auditLog.resourceType, "action_engine_execution"),
-            sql`${schema.auditLog.metadata}->>'actionType' = 'send_email'`,
-            sql`${schema.auditLog.metadata}->>'sourceType' = 'phone_call'`,
-            sql`${schema.auditLog.metadata}->>'phase' = 'auto'`,
-            sql`${schema.auditLog.metadata}->>'sourceId' in (${sql.join(
-              ids.map((id) => sql`${id}`),
-              sql`, `,
-            )})`,
+        // The execution ledger for those approvals: an approved send records
+        // its real outcome here, including failures the task row cannot show.
+        drizzle
+          .select({ metadata: schema.auditLog.metadata })
+          .from(schema.auditLog)
+          .where(
+            and(
+              eq(schema.auditLog.userId, userId),
+              eq(schema.auditLog.eventType, "action.execution"),
+              eq(schema.auditLog.resourceType, "action_engine_execution"),
+              sql`${schema.auditLog.metadata}->>'actionType' = 'send_email'`,
+              sql`${schema.auditLog.metadata}->>'sourceType' = 'phone_call'`,
+              sql`${schema.auditLog.metadata}->>'phase' = 'auto'`,
+              sql`${schema.auditLog.metadata}->>'sourceId' in (${sql.join(
+                ids.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            ),
           ),
-        ),
-    ]);
+        // Appointments the Bot booked on these calls. A cancelled booking no
+        // longer stands for what the call achieved.
+        drizzle
+          .select({ callId: schema.appointments.callId })
+          .from(schema.appointments)
+          .where(
+            and(
+              eq(schema.appointments.userId, userId),
+              inArray(schema.appointments.callId, ids),
+              sql`coalesce(${schema.appointments.status}, '') <> 'Cancelled'`,
+            ),
+          ),
+      ],
+    );
+    for (const row of bookingRows) {
+      if (row.callId) bookedCalls.add(row.callId);
+    }
     for (const row of emailRows) {
       const metadata =
         row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
@@ -179,10 +197,9 @@ export async function annotateCallsWithHappened<T extends CallFactRow>(
         taskStatuses: call.vapiCallId ? (emailTaskStatuses.get(call.vapiCallId) ?? []) : [],
         executions: call.vapiCallId ? (emailExecutions.get(call.vapiCallId) ?? []) : [],
       }),
-      messageContent: call.vapiCallId
-        ? (messageContentByCall.get(call.vapiCallId) ?? null)
-        : null,
+      messageContent: call.vapiCallId ? (messageContentByCall.get(call.vapiCallId) ?? null) : null,
       hasFollowUpTask: Boolean(call.vapiCallId && followUpCalls.has(call.vapiCallId)),
+      hasBooking: Boolean(call.vapiCallId && bookedCalls.has(call.vapiCallId)),
       hasTranscript: call.hasTranscript ?? Boolean(call.transcript?.trim()),
       hasSummary: call.hasSummary ?? Boolean(call.summary?.trim()),
       durationSeconds: call.durationSeconds,

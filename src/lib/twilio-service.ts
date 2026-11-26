@@ -545,19 +545,20 @@ export async function sendTenantMessage(
 
   // An inbound-first conversation already has a thread, but the first text
   // FROM the business still needs its sender name and opt-out instruction.
-  const [priorOutbound] = channel === "sms" && thread
-    ? await drizzle
-        .select({ id: schema.smsMessages.id })
-        .from(schema.smsMessages)
-        .where(
-          and(
-            eq(schema.smsMessages.userId, userId),
-            eq(schema.smsMessages.threadId, thread.id),
-            eq(schema.smsMessages.direction, "out"),
-          ),
-        )
-        .limit(1)
-    : [];
+  const [priorOutbound] =
+    channel === "sms" && thread
+      ? await drizzle
+          .select({ id: schema.smsMessages.id })
+          .from(schema.smsMessages)
+          .where(
+            and(
+              eq(schema.smsMessages.userId, userId),
+              eq(schema.smsMessages.threadId, thread.id),
+              eq(schema.smsMessages.direction, "out"),
+            ),
+          )
+          .limit(1)
+      : [];
   const deliveredBody =
     channel === "sms" && !priorOutbound
       ? composeFirstContactSmsBody({ body, senderName: settings.senderName })
@@ -779,7 +780,7 @@ export async function sendTenantMessage(
             refundError: getErrorMessage(refundError),
           });
           const accountingError = new Error(
-            "Twilio was not called, but its billing reservation could not be released.",
+            "The text never reached the carrier, but its billing reservation could not be released.",
           );
           (accountingError as Error & { cause?: unknown }).cause = refundError;
           throw accountingError;

@@ -18,6 +18,7 @@ import Papa from "papaparse";
 import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
+import { formatPhone } from "../lib/safe-number";
 import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/dnc-import-limits";
 import { OPS_SUPPORT_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import ClientToolbar from "./layout/ClientToolbar";
@@ -439,20 +440,29 @@ export default function DncManager() {
                       key={entry.id}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group flex flex-col gap-3 rounded-md px-2 py-3 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/3 sm:flex-row sm:items-center sm:justify-between"
+                      className="group flex flex-col gap-3 rounded-md px-2 py-3 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-brand/20 bg-brand/10">
-                          <Phone className="h-3.5 w-3.5 text-rose-500" />
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-rose-500/20 bg-rose-500/10">
+                          <Phone className="h-3.5 w-3.5 text-rose-500" aria-hidden="true" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-mono text-sm text-foreground">
-                            {entry.phone_raw || entry.phone}
+                          <p
+                            className="text-sm font-medium tabular-nums text-foreground"
+                            title={entry.phone_raw || entry.phone}
+                          >
+                            {formatPhone(entry.phone_raw || entry.phone)}
                           </p>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                            <span className="wl-micro-meta">{formatDate(entry.created_at)}</span>
-                            <span className="h-1 w-1 rounded-full bg-black/15 dark:bg-white/15" />
-                            <span className="wl-micro-meta">{reasonLabel(entry.reason)}</span>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+                            <span>
+                              {formatDate(entry.created_at, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span className="h-1 w-1 rounded-full bg-border" aria-hidden="true" />
+                            <span>{reasonLabel(entry.reason)}</span>
                           </div>
                         </div>
                       </div>

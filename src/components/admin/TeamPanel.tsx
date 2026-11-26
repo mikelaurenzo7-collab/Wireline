@@ -43,7 +43,13 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
     { id: "owner", label: "Owner", icon: Shield, color: "text-brand", bg: "bg-brand/10" },
     { id: "admin", label: "Admin", icon: ShieldCheck, color: "text-brand", bg: "bg-brand/10" },
     { id: "member", label: "Member", icon: User, color: "text-foreground", bg: "bg-muted" },
-    { id: "auditor", label: "Auditor", icon: KeyRound, color: "text-muted-foreground", bg: "bg-muted" },
+    {
+      id: "auditor",
+      label: "Auditor",
+      icon: KeyRound,
+      color: "text-muted-foreground",
+      bg: "bg-muted",
+    },
   ];
 
   const handleInvite = async () => {
@@ -214,7 +220,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                                 roleInfo.bg,
                                 roleInfo.id === "owner" || roleInfo.id === "admin"
                                   ? "border-brand/10"
-                                  : "border-white/0",
+                                  : "border-transparent",
                               )}
                             >
                               <roleInfo.icon className={cn("w-3 h-3", roleInfo.color)} />

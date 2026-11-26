@@ -40,6 +40,8 @@ The launch report now validates each configured Shared Work tier through the exi
 
 B6 was reproduced on November 20: a missed call displayed a completion placeholder and its attempt duration twice. Missing-transcript summaries now use neutral text, including the known historical placeholder at display time. Missed reports omit the duration badge; other reports show duration once. Call report headings follow the page hierarchy. Stored call data and outcome classification remain unchanged; this correction does not establish live call quality.
 
+The November 26 [design and surface audit](../audits/2026-11-26-design-and-surface-audit.md) linked calls, texts, email and bookings to People and to each other, counted a call as Booked when the Bot booked on it, and removed light-theme-invisible borders and vendor names from customer copy. Its open follow-ups are the P2 row below.
+
 ## Next work in order
 
 | Priority | Work | Acceptance |
@@ -49,6 +51,7 @@ B6 was reproduced on November 20: a missed call displayed a completion placehold
 | P1 | Measure live phone behavior. | One consented non-demo call exercises learned facts, a supported action, interruption, handoff and termination. Record first audio, response delay, playback and settlement evidence. Old call history and mocked speech do not establish current latency. |
 | P1 | Verify the phone workspace in use. | Light/dark, 320/375/390px, enlarged text, keyboard open/closed, browser return, long history and notices keep the composer, navigation and recovery reachable. Physical iPhone/Bluetooth/Meta acceptance remains distinct from browser-width tests. |
 | P1 | Complete controlled commercial proof. | Eligible new-plan checkout, ordinary paid activation, email send/receive callbacks, support handling, repeat usage and actual contribution margin have separate dated receipts. Readiness and sandbox arithmetic do not establish these outcomes. |
+| P2 | Finish the November 26 design follow-ups. | Arbitrary type, radius and letter-spacing values map to tokens; duplicate primitives converge on the atoms; one page-header treatment and one date formatter; unrendered components retired with their tests. Compare each family before and after in both themes. |
 | P2 | Consider automatic browser-task routing. | Only after the explicit flow is proven. Reuse existing admission, receipts, billing, concurrency and recovery; clarify ambiguous intent. Do not create another executor or bypass permission checks. |
 
 Keep expansion limited to evidence of customer need and completed workflow proof. BotBound owns a small appointment/People/approval core; it does not need a generic CRM or field-service platform clone. External adapters remain optional.

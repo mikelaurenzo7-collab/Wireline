@@ -150,19 +150,17 @@ export default function SmsOutcomePanel({
   if (routingConflict) {
     return (
       <section
-        className="mb-3 rounded-lg border border-amber-500/35 bg-amber-500/10 p-3"
+        className="mb-3 rounded-lg border border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] p-3"
         aria-label="SMS outcome"
       >
         <div className="flex items-center gap-2">
-          <Route className="size-3.5 text-amber-700 dark:text-amber-300" aria-hidden="true" />
-          <span className="text-xs font-semibold uppercase tracking-[.08em] text-amber-800 dark:text-amber-200">
-            Sending line needs review
-          </span>
+          <Route className="size-3.5 text-warning" aria-hidden="true" />
+          <span className="text-xs font-semibold text-warning">Sending Line Needs Review</span>
         </div>
-        <StatusNotice tone="warning" className="mt-3">
-          Outcome controls are paused until this conversation is bound to one verified Twilio
-          number. BotBound will not guess which business line owns it.
-        </StatusNotice>
+        <p className="mt-2 text-sm text-foreground">
+          Outcome controls are paused until this conversation belongs to one of your numbers.
+          BotBound will not guess which line owns it.
+        </p>
       </section>
     );
   }

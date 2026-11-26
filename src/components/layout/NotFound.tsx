@@ -177,7 +177,7 @@ function NotFoundCard({
       className="group relative flex items-center gap-3 p-4 rounded-md wl-paper wl-press wl-focus-ring-halo"
       data-accent={accent}
     >
-      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-white/8 wl-accent-icon-chip">
+      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-border wl-accent-icon-chip">
         <Icon className="w-4 h-4" strokeWidth={2.2} />
       </div>
       <div className="min-w-0 flex-1 text-left">

@@ -129,7 +129,7 @@ export function AgentWireForm({
               Draft saved. Next: add a number, voice, and launch rules.
             </div>
           )}
-          <div className="rounded-md wl-panel-elevated border border-white/12 p-6 space-y-3">
+          <div className="rounded-md wl-panel-elevated border border-border p-6 space-y-3">
             <div className="flex items-baseline justify-between">
               <h3 className="font-display text-4xl text-brand-display leading-none">
                 {design.name}
