@@ -226,9 +226,12 @@ export default function ComplianceCenter() {
                       <span className="font-medium" title={entry.event}>
                         {consentEventLabel(entry.event)}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatActivityTime(entry.created_at)}
-                      </span>
+                      <time
+                        dateTime={entry.created_at || undefined}
+                        className="text-xs tabular-nums text-muted-foreground"
+                      >
+                        {formatActivityTime(entry.created_at, "", { year: true, seconds: true })}
+                      </time>
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {formatPhone(entry.customer_number, "Unknown Number")}

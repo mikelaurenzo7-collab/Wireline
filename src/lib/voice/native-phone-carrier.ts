@@ -295,7 +295,7 @@ export async function repairOwnedTwilioOpenAIRouting(
         } catch (error) {
           failures.set(
             row.phoneNumber,
-            "BotBound could not confirm this line's Twilio routing. Retry shortly or contact support.",
+            "BotBound could not confirm this line's call routing. Retry shortly or contact support.",
           );
           log.warn("OpenAI inbound routing repair failed", {
             userId,

@@ -443,7 +443,7 @@ test("a newly paid Bot can choose a number while new checkout is paused", async 
   });
   await page.goto("/studio?agent=bot-front-desk");
   const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
-  const chooseNumber = guide.getByRole("button", { name: "Choose a number", exact: true });
+  const chooseNumber = guide.getByRole("button", { name: "Choose a Number", exact: true });
   await expect(chooseNumber).toBeEnabled();
   await expect(
     guide.getByText("Live activation isn't available right now", { exact: true }),
@@ -481,7 +481,7 @@ test("a verified checkout returns to the Bot that was being launched", async ({ 
   await expect(page).toHaveURL(/\/studio\?agent=bot-front-desk$/);
   expect(verifiedSession).toBe("cs_setup_fixture");
   const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
-  await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
+  await guide.getByRole("button", { name: "Choose a Number", exact: true }).click();
   await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
   await expect(page.getByRole("combobox", { name: "Bot for this line" })).toHaveText("Front Desk");
 });
@@ -634,13 +634,13 @@ for (const failure of ["unavailable", "malformed"] as const) {
     ).toBeVisible();
     await expect(guide.getByRole("button", { name: "Retry Line Lookup" })).toBeEnabled();
     await expect(
-      guide.getByRole("button", { name: "Choose a number", exact: true }),
+      guide.getByRole("button", { name: "Choose a Number", exact: true }),
     ).toBeDisabled();
     await expect(guide.getByText("No phone number yet.", { exact: false })).toHaveCount(0);
     recovered = true;
     await guide.getByRole("button", { name: "Retry Line Lookup" }).click();
-    await expect(guide.getByRole("button", { name: "Choose a number", exact: true })).toBeEnabled();
-    await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
+    await expect(guide.getByRole("button", { name: "Choose a Number", exact: true })).toBeEnabled();
+    await guide.getByRole("button", { name: "Choose a Number", exact: true }).click();
     await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
     await expect(page.getByRole("button", { name: "Find Numbers", exact: true })).toBeVisible();
     expect(provisionCount).toBe(0);

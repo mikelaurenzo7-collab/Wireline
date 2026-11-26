@@ -27,6 +27,7 @@ import {
 
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
 import { phoneSuffixForLog } from "../twilio-webhook-privacy";
+import { spokenSmsFailureReason } from "../sms-customer-errors";
 import {
   externalEntityActionPolicyForUser,
   liveExternalActionPolicyForUser,
@@ -576,7 +577,8 @@ The team has the email request for approval. Say the request was saved and the e
             toolCallId,
             result: `${outcome.channel === "whatsapp" ? "WhatsApp" : "SMS"} sent to ${targetNumber}.`,
           }
-        : notConfirmed(outcome.reason || "Message send failed.");
+        : // The Bot may say this to the caller, so it never names the carrier vendor.
+          notConfirmed(spokenSmsFailureReason(outcome));
     } catch {
       // An exception after entering the transport does not prove rejection.
       // Save reviewed content for manual duplicate checking, never a resend.

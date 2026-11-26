@@ -91,6 +91,7 @@ type Props = {
 let tree: ReactNode;
 let agentId = "first";
 let focusCallId: string | null = null;
+let onFocusSettled: (() => void) | undefined;
 const json = <T extends { id: string }>(calls: T[], total = 3, status = 200) =>
   new Response(JSON.stringify({ calls, total, hasMore: calls.length < total }), { status });
 function deferred() {
@@ -107,7 +108,7 @@ function render() {
     h.dirty = false;
     h.cursor = 0;
     h.effects = [];
-    tree = CallLogsClaude({ agentId, focusCallId });
+    tree = CallLogsClaude({ agentId, focusCallId, onFocusSettled });
     h.effects.forEach((run) => run());
   } while (h.dirty);
 }
@@ -142,6 +143,7 @@ beforeEach(() => {
   h.fetch.mockReset();
   agentId = "first";
   focusCallId = null;
+  onFocusSettled = undefined;
 });
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 describe("call history links to one call", () => {
@@ -171,6 +173,58 @@ describe("call history links to one call", () => {
         (node) => node.type === "button" && node.props["aria-pressed" as keyof Props] === true,
       ),
     ).toHaveLength(0);
+  });
+});
+
+describe("a link to a call that is answered", () => {
+  const rows = () =>
+    elements(tree).filter(
+      (node) => node.type === "button" && node.props["aria-pressed" as keyof Props] !== undefined,
+    );
+
+  it("says the named call is not here instead of leaving another call in its place", async () => {
+    focusCallId = "missing";
+    onFocusSettled = vi.fn();
+    h.fetch.mockResolvedValueOnce(json([{ id: "one" }], 1));
+    await settle();
+    const notice = elements(tree).find(
+      (node) => node.type === "notice" && node.props.title === "Call Not in This List",
+    );
+    expect(notice).toBeDefined();
+    expect(text(notice)).toContain("no longer in this history");
+    expect(onFocusSettled).toHaveBeenCalledOnce();
+    // Opening a call answers the notice.
+    rows()[0].props.onClick!();
+    await settle();
+    expect(elements(tree).some((node) => node.props.title === "Call Not in This List")).toBe(false);
+  });
+
+  it("tells the page once the linked call is open, so the link can leave the URL", async () => {
+    focusCallId = "39";
+    onFocusSettled = vi.fn();
+    h.fetch.mockResolvedValueOnce(json([{ id: "40" }, { id: "39" }], 2));
+    await settle();
+    expect(onFocusSettled).toHaveBeenCalledOnce();
+    expect(rows().map((node) => node.props["aria-pressed" as keyof Props])).toEqual([false, true]);
+  });
+
+  it("keeps the call the owner opened while a deeper page was still loading", async () => {
+    focusCallId = "37";
+    const second = deferred();
+    h.fetch
+      .mockResolvedValueOnce(json([{ id: "40" }, { id: "39" }], 4))
+      .mockReturnValueOnce(second.promise);
+    await settle();
+    rows()[0].props.onClick!();
+    await settle();
+    second.resolve(json([{ id: "38" }, { id: "37" }], 4));
+    await settle();
+    expect(rows().map((node) => node.props["aria-pressed" as keyof Props])).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
   });
 });
 

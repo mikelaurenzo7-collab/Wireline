@@ -24,6 +24,7 @@ import { placeOutboundCall } from "./voice/outbound-call-service";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { inspectOutboundRecipientPermission } from "./recipient-voice-permission-store";
 import { AppError } from "./api-error";
+import { withoutCarrierVendorName } from "./sms-customer-errors";
 
 interface CadenceStep {
   type: "call" | "sms" | "email";
@@ -283,7 +284,7 @@ export async function executeStep(
       ok: result.ok,
       result: result.ok
         ? `sms sent ${result.sid || ""}`
-        : `sms failed: ${result.reason || "unknown"}`,
+        : `sms failed: ${withoutCarrierVendorName(result.reason || "unknown")}`,
     };
   }
 

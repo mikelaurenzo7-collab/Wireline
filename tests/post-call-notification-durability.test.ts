@@ -280,7 +280,7 @@ describe("durable post-call customer follow-up", () => {
     expect(digest).toContain("requires provider reconciliation after an at-most-once attempt");
     expect(digest).toContain("await csatService.reconcilePriorPostCallCsatReservations");
     expect(twilio).toContain("export function twilioMessageReservationReference");
-    expect(twilio).toContain('reason: "Twilio provider attempt did not start"');
+    expect(twilio).toContain('reason: "Text was not sent"');
     expect(twilio).toContain("throw error");
     expect(callback).toBeGreaterThan(twilio.indexOf("await reserveRuntimeUsage"));
     expect(provider).toBeGreaterThan(callback);

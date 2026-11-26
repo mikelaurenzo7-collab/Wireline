@@ -654,7 +654,7 @@ export default function AppointmentsPanel({
                   <span className="text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wider text-muted-foreground">
                     {group.label}
                   </span>
-                  <span className="rounded-full bg-muted/80 px-1.5 py-0.2 text-[length:var(--wireline-typography-overline-size)] font-mono text-muted-foreground">
+                  <span className="rounded-full bg-muted/80 px-1.5 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-mono text-muted-foreground">
                     {group.items.length}
                   </span>
                 </div>

@@ -160,8 +160,17 @@ export function formatRelative(input: unknown, fallback = DEFAULT_FALLBACK): str
  * email, compliance, approvals): "Nov 26, 9:59 AM". The year is added only
  * outside the current year ("Dec 30, 2025, 4:10 PM"). Booked appointment
  * times use `appointmentWhen`, which also names the booking's time zone.
+ *
+ * Two kinds of record need more than a list row does. Work that can wait for
+ * months (an approval) always shows its year. An audit record (the consent
+ * ledger) shows its year and its seconds, so two events from one call do not
+ * read as the same moment.
  */
-export function formatActivityTime(input: unknown, fallback = ""): string {
+export function formatActivityTime(
+  input: unknown,
+  fallback = "",
+  detail: { year?: boolean; seconds?: boolean } = {},
+): string {
   const d = toDate(input);
   if (!d) return fallback;
   const options: Intl.DateTimeFormatOptions = {
@@ -170,6 +179,7 @@ export function formatActivityTime(input: unknown, fallback = ""): string {
     hour: "numeric",
     minute: "2-digit",
   };
-  if (d.getFullYear() !== new Date().getFullYear()) options.year = "numeric";
+  if (detail.seconds) options.second = "2-digit";
+  if (detail.year || d.getFullYear() !== new Date().getFullYear()) options.year = "numeric";
   return safeFormat(d, (x) => x.toLocaleString("en-US", options), fallback);
 }

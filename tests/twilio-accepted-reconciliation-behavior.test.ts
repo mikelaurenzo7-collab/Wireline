@@ -659,7 +659,7 @@ describe("Twilio accepted-message reliability", () => {
     expect(mocks.refundRuntimeUsage).toHaveBeenCalledTimes(1);
     expect(mocks.refundRuntimeUsage).toHaveBeenCalledWith(
       expect.objectContaining({
-        reason: "Twilio provider attempt did not start",
+        reason: "Text was not sent",
         metadata: expect.objectContaining({ pre_provider_failure: true }),
       }),
     );

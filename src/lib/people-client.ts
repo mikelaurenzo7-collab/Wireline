@@ -133,10 +133,18 @@ export function getPerson(personId: string, signal?: AbortSignal) {
   return call<{ person: Person }>(`/api/people/${encodeURIComponent(personId)}`, { signal });
 }
 
-/** The saved person who holds this phone or email, or null when nobody does. */
+/**
+ * The saved person who holds this phone or email, or null when nobody does.
+ * Sent in the request body: this runs for every call, text and email an owner
+ * opens, and a customer's number or address does not belong in a URL that
+ * proxies and request logs keep.
+ */
 export function lookupPerson(kind: PersonIdentifierKind, value: string, signal?: AbortSignal) {
-  const search = new URLSearchParams({ kind, value });
-  return call<{ person: Person | null }>(`/api/people/lookup?${search.toString()}`, { signal });
+  return call<{ person: Person | null }>("/api/people/lookup", {
+    method: "POST",
+    body: JSON.stringify({ kind, value }),
+    signal,
+  });
 }
 
 /**

@@ -742,7 +742,7 @@ function ApprovalTaskCard({
           {created ? (
             <>
               <time dateTime={created.dateTime} className="min-w-0 max-w-full">
-                Created {formatActivityTime(created.dateTime)}
+                Created {formatActivityTime(created.dateTime, "", { year: true })}
               </time>
               <span>{created.ageLabel}</span>
             </>

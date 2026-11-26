@@ -10,6 +10,13 @@ export type RuntimeBalanceEntry = {
   createdAt: string | null;
 };
 
+// Refunds recorded before 2026-11-27 named the carrier vendor. The ledger is
+// append-only, so those rows are reworded where they are shown.
+const LEGACY_REFUND_REASONS: Record<string, string> = {
+  "Twilio provider attempt did not start": "Text was not sent",
+  "Twilio rejected the outbound message": "Carrier did not accept the text",
+};
+
 const ENTRY_LABELS: Record<string, string> = {
   top_up: "Balance top-up",
   burn: "Runtime usage",
@@ -47,7 +54,10 @@ export function readRuntimeBalanceEntries(value: unknown): RuntimeBalanceEntry[]
     entries.push({
       id: row.id,
       // Legacy records copied the internal reason into customerReason.
-      description: customerReason && customerReason !== row.reason ? customerReason : fallback,
+      description:
+        customerReason && customerReason !== row.reason
+          ? (LEGACY_REFUND_REASONS[customerReason] ?? customerReason)
+          : fallback,
       deltaUsd: row.deltaUsd,
       balanceAfterUsd: row.balanceAfterUsd,
       createdAt: row.createdAt as string | null,

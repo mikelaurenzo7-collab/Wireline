@@ -27,6 +27,7 @@ import { assertTaskCanBeEdited } from "../lib/action-execution-idempotency";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
+import { withoutCarrierVendorName } from "../lib/sms-customer-errors";
 
 const router = Router();
 
@@ -718,9 +719,9 @@ router.post(
                 : 500;
         res.status(status).json({
           code: result.errorCode || "INTERNAL_ERROR",
-          error:
-            result.error ||
-            "This action could not be completed. Check that its channel is connected in Connections, then try again.",
+          error: result.error
+            ? withoutCarrierVendorName(String(result.error))
+            : "This action could not be completed. Check that its channel is connected in Connections, then try again.",
         });
       }
     } catch (error: any) {

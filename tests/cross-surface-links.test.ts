@@ -55,7 +55,7 @@ describe("cross-surface links between channels and People", () => {
     }
     const link = read("src/components/PersonLink.tsx");
     expect(link).toContain("lookupPerson(kind, identifier");
-    expect(link).toContain("peopleAddHref(kind, identifier, nameHint)");
+    expect(link).toContain("peopleAddHref(kind, identifier, saveName)");
     // Only found people are remembered, so a person saved a moment ago never
     // still reads "Save to People".
     expect(link).toContain('if (result.status === "found") recent.set(');

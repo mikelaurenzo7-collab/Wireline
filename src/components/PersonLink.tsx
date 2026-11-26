@@ -8,7 +8,9 @@ import {
   type Person,
   type PersonIdentifierKind,
 } from "../lib/people-client";
+import { emailDisplayName, normalizeIdentifier } from "../lib/people/identifiers";
 import { cn } from "../lib/utils";
+import { useAuth } from "../contexts/AuthContext";
 import { Button } from "./atoms";
 
 type Lookup =
@@ -22,6 +24,7 @@ type Lookup =
 // found people are remembered: someone saved a moment ago must not still read
 // "Save to People" when the owner comes back.
 const LOOKUP_TTL_MS = 30_000;
+const LOOKUP_MEMORY_MAX = 200;
 const recent = new Map<string, { at: number; result: Lookup }>();
 
 /**
@@ -43,8 +46,15 @@ export default function PersonLink({
   nameShown?: boolean;
   className?: string;
 }) {
-  const identifier = value?.trim() || "";
-  const key = `${kind}:${identifier.toLowerCase()}`;
+  const { user } = useAuth();
+  // A channel stores the value as it arrived: a formatted number, a blocked
+  // caller id, or a whole From header. Only a real phone or address can be
+  // looked up or saved, so anything else shows no chip rather than a Save
+  // that cannot succeed. The same rules the server saves by decide it.
+  const identifier = normalizeIdentifier(kind, value)?.value ?? "";
+  // Keyed by account: a signed-in tab can change accounts without reloading.
+  const key = `${user?.id ?? ""}:${kind}:${identifier}`;
+  const saveName = nameHint?.trim() || (kind === "email" ? emailDisplayName(value) : null);
   const [lookup, setLookup] = useState<Lookup>({ status: "loading" });
 
   useEffect(() => {
@@ -73,6 +83,7 @@ export default function PersonLink({
                 },
               }
             : { status: "missing" };
+        if (recent.size >= LOOKUP_MEMORY_MAX) recent.clear();
         if (result.status === "found") recent.set(key, { at: Date.now(), result });
         setLookup(result);
       })
@@ -101,7 +112,7 @@ export default function PersonLink({
 
   return (
     <Button asChild variant="ghost" size="sm" className={cn("shrink-0", className)}>
-      <Link to={peopleAddHref(kind, identifier, nameHint)}>
+      <Link to={peopleAddHref(kind, identifier, saveName)}>
         <UserPlus aria-hidden="true" />
         Save to People
       </Link>

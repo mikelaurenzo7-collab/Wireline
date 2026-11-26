@@ -98,7 +98,11 @@ type LineTexting = {
  * page; it reports "unknown" instead.
  */
 async function lineTexting(phoneNumber: string): Promise<LineTexting> {
-  const unknown: LineTexting = { approval: "unknown", missedCallsCovered: false, inboundRepliesCovered: null };
+  const unknown: LineTexting = {
+    approval: "unknown",
+    missedCallsCovered: false,
+    inboundRepliesCovered: null,
+  };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<LineTexting>((resolveTimer) => {
     timer = setTimeout(() => resolveTimer(unknown), 1500);
@@ -170,7 +174,7 @@ router.get(
                 ? "Phone voice needs platform configuration. Contact BotBound support."
                 : routing.state === "blocked"
                   ? "Phone voice is unavailable for this account environment."
-                  : "BotBound could not confirm this line's Twilio routing. Retry shortly or contact support."));
+                  : "BotBound could not confirm this line's call routing. Retry shortly or contact support."));
         return {
           id: String(row.id),
           phone_number: row.phoneNumber,

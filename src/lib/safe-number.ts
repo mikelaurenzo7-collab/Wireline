@@ -126,7 +126,9 @@ export function formatPhone(input: unknown, fallback?: string): string {
   if (digits.length === 11 && digits.startsWith("1")) {
     return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
   }
-  if (digits.length === 10) {
+  // A leading + states the country code. Ten digits after one is another
+  // country's number (+45 12 34 56 78), not a North American one missing its 1.
+  if (digits.length === 10 && !raw.startsWith("+")) {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
   return raw;

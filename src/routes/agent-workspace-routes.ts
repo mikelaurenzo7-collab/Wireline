@@ -54,6 +54,7 @@ import {
 import { loadOwnerMemories, changeOwnerMemory } from "../lib/owner-memory-store";
 import { ownerMemorySchema, ownerMemoryIdSchema } from "../lib/owner-memory";
 import { humanHandoffProblem, normalizeHandoffPhone } from "../lib/human-handoff-settings";
+import { withoutCarrierVendorName } from "../lib/sms-customer-errors";
 
 const router = express.Router();
 type WorkspaceTx = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
@@ -1063,7 +1064,10 @@ router.post(
       );
 
       if (!result.success) {
-        throw AppError.fromHttpStatus(400, String(result.error || "Action failed"));
+        throw AppError.fromHttpStatus(
+          400,
+          withoutCarrierVendorName(String(result.error || "Action failed")),
+        );
       }
       const queued = result.queued === true;
       log.info(queued ? "workspace action queued for approval" : "workspace action executed", {

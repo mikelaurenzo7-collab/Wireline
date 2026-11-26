@@ -81,7 +81,7 @@ describe("carrier opt-out learned from a refused send", () => {
   it("is used only for an SMS refused with Twilio error 21610, after the refund", () => {
     expect(TWILIO_UNSUBSCRIBED_RECIPIENT).toBe(21610);
     const service = readFileSync(resolve(process.cwd(), "src/lib/twilio-service.ts"), "utf8");
-    const refund = service.indexOf('reason: "Twilio rejected the outbound message"');
+    const refund = service.indexOf('reason: "Carrier did not accept the text"');
     const guard = service.indexOf(
       'if (channel === "sms" && providerCode === TWILIO_UNSUBSCRIBED_RECIPIENT) {',
     );

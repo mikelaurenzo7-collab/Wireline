@@ -169,7 +169,7 @@ export async function refundReservedTenantMessageAttempt(input: {
     userId: input.userId,
     amountUsd,
     referenceId,
-    reason: "Twilio provider attempt did not start",
+    reason: "Text was not sent",
     provider: "twilio",
     source: "twilio",
     metadata: { channel, pre_provider_reconciliation: true, original_burn_id: String(burn.id) },
@@ -766,7 +766,7 @@ export async function sendTenantMessage(
             userId,
             amountUsd: requiredBalance,
             referenceId: reservationReference,
-            reason: "Twilio provider attempt did not start",
+            reason: "Text was not sent",
             provider: "twilio",
             source: "twilio",
             metadata: { channel, estimated_segments: segments, pre_provider_failure: true },
@@ -862,7 +862,7 @@ export async function sendTenantMessage(
               userId,
               amountUsd: requiredBalance,
               referenceId: reservationReference,
-              reason: "Twilio rejected the outbound message",
+              reason: "Carrier did not accept the text",
               provider: "twilio",
               source: "twilio",
               metadata: { channel, status, estimated_segments: segments },
@@ -877,7 +877,7 @@ export async function sendTenantMessage(
               refundError: getErrorMessage(refundError),
             });
             const accountingError = new Error(
-              "Twilio rejected the message, but its billing reservation could not be released.",
+              "The carrier did not accept the text, but its billing reservation could not be released.",
             );
             (accountingError as Error & { cause?: unknown }).cause = refundError;
             throw accountingError;

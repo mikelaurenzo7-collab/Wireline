@@ -333,7 +333,8 @@ test("legacy appointment links land on native Calendar with their scope and anch
   await expect(
     page.getByRole("heading", { name: "No Appointments Yet", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Set Availability", exact: true }).click();
+  // The header and the empty state both offer it while nothing is configured.
+  await page.getByRole("button", { name: "Set Availability", exact: true }).first().click();
   await expect(page).toHaveURL(/\/calendar\?agent=bot-a&tab=availability/);
   await expect(page.getByRole("heading", { name: "Weekly Hours", exact: true })).toBeVisible();
 });

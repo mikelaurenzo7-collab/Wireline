@@ -76,6 +76,22 @@ router.get(
   },
 );
 
+// The same lookup with the phone or email in the body, so a customer's
+// identifier is not written into request URLs. The app uses this one; the GET
+// stays for clients loaded before it existed.
+router.post(
+  "/api/people/lookup",
+  authenticateUser,
+  peopleReadRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const input = body(req);
+    if (input.kind !== "phone" && input.kind !== "email") {
+      throw AppError.badRequest("Look up a phone or an email.");
+    }
+    res.json({ person: await findPersonByIdentifier(req.user.id, input.kind, input.value) });
+  },
+);
+
 router.post(
   "/api/people",
   authenticateUser,

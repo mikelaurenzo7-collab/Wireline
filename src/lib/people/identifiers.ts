@@ -37,8 +37,16 @@ export function normalizePersonEmail(raw: unknown): string | null {
   let candidate = trimmed;
   if (trimmed.includes("<") || trimmed.includes(">")) {
     const named = /^([^<>\r\n]*)<([^<>]*)>$/.exec(trimmed);
-    if (!named || /[@;\r\n]/.test(named[1])) return null;
+    if (!named) return null;
     candidate = named[2].trim();
+    // Mail clients often repeat the address as its own display name:
+    // "a@x.com" <a@x.com>. That is one address written twice. Any other @ or ;
+    // before the bracket is a list or a second address, which stays refused.
+    const label = named[1]
+      .trim()
+      .replace(/^"(.*)"$/, "$1")
+      .trim();
+    if (/[@;\r\n]/.test(label) && label.toLowerCase() !== candidate.toLowerCase()) return null;
   }
   const lowered = candidate.toLowerCase();
   if (lowered.length > 254 || !EMAIL_PATTERN.test(lowered)) return null;

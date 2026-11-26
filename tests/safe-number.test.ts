@@ -59,6 +59,9 @@ describe("formatInt / formatPhone", () => {
     expect(formatPhone("15551234567")).toBe("+1 (555) 123-4567");
     expect(formatPhone("5551234567")).toBe("(555) 123-4567");
     expect(formatPhone("+44 20 7946")).toBe("+44 20 7946");
+    // Ten digits after a + is another country, never a US number.
+    expect(formatPhone("+4512345678")).toBe("+4512345678");
+    expect(formatPhone("+15551234567")).toBe("+1 (555) 123-4567");
     expect(formatPhone(null)).toBe("");
   });
 });

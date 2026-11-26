@@ -69,12 +69,12 @@ beforeEach(() => {
 
 describe("People routes", () => {
   it("authenticates and rate-limits every route, with writes on the write bucket", () => {
-    expect(h.routes.length).toBe(14);
+    expect(h.routes.length).toBe(15);
     for (const entry of h.routes) {
       expect(entry.handlers[0], `${entry.method} ${entry.path}`).toBe(h.authenticateUser);
-      expect(entry.handlers[1], `${entry.method} ${entry.path}`).toBe(
-        entry.method === "get" ? h.read : h.write,
-      );
+      // The lookup is a read that carries its value in a body, not a write.
+      const reads = entry.method === "get" || entry.path === "/api/people/lookup";
+      expect(entry.handlers[1], `${entry.method} ${entry.path}`).toBe(reads ? h.read : h.write);
       expect(entry.path.startsWith("/api/people")).toBe(true);
     }
   });
@@ -134,6 +134,30 @@ describe("People routes", () => {
     await expect(
       route("post", "/api/people/:personId/merge")(
         { user: { id: "owner" }, params: { personId: PERSON }, body: {} },
+        response(),
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("takes the lookup value in the body, so a customer number stays out of the URL", async () => {
+    h.service.findPersonByIdentifier.mockResolvedValue({ id: PERSON });
+    const res = response();
+    await route("post", "/api/people/lookup")(
+      {
+        user: { id: "owner" },
+        body: { kind: "email", value: "dana@example.com", userId: "intruder" },
+      },
+      res,
+    );
+    expect(h.service.findPersonByIdentifier).toHaveBeenLastCalledWith(
+      "owner",
+      "email",
+      "dana@example.com",
+    );
+    expect(res.json).toHaveBeenCalledWith({ person: { id: PERSON } });
+    await expect(
+      route("post", "/api/people/lookup")(
+        { user: { id: "owner" }, body: { kind: "ssn", value: "x" } },
         response(),
       ),
     ).rejects.toMatchObject({ status: 400 });

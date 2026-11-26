@@ -137,7 +137,7 @@ describe("post-call CSAT pre-provider refund", () => {
     expect(mocks.refundRuntimeUsage).toHaveBeenCalledWith(
       expect.objectContaining({
         referenceId: "twilio_message:sms:post-call-csat/job-1:attempt:2",
-        reason: "Twilio provider attempt did not start",
+        reason: "Text was not sent",
       }),
     );
     expect(mocks.createMessage).not.toHaveBeenCalled();

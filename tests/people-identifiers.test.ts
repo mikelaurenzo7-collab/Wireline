@@ -54,6 +54,9 @@ describe("People email normalization", () => {
     ["  sam@example.com  ", "sam@example.com"],
     ["Sam Ortiz <SAM@example.com>", "sam@example.com"],
     ['"Ortiz, Sam" <sam@example.com>', "sam@example.com"],
+    // A client that repeats the address as its own display name.
+    ['"Sam@Example.com" <sam@example.com>', "sam@example.com"],
+    ["sam@example.com <sam@example.com>", "sam@example.com"],
   ])("normalizes %s", (raw, expected) => {
     expect(normalizePersonEmail(raw)).toBe(expected);
   });

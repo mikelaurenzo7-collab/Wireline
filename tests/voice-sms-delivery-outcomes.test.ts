@@ -219,9 +219,13 @@ describe("voice SMS delivery outcome accounting", () => {
       h.send.mockResolvedValueOnce(outcome);
       const result = await handleCoreToolCall("send_text_message", args, context);
 
-      expect(result?.result).toBe(
-        `The message was not confirmed. ${outcome.reason || "Message send failed."}`,
-      );
+      // The Bot may repeat this to the caller, so a reason that names the
+      // carrier vendor becomes one plain sentence; guidance is kept as written.
+      const spoken = /twilio/i.test(outcome.reason || "")
+        ? "The text could not be sent right now."
+        : outcome.reason || "Message send failed.";
+      expect(result?.result).toBe(`The message was not confirmed. ${spoken}`);
+      expect(result?.result).not.toMatch(/twilio/i);
       expect(enforceAgentToolResultTruth("send_text_message", result!)).toEqual(result);
       expect(isToolCallFailureResult(result!.result)).toBe(true);
       expect(h.send).toHaveBeenCalledExactlyOnceWith("tenant-owned", {

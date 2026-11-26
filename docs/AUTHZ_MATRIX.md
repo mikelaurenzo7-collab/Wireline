@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 458
-**Protected:** 376
+**Routes scanned:** 459
+**Protected:** 377
 **Public (allowlisted):** 82
 **Violations:** 0
 
@@ -455,6 +455,7 @@
 | people-routes.ts | GET | `/api/people/:personId/timeline` | inline | — | — | Protected |
 | people-routes.ts | POST | `/api/people/:personId/unmerge` | inline | — | — | Protected |
 | people-routes.ts | GET | `/api/people/lookup` | inline | — | — | Protected |
+| people-routes.ts | POST | `/api/people/lookup` | inline | — | — | Protected |
 | people-routes.ts | GET | `/api/people/suggestions` | inline | — | — | Protected |
 | phone-test-routes.ts | POST | `/api/agents/:agentId/phone-test` | inline | — | — | Protected |
 | phone-test-routes.ts | GET | `/api/agents/:agentId/phone-test/:requestKey` | inline | — | — | Protected |
