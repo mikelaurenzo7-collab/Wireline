@@ -11,13 +11,19 @@ While Vercel remains available for an explicitly reviewed rollback, `revaluate/b
 
 ## Current launch posture
 
-Non-marketing service, coordination, and requested callbacks for personal and business Bots can be enabled independently with
-`BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED=true` on the API and voice runtime. The general
-outbound switch remains separate. Bot audience does not determine eligibility;
-paid voice, line ownership, captured recipient permission, United States jurisdiction,
-quiet hours, funding, and duplicate suppression still apply. Set the non-marketing switch
-to `false` while general outbound remains disabled to stop new placements
-without changing inbound calling.
+Non-marketing service, coordination, and requested callbacks for personal and business Bots are
+placed when paid voice, line ownership, captured recipient permission, United States jurisdiction,
+quiet hours, funding, and duplicate suppression all pass. Bot audience does not determine eligibility.
+
+**The outbound switches do not currently stop placements.** `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED`
+and `BOTBOUND_GENERAL_OUTBOUND_ENABLED` are read into `outboundCallingAvailability()`, but
+`outboundCallingEnabledFor()` in `src/lib/outbound-call-purpose.ts` returns `true` for every
+purpose, and `tests/outbound-call-purpose.test.ts` pins that. Setting either flag to `false` does
+not stop new outbound calls (verified November 26, 2026). Until an outbound-only stop is restored,
+the emergency levers are broader: `WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED=false` on the voice
+service stops the worker admitting new calls, inbound included, and `BOTBOUND_TRAFFIC_ENABLED=false`
+stops traffic entirely. Marketing and campaign outbound still fail closed without federal DNC
+screening.
 MCP proposals remain private records until the account holder reviews and places a call.
 
 The current recipient-permission resolver accepts the hosted capture flow. This is an

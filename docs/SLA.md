@@ -30,7 +30,7 @@ BotBound prioritizes widespread voice/runtime outages and security incidents abo
 
 ## Incidents
 
-BotBound uses application health probes, job/queue monitoring, provider diagnostics, structured error reporting, and a nightly public-line canary to detect failures. Some checks are request-driven rather than scheduled; monitoring cadence and alert delivery depend on the active production configuration. The operator SLO snapshot treats the incident-response path as configured only when both a protected monitor credential and an owner contact are present; that configuration alone does not prove external polling or alert delivery.
+BotBound uses application health probes, job/queue monitoring, provider diagnostics, and structured error reporting to detect failures. No scheduled synthetic call or text canary runs today; adding one is an open launch gate in `docs/AI_NATIVE_ROADMAP.md`. Some checks are request-driven rather than scheduled; monitoring cadence and alert delivery depend on the active production configuration. The operator SLO snapshot treats the incident-response path as configured only when both a protected monitor credential and an owner contact are present; that configuration alone does not prove external polling or alert delivery.
 
 During a material incident, BotBound aims to:
 

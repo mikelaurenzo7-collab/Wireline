@@ -37,7 +37,7 @@ The objective of this roadmap is to execute a flawless, zero-downtime, fully ver
 | Task ID | Component | Operational Requirement | Configuration & Action |
 |---|---|---|---|
 | **P1-1** | Twilio Lookups v2 & Landline Filter | Ensure all outbound voice/SMS calls screen carrier line type via Lookups v2. Landlines must be rejected for SMS without balance waste. | Handled in `src/lib/twilio-service.ts`. Covered by contract tests. |
-| **P1-2** | TCPA & Spoken Disclosure | Outbound AI calls identify as an automated AI assistant on behalf of the business at the start of the call; inbound identification is `composeInboundOpening` on every inbound call, not the tenant TCPA preset; recording notice plays when recording is enabled; telemarketing calls announce the voice opt-out mechanism per 47 CFR 64.1200(b)(3). | Inbound: `src/lib/voice/inbound-opening.ts`. Outbound prefix: `complianceFirstMessagePrefix` in `src/lib/agent-runtime.ts`, used only by `buildOutboundOpening`. OPEN DECISION (owner): the owner's no-first-turn-disclosure preference conflicts with the outbound disclosure above — resolve before launch; do not silently disable disclosure. |
+| **P1-2** | TCPA & Spoken Disclosure | Outbound AI calls identify as an automated AI assistant on behalf of the business at the start of the call; inbound identification is `composeInboundOpening` on every inbound call, not the tenant TCPA preset; recording notice plays when recording is enabled; telemarketing calls announce the voice opt-out mechanism per 47 CFR 64.1200(b)(3). | Inbound: `src/lib/voice/inbound-opening.ts`. Outbound prefix: `complianceFirstMessagePrefix` in `src/lib/agent-runtime.ts`, used only by `buildOutboundOpening`. Resolved in code: every outbound opening passes `outboundAiCall: true` (`src/lib/voice/openai-sip-session.ts`), so the AI disclosure always opens the call; there is no owner override. |
 | **P1-3** | CAN-SPAM Postal Address | Verify that every commercial email sent through Resend includes a valid physical postal address and unsubscribe mailto header. | Enforced by `WIRELINE_POSTAL_ADDRESS` and `WIRELINE_UNSUBSCRIBE_MAILTO`. |
 | **P1-4** | AgentMail Domain Reputation | Ensure bot email inboxes are provisioned exclusively on verified subdomains (`bots.botbound.app`), never on the apex domain. | Enforced by `AGENTMAIL_DEFAULT_DOMAIN="bots.botbound.app"`. |
 | **P1-5** | Stripe Webhook Cryptographic Verification | Ensure all incoming Stripe events are verified with `STRIPE_WEBHOOK_SECRET` before updating customer status or confirming voice sessions. | Enforced in `src/routes/stripe-routes.ts`. |
@@ -163,7 +163,7 @@ npm.cmd run check-prod-env
 4. **Health Probe Verification**:
    - `GET https://botbound.app/healthz` -> Expect `200 OK`.
    - `GET https://botbound.app/livez` -> Expect `200 OK`.
-   - `GET https://botbound.app/api/health/launch-readiness` (with `HEALTH_MONITOR_TOKEN`) -> Expect `100% Ready`.
+   - `GET https://botbound.app/api/health/launch-readiness` (with `HEALTH_MONITOR_TOKEN`) -> Expect every capability configured. This checks that configuration is present; it places no call and sends no message, so it is not end-to-end proof.
 
 ### Phase 4: T-Plus 1 Hour (Live Operational Validation)
 1. **Live Inbound Call Test**:
