@@ -366,6 +366,18 @@ export function currentPricingFacts(): string[] {
   ];
 }
 
+/** Id prefix of BotBound's own showcase Bots (see `founderShowcaseAgentId`). */
+export const FOUNDER_SHOWCASE_AGENT_ID_PREFIX = "founder-showcase:";
+
+/**
+ * BotBound's price list belongs only in the Bots that sell BotBound: the
+ * founder's internal personas and showcase Bots. A customer's Bot answers
+ * price questions from its own Training, never with BotBound's plans.
+ */
+export function botSellsBotBound(input: { agentId: string; internalPersona: boolean }): boolean {
+  return input.internalPersona || input.agentId.startsWith(FOUNDER_SHOWCASE_AGENT_ID_PREFIX);
+}
+
 export function currentPricingPromptBlock(): string {
   return [
     "CURRENT BOTBOUND PRICING",
