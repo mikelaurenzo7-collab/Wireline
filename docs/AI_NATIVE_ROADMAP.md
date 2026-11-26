@@ -26,10 +26,10 @@ BotBound is the system of record for a small business's customer conversations. 
 Repo debt the November 24 audit found and a second read of the tree confirmed:
 - Rename `agent-routes-v2.ts`, `qa-routes-v2.ts` and `google-drive-sync-v2.ts`; no v1 exists for any of them.
 - Retired Live Video: `src/lib/video-presenter/` (12 files), `LiveVideoPresenter.tsx`, `LiveVideoStudioPage.tsx`, `stripe-live-video-addon.ts`.
-- No importer in `src/`: `voice/gemini-live-client.ts` (a test only) and `cloud-computer/trade-portal-mirroring.ts` (its own tests only). The `wireline_design_integrations` table is read only by the account-deletion registry. The `calendar_sync` and `google_drive_ingest` job types are declared in `job-queue-base.ts` with no producer.
+- No importer in `src/`: `voice/gemini-live-client.ts` (a test only). The `wireline_design_integrations` table is read only by the account-deletion registry. Removed: `cloud-computer/trade-portal-mirroring.ts` and its tests, and the producer-less `calendar_sync` and `google_drive_ingest` job types (no production job of any of the three types existed).
 - Vercel leftovers: the `api/` directory and `src/entrypoints/chatgpt-mcp-api.ts`, to remove once the rollback path is retired.
 - Vapi-era naming: `vapiCallId` appears in 37 source files and the outbound webhook payload still carries `vapi_call_id`. Renaming needs an append-only migration and a versioned webhook payload.
-- Docs to reconcile: `CODEBASE_HEALTH.md` cites `apps/desktop/`, which does not exist; confirm `OPENAI_REALTIME_VOICE.md` and `CODEBASE_HEALTH.md` agree with the code that xAI Grok Voice is the default phone provider; dated documents that still say "Status: Active".
+- Docs to reconcile (the `apps/desktop/` and `SalesforceIntegrationPage` references are fixed): confirm `OPENAI_REALTIME_VOICE.md` and `CODEBASE_HEALTH.md` agree with the code that xAI Grok Voice is the default phone provider; dated documents that still say "Status: Active".
 - Retention: the 365-day purge deletes call logs, email, appointments and leads but not SMS. People must be exempt, and retention should be consistent per object.
 
 ## Phase 1 — People and helpers

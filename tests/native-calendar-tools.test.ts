@@ -13,7 +13,6 @@ const h = vi.hoisted(() => ({
   webhook: vi.fn(),
   slack: vi.fn(),
   win: vi.fn(),
-  tradePortalMirror: vi.fn(),
 }));
 vi.mock("../src/lib/native-calendar", () => ({
   getNativeCalendarConfiguration: h.configuration,
@@ -36,9 +35,6 @@ vi.mock("../src/lib/notifications", () => ({
   NotificationService: class {
     sendWinAlert = h.win;
   },
-}));
-vi.mock("../src/lib/cloud-computer/trade-portal-mirroring", () => ({
-  enqueueTradePortalMirrorJob: h.tradePortalMirror,
 }));
 
 import { handleCalendarToolCall } from "../src/lib/bot-tools/calendar";
@@ -139,7 +135,6 @@ describe("native Calendar live tools", () => {
       "appointment.booked",
       expect.objectContaining({ start_time: "2026-10-02T15:00:00.000Z" }),
     );
-    expect(h.tradePortalMirror).not.toHaveBeenCalled();
     expect(h.book.mock.calls[1][1].requestKey).toBe(firstKey);
     expect(h.externalBook).not.toHaveBeenCalled();
     expect(h.insert).not.toHaveBeenCalled();

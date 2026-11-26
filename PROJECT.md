@@ -52,7 +52,7 @@ BotBound is an omnichannel autonomous AI workforce platform for service business
 | 10 | Location-Aware Travel Buffers | Travel time buffer calculation between consecutive appointment job sites | M3 | Survey 3 (R4) |
 | 11 | Ephemeral 5-Minute Soft Holds | Ephemeral slot reservation preventing double bookings during live voice calls | M3 | Survey 3 (R4) |
 | 12 | RFC 5545 ICS Invite Generation | Standard iCalendar `.ics` file generator for confirmed appointments | M3 | Survey 3 (R4) |
-| 13 | Calendar-to-Dispatch Trigger | Automatic trigger queuing background trade portal mirroring upon booking | M3 | Survey 3 (R4) |
+| 13 | Calendar-to-Dispatch Trigger | Retired November 2026: the trade portal mirror was never queued by a booking and was removed | M3 | Survey 3 (R4) |
 | 14 | AgentMail Attachment Support | Extend `sendAgentMail` to accept file attachments (`.ics`, PDF receipts) | M4 | Survey 3 (R7) |
 | 15 | Transactional Email Dispatchers | Automated emails for appointment confirmations with `.ics` and payment receipts | M4 | Survey 3 (R7) |
 | 16 | Inbound Email Reply Triage | Intent analysis and human escalation routing (`agent_attach_human`) on replies | M4 | Survey 3 (R7) |
@@ -168,7 +168,6 @@ export interface EmailTriageResult {
 
 ## Code Layout
 - `src/lib/cloud-computer/voice-bridge.ts`: Non-blocking tool execution, status fillers, and 2FA takeover alert handler.
-- `src/lib/cloud-computer/trade-portal-mirroring.ts`: Background job mirroring into Housecall Pro and ServiceTitan.
 - `src/routes/stripe-routes.ts`: In-call text-to-pay deposit creation and webhook verification.
 - `src/lib/stripe-voice-session.ts`: In-memory voice session event registry for mid-call webhook callbacks.
 - `src/lib/goodwill-wallet-policy.ts`: Server-side goodwill wallet budget and per-call resolution cap enforcement.

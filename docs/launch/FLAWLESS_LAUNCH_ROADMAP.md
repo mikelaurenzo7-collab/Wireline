@@ -124,11 +124,11 @@ npm.cmd run smoke:server
 ```
 *Expected Output*: `dist/server.cjs` bundled cleanly; smoke test outputs: `server bundle imports without database configuration`.
 
-### Step 7: Custom Voice Bridge & Mirroring Tests
+### Step 7: Custom Voice Bridge Tests
 ```powershell
-npx.cmd vitest run tests/voice-browserbase-bridge.test.ts tests/trade-portal-mirroring.test.ts
+npx.cmd vitest run tests/voice-browserbase-bridge.test.ts
 ```
-*Expected Output*: 2 passed test files, 27 passed tests.
+*Expected Output*: 1 passed test file. The trade portal mirror and its tests were removed in November 2026: no booking ever queued its job.
 
 ### Step 8: Production Environment Readiness Probe
 ```powershell
@@ -175,8 +175,6 @@ npm.cmd run check-prod-env
 3. **Live Appointment & Calendar Booking**:
    - Book an appointment during the call.
    - Verify 5-minute soft hold, confirmation SMS, and AgentMail email receipt containing the `.ics` calendar attachment.
-4. **Trade Portal Background Mirroring**:
-   - Inspect `wireline_jobs` to verify that the trade portal mirror job enqueued and completed without 409 conflict errors.
 
 ### Phase 5: T-Plus 24 Hours (Post-Launch Monitoring)
 1. **Cron Execution Audit**: Verify `botbound-jobs-sweep` runs every minute with zero stale job backlogs.
