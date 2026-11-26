@@ -58,7 +58,7 @@ export default function InsightsPage() {
         className="flex min-h-0 flex-1 flex-col gap-0 pb-5 lg:pb-6"
       >
         <WorkspaceOperateIntro title="Insights" titleHidden tabs={controls} />
-        <div className="flex flex-col md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain">
+        <div className="flex flex-col">
           <InsightsView />
         </div>
       </WorkspacePageFrame>
