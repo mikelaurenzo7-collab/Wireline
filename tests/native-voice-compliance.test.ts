@@ -5,6 +5,7 @@ import {
   nativeCallPurposeFromMetadata,
   nativeOutboundAmdParams,
   resolveNativeAmdBridgeAction,
+  resolveNativeAsyncAmdAction,
 } from "../src/lib/voice/native-outbound-amd";
 import { resolveRetryableLeadStatus } from "../src/lib/outbound-status";
 
@@ -25,18 +26,34 @@ describe("formatCallbackNumberForSpeech", () => {
 });
 
 describe("native outbound AMD", () => {
-  it("uses Enable and a short timeout for marketing so the SIP agent never greets a mailbox", () => {
-    expect(nativeOutboundAmdParams("marketing_or_sales")).toEqual({
+  const amdUrl = "https://app.example/amd?token=t";
+
+  it("detects synchronously with a short timeout for marketing so the Bot never greets a mailbox", () => {
+    expect(nativeOutboundAmdParams("marketing_or_sales", amdUrl)).toEqual({
       machineDetection: "Enable",
       machineDetectionTimeout: 8,
     });
   });
 
-  it("waits for greeting end so service and callback machines are classified definitively", () => {
-    expect(nativeOutboundAmdParams("service_or_requested").machineDetection).toBe(
-      "DetectMessageEnd",
-    );
-    expect(nativeOutboundAmdParams("callback").machineDetection).toBe("DetectMessageEnd");
+  it("detects in the background on service calls so an answered person is not held in silence", () => {
+    for (const purpose of ["service_or_requested", "callback", "personal"] as const) {
+      expect(nativeOutboundAmdParams(purpose, amdUrl)).toEqual({
+        machineDetection: "Enable",
+        machineDetectionTimeout: 30,
+        asyncAmd: "true",
+        asyncAmdStatusCallback: amdUrl,
+        asyncAmdStatusCallbackMethod: "POST",
+      });
+    }
+  });
+
+  it("ends a bridged service call on a machine or fax and keeps talking to a person", () => {
+    expect(resolveNativeAsyncAmdAction("machine_start")).toBe("hangup");
+    expect(resolveNativeAsyncAmdAction("machine_end_beep")).toBe("hangup");
+    expect(resolveNativeAsyncAmdAction("fax")).toBe("hangup");
+    expect(resolveNativeAsyncAmdAction("human")).toBe("continue");
+    expect(resolveNativeAsyncAmdAction("unknown")).toBe("continue");
+    expect(resolveNativeAsyncAmdAction("")).toBe("continue");
   });
 
   it("classifies service machines for the route's no-message drop and fail-opens service unknown", () => {
@@ -93,10 +110,16 @@ describe("native outbound AMD", () => {
 
 describe("campaign attempt budget", () => {
   it("retries unreachable dials until the campaign max, then retires the lead", () => {
-    expect(resolveRetryableLeadStatus(1, 3)).toBe("Retrying");
-    expect(resolveRetryableLeadStatus(2, 3)).toBe("Retrying");
-    expect(resolveRetryableLeadStatus(3, 3)).toBe("Max-Attempts");
-    expect(resolveRetryableLeadStatus(0, 3)).toBe("Retrying");
-    expect(resolveRetryableLeadStatus(1, 1)).toBe("Max-Attempts");
+    expect(resolveRetryableLeadStatus(1, 3, "campaign")).toBe("Retrying");
+    expect(resolveRetryableLeadStatus(2, 3, "campaign")).toBe("Retrying");
+    expect(resolveRetryableLeadStatus(3, 3, "campaign")).toBe("Max-Attempts");
+    expect(resolveRetryableLeadStatus(0, 3, "campaign")).toBe("Retrying");
+    expect(resolveRetryableLeadStatus(1, 1, "campaign")).toBe("Max-Attempts");
+  });
+
+  it("never leaves a single call with no campaign waiting on a retry nobody makes", () => {
+    expect(resolveRetryableLeadStatus(1, 3, null)).toBe("Failed");
+    expect(resolveRetryableLeadStatus(1, 3, undefined)).toBe("Failed");
+    expect(resolveRetryableLeadStatus(0, 3, "")).toBe("Failed");
   });
 });

@@ -24,14 +24,26 @@ export function voiceWorkerSourceRevision(env: NodeJS.ProcessEnv = process.env):
   return revision.toLowerCase();
 }
 
-/** Compare routing/signature settings without disclosing their values. */
+/**
+ * Compare routing/signature settings without disclosing their values. The
+ * carrier credential is part of the comparison because the worker reads and
+ * caps every answered call through the carrier API: on 2026-11-23 a worker
+ * holding a different carrier credential rejected an answered call (Twilio
+ * 70051) while this check still passed.
+ */
 export function voiceWorkerSipFingerprint(env: NodeJS.ProcessEnv = process.env): string {
   const values = [env.OPENAI_PROJECT_ID, env.OPENAI_WEBHOOK_SECRET, env.INTERNAL_JWT_SECRET].map(
     (value) => value?.trim() || "",
   );
   if (values.some((value) => !value)) throw new Error("Worker SIP parity settings are incomplete.");
+  const carrier = [
+    env.TWILIO_ACCOUNT_SID,
+    env.TWILIO_API_KEY,
+    env.TWILIO_API_SECRET,
+    env.TWILIO_AUTH_TOKEN,
+  ].map((value) => value?.trim() || "");
   return createHmac("sha256", voiceWorkerServiceSecret(env))
-    .update(JSON.stringify({ protocol: VOICE_WORKER_READINESS_PROTOCOL, values }))
+    .update(JSON.stringify({ protocol: VOICE_WORKER_READINESS_PROTOCOL, values, carrier }))
     .digest("hex");
 }
 
@@ -116,12 +128,15 @@ export async function probeVoiceWorkerReadiness(
       !/^[a-f0-9]{64}$/.test(actualFingerprint) ||
       !timingSafeEqual(Buffer.from(actualFingerprint), Buffer.from(expectedFingerprint))
     ) {
-      return { ready: false, detail: "Web and worker SIP project or signing settings differ." };
+      return {
+        ready: false,
+        detail: "Web and worker SIP project, signing or carrier credential settings differ.",
+      };
     }
     return {
       ready: true,
       detail:
-        "Authenticated worker, database access, source revision, duration and SIP signing parity verified.",
+        "Authenticated worker, database access, source revision, duration, SIP signing and carrier credential parity verified.",
       expected_source_revision: expected,
       worker_source_revision: expected,
       max_call_seconds: body.max_call_seconds as number,

@@ -707,6 +707,10 @@ async function claimOutboundLeadInTransaction(
   if (!ACTIVE_OUTBOUND_STATUSES.includes(lead.status || "") && !recoverableCarrierRace) {
     throw AppError.conflict("This outbound call is no longer attachable.");
   }
+  // A background machine result already ended this carrier call.
+  if (nativeVoice.amd_async_action === "hangup") {
+    throw AppError.conflict("This outbound call reached a machine and was ended.");
+  }
 
   const providerId = providerCallId(input.callId);
   const currentCallId = String(nativeVoice.openai_call_id || "").trim();
@@ -1368,13 +1372,16 @@ async function settleOutboundLeadInTransaction(
         ? LEAD_STATUS.ERROR
         : LEAD_STATUS.COMPLETED;
 
+  // An asynchronous machine result already recorded the truthful outcome and
+  // the campaign's retry status; a few seconds of greeting are not a conversation.
+  const machineEnded = nativeVoice.amd_async_action === "hangup";
+  const settleOutcome = currentlyActive && !machineEnded;
+
   await tx
     .update(schema.outboundLeads)
     .set({
-      ...(currentlyActive ? { status: nextStatus } : {}),
-      lastContactSummary: currentlyActive
-        ? input.summary
-        : lead.lastContactSummary || input.summary,
+      ...(settleOutcome ? { status: nextStatus } : {}),
+      lastContactSummary: settleOutcome ? input.summary : lead.lastContactSummary || input.summary,
       lastCalledAt: now,
       metadata: {
         ...metadata,

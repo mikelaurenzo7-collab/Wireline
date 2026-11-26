@@ -591,8 +591,9 @@ export async function handleFundedOutboundCarrierEvent(input: {
     let nextStatus = lead.status;
     let nextState = voice.state;
     if (!hasConversation) {
-      if (voice.amd_action === "drop") {
-        // The AMD branch already applied its retry budget or terminal fax status.
+      if (voice.amd_action === "drop" || voice.amd_async_action === "hangup") {
+        // The AMD branch (synchronous drop or background machine result)
+        // already applied its retry budget or terminal fax status.
       } else if (!bridgePending) {
         let maxAttempts = DEFAULT_LEAD_MAX_ATTEMPTS;
         if (lead.campaignId) {
@@ -613,7 +614,7 @@ export async function handleFundedOutboundCarrierEvent(input: {
           )
             maxAttempts = campaign.maxAttempts;
         }
-        nextStatus = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+        nextStatus = resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId);
         nextState =
           input.status === "completed"
             ? "carrier_completed_without_openai_confirmation"

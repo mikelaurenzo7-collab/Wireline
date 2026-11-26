@@ -83,6 +83,7 @@ vi.mock("../src/lib/voice/openai-outbound-token", () => ({
 vi.mock("../src/lib/voice/openai-sip-config", () => ({
   openAISipConfigured: () => true,
   normalizeOpenAIPhoneNumber: (phone: string) => phone,
+  twilioOpenAIOutboundAmdUrl: () => "https://app.example/amd",
   twilioOpenAIOutboundBridgeUrl: () => "https://app.example/bridge",
   twilioOpenAIOutboundFallbackUrl: () => "https://app.example/fallback",
   twilioOpenAIOutboundStatusUrl: () => "https://app.example/status",

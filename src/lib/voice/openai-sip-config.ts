@@ -117,6 +117,13 @@ export function twilioOpenAIOutboundStatusUrl(token: string): string {
   return withTwilioConnectionOverrides(url);
 }
 
+/** Asynchronous answering-machine result for a service call that is already bridged. */
+export function twilioOpenAIOutboundAmdUrl(token: string): string {
+  const url = new URL("/api/twilio-webhook/openai-outbound-amd", `${getCanonicalAppUrl()}/`);
+  url.searchParams.set("token", token);
+  return withTwilioConnectionOverrides(url);
+}
+
 export function twilioOpenAIOutboundFallbackUrl(token: string): string {
   const url = new URL("/api/twilio-webhook/openai-outbound-fallback", `${getCanonicalAppUrl()}/`);
   url.searchParams.set("token", token);

@@ -38,14 +38,19 @@ export const LEAD_PROCESSABLE_STATUSES = [
 export const DEFAULT_LEAD_MAX_ATTEMPTS = 3;
 
 /**
- * Busy, no-answer, canceled, and marketing AMD drops consume one attempt.
- * Remaining budget returns the lead to the campaign dialer; exhaustion is
- * terminal. Fax is handled by callers as a separate non-retryable failure.
+ * Busy, no-answer, canceled, and AMD drops consume one attempt. Remaining
+ * budget returns a campaign lead to the campaign dialer; exhaustion is
+ * terminal. Only the campaign dialer redials, so a lead with no campaign (a
+ * single call) is never left waiting on a retry nobody will make: it ends as
+ * Failed and the owner can call again. Fax is handled by callers as a separate
+ * non-retryable failure.
  */
 export function resolveRetryableLeadStatus(
   attempts: number | null | undefined,
   maxAttempts: number | null | undefined,
-): typeof LEAD_STATUS.RETRYING | typeof LEAD_STATUS.MAX_ATTEMPTS {
+  campaignId: string | null | undefined,
+): typeof LEAD_STATUS.RETRYING | typeof LEAD_STATUS.MAX_ATTEMPTS | typeof LEAD_STATUS.FAILED {
+  if (!campaignId) return LEAD_STATUS.FAILED;
   const current = Math.max(1, Number(attempts) || 0);
   const budget = Math.max(1, Number(maxAttempts) || DEFAULT_LEAD_MAX_ATTEMPTS);
   return current < budget ? LEAD_STATUS.RETRYING : LEAD_STATUS.MAX_ATTEMPTS;

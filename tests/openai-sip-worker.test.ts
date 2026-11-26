@@ -569,26 +569,31 @@ describe("authenticated deployment readiness", () => {
     },
   );
 
-  it.each(["OPENAI_PROJECT_ID", "OPENAI_WEBHOOK_SECRET", "INTERNAL_JWT_SECRET"] as const)(
-    "detects a different worker %s without exposing its value",
-    async (setting) => {
-      const different = {
-        ...workerReadinessEnv,
-        [setting]:
-          setting === "OPENAI_PROJECT_ID"
-            ? "proj_different123"
-            : "different-secret-at-least-thirty-two-bytes",
-      };
-      const snapshot = await readVoiceWorkerReadiness(async () => undefined, different);
-      const request = vi.fn().mockResolvedValue(new globalThis.Response(JSON.stringify(snapshot)));
-      const result = await probeVoiceWorkerReadiness(releaseRevision, webReadinessEnv, request);
-      expect(result).toMatchObject({
-        ready: false,
-        detail: expect.stringContaining("signing settings differ"),
-      });
-      expect(JSON.stringify(result)).not.toContain(different[setting]);
-    },
-  );
+  it.each([
+    "OPENAI_PROJECT_ID",
+    "OPENAI_WEBHOOK_SECRET",
+    "INTERNAL_JWT_SECRET",
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_API_KEY",
+    "TWILIO_API_SECRET",
+    "TWILIO_AUTH_TOKEN",
+  ] as const)("detects a different worker %s without exposing its value", async (setting) => {
+    const different = {
+      ...workerReadinessEnv,
+      [setting]:
+        setting === "OPENAI_PROJECT_ID"
+          ? "proj_different123"
+          : "different-secret-at-least-thirty-two-bytes",
+    };
+    const snapshot = await readVoiceWorkerReadiness(async () => undefined, different);
+    const request = vi.fn().mockResolvedValue(new globalThis.Response(JSON.stringify(snapshot)));
+    const result = await probeVoiceWorkerReadiness(releaseRevision, webReadinessEnv, request);
+    expect(result).toMatchObject({
+      ready: false,
+      detail: expect.stringContaining("carrier credential settings differ"),
+    });
+    expect(JSON.stringify(result)).not.toContain(different[setting]);
+  });
 
   it.each(["unreachable", "timeout", "unauthorized", "invalid_json"] as const)(
     "fails closed and redacts a %s readiness failure",
