@@ -31,6 +31,22 @@ export function xaiSipConfigured(env: NodeJS.ProcessEnv = process.env): boolean 
 }
 
 /**
+ * Which of xAI's three prerequisites this process has. Booleans only, so a
+ * log line can say why calls fall back to OpenAI without exposing a secret.
+ */
+export function xaiSipReadiness(env: NodeJS.ProcessEnv = process.env): {
+  xaiApiKey: boolean;
+  secretVault: boolean;
+  voiceWorker: boolean;
+} {
+  return {
+    xaiApiKey: Boolean(String(env.XAI_API_KEY || "").trim()),
+    secretVault: isVaultConfigured(),
+    voiceWorker: isPersistentVoiceWorkerConfigured(env),
+  };
+}
+
+/**
  * A SIP URI for the registered number, carrying BotBound's signed routing token
  * as an x- header (Twilio forwards x- prefixed URI parameters as SIP headers,
  * and xAI includes them in the signed incoming-call event).

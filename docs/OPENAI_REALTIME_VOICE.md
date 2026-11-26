@@ -1,7 +1,7 @@
 # OpenAI Realtime Voice — Browser and Twilio PSTN
 
 **Status:** Canonical production voice policy  
-**Updated:** October 24, 2026
+**Updated:** November 26, 2026
 
 Telephone calls run on xAI voice (`grok-voice-3.0`, SIP digest trunk,
 per-number signed webhooks) by default for every number. A line registers with
@@ -15,19 +15,24 @@ and recovery always reach the provider that owns the call. See the xAI section
 of `docs/DEPLOYMENT_RUNBOOK.md` for rollback.
 Public and guest audio/call demos are retired. Twilio owns carrier transport,
 phone numbers, PSTN/SIP, and SMS.
-A call never moves between providers mid-flight. Within an xAI call, a Bot's
-cloned voice that errors or misses the reply budget twice in a row switches to
-the Bot's stock voice for the rest of that call; the call is never dropped.
+A call changes provider in one case only: when an inbound call's xAI leg
+fails, BotBound redirects that same call to OpenAI Realtime and the caller
+stays on the line. Control and recovery always follow the provider in the call
+id. Within an xAI call, a Bot's cloned voice that errors or misses the reply
+budget twice in a row switches to the Bot's stock voice for the rest of that
+call; the call is never dropped. When xAI is switched off or not configured,
+BotBound logs why calls answer on OpenAI, at most once per reason every 10
+minutes.
 Customer surfaces describe the voice as BotBound's and never name the vendor.
 
 ## Transport map
 
-| Surface                                           | Transport                                                                         | Runtime                              |
-| ------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ |
-| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime                      |
-| Inbound phone                                     | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | xAI voice (OpenAI Realtime fallback) |
-| Outbound phone                                    | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | xAI voice (OpenAI Realtime fallback) |
-| SMS                                               | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime           |
+| Surface                                           | Transport                                                                                                                                 | Runtime                              |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                                                                                 | OpenAI Realtime                      |
+| Inbound phone                                     | Twilio signed webhook → BotBound TwiML → the registered number's xAI SIP URI, or the OpenAI project SIP URI                               | xAI voice (OpenAI Realtime fallback) |
+| Outbound phone                                    | Twilio customer leg + AMD → attempt-bound BotBound TwiML → media stream to the BotBound voice worker (xAI), or the OpenAI project SIP URI | xAI voice (OpenAI Realtime fallback) |
+| SMS                                               | Twilio signed webhook and Messaging Service/number                                                                                        | BotBound messaging runtime           |
 
 The OpenAI project SIP URI is:
 

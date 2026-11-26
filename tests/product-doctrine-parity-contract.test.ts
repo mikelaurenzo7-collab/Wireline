@@ -51,7 +51,9 @@ describe("product doctrine parity", () => {
     expect(entitlements).toContain("Live talking-head video is no longer offered");
     expect(entitlements).toContain("addonOffered: false");
     expect(liveVoice).toContain("Telephone calls run on xAI voice");
-    expect(liveVoice).toContain("A call never moves between providers mid-flight.");
+    // The one mid-call provider change is the inbound xAI-to-OpenAI failover.
+    expect(liveVoice).toContain("A call changes provider in one case only");
+    expect(liveVoice).not.toContain("A call never moves between providers mid-flight.");
     expect(liveVoice).not.toMatch(/work-companion|Grok Bot companion/i);
     expect(existsSync(resolve(process.cwd(), "docs/GROK_BOT_COMPANION_RUNTIME.md"))).toBe(false);
 
