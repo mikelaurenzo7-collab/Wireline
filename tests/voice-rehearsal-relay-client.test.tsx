@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   refCursor: 0,
   fetch: vi.fn(),
   completed: vi.fn(),
+  ended: vi.fn(),
   sockets: [] as FakeSocket[],
   sources: [] as FakeSource[],
   processors: [] as Array<{ onaudioprocess: ((event: unknown) => void) | null }>,
@@ -82,6 +83,7 @@ function render() {
     agentName: "Front Desk",
     compact: true,
     onTestCompleted: h.completed,
+    onTestEnded: h.ended,
   });
 }
 function click(label: string) {
@@ -176,6 +178,7 @@ beforeEach(() => {
   h.sources = [];
   h.processors = [];
   h.completed.mockReset();
+  h.ended.mockReset();
   h.fetch.mockReset();
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -288,6 +291,8 @@ it("rehearses over the relay: opening, playback, barge-in, typed lines and provi
   });
   socket.onclose!();
   expect(statusText()).toBe("Live Voice Needs Attention");
+  // The Bot answered, but the rehearsal ended on a lost connection.
+  expect(h.ended).toHaveBeenCalledExactlyOnceWith({ replied: true, failed: true });
   expect(pageText()).toContain("The voice connection ended.");
   // The server already ended its session; no stop request is needed.
   expect(h.fetch.mock.calls.some(([url]) => url === "/api/voice/live/session/stop")).toBe(false);
@@ -313,7 +318,9 @@ it("ends a relayed rehearsal through its cleanup ticket", async () => {
   h.sockets[0]!.readyState = 1;
   h.sockets[0]!.onopen!();
   h.sockets[0]!.onmessage!({ data: JSON.stringify({ type: "ready" }) });
+  expect(h.ended).not.toHaveBeenCalled();
   click("End Rehearsal");
+  expect(h.ended).toHaveBeenCalledExactlyOnceWith({ replied: false, failed: false });
   expect(h.sockets[0]!.closed).toBe(true);
   const stop = h.fetch.mock.calls.find(([url]) => url === "/api/voice/live/session/stop");
   expect(JSON.parse(stop![1].body)).toEqual({ cleanupToken: "cleanup-1" });

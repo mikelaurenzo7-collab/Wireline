@@ -183,16 +183,19 @@ Twilio retry fragment.
 
 ## Voice roster and studio boundary
 
-Phone and browser sessions use only OpenAI's documented Realtime voices:
+Owners choose from OpenAI's documented Realtime voice names:
 `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`,
 and `cedar`. BotBound defaults to `marin`; `cedar` is the second recommended
 quality choice. The saved voice remains fixed for an active session and can be
-changed before a later session. Studio previews and phone calls resolve the same
-saved choice.
+changed before a later session. On xAI, the default for calls and Studio
+rehearsal, each saved name maps to the closest xAI voice
+(`xaiVoiceForSavedVoice`), so calls, rehearsals and voice samples use that same
+voice; an OpenAI session (the fallback) speaks the saved voice itself.
 
-BotBound does not operate a separate voice-cloning provider or accept customer
-voice uploads. Historical presenter/video records retain an explicit OpenAI
-phone fallback, and Studio uses that same fallback for a consistent preview.
+Consented cloned voices are described in
+[the production voice policy](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md#cloned-live-voices).
+Historical presenter/video records retain an explicit OpenAI phone fallback, and
+Studio uses that same fallback for a consistent preview.
 
 ## Studio rehearsal on xAI
 

@@ -215,8 +215,11 @@ export default function OpenAILiveVoiceSandbox({
   onAgentAudioEnd?: () => void;
   onTestStarted?: () => void;
   onTestCompleted?: () => void;
-  /** A started voice rehearsal ended; `replied` when the Bot finished a reply in it. */
-  onTestEnded?: (result: { replied: boolean }) => void;
+  /**
+   * A started voice rehearsal ended: `replied` when the Bot finished a reply in
+   * it, `failed` when it ended on an error rather than by Stop or its time limit.
+   */
+  onTestEnded?: (result: { replied: boolean; failed: boolean }) => void;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [muted, setMuted] = useState(false);
@@ -257,6 +260,7 @@ export default function OpenAILiveVoiceSandbox({
   // Teardown callbacks are stable, so they read the latest handler from here.
   const testEnded = useRef(onTestEnded);
   testEnded.current = onTestEnded;
+  const endingOnError = useRef(false);
 
   function clearTranscript() {
     completedText.current = [];
@@ -359,9 +363,11 @@ export default function OpenAILiveVoiceSandbox({
     knowledgeChecks.current = 0;
     assistantLineId.current = null;
     userLineId.current = null;
+    const failed = endingOnError.current;
+    endingOnError.current = false;
     if (reportedStarted.current) {
       reportedStarted.current = false;
-      testEnded.current?.({ replied: reportedCompleted.current });
+      testEnded.current?.({ replied: reportedCompleted.current, failed });
     }
   }, [releaseServerCall]);
 
@@ -376,6 +382,7 @@ export default function OpenAILiveVoiceSandbox({
   const fail = useCallback(
     (message: string) => {
       generation.current += 1;
+      endingOnError.current = true;
       release();
       desiredMuted.current = false;
       setMuted(false);

@@ -156,8 +156,8 @@ export default function StudioVoiceRehearsal({
         compact
         startButtonId={studioVoiceStartId(agentId)}
         onTestStarted={() => setSuggestPhoneTest(false)}
-        onTestEnded={({ replied }) => {
-          if (replied) setSuggestPhoneTest(true);
+        onTestEnded={({ replied, failed }) => {
+          if (replied && !failed) setSuggestPhoneTest(true);
         }}
       />
       {suggestPhoneTest && onCallMyPhone ? (
