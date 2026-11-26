@@ -252,6 +252,34 @@ describe("BotBound appearance contrast", () => {
     expect(intake).toContain("wireline-color-action-primary-container");
   });
 
+  it("keeps borders and fills visible in the light theme, which is the default", () => {
+    // A white-alpha border or fill disappears on the light canvas, and an
+    // unmapped amber shade skips the warning token both themes define.
+    const surfaces = [
+      "src/components/UsageMeter.tsx",
+      "src/components/IntegrationCapabilityPanel.tsx",
+      "src/components/recipes/forms/QualifyForm.tsx",
+      "src/components/recipes/forms/AgentWireForm.tsx",
+      "src/components/recipes/forms/KnowledgeFromDocumentForm.tsx",
+      "src/components/CrmConnectionCard.tsx",
+      "src/components/WebhooksManager.tsx",
+      "src/components/PrivacyPolicyPage.tsx",
+      "src/components/LegalPage.tsx",
+      "src/components/layout/NotFound.tsx",
+      "src/components/admin/SettingsTabSwitcher.tsx",
+      "src/components/SmsThreads.tsx",
+      "src/components/SmsOutcomePanel.tsx",
+      "src/components/DncManager.tsx",
+      "src/components/voice/LiveVoiceCloneStudio.tsx",
+    ];
+    for (const path of surfaces) {
+      const source = readFileSync(path, "utf8");
+      expect(source, path).not.toMatch(/(?<!dark:)(?:border|divide)-white\/\d/);
+      expect(source, path).not.toMatch(/(?<!dark:)bg-white\/(?:4|5|8|10)\b/);
+      expect(source, path).not.toMatch(/\b(?:text|bg|border)-amber-(?:100|300|700|900)\b/);
+    }
+  });
+
   it("guards semantic text and result-card borders across the BotBound UI", () => {
     const surfaces = [
       "src/components/ui/SegmentStrip.tsx",

@@ -1151,7 +1151,7 @@ export default function PhoneSetupPanel({
             className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
             aria-hidden="true"
           />
-          Use an Existing Number
+          <span className="flex-1">Use an Existing Number</span>
         </summary>
         <div className="space-y-2 border-t border-border p-4 text-sm text-muted-foreground">
           <p>

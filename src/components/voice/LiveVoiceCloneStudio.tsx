@@ -1055,7 +1055,7 @@ export default function LiveVoiceCloneStudio({
             <span
               className={`grid size-12 shrink-0 place-items-center rounded-full text-sm font-bold ${
                 recording.report.verdict === "retake"
-                  ? "bg-amber-100 text-amber-900"
+                  ? "bg-[var(--wireline-color-feedback-warning-surface)] text-warning"
                   : "bg-primary/10 text-primary"
               }`}
               aria-hidden="true"

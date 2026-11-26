@@ -71,6 +71,7 @@ vi.mock("../src/lib/nav-counts-cache", () => ({
   getCachedNavCounts: vi.fn(),
   setCachedNavCounts: vi.fn(),
 }));
+vi.mock("../src/lib/people/people-labels", () => ({ withPersonLabels: vi.fn() }));
 vi.mock("../src/lib/server-utils", () => ({
   getErrorMessage: String,
   mapObjectToSnake: (value: unknown) => value,

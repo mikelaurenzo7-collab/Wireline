@@ -87,7 +87,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             </div>
           </div>
 
-          <div className="preview-panel flex flex-col items-center justify-center p-5 border border-input bg-white/25 rounded-md">
+          <div className="preview-panel flex flex-col items-center justify-center p-5 border border-input bg-muted/40 rounded-md">
             <p className="app-form-eyebrow text-foreground mb-5">Preview</p>
             <div
               className="brand-preview-card w-full p-5 rounded-md bg-card relative overflow-hidden group"

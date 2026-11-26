@@ -51,7 +51,7 @@ export function QualifyForm({
       {err && <ErrCard error={err} />}
       {q && (
         <div className="space-y-4 pt-3">
-          <div className="rounded-md p-6 wl-panel-elevated border border-white/12 flex items-center justify-between">
+          <div className="rounded-md p-6 wl-panel-elevated border border-border flex items-center justify-between">
             <div>
               <div className="app-section-title mb-2">Aggregate</div>
               <div className="font-display text-6xl text-brand-display leading-none">
@@ -68,9 +68,9 @@ export function QualifyForm({
                   q.qualification_label === "warm" &&
                     "bg-brand/15 border border-brand/40 text-brand",
                   q.qualification_label === "cool" &&
-                    "bg-black/[0.06] border border-white/15 text-foreground/50",
+                    "bg-muted/60 border border-border text-foreground/50",
                   q.qualification_label === "cold" &&
-                    "bg-black/8 border border-white/15 text-foreground/55",
+                    "bg-muted border border-border text-foreground/55",
                   q.qualification_label === "disqualified" &&
                     "bg-rose-700/15 border border-rose-700/40 text-rose-500",
                 )}

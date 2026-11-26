@@ -12,6 +12,7 @@ import { CONVERSATION_OUTCOME_META as OUTCOME_META } from "../lib/conversation-o
 import { Badge, Button, EmptyState, Skeleton } from "./atoms";
 import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
 import EmailReplyComposer, { type SentEmailReply } from "./EmailReplyComposer";
+import PersonLink from "./PersonLink";
 
 type EmailThread = {
   id: string;
@@ -924,6 +925,11 @@ export default function EmailInbox({
                   >
                     {OUTCOME_META[selected.status].label}
                   </Badge>
+                  {selected.sender.includes("@") ? (
+                    <div className="col-start-2 row-start-3 flex justify-self-end empty:hidden sm:col-span-2 sm:col-start-1 sm:mt-1 sm:justify-self-start">
+                      <PersonLink kind="email" value={selected.sender} />
+                    </div>
+                  ) : null}
                 </div>
               </header>
 

@@ -4,13 +4,7 @@ import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 
 type AdminTab =
-  | "integrations"
-  | "branding"
-  | "carrier"
-  | "subscription"
-  | "team"
-  | "activity"
-  | "dnc";
+  "integrations" | "branding" | "carrier" | "subscription" | "team" | "activity" | "dnc";
 
 interface TabDef {
   id: AdminTab;
@@ -54,13 +48,7 @@ export default function SettingsTabSwitcher({
     }
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab") as AdminTab;
-    const validTabs: AdminTab[] = [
-      "branding",
-      "carrier",
-      "subscription",
-      "team",
-      "activity",
-    ];
+    const validTabs: AdminTab[] = ["branding", "carrier", "subscription", "team", "activity"];
     return validTabs.includes(tab) ? tab : "branding";
   };
 
@@ -114,7 +102,7 @@ export default function SettingsTabSwitcher({
     >
       <div
         className={cn(
-          "app-tab-strip flex items-center gap-0.5 wl-panel border border-white/8 w-max min-w-full",
+          "app-tab-strip flex items-center gap-0.5 wl-panel border border-border w-max min-w-full",
           density === "compact" ? "p-0.5 border-0 bg-transparent shadow-none" : "p-0.5",
         )}
       >

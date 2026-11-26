@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
+import { ChevronRight } from "lucide-react";
 import { authFetch } from "../lib/api";
 import {
   calendarSettingsMatch,
@@ -337,9 +338,16 @@ export default function CalendarAvailabilityPanel({
           ) : null}
         </div>
       </form>
-      <details className="rounded-xl border border-border bg-card">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
-          Connected calendars <span className="font-normal text-muted-foreground">(optional)</span>
+      <details className="group rounded-xl border border-border bg-card">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground">
+          <ChevronRight
+            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+          <span className="flex-1">
+            Connected Calendars{" "}
+            <span className="font-normal text-muted-foreground">(optional)</span>
+          </span>
         </summary>
         <div className="space-y-3 border-t border-border p-4">
           <p className="text-sm text-muted-foreground">

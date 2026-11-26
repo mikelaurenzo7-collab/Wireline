@@ -94,12 +94,14 @@ export function AppointmentRow({
   appointment,
   busy,
   confirmingCancel,
+  focused = false,
   onCancelIntent,
   onStatus,
 }: {
   appointment: Appointment;
   busy?: boolean;
   confirmingCancel?: boolean;
+  focused?: boolean;
   onCancelIntent?: (id: string | null) => void;
   onStatus?: (appointment: Appointment, status: "Confirmed" | "Cancelled") => void;
 }) {
@@ -110,7 +112,13 @@ export function AppointmentRow({
     appointment.booking_source === "google" || appointment.booking_source === "google_calendar";
 
   return (
-    <li className="flex items-start gap-3 rounded-xl border border-border bg-card px-3.5 py-3.5 sm:px-4">
+    <li
+      id={`appointment-${appointment.id}`}
+      aria-current={focused ? "true" : undefined}
+      className={`flex scroll-mt-24 items-start gap-3 rounded-xl border bg-card px-3.5 py-3.5 sm:px-4 ${
+        focused ? "border-primary ring-2 ring-primary/25" : "border-border"
+      }`}
+    >
       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
         <CalendarDays className="size-4" aria-hidden="true" />
       </span>
@@ -412,12 +420,14 @@ export default function AppointmentsPanel({
   onConfigure,
   reloadKey = 0,
   onAppointmentUpdated,
+  focusAppointmentId = null,
 }: {
   calendarConfigured?: boolean | null;
   calendarTimeZone?: string;
   onConfigure?: () => void;
   reloadKey?: number;
   onAppointmentUpdated?: () => void;
+  focusAppointmentId?: string | null;
 } = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -555,6 +565,22 @@ export default function AppointmentsPanel({
     return { upcoming: future, past: history };
   }, [appointments]);
   const [pastOpen, setPastOpen] = useState<boolean | null>(null);
+  const focusedId =
+    focusAppointmentId &&
+    appointments.some((appointment) => String(appointment.id) === focusAppointmentId)
+      ? focusAppointmentId
+      : null;
+  const focusScrolled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusedId || focusScrolled.current === focusedId) return;
+    focusScrolled.current = focusedId;
+    if (past.some((appointment) => String(appointment.id) === focusedId)) setPastOpen(true);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(`appointment-${focusedId}`)
+        ?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    });
+  }, [focusedId, past]);
 
   if (loading) {
     return (
@@ -669,6 +695,7 @@ export default function AppointmentsPanel({
                       appointment={appointment}
                       busy={mutatingId !== null}
                       confirmingCancel={cancelConfirmId === appointment.id}
+                      focused={String(appointment.id) === focusedId}
                       onCancelIntent={setCancelConfirmId}
                       onStatus={changeStatus}
                     />
@@ -723,7 +750,11 @@ export default function AppointmentsPanel({
           </summary>
           <ul className="space-y-2 border-t border-border p-3">
             {past.map((appointment) => (
-              <AppointmentRow key={appointment.id} appointment={appointment} />
+              <AppointmentRow
+                key={appointment.id}
+                appointment={appointment}
+                focused={String(appointment.id) === focusedId}
+              />
             ))}
           </ul>
         </details>

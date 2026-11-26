@@ -583,6 +583,73 @@ export async function findPersonByIdentifier(
   return personId ? getPerson(userId, personId) : null;
 }
 
+/** Most rows one list page can label in one round trip. */
+export const PEOPLE_LABEL_BATCH_MAX = 200;
+
+export type PersonLabel = { id: string; displayName: string | null };
+
+/**
+ * Who holds each phone or email, for labelling a list of calls or threads in
+ * one round trip. Keys are the raw values the caller passed; a value nobody
+ * holds is absent. Merged people resolve to the survivor, like a single
+ * lookup does.
+ */
+export async function findPeopleByIdentifiers(
+  userId: string,
+  kind: "phone" | "email",
+  values: readonly unknown[],
+): Promise<Map<string, PersonLabel>> {
+  const rawByNormalized = new Map<string, string[]>();
+  for (const raw of values) {
+    if (typeof raw !== "string" || !raw.trim()) continue;
+    const identifier = normalizeIdentifier(kind, raw);
+    if (!identifier) continue;
+    const raws = rawByNormalized.get(identifier.value);
+    if (raws) {
+      if (!raws.includes(raw)) raws.push(raw);
+    } else if (rawByNormalized.size < PEOPLE_LABEL_BATCH_MAX) {
+      rawByNormalized.set(identifier.value, [raw]);
+    }
+  }
+  const labels = new Map<string, PersonLabel>();
+  if (!rawByNormalized.size) return labels;
+
+  await inTenant(userId, async () => {
+    const held = await drizzle
+      .select({ personId: personIdentifiers.personId, value: personIdentifiers.value })
+      .from(personIdentifiers)
+      .where(
+        and(
+          eq(personIdentifiers.userId, userId),
+          eq(personIdentifiers.kind, kind),
+          inArray(personIdentifiers.value, [...rawByNormalized.keys()]),
+        ),
+      );
+    if (!held.length) return;
+    const survivors = await resolveCanonicalPersonIds(
+      drizzle,
+      userId,
+      held.map((row) => row.personId),
+    );
+    const survivorIds = [
+      ...new Set(held.map((row) => survivors.get(row.personId) ?? row.personId)),
+    ];
+    const rows = await drizzle
+      .select({ id: people.id, displayName: people.displayName })
+      .from(people)
+      .where(and(eq(people.userId, userId), inArray(people.id, survivorIds)));
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    for (const row of held) {
+      const person = byId.get(survivors.get(row.personId) ?? row.personId);
+      if (!person) continue;
+      for (const raw of rawByNormalized.get(row.value) ?? []) {
+        labels.set(raw, { id: person.id, displayName: person.displayName });
+      }
+    }
+  });
+  return labels;
+}
+
 export async function createPerson(
   userId: string,
   input: CreatePersonInput,

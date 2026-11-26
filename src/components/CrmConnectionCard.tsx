@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2, RefreshCw } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
@@ -524,7 +524,7 @@ export default function CrmConnectionCard() {
           className="text-sm"
           aria-label="Refresh integration status"
         >
-          <Loader2 className="w-3 h-3" />
+          <RefreshCw className="w-3 h-3" aria-hidden="true" />
           Refresh
         </ShadButton>
       </div>
@@ -728,7 +728,7 @@ export default function CrmConnectionCard() {
                       >
                         <SelectTrigger
                           aria-label="Default Slack channel"
-                          className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
+                          className="w-full wl-micro-meta rounded-md bg-background border border-input px-2 py-1.5 text-foreground h-auto"
                         >
                           <SelectValue placeholder="Select channel…" />
                         </SelectTrigger>
@@ -796,7 +796,7 @@ export default function CrmConnectionCard() {
                       >
                         <SelectTrigger
                           aria-label="Default Teams team and channel"
-                          className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
+                          className="w-full wl-micro-meta rounded-md bg-background border border-input px-2 py-1.5 text-foreground h-auto"
                         >
                           <SelectValue placeholder="Select team channel…" />
                         </SelectTrigger>
