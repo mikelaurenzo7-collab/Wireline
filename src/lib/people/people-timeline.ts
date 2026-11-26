@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNotNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, sql, type SQL } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { personIdentifiers } from "../../db/people-schema";
@@ -59,6 +59,28 @@ function iso(value: Date | string | null | undefined): string | null {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/**
+ * Postgres keeps microseconds; a JavaScript Date keeps milliseconds. Times
+ * leave the database as exact UTC text so a page cursor never drops a row
+ * written in the same millisecond as the last one shown.
+ */
+export function exactIso(column: unknown): SQL<string> {
+  return sql<string>`to_char(${column} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+}
+
+const CURSOR_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/;
+
+/** A cursor is exact UTC text from a previous page; anything else starts over. */
+export function parseTimeCursor(value: unknown): string | null {
+  return typeof value === "string" && CURSOR_PATTERN.test(value) && !Number.isNaN(Date.parse(value))
+    ? value
+    : null;
+}
+
+function olderThan(column: unknown, before: string): SQL {
+  return sql`${column} < ${before}::timestamptz`;
 }
 
 function digitsOf(column: unknown): SQL {
@@ -140,10 +162,7 @@ export async function getPersonTimeline(
   const limit = Number.isFinite(limitRaw)
     ? Math.min(Math.max(Math.trunc(limitRaw), 1), TIMELINE_LIMIT)
     : TIMELINE_LIMIT;
-  const before =
-    typeof options.before === "string" && !Number.isNaN(Date.parse(options.before))
-      ? new Date(options.before)
-      : null;
+  const before = parseTimeCursor(options.before);
 
   return runPeopleInTenant(userId, async () => {
     const [exists] = await drizzle
@@ -195,13 +214,13 @@ export async function getPersonTimeline(
 async function loadCalls(
   userId: string,
   phones: string[],
-  before: Date | null,
+  before: string | null,
   limit: number,
 ): Promise<TimelineItem[]> {
   const match = phoneMatch(schema.callLogs.customerNumber, phones);
   if (!match) return [];
   const filters = [eq(schema.callLogs.userId, userId), match];
-  if (before) filters.push(lt(schema.callLogs.createdAt, before));
+  if (before) filters.push(olderThan(schema.callLogs.createdAt, before));
   const rows = await drizzle
     .select({
       id: schema.callLogs.id,
@@ -211,14 +230,14 @@ async function loadCalls(
       durationSeconds: schema.callLogs.durationSeconds,
       agentId: schema.callLogs.agentId,
       demo: schema.callLogs.demo,
-      createdAt: schema.callLogs.createdAt,
+      at: exactIso(schema.callLogs.createdAt),
     })
     .from(schema.callLogs)
     .where(and(...filters))
     .orderBy(desc(schema.callLogs.createdAt))
     .limit(limit);
   return rows.flatMap((row): TimelineItem[] => {
-    const at = iso(row.createdAt);
+    const at = row.at;
     if (!at) return [];
     const minutes =
       typeof row.durationSeconds === "number" && row.durationSeconds > 0
@@ -245,7 +264,7 @@ async function loadCalls(
 async function loadTexts(
   userId: string,
   phones: string[],
-  before: Date | null,
+  before: string | null,
   limit: number,
 ): Promise<TimelineItem[]> {
   const match = phoneMatch(schema.smsThreads.customerNumber, phones);
@@ -255,7 +274,7 @@ async function loadTexts(
     eq(schema.smsThreads.userId, userId),
     match,
   ];
-  if (before) filters.push(lt(schema.smsMessages.createdAt, before));
+  if (before) filters.push(olderThan(schema.smsMessages.createdAt, before));
   const rows = await drizzle
     .select({
       id: schema.smsMessages.id,
@@ -264,7 +283,7 @@ async function loadTexts(
       body: schema.smsMessages.body,
       agentId: schema.smsMessages.agentId,
       threadAgentId: schema.smsThreads.agentId,
-      createdAt: schema.smsMessages.createdAt,
+      at: exactIso(schema.smsMessages.createdAt),
     })
     .from(schema.smsMessages)
     .innerJoin(schema.smsThreads, eq(schema.smsMessages.threadId, schema.smsThreads.id))
@@ -272,7 +291,7 @@ async function loadTexts(
     .orderBy(desc(schema.smsMessages.createdAt))
     .limit(limit);
   return rows.flatMap((row): TimelineItem[] => {
-    const at = iso(row.createdAt);
+    const at = row.at;
     if (!at || !row.threadId) return [];
     const inbound = row.direction === "in";
     return [
@@ -294,28 +313,31 @@ async function loadTexts(
 async function loadEmailThreads(
   userId: string,
   emails: string[],
-  before: Date | null,
+  before: string | null,
   limit: number,
 ): Promise<TimelineItem[]> {
   const match = emailMatch(schema.emailThreads.customerEmail, emails);
   if (!match) return [];
-  const filters = [eq(schema.emailThreads.userId, userId), match];
-  if (before) filters.push(lt(schema.emailThreads.lastMessageAt, before));
+  const filters = [
+    eq(schema.emailThreads.userId, userId),
+    isNotNull(schema.emailThreads.lastMessageAt),
+    match,
+  ];
+  if (before) filters.push(olderThan(schema.emailThreads.lastMessageAt, before));
   const rows = await drizzle
     .select({
       id: schema.emailThreads.id,
       subject: schema.emailThreads.subject,
       summary: schema.emailThreads.summary,
       agentId: schema.emailThreads.agentId,
-      lastMessageAt: schema.emailThreads.lastMessageAt,
-      createdAt: schema.emailThreads.createdAt,
+      at: exactIso(schema.emailThreads.lastMessageAt),
     })
     .from(schema.emailThreads)
     .where(and(...filters))
     .orderBy(desc(schema.emailThreads.lastMessageAt))
     .limit(limit);
   return rows.flatMap((row): TimelineItem[] => {
-    const at = iso(row.lastMessageAt ?? row.createdAt);
+    const at = row.at;
     if (!at) return [];
     return [
       {
@@ -336,13 +358,13 @@ async function loadEmailThreads(
 async function loadAppointments(
   userId: string,
   phones: string[],
-  before: Date | null,
+  before: string | null,
   limit: number,
 ): Promise<TimelineItem[]> {
   const match = phoneMatch(schema.appointments.phoneNumber, phones);
   if (!match) return [];
   const filters = [eq(schema.appointments.userId, userId), match];
-  if (before) filters.push(lt(schema.appointments.createdAt, before));
+  if (before) filters.push(olderThan(schema.appointments.createdAt, before));
   const rows = await drizzle
     .select({
       id: schema.appointments.id,
@@ -354,14 +376,14 @@ async function loadAppointments(
       time: schema.appointments.time,
       agentId: schema.appointments.agentId,
       demo: schema.appointments.demo,
-      createdAt: schema.appointments.createdAt,
+      at: exactIso(schema.appointments.createdAt),
     })
     .from(schema.appointments)
     .where(and(...filters))
     .orderBy(desc(schema.appointments.createdAt))
     .limit(limit);
   return rows.flatMap((row): TimelineItem[] => {
-    const at = iso(row.createdAt);
+    const at = row.at;
     if (!at) return [];
     const when = iso(row.startAt) ?? ([row.date, row.time].filter(Boolean).join(" ") || null);
     const label = row.serviceType?.trim() ? row.serviceType.trim().slice(0, 80) : "Appointment";

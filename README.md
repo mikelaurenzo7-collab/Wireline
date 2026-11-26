@@ -46,6 +46,8 @@ Calls Light / Regular / High include 50 / 250 / 500 minutes per month, respectiv
 
 Channel-plan call minutes and managed AI allowances reset on the paid monthly subscription anniversary, including monthly slices of annual plans. Unused included usage does not roll over. Billing and Activity show the next reset date; legacy plans and unpaid draft allowances retain their separate accounting rules.
 
+People at `/people` is the customer record: one person per customer with their phones and email, notes, details, and a timeline of every call, text, email thread and booking with them, built at read time from those channel records. Recent contacts that nobody in People holds are listed for the owner to save. Duplicates merge reversibly; a phone or email already on someone else is a conflict to resolve, never an automatic merge.
+
 Calendar owns appointments, weekly availability, timezone, and booking rules at `/calendar`. Save availability to enable native booking; appointments then confirm automatically unless the owner selects approval mode. Requested appointments hold their time until confirmed or cancelled. Google and Outlook connections are optional busy-time imports refreshed by calendar sync; new native bookings are not exported to those providers. Pausing native booking does not silently fall back to them. Existing `/phone?tab=appointments` links redirect to Calendar.
 
 ## Technology and ownership

@@ -867,7 +867,7 @@ const PATHS: Record<string, PathItem> = {
       tags: ["People"],
       security: auth.bearer,
       parameters: [
-        { name: "q", in: "query", required: false, schema: { type: "string", maxLength: 120 } },
+        { name: "q", in: "query", required: false, schema: { type: "string" } },
         {
           name: "status",
           in: "query",

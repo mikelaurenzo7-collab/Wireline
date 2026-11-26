@@ -62,6 +62,21 @@ function identifierText(kind: PersonIdentifierKind, value: string): string {
   return kind === "phone" ? formatPhone(value, value) : value;
 }
 
+/** The line under a person's name in the list: company and contact details. */
+function personSubtitle(person: Person): string {
+  const label = personLabel(person);
+  const details = [
+    person.company,
+    ...person.identifiers
+      .filter((identifier) => identifier.value !== label)
+      .slice(0, person.displayName ? 1 : 2)
+      .map((identifier) => identifierText(identifier.kind, identifier.value)),
+  ].filter(Boolean);
+  if (details.length) return details.join(" · ");
+  if (!person.displayName && person.identifiers.length) return "No name yet";
+  return "No phone or email yet";
+}
+
 function ErrorNotice({ error, onRetry }: { error: PeopleApiError; onRetry?: () => void }) {
   return (
     <StatusNotice
@@ -1147,17 +1162,7 @@ export default function PeoplePage() {
                       >
                         <span className="truncate font-semibold">{personLabel(person)}</span>
                         <span className="truncate text-sm text-[var(--wireline-color-text-secondary)]">
-                          {[
-                            person.company,
-                            ...person.identifiers
-                              .slice(0, person.displayName ? 1 : 2)
-                              .filter((identifier) => identifier.value !== personLabel(person))
-                              .map((identifier) =>
-                                identifierText(identifier.kind, identifier.value),
-                              ),
-                          ]
-                            .filter(Boolean)
-                            .join(" · ") || "No phone or email yet"}
+                          {personSubtitle(person)}
                         </span>
                       </Link>
                     </li>

@@ -301,4 +301,56 @@ describe("People service against Postgres", () => {
     const second = await tenantStore.run(fresh, () => timeline.listPeopleSuggestions(fresh));
     expect(second.map((s) => s.value)).toEqual(["+16085550123"]);
   });
+
+  it("pages without dropping rows written in the same millisecond", async () => {
+    const pager = await createUser(pool, "people-pager");
+    const ids: string[] = [];
+    for (const name of ["First", "Second", "Third"]) {
+      const created = await tenantStore.run(pager, () =>
+        people.createPerson(pager, { displayName: name }),
+      );
+      ids.push(created.id);
+    }
+    // Three updates inside one millisecond, apart only in microseconds.
+    await pool.query(
+      `UPDATE wireline_people SET updated_at = CASE id
+         WHEN $1::uuid THEN '2026-11-20T12:00:00.123900Z'::timestamptz
+         WHEN $2::uuid THEN '2026-11-20T12:00:00.123500Z'::timestamptz
+         WHEN $3::uuid THEN '2026-11-20T12:00:00.123100Z'::timestamptz END
+       WHERE user_id = $4`,
+      [ids[0], ids[1], ids[2], pager],
+    );
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const page = await tenantStore.run(pager, () =>
+        people.listPeople(pager, { limit: 1, cursor }),
+      );
+      seen.push(...page.people.map((p) => p.id));
+      cursor = page.nextCursor;
+    } while (cursor && seen.length < 10);
+    expect(seen).toEqual(ids);
+
+    const owner2 = await createUser(pool, "people-pager-timeline");
+    const person = await tenantStore.run(owner2, () =>
+      people.createPerson(owner2, { identifiers: [{ kind: "phone", value: "3125550177" }] }),
+    );
+    await pool.query(
+      `INSERT INTO wireline_call_logs (user_id, direction, customer_number, summary, created_at)
+       VALUES ($1, 'inbound', '+13125550177', 'one', '2026-11-20T12:00:00.123900Z'),
+              ($1, 'inbound', '+13125550177', 'two', '2026-11-20T12:00:00.123500Z'),
+              ($1, 'inbound', '+13125550177', 'three', '2026-11-20T12:00:00.123100Z')`,
+      [owner2],
+    );
+    const previews: Array<string | null> = [];
+    let before: string | null = "2026-11-21T00:00:00.000000Z";
+    while (before && previews.length < 10) {
+      const page = await tenantStore.run(owner2, () =>
+        timeline.getPersonTimeline(owner2, person.id, { before, limit: 1 }),
+      );
+      previews.push(...page.items.map((item) => item.preview));
+      before = page.nextCursor;
+    }
+    expect(previews).toEqual(["one", "two", "three"]);
+  });
 });

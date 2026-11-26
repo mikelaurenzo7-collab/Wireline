@@ -154,7 +154,8 @@ test("People lists the customer record, opens a timeline and saves a note", asyn
   await list.getByRole("link", { name: /Dana Ruiz/ }).click();
   await expect(page).toHaveURL(new RegExp(`/people/${DANA}$`));
   await expect(page.getByRole("heading", { name: "Dana Ruiz", level: 2 })).toBeVisible();
-  await expect(page.getByText("+1 (312) 555-0101")).toBeVisible();
+  const detail = page.getByRole("article", { name: "Dana Ruiz" });
+  await expect(detail.getByText("+1 (312) 555-0101")).toBeVisible();
   const timeline = page.getByRole("list", { name: "Timeline for Dana Ruiz" });
   await expect(timeline.getByText("Asked about a Friday install.")).toBeVisible();
 

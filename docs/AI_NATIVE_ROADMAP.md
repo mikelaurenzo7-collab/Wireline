@@ -41,6 +41,12 @@ Starting point, from the audit: every channel stores the customer as plain text 
 - Live calls keep today's rule: no record reads while the caller is unverified. After the call, an internal update_person action (replacing the removed CRM update action) writes through the existing autonomy, draft and approval path.
 - MCP people writes are an owner opt-in, like connected-app Training writes. No pipelines, deals or custom-object builder until owners ask.
 
+Progress:
+- [x] Tables and owner surface in code: migration 0197 (`wireline_people`, `wireline_person_identifiers`, `wireline_person_events`) with tenant RLS, composite same-tenant keys and no UPDATE grant on events; `src/lib/people/`; `/api/people`; the People page at `/people` with search, recent contacts not yet saved, phones and email, details, notes, reversible merge and the read-time timeline. Account deletion and export cover all three tables; the 365-day purge does not. Applying 0197 to the shared database is a separate, reviewed step; until then the routes answer 503 `PEOPLE_UNAVAILABLE`.
+- [ ] Bot actions: `find_person` (owner and post-call contexts only; never while a live caller is unverified), `record_interaction` and `update_person` through the existing autonomy, draft and approval path, plus the reviewed tool-list migration that preserves owner opt-outs.
+- [ ] Outward MCP `people.read` and opt-in `people.write`, with the ChatGPT and Claude connector submissions updated together.
+- [ ] Links from call, text, email and booking views into the person, and a "save to People" action there.
+
 Helpers use one per-Bot toggle, initially thinking-only, at most one level and two calls per parent task, with bounded context/time/output. Parent authorization, environment, budget and cancellation apply. Existing explicit tool lists require a reviewed migration that preserves owner opt-outs. Record parent-child trace and usage without double billing. Slow work uses durable task handles; never block a live call indefinitely.
 
 ## Phase 2 — Connector Gateway

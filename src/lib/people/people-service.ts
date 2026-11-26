@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import {
   PERSON_IDENTIFIER_SOURCES,
@@ -126,6 +126,19 @@ function inTenant<T>(userId: string, work: () => Promise<T>): Promise<T> {
 function iso(value: Date | string | null | undefined): string {
   if (!value) return new Date(0).toISOString();
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+/** Exact UTC text: Postgres keeps microseconds a JavaScript Date would drop. */
+function exactIso(column: unknown) {
+  return sql<string>`to_char(${column} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+}
+
+const EXACT_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/;
+
+function parsePeopleCursor(value: unknown): { at: string; id: string } | null {
+  if (typeof value !== "string") return null;
+  const [at, id] = value.split("~");
+  return at && EXACT_TIME.test(at) && isUuid(id) ? { at, id } : null;
 }
 
 function identifierView(row: PersonIdentifier): PersonIdentifierView {
@@ -443,7 +456,7 @@ export type ListPeopleOptions = {
   query?: unknown;
   status?: unknown;
   limit?: unknown;
-  /** ISO timestamp from the previous page's `nextCursor`. */
+  /** The previous page's `nextCursor`: exact update time and id of its last row. */
   cursor?: unknown;
 };
 
@@ -457,10 +470,7 @@ export async function listPeople(
     : PEOPLE_LIST_LIMIT;
   const status = options.status === "archived" ? "archived" : "active";
   const query = typeof options.query === "string" ? options.query.trim().slice(0, 120) : "";
-  const cursor =
-    typeof options.cursor === "string" && !Number.isNaN(Date.parse(options.cursor))
-      ? new Date(options.cursor)
-      : null;
+  const cursor = parsePeopleCursor(options.cursor);
 
   return inTenant(userId, async () => {
     const filters = [
@@ -468,7 +478,11 @@ export async function listPeople(
       isNull(people.mergedIntoId),
       eq(people.status, status),
     ];
-    if (cursor) filters.push(lt(people.updatedAt, cursor));
+    if (cursor) {
+      filters.push(
+        sql`(${people.updatedAt}, ${people.id}) < (${cursor.at}::timestamptz, ${cursor.id}::uuid)`,
+      );
+    }
     if (query) {
       const escaped = query.replace(/[\\%_]/g, (c) => `\\${c}`);
       const digits = query.replace(/\D/g, "");
@@ -504,12 +518,13 @@ export async function listPeople(
       filters.push(matchedIds.length ? or(textMatch, inArray(people.id, matchedIds))! : textMatch);
     }
     const rows = await drizzle
-      .select()
+      .select({ person: people, exactUpdatedAt: exactIso(people.updatedAt) })
       .from(people)
       .where(and(...filters))
       .orderBy(desc(people.updatedAt), desc(people.id))
       .limit(limit + 1);
-    const page = rows.slice(0, limit);
+    const pageRows = rows.slice(0, limit);
+    const page = pageRows.map((row) => row.person);
     // A person shows every identifier in its family, including merged ones.
     const families = await personFamilies(
       drizzle,
@@ -525,10 +540,10 @@ export async function listPeople(
       if (!root) continue;
       byRoot.set(root, [...(byRoot.get(root) ?? []), identifier]);
     }
-    const last = page[page.length - 1];
+    const last = pageRows[pageRows.length - 1];
     return {
       people: page.map((row) => personView(row, byRoot.get(row.id) ?? [])),
-      nextCursor: rows.length > limit && last ? iso(last.updatedAt) : null,
+      nextCursor: rows.length > limit && last ? `${last.exactUpdatedAt}~${last.person.id}` : null,
     };
   });
 }
@@ -967,27 +982,27 @@ export async function listPersonEvents(
   db: Db,
   userId: string,
   personIds: string[],
-  before: Date | null,
+  before: string | null,
   limit: number,
 ): Promise<PersonEventView[]> {
   if (!personIds.length) return [];
   const filters = [eq(personEvents.userId, userId), inArray(personEvents.personId, personIds)];
-  if (before) filters.push(lt(personEvents.createdAt, before));
+  if (before) filters.push(sql`${personEvents.createdAt} < ${before}::timestamptz`);
   const rows = await db
-    .select()
+    .select({ event: personEvents, at: exactIso(personEvents.createdAt) })
     .from(personEvents)
     .where(and(...filters))
     .orderBy(desc(personEvents.createdAt))
     .limit(limit);
-  return rows.map((row) => ({
-    id: row.id,
-    personId: row.personId,
-    kind: row.kind,
-    actor: row.actor,
-    agentId: row.agentId,
-    body: row.body,
-    data: (row.data ?? {}) as Record<string, unknown>,
-    createdAt: iso(row.createdAt),
+  return rows.map(({ event, at }) => ({
+    id: event.id,
+    personId: event.personId,
+    kind: event.kind,
+    actor: event.actor,
+    agentId: event.agentId,
+    body: event.body,
+    data: (event.data ?? {}) as Record<string, unknown>,
+    createdAt: at,
   }));
 }
 
