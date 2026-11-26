@@ -279,19 +279,60 @@ describe("every AI-spending surface reaches the spend ledger", () => {
 });
 
 describe("the retention purge deletes event data, never live configuration", () => {
-  const migration = read("drizzle/migrations/0149_retention_purge_fails_closed.sql");
+  // The newest CREATE OR REPLACE body is the live one. 0149 made failures
+  // abort; 0198 carries that over and fixes the thread purge.
+  const migration = read("drizzle/migrations/0198_retention_purge_thread_activity.sql");
+  const purgeList = migration.slice(
+    migration.indexOf("FOR v_table IN SELECT * FROM (VALUES"),
+    migration.indexOf("AS t(target_table_name"),
+  );
 
   it("drops the two configuration tables from the purge list", () => {
-    const purgeList = migration.slice(
-      migration.indexOf("FOR v_table IN SELECT * FROM (VALUES"),
-      migration.indexOf("AS t(target_table_name"),
-    );
     expect(purgeList).not.toContain("'wireline_webhooks'");
     expect(purgeList).not.toContain("'wireline_intake_keys'");
     // The delivery log is genuine event data and stays purgeable.
     expect(purgeList).toContain("'wireline_webhook_deliveries'");
     expect(purgeList).toContain("'wireline_call_logs'");
     expect(purgeList).toContain("'wireline_audit_log'");
+  });
+
+  it("purges threads by last activity, never cascading away a recent message", () => {
+    // A created_at thread purge cascaded every message of a long-running
+    // thread, including yesterday's.
+    expect(purgeList).not.toMatch(/'wireline_(email|sms)_threads',\s*'user_id',\s*'created_at'/);
+    expect(purgeList).toContain(
+      "('wireline_email_threads', 'user_id', 'last_message_at', ARRAY['wireline_email_messages'])",
+    );
+    expect(purgeList).toContain(
+      "('wireline_sms_threads', 'user_id', 'last_message_at', ARRAY['wireline_sms_messages', 'wireline_sms_send_operations'])",
+    );
+    // Children are purged by their own age before their thread is considered.
+    for (const [child, thread] of [
+      ["'wireline_email_messages', 'user_id', 'created_at'", "'wireline_email_threads'"],
+      ["'wireline_sms_messages', 'user_id', 'created_at'", "'wireline_sms_threads'"],
+      ["'wireline_sms_send_operations', 'user_id', 'created_at'", "'wireline_sms_threads'"],
+    ]) {
+      expect(purgeList).toContain(child);
+      expect(purgeList.indexOf(child)).toBeLessThan(purgeList.indexOf(thread));
+    }
+    const body = migration.slice(migration.indexOf("AS $$"), migration.indexOf("$$;"));
+    expect(body).toContain(
+      "' AND NOT EXISTS (SELECT 1 FROM %I AS child WHERE child.thread_id = target.id)'",
+    );
+  });
+
+  it("keeps People and the 5-year outbound purpose audit out of the sweep", () => {
+    for (const exempt of [
+      "wireline_people",
+      "wireline_person_identifiers",
+      "wireline_person_events",
+      "wireline_outbound_purpose_audit",
+    ]) {
+      expect(purgeList).not.toContain(exempt);
+    }
+    // The behavior is documented where the migration is reviewed.
+    expect(migration).toContain("People (`wireline_people`, `wireline_person_identifiers`,");
+    expect(migration).toContain("`wireline_outbound_purpose_audit` is kept for 5 years (0194)");
   });
 
   it("keeps input and search-path hardening while allowing unexpected failures to retry", () => {
@@ -303,6 +344,16 @@ describe("the retention purge deletes event data, never live configuration", () 
     expect(body).not.toMatch(/v_rows_deleted\s*:=\s*0/i);
     expect(body).toContain("EXECUTE format(");
     expect(body).toContain("INTO v_rows_deleted USING p_user_id, v_cutoff_date");
+    // Missing tables and columns are skipped; the routine runs with the
+    // caller's rights at the worker's root scope.
+    expect(body).toContain("IF to_regclass(v_table.target_table_name) IS NULL THEN");
+    expect(body).toContain("information_schema.columns");
+    const declaration = migration.slice(
+      migration.indexOf("CREATE OR REPLACE FUNCTION"),
+      migration.indexOf("AS $$"),
+    );
+    expect(declaration).toContain("LANGUAGE plpgsql");
+    expect(declaration).not.toMatch(/SECURITY\s+DEFINER/i);
   });
 
   it("is journalled so the production build actually applies it", () => {
@@ -346,6 +397,12 @@ describe("the retention purge deletes event data, never live configuration", () 
       expect.objectContaining({
         idx: 55,
         tag: "0157_audit_log_system_receipts",
+      }),
+    );
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 96,
+        tag: "0198_retention_purge_thread_activity",
       }),
     );
   });

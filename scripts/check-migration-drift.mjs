@@ -58,11 +58,25 @@ const JSON_OUT = process.argv.includes("--json");
 // routine definition safely.
 const ROUTINE_SEMANTIC_EXPECTATIONS = [
   {
-    migration: "0149_retention_purge_fails_closed",
+    // 0149 made delete failures abort; 0198 purges threads by activity behind
+    // an emptiness guard and adds SMS history. The newest body owns all of it.
+    migration: "0198_retention_purge_thread_activity",
     identity: "wireline_purge_old_data(uuid,integer)",
-    mustContain: ["wireline_webhook_deliveries"],
+    mustContain: [
+      "wireline_webhook_deliveries",
+      "('wireline_email_threads', 'user_id', 'last_message_at'",
+      "('wireline_sms_threads', 'user_id', 'last_message_at'",
+      "('wireline_sms_messages', 'user_id', 'created_at'",
+      "('wireline_sms_send_operations', 'user_id', 'created_at'",
+      "NOT EXISTS (SELECT 1 FROM %I AS child WHERE child.thread_id = target.id)",
+    ],
     mustNotContain: ["wireline_webhooks", "wireline_intake_keys"],
-    mustNotMatch: [/EXCEPTION\s+WHEN\s+OTHERS/i, /v_rows_deleted\s*:=\s*0/i],
+    mustNotMatch: [
+      /EXCEPTION\s+WHEN\s+OTHERS/i,
+      /v_rows_deleted\s*:=\s*0/i,
+      /'wireline_(email|sms)_threads',\s*'user_id',\s*'created_at'/,
+      /wireline_(people|person_identifiers|person_events|outbound_purpose_audit)\b/,
+    ],
   },
 ];
 

@@ -112,6 +112,18 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("retention:live_intake_key_configuration_purgeable");
     expect(verifierSource).toContain("retention:purge_errors_suppressed");
     expect(verifierSource).toContain("retention:purge_function_search_path_not_pinned");
+    // 0198: threads by last activity behind an emptiness guard, SMS history
+    // purged, People and the 5-year outbound purpose audit exempt.
+    expect(verifierSource).toContain("retention:threads_not_purged_by_last_activity");
+    expect(verifierSource).toContain("retention:thread_purge_can_cascade_recent_messages");
+    expect(verifierSource).toContain("retention:sms_history_not_purgeable");
+    expect(verifierSource).toContain("retention:people_purgeable");
+    expect(verifierSource).toContain("retention:outbound_purpose_audit_purgeable");
+    expect(verifierSource).toContain("retention:purge_function_security_definer");
+    // The live body must equal the newest migration body, byte for byte.
+    expect(verifierSource).toContain("0198_retention_purge_thread_activity.sql");
+    expect(verifierSource).toContain("p.prosrc AS function_body");
+    expect(verifierSource).toContain("retention:purge_body_drift");
   });
 
   it("certifies migration 0168 OpenAI Realtime effects on the live schema", () => {
