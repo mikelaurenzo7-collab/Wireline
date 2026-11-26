@@ -140,19 +140,19 @@ export default function CallOpsAnalytics() {
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-4"
+            className="rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-4"
           >
-            <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--wireline-color-text-tertiary)]">
+            <div className="text-[length:var(--wireline-typography-overline-size)] font-medium uppercase tracking-widest text-[var(--wireline-color-text-tertiary)]">
               {metric.label}
             </div>
-            <div className="mt-1.5 font-[var(--wireline-font-family-display)] text-[clamp(1.2rem,1rem+0.5vw,1.6rem)] leading-none tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
+            <div className="mt-1.5 font-[var(--wireline-font-family-display)] text-[clamp(1.2rem,1rem+0.5vw,1.6rem)] leading-none tracking-tight text-[var(--wireline-color-text-primary)]">
               {metric.value}
             </div>
           </div>
         ))}
       </div>
-      <div className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
-        <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--wireline-color-text-tertiary)]">
+      <div className="rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
+        <div className="mb-3 text-[length:var(--wireline-typography-overline-size)] font-medium uppercase tracking-widest text-[var(--wireline-color-text-tertiary)]">
           Call volume by day of week
         </div>
         <div className="flex h-40 items-end gap-2">
@@ -161,7 +161,7 @@ export default function CallOpsAnalytics() {
               key={day.label}
               className="grid h-full min-w-0 flex-1 grid-rows-[1rem_minmax(0,1fr)_1rem] justify-items-center gap-1.5"
             >
-              <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
+              <span className="font-[var(--wireline-font-mono)] text-[length:var(--wireline-typography-overline-size)] text-[var(--wireline-color-text-tertiary)]">
                 {day.count}
               </span>
               <div className="flex h-full w-full items-end">
@@ -174,7 +174,7 @@ export default function CallOpsAnalytics() {
                   }}
                 />
               </div>
-              <span className="text-[10px] text-[var(--wireline-color-text-tertiary)]">
+              <span className="text-[length:var(--wireline-typography-overline-size)] text-[var(--wireline-color-text-tertiary)]">
                 {day.label}
               </span>
             </div>

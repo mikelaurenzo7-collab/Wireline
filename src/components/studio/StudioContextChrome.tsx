@@ -59,7 +59,7 @@ export default function StudioContextChrome() {
       <div className="wl-studio-context-row flex min-h-[56px] flex-nowrap items-center justify-between gap-1 px-2 py-1.5 sm:gap-2 sm:px-5 sm:py-2">
         <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
           {activeAgent ? null : (
-            <span className="inline-flex shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary">
+            <span className="inline-flex shrink-0 font-[var(--wireline-font-mono)] text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest text-primary">
               {language.navLabel}
             </span>
           )}

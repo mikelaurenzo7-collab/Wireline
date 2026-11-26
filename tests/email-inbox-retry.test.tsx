@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EmailInbox from "../src/components/EmailInbox";
 import EmailPage from "../src/pages/EmailPage";
+import { formatActivityTime } from "../src/lib/safe-date";
 
 const h = vi.hoisted(() => ({
   slots: [] as Array<{ value?: unknown; dependencies?: readonly unknown[]; cleanup?: () => void }>,
@@ -1164,14 +1165,7 @@ describe("email inbox operation recovery", () => {
       expect(text(row)).toContain(action);
       expect(text(row)).toContain(latest.subject);
       expect(text(row)).toContain(latest.customer_email);
-      expect(text(row)).toContain(
-        new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        }).format(new Date(latest.last_message_at)),
-      );
+      expect(text(row)).toContain(formatActivityTime(latest.last_message_at));
       elements(tree)
         .find((node) => node.type === "search-field")
         ?.props.onChange?.({ target: { value: latest.summary } });

@@ -187,7 +187,7 @@ export function CarrierPanel({
               ...(SMS_LAUNCH_UI_ENABLED ? [["SMS", "Twilio"]] : []),
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-border bg-background p-3">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                <dt className="text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-widest text-muted-foreground">
                   {label}
                 </dt>
                 <dd className="mt-1 text-sm font-semibold text-foreground">{value}</dd>
@@ -256,7 +256,7 @@ export function CarrierPanel({
                       <p className="truncate text-base font-semibold tabular-nums text-foreground">
                         {number.phone_number}
                       </p>
-                      <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                      <p className="mt-1 truncate font-mono text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
                         {number.carrier_number_id || "Number managed by Twilio"}
                       </p>
                     </div>

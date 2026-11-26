@@ -174,7 +174,7 @@ describe("Calendar pending saves across tabs", () => {
     ).toBe(false);
     expect(text(notice)).toContain("Availability could not load.");
     expect(
-      elements(page).find((node) => node.type === "button" && text(node) === "Set availability")
+      elements(page).find((node) => node.type === "button" && text(node) === "Set Availability")
         ?.props.disabled,
     ).toBe(true);
 

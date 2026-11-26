@@ -25,6 +25,7 @@ import OutboundDialDialog from "./OutboundDialDialog";
 import PersonLink from "./PersonLink";
 import { SearchField, StatusNotice } from "./molecules";
 import WorkspaceResizablePanel from "./layout/WorkspaceResizablePanel";
+import { formatActivityTime } from "../lib/safe-date";
 
 type Call = {
   id: string;
@@ -60,18 +61,6 @@ function formatDuration(seconds: number | null | undefined): string {
   const minutes = Math.floor(seconds / 60);
   const rest = Math.floor(seconds % 60);
   return minutes > 0 ? `${minutes}m ${rest}s` : `${rest}s`;
-}
-
-function formatTime(value: string | null | undefined): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
 }
 
 function humanize(value: string | null | undefined, fallback = "Unclassified") {
@@ -451,22 +440,22 @@ export default function CallLogsClaude({
                       >
                         {call.person_name || formatPhone(call.customer_number, "Unknown caller")}
                       </strong>
-                      <span className="shrink-0 text-[10px] text-muted-foreground/75">
-                        {formatTime(call.created_at)}
+                      <span className="shrink-0 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground/75">
+                        {formatActivityTime(call.created_at)}
                       </span>
                     </div>
                     <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="wl-preserve-case block truncate text-[11px] text-muted-foreground">
+                      <span className="wl-preserve-case block truncate text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
                         {meta || humanize(call.direction, "Call")}
                       </span>
                       <div className="flex shrink-0 items-center gap-1.5">
                         {call.recording_url ? (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground">
+                          <span className="inline-flex items-center gap-0.5 text-[length:var(--wireline-typography-overline-size)] font-medium text-muted-foreground">
                             <Mic className="size-2.5" aria-hidden="true" />
                           </span>
                         ) : null}
                         <span
-                          className={`text-[10px] font-medium ${statusTone(callOutcomeLabelFor(reportHappened(call), call.direction))}`}
+                          className={`text-[length:var(--wireline-typography-overline-size)] font-medium ${statusTone(callOutcomeLabelFor(reportHappened(call), call.direction))}`}
                         >
                           {callOutcomeLabelFor(reportHappened(call), call.direction)}
                         </span>
@@ -511,7 +500,7 @@ export default function CallLogsClaude({
               {[
                 selected.person_name ? formatPhone(selected.customer_number) : "",
                 selected.agent_name,
-                formatTime(selected.created_at),
+                formatActivityTime(selected.created_at),
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -605,7 +594,7 @@ export default function CallLogsClaude({
 
       <section className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs space-y-4">
         <div>
-          <h3 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
+          <h3 className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">
             {selected.summary?.trim().startsWith("Caller:") ? "Caller Excerpt" : "Summary"}
           </h3>
           <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
@@ -619,7 +608,7 @@ export default function CallLogsClaude({
             ["What happened", callOutcomeDetailFor(reportHappened(selected), selected.direction)],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border/70 bg-background/50 p-3">
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <span className="block text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-widest text-muted-foreground">
                 {label}
               </span>
               <strong className="mt-1 block text-sm font-semibold text-foreground">{value}</strong>
@@ -631,10 +620,10 @@ export default function CallLogsClaude({
       {selected.transcript ? (
         <section className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between pb-3 border-b border-border/60">
-            <h3 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
+            <h3 className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">
               Transcript
             </h3>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
               {parseDialogue(selected.transcript, selected.agent_name).length > 1
                 ? "Dialogue turns"
                 : "Continuous transcript"}
@@ -652,7 +641,7 @@ export default function CallLogsClaude({
                       key={index}
                       className={`flex flex-col gap-1 ${isBot ? "items-start" : "items-end"}`}
                     >
-                      <span className="px-1 text-[11px] font-medium text-muted-foreground">
+                      <span className="px-1 text-[length:var(--wireline-typography-overline-size)] font-medium text-muted-foreground">
                         {turn.speakerName}
                       </span>
                       <div
@@ -760,7 +749,7 @@ export default function CallLogsClaude({
                 >
                   <ChevronsRight className="size-4" aria-hidden="true" />
                   <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+                    className="text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-widest"
                     style={{ writingMode: "vertical-rl" }}
                   >
                     Calls

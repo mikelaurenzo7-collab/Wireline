@@ -373,7 +373,7 @@ export default function CommandBar() {
             aria-labelledby="command-palette-title"
             aria-describedby="command-palette-description"
             data-slot="command-palette"
-            className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--wireline-elevation-lg)]"
+            className="relative w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-[var(--wireline-elevation-lg)]"
           >
             <div className="flex items-center gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
               <Search aria-hidden="true" className="size-4 shrink-0 text-primary" />
@@ -404,7 +404,7 @@ export default function CommandBar() {
                   onKeyDown={onSearchKeyDown}
                 />
               </div>
-              <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold tracking-[0.08em] text-muted-foreground sm:inline-flex">
+              <kbd className="hidden rounded-sm border border-border bg-secondary px-1.5 py-0.5 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold tracking-widest text-muted-foreground sm:inline-flex">
                 ESC
               </kbd>
               <Button
@@ -434,7 +434,7 @@ export default function CommandBar() {
                     if (!commands.length) return null;
                     return (
                       <section key={category} className="mb-3 last:mb-0">
-                        <p className="px-2 pb-1 pt-1 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        <p className="px-2 pb-1 pt-1 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-widest text-muted-foreground">
                           {category}
                         </p>
                         <div className="space-y-1">
@@ -457,13 +457,13 @@ export default function CommandBar() {
                                 onClick={() => execute(command)}
                                 onMouseEnter={() => setSelectedIndex(index)}
                                 className={cn(
-                                  "h-auto min-h-11 w-full justify-start gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left",
+                                  "h-auto min-h-11 w-full justify-start gap-3 rounded-md px-3 py-2 text-left",
                                   selected ? "bg-primary/10 text-foreground" : "hover:bg-secondary",
                                 )}
                               >
                                 <span
                                   className={cn(
-                                    "grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] border",
+                                    "grid size-8 shrink-0 place-items-center rounded-md border",
                                     selected
                                       ? "border-primary/20 bg-primary/10 text-primary"
                                       : "border-border bg-card text-muted-foreground",
@@ -504,11 +504,11 @@ export default function CommandBar() {
 
             <footer className="flex items-center border-t border-border bg-secondary/40 px-4 py-2.5 sm:px-5">
               <p className="text-xs text-muted-foreground">
-                <span className="font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold tracking-[0.08em]">
+                <span className="font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold tracking-widest">
                   ↑↓
                 </span>{" "}
                 Navigate ·{" "}
-                <span className="font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold tracking-[0.08em]">
+                <span className="font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold tracking-widest">
                   ↵
                 </span>{" "}
                 Open

@@ -90,7 +90,7 @@ describe("activation path contract", () => {
     expect(wizard).toContain('event: "test_call_completed"');
     expect(wizard).toContain('result: "assistant_response_completed"');
     expect(wizard).not.toContain("Finish without a test");
-    expect(copy).toContain('label: "Train"');
+    expect(copy).toContain('label: "Knowledge"');
     expect(copy).toContain('label: "Rehearse"');
     expect(copy).toContain('label: "Launch"');
     expect(copy).not.toContain('label: "Wire"');

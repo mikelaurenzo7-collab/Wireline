@@ -5,6 +5,7 @@ import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { addDaysToIsoDate } from "../lib/calendar-time";
+import { appointmentWhen } from "../lib/people/appointment-when";
 import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import { formatPhone } from "../lib/safe-number";
 import { Badge, Button, EmptyState, Skeleton } from "./atoms";
@@ -25,56 +26,25 @@ type Appointment = {
   booking_source?: string | null;
 };
 
+/** The booked time in the shape People and Calendar share, plus the length of native bookings. */
 function scheduleLabel(appointment: Appointment): string {
-  if (appointment.start_at && appointment.time_zone) {
-    const instant = new Date(appointment.start_at);
-    if (Number.isFinite(instant.getTime())) {
-      try {
-        const start = new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          timeZone: appointment.time_zone,
-          timeZoneName: "short",
-        }).format(instant);
-        const duration = appointment.end_at
-          ? (new Date(appointment.end_at).getTime() - instant.getTime()) / 60_000
-          : NaN;
-        return appointment.booking_source === "native" && Number.isFinite(duration) && duration > 0
-          ? `${start} · ${Math.round(duration)} min`
-          : start;
-      } catch {
-        /* Retain the original local date/time for older records. */
-      }
-    }
-  }
-  let date = appointment.date;
-  let time = appointment.time;
-  // These are local calendar/clock strings, not instants. UTC formatting keeps
-  // their stored values intact regardless of the viewer's timezone.
-  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    const parsed = new Date(`${date}T00:00:00Z`);
-    if (Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date) {
-      date = parsed.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        timeZone: "UTC",
-      });
-    }
-  }
-  if (time && /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(time)) {
-    const [hours, minutes] = time.split(":").map(Number);
-    time = new Date(Date.UTC(2000, 0, 1, hours, minutes)).toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: "UTC",
-    });
-  }
-  const parts = [date, time].filter(Boolean);
-  return parts.length ? parts.join(" · ") : "Time to be confirmed";
+  const when = appointmentWhen({
+    startAt: appointment.start_at ?? null,
+    timeZone: appointment.time_zone ?? null,
+    date: appointment.date ?? null,
+    time: appointment.time ?? null,
+  });
+  if (!when) return "Time to be confirmed";
+  const start = appointment.start_at ? new Date(appointment.start_at).getTime() : NaN;
+  const minutes = appointment.end_at
+    ? (new Date(appointment.end_at).getTime() - start) / 60_000
+    : NaN;
+  return appointment.booking_source === "native" &&
+    appointment.time_zone &&
+    Number.isFinite(minutes) &&
+    minutes > 0
+    ? `${when} · ${Math.round(minutes)} min`
+    : when;
 }
 
 function appointmentTimestamp(appointment: Appointment): number | null {
@@ -129,7 +99,7 @@ export function AppointmentRow({
               {appointment.customer_name || "Customer"}
             </strong>
             {isGoogle ? (
-              <span className="inline-flex items-center rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="inline-flex items-center rounded-md border border-border bg-background px-1.5 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-medium text-muted-foreground">
                 Google Calendar
               </span>
             ) : null}
@@ -160,7 +130,7 @@ export function AppointmentRow({
               href="https://calendar.google.com/calendar/u/0/r"
               target="_blank"
               rel="noreferrer"
-              className="text-[11px] font-medium text-primary hover:underline"
+              className="text-[length:var(--wireline-typography-overline-size)] font-medium text-primary hover:underline"
             >
               Open Google Calendar
             </a>
@@ -681,10 +651,10 @@ export default function AppointmentsPanel({
             {groupAppointmentsByDay(upcoming, calendarTimeZone).map((group) => (
               <div key={group.date} className="space-y-1.5">
                 <div className="flex items-center gap-2 px-0.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span className="text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wider text-muted-foreground">
                     {group.label}
                   </span>
-                  <span className="rounded-full bg-muted/80 px-1.5 py-0.2 text-[10px] font-mono text-muted-foreground">
+                  <span className="rounded-full bg-muted/80 px-1.5 py-0.2 text-[length:var(--wireline-typography-overline-size)] font-mono text-muted-foreground">
                     {group.items.length}
                   </span>
                 </div>

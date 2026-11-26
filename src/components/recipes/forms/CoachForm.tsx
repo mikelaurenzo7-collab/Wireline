@@ -33,7 +33,7 @@ export function CoachForm({
         </Field>
       )}
       {callId && (
-        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted-foreground">
+        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest text-muted-foreground">
           Coaching call{" "}
           <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span>
         </p>
@@ -60,7 +60,7 @@ export function CoachForm({
             <ResultCard title="Sentiment">
               <span
                 className={cn(
-                  "inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
+                  "inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest",
                   coaching.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "positive" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "neutral" &&
@@ -75,14 +75,14 @@ export function CoachForm({
               </span>
             </ResultCard>
             <ResultCard title="Engagement">
-              <span className="inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
+              <span className="inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest bg-brand/15 text-brand border border-brand/30">
                 {coaching.engagement}
               </span>
             </ResultCard>
             <ResultCard title="Escalation Risk">
               <span
                 className={cn(
-                  "inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
+                  "inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest",
                   coaching.escalation_risk === "imminent" &&
                     "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)] motion-safe:animate-pulse",
                   coaching.escalation_risk === "high" &&

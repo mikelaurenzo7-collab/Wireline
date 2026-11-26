@@ -131,7 +131,8 @@ export function AgentReviewForm({
                     "shrink-0 px-2 py-0.5 rounded-full wl-label mt-0.5",
                     d.priority === "critical" &&
                       "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
-                    d.priority === "high" && "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
+                    d.priority === "high" &&
+                      "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
                     d.priority === "medium" && "bg-brand/15 text-brand border border-brand/30",
                     d.priority === "low" &&
                       "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
@@ -170,7 +171,7 @@ export function AgentReviewForm({
             ))}
           </div>
           {review.suggested_knowledge_entries?.length > 0 && (
-            <ResultCard title="Suggested Training Entries">
+            <ResultCard title="Suggested Knowledge Entries">
               <ul className="list-disc list-inside space-y-1">
                 {review.suggested_knowledge_entries.map((k: string, i: number) => (
                   <li key={i}>{k}</li>

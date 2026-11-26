@@ -36,6 +36,7 @@ import {
   CONTACT_PERMISSION_LABEL,
   NONSALES_CONFIRMATION_LABEL,
 } from "../lib/outbound-compliance-copy";
+import { formatActivityTime } from "../lib/safe-date";
 
 type ApprovalBucket = "pending" | "compliance" | "hot_leads" | "escalations" | "knowledge_gaps";
 
@@ -440,8 +441,7 @@ function ApprovalTaskCard({
   const [nonsalesChecked, setNonsalesChecked] = useState(false);
   const [salesChecked, setSalesChecked] = useState(false);
   const textConfirmed =
-    !isTextApproval ||
-    (permissionChecked && (followsCall ? nonsalesChecked : salesChecked));
+    !isTextApproval || (permissionChecked && (followsCall ? nonsalesChecked : salesChecked));
   const hasSubject = rawTaskType(task).includes("email") || "subject" in savedPayload;
   const evidence = evidenceSnippet(savedTask, editing && canEditMessage, true);
   const preview = approvalPreview(savedTask, manualTask);
@@ -742,15 +742,7 @@ function ApprovalTaskCard({
           {created ? (
             <>
               <time dateTime={created.dateTime} className="min-w-0 max-w-full">
-                Created{" "}
-                {new Date(created.dateTime).toLocaleString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                  timeZoneName: "short",
-                })}
+                Created {formatActivityTime(created.dateTime)}
               </time>
               <span>{created.ageLabel}</span>
             </>

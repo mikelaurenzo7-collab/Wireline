@@ -172,20 +172,98 @@ const SAMPLE_APPOINTMENT_TYPES = [
   "Renewal Conversation",
 ];
 
-const SAMPLE_EMAIL_SUBJECTS = [
-  "Pricing for 5-seat plan?",
-  "Re: invoice overage line item",
-  "HIPAA + BotBound for our practice",
-  "Follow-up from yesterday's call",
-  "Demo request: outbound playbook",
-  "Pro supervisor cockpit",
-  "Refund for duplicate charge",
-  "Integration question: Slack alerts",
-  "Can you take calls after hours?",
-  "Enterprise quote: 50 seats",
-  "Thanks for the quick support",
-  "Scheduling conflict on Thursday demo",
-];
+// Email-shaped sample mail: each thread's subject, digest, customer message
+// and Bot reply describe the same conversation, and the reply is unsigned
+// because the account names its own Bot.
+const SAMPLE_EMAILS = [
+  {
+    subject: "Pricing for 5-seat plan?",
+    summary:
+      "Five-person team asked about pricing and yearly billing. Offered a walkthrough Thursday.",
+    body: "We're a five-person team looking at BotBound. What would five seats cost each month, and is there a discount for paying yearly?",
+    reply:
+      "Thanks for asking. I've sent the current plan options for five seats, including yearly billing. I can also walk you through them on a short call Thursday at 2 PM if that helps.",
+  },
+  {
+    subject: "Re: invoice overage line item",
+    summary: "Customer asked about the overage line on the last invoice. Sent a usage breakdown.",
+    body: "Our last invoice has an overage line I don't understand. Can you explain what it covers?",
+    reply:
+      "Of course. The overage line covers usage past your plan's included amount last month. I've sent a day-by-day breakdown so you can see where it came from.",
+  },
+  {
+    subject: "HIPAA + BotBound for our practice",
+    summary:
+      "Concierge medical practice asked how patient information is handled before committing.",
+    body: "We run a three-person concierge medical practice. Before we go further, can you tell us how you handle patient information?",
+    reply:
+      "Thanks for checking first. I've sent our security overview, and I can set up a call with our team to go through any questions.",
+  },
+  {
+    subject: "Follow-up from yesterday's call",
+    summary: "Lead asked for a callback Tuesday morning. Callback scheduled.",
+    body: "Thanks for the call yesterday. Could you call me back Tuesday morning to pick up where we left off?",
+    reply:
+      "Happy to. I've scheduled a callback for Tuesday at 10 AM. Reply here if another time suits you better.",
+  },
+  {
+    subject: "Demo request: outbound playbook",
+    summary: "Prospect switching providers asked for an outbound calling demo. Offered two times.",
+    body: "We're switching providers and want to see how outbound calling works before we decide. Can we book a demo?",
+    reply: "Absolutely. I have Wednesday at 11 AM or Thursday at 3 PM open. Which works for you?",
+  },
+  {
+    subject: "Pro supervisor cockpit",
+    summary: "Renewing customer asked what the supervisor view includes. Sent an overview.",
+    body: "We're renewing and wanted to ask about the supervisor view on the Pro plan. What does it include?",
+    reply:
+      "Thanks for renewing. I've sent a short overview of the supervisor view, and I can show it live on a quick call.",
+  },
+  {
+    subject: "Refund for duplicate charge",
+    summary: "Customer reported a duplicate charge during a pause. Queued for billing review.",
+    body: "We were charged twice while our account was paused. Could you refund the duplicate?",
+    reply:
+      "Sorry about that. I've passed the duplicate charge to billing for review, and you'll hear back within one business day.",
+  },
+  {
+    subject: "Integration question: Slack alerts",
+    summary: "Customer asked about Slack alerts for follow-ups. Passed to the team to confirm.",
+    body: "Can BotBound post an alert to our Slack channel when a call needs follow-up?",
+    reply:
+      "Good question. I've passed this to our team so they can confirm what's possible for your workspace, and they'll reply here.",
+  },
+  {
+    subject: "Can you take calls after hours?",
+    summary: "Office asked about evening calls and next-day booking.",
+    body: "Our office closes at 6. Can your Bot answer calls in the evening and book appointments for the next day?",
+    reply:
+      "Yes. Your Bot can answer around the clock and book into the hours you set in Availability.",
+  },
+  {
+    subject: "Enterprise quote: 50 seats",
+    summary: "50-seat call center asked for a quote. Routed to the enterprise team.",
+    body: "We run a 50-seat call center and need a quote. Who should we talk to?",
+    reply:
+      "Thanks for reaching out. I've passed your request to our enterprise team, and they'll be in touch today to set up a call.",
+  },
+  {
+    subject: "Thanks for the quick support",
+    summary: "Customer confirmed the webhook fix worked.",
+    body: "Just wanted to say thanks. The webhook fix worked and everything is running again.",
+    reply: "Glad it's working. Reply here anytime if anything else comes up.",
+  },
+  {
+    subject: "Scheduling conflict on Thursday demo",
+    summary: "Prospect asked to move Thursday's demo. Moved to Friday afternoon.",
+    body: "Something came up on Thursday. Can we move the demo to Friday afternoon?",
+    reply: "No problem. I've moved your demo to Friday at 2 PM and sent an updated invite.",
+  },
+] as const;
+
+function seedEmailBody(sample: (typeof SAMPLE_EMAILS)[number], customerName: string): string {
+  return `Hi there,\n\n${sample.body}\n\nThanks,\n${customerName.split(" ")[0]}`;
+}
 
 const SAMPLE_STOP_CONFIRMATION =
   "You have been unsubscribed. You will not receive any more messages from this number. Reply START to opt back in.";
@@ -426,16 +504,34 @@ async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<
     .orderBy(sql`(regexp_replace(${emailThreads.threadId}, '^.*-', ''))::int`);
   for (let i = 0; i < seedEmails.length && i < TARGET.emailThreads; i++) {
     const idx = i % SAMPLE_SUMMARIES.length;
+    const sample = SAMPLE_EMAILS[i % SAMPLE_EMAILS.length];
+    const customer = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
     await tx
       .update(emailThreads)
       .set({
-        customerEmail: SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length].email,
-        summary: SAMPLE_SUMMARIES[idx],
-        subject: SAMPLE_EMAIL_SUBJECTS[i % SAMPLE_EMAIL_SUBJECTS.length],
+        customerEmail: customer.email,
+        summary: sample.summary,
+        subject: sample.subject,
         intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
         read: true,
       })
       .where(eq(emailThreads.id, seedEmails[i].id));
+    // Older seeds wrote call summaries as email bodies; rewrite only the seeded pair.
+    for (const [suffix, content] of [
+      ["in", seedEmailBody(sample, customer.name)],
+      ["out", sample.reply],
+    ] as const) {
+      await tx
+        .update(emailMessages)
+        .set({ content })
+        .where(
+          and(
+            eq(emailMessages.userId, userId),
+            eq(emailMessages.threadId, seedEmails[i].id),
+            like(emailMessages.googleMessageId, `seed-gmail-%-${suffix}`),
+          ),
+        );
+    }
   }
 
   const seededAppointments = await tx
@@ -710,6 +806,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
       let inserted = 0;
       for (let index = 0; index < TARGET.emailThreads; index++) {
         const cust = SAMPLE_CUSTOMERS[index % SAMPLE_CUSTOMERS.length];
+        const sample = SAMPLE_EMAILS[index % SAMPLE_EMAILS.length];
         const threadId = seedEmailThreadId(userId, index);
         const [thread] = await tx
           .insert(emailThreads)
@@ -718,9 +815,9 @@ export async function seedDemoAccountData(userId: string): Promise<{
             agentId,
             threadId,
             customerEmail: cust.email,
-            subject: SAMPLE_EMAIL_SUBJECTS[index % SAMPLE_EMAIL_SUBJECTS.length],
+            subject: sample.subject,
             status: "open",
-            summary: SAMPLE_SUMMARIES[index % SAMPLE_SUMMARIES.length],
+            summary: sample.summary,
             leadScore: 45 + Math.floor(Math.random() * 50),
             intentLabel: SAMPLE_INTENTS[index % SAMPLE_INTENTS.length],
             read: true,
@@ -731,11 +828,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
           .returning({ id: emailThreads.id });
 
         if (thread?.id) {
-          const inboundBody =
-            "Hi team,\n\n" +
-            SAMPLE_SUMMARIES[index % SAMPLE_SUMMARIES.length] +
-            "\n\nBest,\n" +
-            cust.name.split(" ")[0];
+          const inboundBody = seedEmailBody(sample, cust.name);
           await tx.insert(emailMessages).values({
             userId,
             threadId: thread.id,
@@ -749,10 +842,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
             threadId: thread.id,
             googleMessageId: `seed-gmail-${userPrefix}-${index}-out`,
             role: "ai",
-            content:
-              "Thanks for reaching out. " +
-              SAMPLE_SUMMARIES[(index + 2) % SAMPLE_SUMMARIES.length] +
-              " Let me know if you'd like to book a live demo.",
+            content: sample.reply,
             createdAt: randomCreatedAt(9),
           });
           inserted++;

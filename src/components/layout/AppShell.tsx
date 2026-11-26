@@ -31,7 +31,7 @@ export default function AppShell() {
   if (!user && sessionUnavailable) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-xs font-semibold tracking-[0.14em] text-muted-foreground">Workspace</p>
+        <p className="text-xs font-semibold tracking-widest text-muted-foreground">Workspace</p>
         <h1 className="text-2xl font-semibold text-foreground">Session Could Not Be Confirmed</h1>
         <p className="max-w-md text-sm leading-6 text-muted-foreground">
           BotBound could not verify this sign-in. Your place in the workspace is unchanged. Try

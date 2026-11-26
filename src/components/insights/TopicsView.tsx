@@ -39,7 +39,7 @@ export default function TopicsView() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+        <div className="flex items-center gap-2 font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest text-muted-foreground">
           {!data.cached ? (
             <span className="relative flex h-1.5 w-1.5" aria-hidden>
               <span className="absolute inline-flex h-full w-full rounded-full bg-brand/60 animate-ping" />
@@ -87,15 +87,16 @@ export default function TopicsView() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-[0.08em] bg-brand/15 text-brand border border-brand/30">
+                  <span className="px-2 py-0.5 rounded-full font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest bg-brand/15 text-brand border border-brand/30">
                     {t.category}
                   </span>
                   {t.trend ? (
                     <span
                       className={cn(
-                        "px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-[0.08em]",
+                        "px-2 py-0.5 rounded-full font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest",
                         t.trend === "growing" && "bg-brand/15 text-brand border border-brand/30",
-                        t.trend === "new" && "bg-[var(--wireline-color-feedback-info-surface)] text-[var(--wireline-color-status-info)] border border-[var(--wireline-color-feedback-info-border)]",
+                        t.trend === "new" &&
+                          "bg-[var(--wireline-color-feedback-info-surface)] text-[var(--wireline-color-status-info)] border border-[var(--wireline-color-feedback-info-border)]",
                         t.trend === "steady" &&
                           "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
                         t.trend === "declining" &&

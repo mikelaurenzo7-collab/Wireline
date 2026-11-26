@@ -351,10 +351,10 @@ export default function AppointmentDialog({
               {pending
                 ? "Saving…"
                 : recovery
-                  ? "Check booking"
+                  ? "Check Booking"
                   : availability?.booking_mode === "approval"
-                    ? "Request appointment"
-                    : "Create appointment"}
+                    ? "Request Appointment"
+                    : "Create Appointment"}
             </Button>
           </DialogFooter>
         </form>

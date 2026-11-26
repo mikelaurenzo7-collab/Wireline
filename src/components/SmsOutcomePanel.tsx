@@ -172,7 +172,7 @@ export default function SmsOutcomePanel({
     >
       <div className="flex flex-wrap items-center gap-2">
         <Route className="size-3.5 text-primary" aria-hidden="true" />
-        <span className="mr-auto text-xs font-semibold uppercase tracking-[.08em] text-muted-foreground">
+        <span className="mr-auto text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Outcome
         </span>
         <Badge variant={OUTCOME_META[status].variant}>{OUTCOME_META[status].label}</Badge>

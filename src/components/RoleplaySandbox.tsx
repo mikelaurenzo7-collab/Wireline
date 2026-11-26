@@ -202,8 +202,8 @@ export default function RoleplaySandbox({
               Private rehearsal
             </p>
             <p className="mt-1 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Your rehearsal may search approved Training context but cannot send, book, transfer,
-              or change outside systems.
+              Your rehearsal may search approved Knowledge but cannot send, book, transfer, or
+              change outside systems.
             </p>
           </div>
         </div>

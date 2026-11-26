@@ -1,5 +1,6 @@
 /**
- * Pure formatting for booked appointment times, shared by the People timeline.
+ * Pure formatting for booked appointment times, shared by Calendar and the
+ * People timeline.
  * No database or server imports, so it stays unit-testable on its own.
  */
 
@@ -44,7 +45,8 @@ export function appointmentWhen(row: {
   let day = row.date?.trim() || null;
   if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
     const parsed = new Date(`${day}T00:00:00Z`);
-    if (!Number.isNaN(parsed.getTime())) {
+    // A date that rolls over (Feb 30 becomes Mar 2) is shown as written.
+    if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === day) {
       day = parsed.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",

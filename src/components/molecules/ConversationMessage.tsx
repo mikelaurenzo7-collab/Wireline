@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import LinkifiedText from "../ui/LinkifiedText";
 
 export const conversationMessageVariants = cva(
-  "min-w-0 max-w-full rounded-[var(--radius-lg)] border p-3 text-sm leading-6 sm:max-w-[92%] sm:p-3.5",
+  "min-w-0 max-w-full rounded-lg border p-3 text-sm leading-6 sm:max-w-[92%] sm:p-3.5",
   {
     variants: {
       author: {

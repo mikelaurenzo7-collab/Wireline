@@ -13,11 +13,14 @@ import { Badge, Button, EmptyState, Skeleton } from "./atoms";
 import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
 import EmailReplyComposer, { type SentEmailReply } from "./EmailReplyComposer";
 import PersonLink from "./PersonLink";
+import { formatActivityTime } from "../lib/safe-date";
 
 type EmailThread = {
   id: string;
   subject: string;
   sender: string;
+  /** The saved People name for the sender, when there is one. */
+  personName: string | null;
   summary: string;
   lastMessageAt: string;
   status: OutcomeStatus;
@@ -53,6 +56,7 @@ function matchesSearch(thread: EmailThread, query: string) {
   return [
     thread.subject,
     thread.sender,
+    thread.personName ?? "",
     thread.summary,
     thread.status,
     OUTCOME_META[thread.status].label,
@@ -77,6 +81,7 @@ function normalizeThread(row: Record<string, unknown>): EmailThread {
     id: text(row.id),
     subject: text(row.subject, "Untitled conversation"),
     sender: text(row.customer_email) || text(row.sender_email) || "Unknown sender",
+    personName: text(row.person_name).trim() || null,
     summary: text(row.summary, "No preview is available yet."),
     // Match the history endpoint's tenant-scoped message-activity ordering.
     lastMessageAt: text(row.activity_at) || text(row.last_message_at) || text(row.created_at),
@@ -92,18 +97,6 @@ function normalizeMessage(row: Record<string, unknown>): EmailMessage {
     createdAt: text(row.created_at),
     deliveryStatus: text(row.delivery_status) || null,
   };
-}
-
-function formatTimestamp(value: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
 }
 
 /** Outgoing mail sits on the right: the Bot's replies, and the owner's own as "You". */
@@ -128,7 +121,7 @@ function InboxLoadingState({ frameClass }: { frameClass: string }) {
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="w-full max-w-md space-y-3 rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-[var(--wireline-elevation-sm)]">
+      <div className="w-full max-w-md space-y-3 rounded-xl border border-border bg-card p-6 shadow-[var(--wireline-elevation-sm)]">
         <Skeleton shape="text" className="h-4 w-28" />
         <Skeleton shape="text" className="h-7 w-3/4" />
         <Skeleton shape="text" className="h-4 w-full" />
@@ -365,7 +358,13 @@ export default function EmailInbox({
           throw new Error(body?.error || "Could not load this conversation.");
         if (!isCurrentRequest()) return false;
         const thread = normalizeThread(body.thread);
-        setThreads((current) => current.map((row) => (row.id === thread.id ? thread : row)));
+        setThreads((current) =>
+          current.map((row) =>
+            row.id === thread.id
+              ? { ...thread, personName: thread.personName ?? row.personName }
+              : row,
+          ),
+        );
         setDetail({
           thread,
           messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
@@ -594,7 +593,11 @@ export default function EmailInbox({
     return threads.filter((thread) => matchesSearch(thread, normalized));
   }, [query, threads]);
 
-  const selected = detail?.thread ?? threads.find((thread) => thread.id === selectedId) ?? null;
+  const listed = threads.find((thread) => thread.id === selectedId) ?? null;
+  // The detail endpoint does not carry People names, so keep the list's label.
+  const selected = detail?.thread
+    ? { ...detail.thread, personName: detail.thread.personName ?? listed?.personName ?? null }
+    : listed;
   const changeSearch = (next: string) => {
     setQuery(next);
     // Mobile hides the list while a detail is selected. Reveal the results
@@ -613,7 +616,7 @@ export default function EmailInbox({
         <ConversationActivity
           state="complete"
           title="Last Activity"
-          detail={formatTimestamp(selected.lastMessageAt)}
+          detail={formatActivityTime(selected.lastMessageAt)}
         />
         <ConversationActivity
           state={activityState(selected.status)}
@@ -836,14 +839,19 @@ export default function EmailInbox({
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <strong className="wl-preserve-case block truncate text-sm font-semibold text-foreground">
-                            {thread.sender}
+                            {thread.personName || thread.sender}
                           </strong>
+                          {thread.personName ? (
+                            <span className="wl-preserve-case block truncate text-xs text-muted-foreground">
+                              {thread.sender}
+                            </span>
+                          ) : null}
                           <span className="wl-preserve-case mt-0.5 block truncate text-xs text-muted-foreground">
                             {thread.subject}
                           </span>
                         </div>
-                        <span className="shrink-0 text-[10px] text-muted-foreground">
-                          {formatTimestamp(thread.lastMessageAt)}
+                        <span className="shrink-0 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
+                          {formatActivityTime(thread.lastMessageAt)}
                         </span>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
@@ -917,7 +925,9 @@ export default function EmailInbox({
                     {selected.subject}
                   </h2>
                   <p className="wl-preserve-case col-span-2 row-start-2 min-w-0 text-xs text-muted-foreground [overflow-wrap:anywhere] sm:col-span-1">
-                    {selected.sender}
+                    {selected.personName
+                      ? `${selected.personName} · ${selected.sender}`
+                      : selected.sender}
                   </p>
                   <Badge
                     variant={OUTCOME_META[selected.status].variant}
@@ -927,7 +937,11 @@ export default function EmailInbox({
                   </Badge>
                   {selected.sender.includes("@") ? (
                     <div className="col-start-2 row-start-3 flex justify-self-end empty:hidden sm:col-span-2 sm:col-start-1 sm:mt-1 sm:justify-self-start">
-                      <PersonLink kind="email" value={selected.sender} />
+                      <PersonLink
+                        kind="email"
+                        value={selected.sender}
+                        nameShown={Boolean(selected.personName)}
+                      />
                     </div>
                   ) : null}
                 </div>
@@ -1001,8 +1015,8 @@ export default function EmailInbox({
                           label={label}
                           timestamp={
                             message.deliveryStatus === "sent"
-                              ? `${formatTimestamp(message.createdAt)} · Sent`
-                              : formatTimestamp(message.createdAt)
+                              ? `${formatActivityTime(message.createdAt)} · Sent`
+                              : formatActivityTime(message.createdAt)
                           }
                           channel="email"
                         >

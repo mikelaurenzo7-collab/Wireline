@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { peopleAddHref } from "../src/lib/people-client";
 import { appointmentWhen } from "../src/lib/people/appointment-when";
+import { formatActivityTime } from "../src/lib/safe-date";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -60,7 +61,7 @@ describe("cross-surface links between channels and People", () => {
     expect(link).toContain('if (result.status === "found") recent.set(');
   });
 
-  it("names saved customers in the Calls and Texts lists, not just bare numbers", () => {
+  it("names saved customers in the Calls, Texts and Email lists, not just bare numbers", () => {
     for (const path of [
       "src/routes/dashboard-routes.ts",
       "src/routes/agent-call-routes.ts",
@@ -77,6 +78,31 @@ describe("cross-surface links between channels and People", () => {
     expect(texts).toContain('person_name: apiStr(row, "person_name") || null');
     expect(texts).toContain("thread.person_name ||");
     expect(texts).toContain("nameShown={Boolean(activeThread.person_name)}");
+    expect(read("src/routes/email-routes.ts")).toMatch(/withPersonLabels\([\s\S]{0,400}?"email"/);
+    const email = read("src/components/EmailInbox.tsx");
+    expect(email).toContain("personName: text(row.person_name).trim() || null");
+    expect(email).toContain("{thread.personName || thread.sender}");
+    expect(email).toContain("nameShown={Boolean(selected.personName)}");
+  });
+
+  it("formats every channel's activity time in one shape", () => {
+    const thisYear = new Date(new Date().getFullYear(), 10, 26, 9, 59);
+    expect(formatActivityTime(thisYear)).toBe("Nov 26, 9:59 AM");
+    expect(formatActivityTime(new Date(2020, 11, 30, 16, 10))).toBe("Dec 30, 2020, 4:10 PM");
+    expect(formatActivityTime("not a date")).toBe("");
+    for (const path of [
+      "src/components/CallLogsClaude.tsx",
+      "src/components/SmsThreads.tsx",
+      "src/components/EmailInbox.tsx",
+      "src/components/ComplianceCenter.tsx",
+      "src/components/ApprovalInbox.tsx",
+    ]) {
+      expect(read(path), path).toContain("formatActivityTime(");
+    }
+    expect(read("src/components/AppointmentsPanel.tsx")).toContain("appointmentWhen(");
+    expect(appointmentWhen({ startAt: null, timeZone: null, date: "2099-02-30", time: null })).toBe(
+      "2099-02-30",
+    );
   });
 
   it("writes booked times the way the Calendar does", () => {

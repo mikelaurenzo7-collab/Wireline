@@ -105,7 +105,7 @@ async function setup(page: Page, recovery = false, malformedLink = false) {
 
 test("a malformed capture link retains the original request and form", async ({ page }) => {
   const { panel, creates } = await setup(page, false, true);
-  await panel.getByRole("button", { name: "New permission", exact: true }).click();
+  await panel.getByRole("button", { name: "New Permission", exact: true }).click();
   await panel.getByRole("combobox", { name: "Bot", exact: true }).selectOption("permission-bot");
   await panel.getByRole("textbox", { name: "Recipient phone", exact: true }).fill("+13125550123");
   await panel.getByRole("combobox", { name: "Recipient location", exact: true }).selectOption("IL");
@@ -127,7 +127,7 @@ for (const width of [320, 1280]) {
   }) => {
     await page.setViewportSize({ width, height: 800 });
     const { panel, creates, externalActions } = await setup(page);
-    await panel.getByRole("button", { name: "New permission", exact: true }).click();
+    await panel.getByRole("button", { name: "New Permission", exact: true }).click();
     await panel.getByRole("combobox", { name: "Bot", exact: true }).selectOption("permission-bot");
     await panel.getByRole("textbox", { name: "Recipient phone", exact: true }).fill("+13125550123");
     await panel

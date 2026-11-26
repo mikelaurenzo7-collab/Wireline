@@ -144,7 +144,7 @@ export default function BotMarkPicker({
                   size={compact ? 24 : 28}
                   title={`${motif.label} mark preview`}
                 />
-                <span className="wl-preserve-case max-w-full truncate text-[11px] font-medium">
+                <span className="wl-preserve-case max-w-full truncate text-[length:var(--wireline-typography-overline-size)] font-medium">
                   {motif.label}
                 </span>
               </button>
