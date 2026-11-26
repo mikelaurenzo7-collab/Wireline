@@ -230,12 +230,6 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     parentHref: "/studio",
   },
   {
-    href: "/studio/live-video",
-    title: "Workspace",
-    eyebrow: "Build",
-    parentHref: "/studio",
-  },
-  {
     href: "/connections/salesforce",
     title: "Salesforce Connection",
     eyebrow: "System",

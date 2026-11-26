@@ -33,9 +33,7 @@ describe("production build environment gate", () => {
     expect(bulkAudit).toContain('const BULK_AUDIT_PATH = "-/npm/v1/security/advisories/bulk"');
     expect(bulkAudit).toContain("gunzipSync");
     expect(bulkAudit).toContain("entry.dev === true");
-    expect(bulkAudit).toContain(
-      'const BLOCKING_SEVERITIES = new Set(["high", "critical"])',
-    );
+    expect(bulkAudit).toContain('const BLOCKING_SEVERITIES = new Set(["high", "critical"])');
     expect(osvAudit).toContain(
       'const DEFAULT_QUERY_ENDPOINT = "https://api.osv.dev/v1/querybatch"',
     );
@@ -56,7 +54,6 @@ describe("production build environment gate", () => {
     const runner = read("scripts/run-test-estate.mjs");
     const environment = read("scripts/lib/test-estate-environment.mjs");
     const behavior = read("tests/test-estate-environment.test.ts");
-    const liveVideoSettlement = read("src/lib/video-presenter/live-video-settlement.ts");
 
     expect(runner).toContain("import { buildTestEstateEnvironment }");
     expect(runner).toContain("mkdtempSync");
@@ -81,6 +78,5 @@ describe("production build environment gate", () => {
     expect(behavior).toContain("FUTURE_PROVIDER_CREDENTIAL");
     expect(behavior).toContain("FUTURE_DATABASE_URL");
     expect(behavior).toContain("expect(env.VERCEL).toBeUndefined()");
-    expect(liveVideoSettlement).toContain('if (process.env.NODE_ENV === "test") return null;');
   });
 });

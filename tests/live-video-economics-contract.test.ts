@@ -21,50 +21,26 @@ describe("retired Live Video economics", () => {
     expect(catalogContract).toContain("FOUNDER_PRICES.length !== expectedPlans.length * 2 + 4");
   });
 
-  it("keeps customer entitlement and new-session behavior closed", () => {
+  it("keeps customer entitlement and checkout closed", () => {
     const entitlement = read("src/lib/video-presenter/live-video-entitlements.ts");
-    const routes = read("src/routes/video-presenter-routes-base.ts");
     const registry = read("src/server/register-api-routes.ts");
 
     expect(entitlement).toContain("addonOffered: false");
-    expect(routes).toContain("LIVE_VIDEO_RETIRED");
-    expect(routes).not.toContain("await mintLiveAvatarSessionToken");
-    expect(routes).not.toContain("reserveLiveVideoSessionMinutes");
-    expect(registry).not.toContain("app.use(videoPresenterRouter)");
+    expect(entitlement).toContain("billingEntitled: false");
+    expect(registry).not.toContain("videoPresenterRouter");
     expect(registry).toContain('app.all("/api/billing/live-video-checkout"');
     expect(registry).toContain("res.status(410)");
   });
 
-  it("retains historical usage accounting only for old records and reversals", () => {
-    const usage = read("src/lib/video-presenter/live-video-usage.ts");
+  it("keeps display-only allowance constants out of the active Stripe manifest", () => {
     const entitlement = read("src/lib/video-presenter/live-video-entitlements.ts");
 
-    // Historical rows can still be reconciled safely after the product is
-    // retired. These constants are not an offer and must not leak into the
-    // active Stripe manifest.
-    expect(usage).toContain("drizzle.transaction");
-    expect(usage).toContain("live_video_reserved_minutes_monthly");
+    // The entitlement still reports these for old add-on subscriptions. They
+    // are not an offer and must not leak into the active Stripe manifest.
     expect(entitlement).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
     expect(read("scripts/lib/stripe-founder-catalog.mjs")).not.toContain(
       "LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY",
     );
-  });
-
-  it("keeps retired marketing components out of the routed product", () => {
-    const appRoutes = read("src/routes/AppRoutes.tsx");
-    const spotlight = read("src/components/marketing/LiveVideoSpotlight.tsx");
-    const stage = read("src/components/marketing/LiveVideoStage.tsx");
-
-    // The files remain as archival design/source material for now, but no
-    // authenticated route can activate them.
-    expect(appRoutes).not.toContain("LiveVideoSpotlight");
-    expect(appRoutes).not.toContain("LiveVideoStage");
-    expect(appRoutes).not.toContain('lazy(() => import("../pages/LiveVideoStudioPage"))');
-    expect(appRoutes).toContain(
-      '<Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />',
-    );
-    expect(spotlight).toContain("LiveVideoStage");
-    expect(stage.length).toBeGreaterThan(0);
   });
 
   it("keeps founder launch spend on customer proof rather than premature brand media", () => {

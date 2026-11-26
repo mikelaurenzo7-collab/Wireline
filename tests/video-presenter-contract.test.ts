@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { BOT_MARK_CHOICES, BOT_MARK_SIGNATURE_CAPACITY, botMarkFor } from "../src/lib/bot-mark";
@@ -7,6 +7,29 @@ import { MAX_EXTRA_AGENT_ADDONS } from "../src/lib/agent-capacity";
 
 const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(resolve(root, dir), { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return sourceFiles(path);
+    return /\.(ts|tsx|mjs)$/.test(entry.name) ? [path] : [];
+  });
+}
+
+/** Deleted November 26, 2026. Nothing imported them except tests and each other. */
+const DELETED_LIVE_VIDEO_PATHS = [
+  "src/lib/video-presenter/live-video-addon.ts",
+  "src/lib/video-presenter/live-video-providers.ts",
+  "src/lib/video-presenter/live-video-usage.ts",
+  "src/lib/video-presenter/live-video-settlement.ts",
+  "src/lib/video-presenter/live-video-session-policy.ts",
+  "src/routes/video-presenter-routes.ts",
+  "src/routes/video-presenter-routes-base.ts",
+  "src/components/LiveVideoPresenter.tsx",
+  "src/pages/LiveVideoStudioPage.tsx",
+  "src/components/marketing/LiveVideoStage.tsx",
+  "src/components/marketing/LiveVideoSpotlight.tsx",
+] as const;
 
 describe("bot visual identity", () => {
   it("uses a curated selectable Bot identity mark rather than a generic avatar token", () => {
@@ -115,16 +138,38 @@ describe("bot visual identity", () => {
 describe("Live Video retirement", () => {
   it("removes the product page while preserving safe historical deep links", () => {
     const routes = source("src/routes/AppRoutes.tsx");
-    const page = source("src/pages/LiveVideoStudioPage.tsx");
 
     expect(routes).not.toContain("LiveVideoStudioPage");
     expect(routes).toContain(
       '<Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />',
     );
-    expect(page).toContain('<Navigate to="/studio" replace />');
-    expect(page).not.toContain("authFetch(");
-    expect(page).not.toContain("<select");
-    expect(page).not.toContain("<AgentFace");
+  });
+
+  it("keeps the presenter routers, session modules, and presenter UI deleted", () => {
+    for (const path of DELETED_LIVE_VIDEO_PATHS) {
+      expect(existsSync(resolve(root, path)), path).toBe(false);
+    }
+  });
+
+  it("leaves no source that can mint, settle, or render a talking-head session", () => {
+    const forbidden = [
+      "/api/video-presenter",
+      ":id/video-presenter",
+      "video-presenter/session",
+      "@heygen/liveavatar-web-sdk",
+      "https://api.liveavatar.com",
+      "https://api.heygen.com",
+      "mintLiveAvatar",
+      "reserveLiveVideoSessionMinutes",
+      "signLiveVideoSettlementReceipt",
+    ];
+    for (const file of [...sourceFiles("src"), "server.ts"]) {
+      const text = source(file);
+      for (const needle of forbidden) {
+        expect(text.includes(needle), `${file} contains ${needle}`).toBe(false);
+      }
+    }
+    expect(source("package.json")).not.toContain("@heygen/liveavatar-web-sdk");
   });
 
   it("does not mount presenter APIs and terminates stale checkout before legacy billing", () => {
@@ -144,13 +189,21 @@ describe("Live Video retirement", () => {
     expect(legacyBillingMount).toBeGreaterThan(terminalCheckout);
   });
 
-  it("keeps archived presenter routes fail-closed if they are ever mounted during rollback", () => {
-    const routes = source("src/routes/video-presenter-routes-base.ts");
-    expect(routes).toContain('"LIVE_VIDEO_RETIRED"');
-    expect(routes).toContain('router.get("/api/video-presenter/avatars"');
-    expect(routes).toContain('"/api/agents/:id/video-presenter/session"');
-    expect(routes).toContain("throwLiveVideoRetired");
-    expect(routes).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
+  it("keeps the remaining presenter helpers fail-closed", () => {
+    const service = source("src/lib/video-presenter/liveavatar-service.ts");
+    const entitlements = source("src/lib/video-presenter/live-video-entitlements.ts");
+    const resolver = source("src/lib/video-presenter/resolve-agent-presenter.ts");
+
+    expect(service).toContain("configured: false");
+    expect(service).toContain("retired: true");
+    expect(service).not.toContain("process.env.LIVEAVATAR_API_KEY");
+    expect(service).not.toContain("fetch(");
+    expect(entitlements).toContain("addonOffered: false");
+    expect(entitlements).toContain("billingEntitled: false");
+    expect(entitlements).toContain("liveVideoCheckoutAvailable: false");
+    expect(entitlements).toMatch(/isLiveVideoCatalogReady\(\): boolean \{\s*return false;/);
+    expect(resolver).toContain('status: "disabled"');
+    expect(resolver).toContain("avatarId: null");
   });
 
   it("keeps Live Video out of the active Stripe catalog", () => {

@@ -47,18 +47,11 @@ describe("WIRELINE design-system double-pass contract", () => {
   });
 
   it("keeps retired face and presenter layers out of active launch identity", () => {
-    const retiredPage = read("src/pages/LiveVideoStudioPage.tsx");
-    const presenter = read("src/components/LiveVideoPresenter.tsx");
     const compatibilityFace = read("src/components/AgentFace.tsx");
     const spendBoundary = read("tests/credential-and-spend-boundary-contract.test.ts");
 
-    expect(retiredPage).toContain('<Navigate to="/studio" replace />');
-    expect(retiredPage).not.toContain("import AgentFace from");
-    expect(retiredPage).not.toContain("<AgentFace");
-    expect(presenter).toContain('import BotMark from "./BotMark"');
-    expect(presenter).toContain("<BotMark");
-    expect(presenter).not.toContain("AgentFace");
-    expect(presenter).not.toContain("wl-presence-live");
+    expect(existsSync(resolve(root, "src/pages/LiveVideoStudioPage.tsx"))).toBe(false);
+    expect(existsSync(resolve(root, "src/components/LiveVideoPresenter.tsx"))).toBe(false);
     expect(compatibilityFace).toContain('import BotMark from "./BotMark"');
 
     // Security/spend auditing must prove the real retirement boundary rather
@@ -66,8 +59,8 @@ describe("WIRELINE design-system double-pass contract", () => {
     expect(spendBoundary).toContain(
       "retired Live Video does not load a presenter SDK or session path",
     );
-    expect(spendBoundary).toContain("page).toContain('<Navigate to=\"/studio\" replace />')");
-    expect(spendBoundary).toContain('page).not.toContain("@heygen/liveavatar-web-sdk")');
+    expect(spendBoundary).toContain('existsSync("src/pages/LiveVideoStudioPage.tsx")).toBe(false)');
+    expect(spendBoundary).toContain('not.toContain("@heygen/liveavatar-web-sdk")');
     expect(spendBoundary).not.toContain('expect(page).toContain("AgentFace")');
   });
 

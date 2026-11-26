@@ -20,7 +20,6 @@ describe("work companions are fully removed", () => {
     const registry = read("src/server/register-api-routes.ts");
     const voiceRuntime = read("src/lib/voice/openai-live-agent-service.ts");
     const campaigns = read("src/components/outbound/CampaignsPanel.tsx");
-    const identity = read("src/pages/LiveVideoStudioPage.tsx");
 
     expect(registry).not.toContain("workCompanionRouter");
     expect(registry).not.toContain("work-companion-routes");
@@ -28,7 +27,6 @@ describe("work companions are fully removed", () => {
     expect(voiceRuntime).not.toContain("work-companion-runtime");
     expect(campaigns).not.toContain("/api/work-companions");
     expect(campaigns).not.toContain("Draft call prep");
-    expect(identity).not.toContain("Call prep on campaigns");
   });
 
   it("keeps customer copy and env inventory free of work companions", () => {

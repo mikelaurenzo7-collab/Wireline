@@ -26,7 +26,7 @@ BotBound is the system of record for a small business's customer conversations. 
 
 Repo debt the November 24 audit found and a second read of the tree confirmed:
 - Rename `agent-routes-v2.ts`, `qa-routes-v2.ts` and `google-drive-sync-v2.ts`; no v1 exists for any of them.
-- Retired Live Video: `src/lib/video-presenter/` (12 files), `LiveVideoPresenter.tsx`, `LiveVideoStudioPage.tsx`, `stripe-live-video-addon.ts`.
+- Retired Live Video: the dead modules, never-mounted presenter routers, page and components are removed (November 26). Still in use and kept: `liveavatar-service.ts`, `resolve-agent-presenter.ts`, `copy.ts` and `types.ts` (agent and mobile routes), `live-video-entitlements.ts` and `live-video-policy.ts` (billing), `stripe-live-video-addon.ts` (leftover add-on subscriptions) and the 410 for `/api/billing/live-video-checkout`. Dropping the `video_presenter_*` and `live_video_addon_enabled` columns needs a separate reviewed migration, because database functions reference them.
 - The `wireline_design_integrations` table is read only by the account-deletion registry. Removed: `voice/gemini-live-client.ts` (only a test imported it), `cloud-computer/trade-portal-mirroring.ts` and its tests, and the producer-less `calendar_sync` and `google_drive_ingest` job types (no production job of any of the three types existed).
 - Vercel leftovers: the `api/` directory and `src/entrypoints/chatgpt-mcp-api.ts`, to remove once the rollback path is retired.
 - Vapi-era naming: `vapiCallId` appears in 37 source files and the outbound webhook payload still carries `vapi_call_id`. Renaming needs an append-only migration and a versioned webhook payload.

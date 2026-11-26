@@ -11,8 +11,8 @@
  * factory/named handlers (`createAuditEventsHandler(deps)`, `sweepHandler`),
  * comments between the method call and the path string, array path arguments,
  * and sub-routers composed via `router.use(subRouter)` (the oauth/ provider
- * pattern, twilio-webhook-base, video-presenter-routes-base, and
- * live-voice-profile-routes) are all resolved instead of silently skipped.
+ * pattern, twilio-webhook-base, and live-voice-profile-routes) are all
+ * resolved instead of silently skipped.
  */
 
 import fs from "node:fs";

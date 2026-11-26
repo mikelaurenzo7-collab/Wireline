@@ -168,7 +168,7 @@ response-time engineering metrics stay off the customer insights pages.
 Talking-head checkout and session mint stay closed. Identity badges remain. Imagine photos and video files are not generated.
 
 1. Confirm `POST /api/billing/live-video-checkout` returns catalog-unavailable / closed.
-2. Confirm `POST /api/agents/:id/video-presenter/session` returns 410.
+2. Confirm `POST /api/agents/:id/video-presenter/session` returns 404. No presenter API exists; the routers were deleted on November 26, 2026.
 3. Confirm leftover Stripe Live Video price IDs still reconcile webhooks without authorizing a provider session.
 4. Confirm `/studio/live-video` redirects to Studio and exposes no setup or talking-head stage.
 

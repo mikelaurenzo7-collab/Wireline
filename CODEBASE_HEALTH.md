@@ -32,7 +32,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Design               | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 | Billing              | `src/lib/usage-billing-catalog.ts`, `docs/USAGE_BILLING.md`; `src/lib/plan-catalog.ts` and `src/lib/conversation-balance.ts` retain legacy contracts |
 | Voice                | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md`                                             |
-| Video presenter      | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts`                                |
+| Video presenter      | Retired. `src/lib/video-presenter/` keeps identity-badge config and add-on billing compatibility; no presenter routes, UI or sessions      |
 | Browser extension    | `apps/browser-extension/`                                                                                                                  |
 | Native clients       | `ios/`, `android/`                                                                                                                         |
 | ChatGPT App          | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md`                                                   |

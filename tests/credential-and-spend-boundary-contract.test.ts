@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -321,23 +321,14 @@ describe("Studio only clears the essentials box when something was stored", () =
 });
 
 describe("retired Live Video does not load a presenter SDK or session path", () => {
-  const page = read("src/pages/LiveVideoStudioPage.tsx");
-  const presenter = read("src/components/LiveVideoPresenter.tsx");
+  it("is redirect-only and leaves no talking-head runtime code to reach", () => {
+    const appRoutes = read("src/routes/AppRoutes.tsx");
 
-  it("is redirect-only and leaves talking-head runtime code unreachable", () => {
-    expect(page).toContain('<Navigate to="/studio" replace />');
-    expect(page).not.toContain("@heygen/liveavatar-web-sdk");
-    expect(page).not.toContain('lazy(() => import("../components/LiveVideoPresenter"))');
-    expect(page).not.toContain("import AgentFace from");
-    expect(page).not.toContain("<AgentFace");
-    expect(page).not.toContain("/video-presenter/session");
-    expect(page).not.toContain("Draft clip script");
-
-    expect(presenter).toContain('import BotMark from "./BotMark"');
-    expect(presenter).toContain("<BotMark");
-    expect(presenter).not.toContain("@heygen/liveavatar-web-sdk");
-    expect(presenter).not.toContain("AgentFace");
-    expect(presenter).not.toContain("/video-presenter/session");
+    expect(appRoutes).toContain(
+      '<Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />',
+    );
+    expect(existsSync("src/pages/LiveVideoStudioPage.tsx")).toBe(false);
+    expect(read("package.json")).not.toContain("@heygen/liveavatar-web-sdk");
   });
 });
 
