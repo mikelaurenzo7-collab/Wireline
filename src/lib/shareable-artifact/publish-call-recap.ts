@@ -77,19 +77,9 @@ function parseTranscript(raw: string | null | undefined): CallRecapTranscriptLin
 function nextActionsFor(tag: string): CallRecapAction[] {
   switch (tag) {
     case "booked":
-      return [
-        {
-          description: "Verify the calendar confirmation and attach prep notes.",
-          owner: "Assign the meeting owner",
-        },
-      ];
+      return [{ description: "Check the booking in Calendar and add any prep notes." }];
     case "qualified":
-      return [
-        {
-          description: "Route to the closer or schedule a demo within 48 hours.",
-          owner: "Sales",
-        },
-      ];
+      return [{ description: "The caller sounded interested. Follow up soon while it's fresh." }];
     case "followup":
       return [
         {
@@ -109,12 +99,7 @@ function nextActionsFor(tag: string): CallRecapAction[] {
         { description: "Review retry policy and voicemail settings before another attempt." },
       ];
     default:
-      return [
-        {
-          description:
-            "Review the transcript, confirm the outcome, and assign any needed follow-up.",
-        },
-      ];
+      return [{ description: "Read the summary and decide whether anything needs doing." }];
   }
 }
 

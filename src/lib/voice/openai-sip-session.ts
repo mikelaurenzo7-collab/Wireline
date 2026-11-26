@@ -27,6 +27,7 @@ import { hasInboundCapacityInTransaction } from "../inbound-concurrency";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
 import { enqueuePostCallDigest, type OpenAISipFinalizationContext } from "../post-call-digest";
+import { callerTurnsText } from "../call-transcript-lines";
 import { reportError } from "../error-reporter";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import {
@@ -1646,7 +1647,10 @@ async function persistFinishedCall(input: {
   );
 
   await runFinalizerStep("transcript_dnc", input.call, async () => {
-    const optOut = detectOptOut(input.transcript || "");
+    // Only the caller can opt out. The Bot's own lines include the sales
+    // opening's "you can say stop calling", which would otherwise put every
+    // answered sales call on the do-not-call list.
+    const optOut = detectOptOut(callerTurnsText(input.transcript));
     if (optOut.kind !== "dnc") return;
     await persistTranscriptDncSuppression({
       userId: input.call.userId,
@@ -1935,7 +1939,8 @@ export async function replayOpenAISipPostCallFinalization(input: {
     openingPlaybackConfirmed: input.finalization.openingPlaybackConfirmed,
   });
 
-  const optOut = detectOptOut(transcript);
+  // Caller lines only, as in the finalizer: the Bot's opening names the opt-out phrase.
+  const optOut = detectOptOut(callerTurnsText(transcript));
   if (optOut.kind === "dnc") {
     await persistTranscriptDncSuppression({
       userId: input.userId,
@@ -2735,16 +2740,17 @@ async function runRealtimeSession(
       requestToolContinuationWhenReady();
       return;
     }
-    if (
-      provider === "xai" &&
-      awaitingExactOpeningPlayback &&
-      type === "response.created"
-    ) {
+    if (provider === "xai" && awaitingExactOpeningPlayback && type === "response.created") {
       // xAI starts no model turn until a non-interruptible line has played, so
       // the first response after the opening's own proves it was heard.
       const responseId = String(asRecord(event.response).id || "");
       if (!xaiOpeningResponseId) xaiOpeningResponseId = responseId || "opening";
-      else if (!isXaiCarrier && responseId !== xaiOpeningResponseId && finishExactOpeningIfNeeded(true)) return;
+      else if (
+        !isXaiCarrier &&
+        responseId !== xaiOpeningResponseId &&
+        finishExactOpeningIfNeeded(true)
+      )
+        return;
     }
     if (type === "input_audio_buffer.speech_started" || type === "input_audio_buffer.committed") {
       // xAI drops caller audio while the opening plays, so speech cannot cut

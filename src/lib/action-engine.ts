@@ -27,6 +27,7 @@ import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
 import { postAgentNotification, getDefaultChannel } from "./slack-service";
 import { ClientCommunicationBlockedError, superviseClientCommunication } from "./ai-supervisor";
+import { resolveClientSenderIdentity } from "./client-sender-identity";
 import { dispatchWebhook } from "./webhook-helpers";
 import { runInBackground } from "./background-work";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
@@ -312,9 +313,11 @@ async function executeAutonomousAction(
       if (!entityPolicy.allowed) return { success: false, error: entityPolicy.message };
       let reviewed;
       try {
+        const sender = await resolveClientSenderIdentity(userId, action.agentId);
         reviewed = await superviseClientCommunication({
           channel: "email",
-          agentName: action.agentId,
+          agentName: sender.botName,
+          businessName: sender.businessName,
           source: "action_engine",
           purpose: action.reasoning || "autonomous follow-up",
           recipient: action.payload.to,

@@ -169,7 +169,8 @@ export async function handleCoreToolCall(
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
-  const { agent, drizzle, log, message, payload, toolCallId, webhookAgentId } = context;
+  const { agent, agentVoiceName, drizzle, log, message, payload, toolCallId, webhookAgentId } =
+    context;
 
   // ── Knowledge base search (highest priority — fast, no side effects) ──────
   if (fn === "search_knowledge_base") {
@@ -274,7 +275,7 @@ export async function handleCoreToolCall(
       // which records a real task instead of fabricating a follow-up.
       const reviewed = await superviseClientCommunication({
         channel: "email",
-        agentName: webhookAgentId,
+        agentName: agentVoiceName,
         source: "voice_tool",
         purpose: "client follow-up requested during a live call",
         recipient: to_email,
@@ -443,14 +444,14 @@ export async function handleCoreToolCall(
           salesAttestation
             ? "I can't send a sales text until you confirm, once, that you're responsible for permission and Do Not Call rules. You'll see that checkbox the next time you place a sales call or text."
             : isDncBlock
-            ? "I can't text that number, it's on a do-not-contact list."
-            : gate.reason === "outside_permitted_calling_hours"
-              ? recorded
-                ? "I can't text that number right now, it's outside permitted contact hours. I've logged the request for human follow-up."
-                : "I can't text that number right now, it's outside permitted contact hours. Please contact us directly."
-              : recorded
-                ? "I wasn't able to send that text, but I've logged it for human follow-up."
-                : "I wasn't able to send that text right now, please reach out to us directly.",
+              ? "I can't text that number, it's on a do-not-contact list."
+              : gate.reason === "outside_permitted_calling_hours"
+                ? recorded
+                  ? "I can't text that number right now, it's outside permitted contact hours. I've logged the request for human follow-up."
+                  : "I can't text that number right now, it's outside permitted contact hours. Please contact us directly."
+                : recorded
+                  ? "I wasn't able to send that text, but I've logged it for human follow-up."
+                  : "I wasn't able to send that text right now, please reach out to us directly.",
         );
       }
 
@@ -459,7 +460,7 @@ export async function handleCoreToolCall(
       // real task rather than claiming it was queued.
       const reviewed = await superviseClientCommunication({
         channel: "sms",
-        agentName: webhookAgentId,
+        agentName: agentVoiceName,
         source: "voice_tool",
         purpose: "client text follow-up requested during a live call",
         recipient: targetNumber,

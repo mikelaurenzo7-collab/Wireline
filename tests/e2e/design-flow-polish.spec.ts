@@ -2,7 +2,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-async function mockWorkspace(page: Page) {
+async function mockWorkspace(page: Page, { emptyRoster = false } = {}) {
   let businessProfile = {
     business_hours: null,
     timezone: "America/Chicago",
@@ -39,14 +39,16 @@ async function mockWorkspace(page: Page) {
         ? { user: { id: "design-owner", email: "owner@example.test" } }
         : path === "/api/agents"
           ? {
-              agents: [
-                {
-                  id: "design-bot",
-                  name: "Front Desk",
-                  role: "receptionist",
-                  mark_key: "spark-rose",
-                },
-              ],
+              agents: emptyRoster
+                ? []
+                : [
+                    {
+                      id: "design-bot",
+                      name: "Front Desk",
+                      role: "receptionist",
+                      mark_key: "spark-rose",
+                    },
+                  ],
             }
           : path === "/api/agent-config/design-bot"
             ? { personality: "Clear", directives: [], mark_key: "spark-rose", businessProfile }
@@ -68,7 +70,7 @@ for (const width of [320, 390, 1440]) {
     page,
   }, info) => {
     await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
-    await mockWorkspace(page);
+    await mockWorkspace(page, { emptyRoster: true });
     await page.goto("/studio?create=1");
     const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
     await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeFocused();
@@ -290,7 +292,7 @@ test("Bot creation keeps its heading, fields and actions usable at 320px with en
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 844 });
-  await mockWorkspace(page);
+  await mockWorkspace(page, { emptyRoster: true });
   await page.goto("/studio?create=1");
   await page.evaluate(() =>
     document.documentElement.style.setProperty("font-size", "32px", "important"),
@@ -325,7 +327,7 @@ test("Bot creation keeps its heading, fields and actions usable at 320px with en
 
 for (const code of ["NAME_CONFLICT", "name_conflict", "BOT_MARK_CONFLICT", "bot_mark_conflict"]) {
   test(`creation conflict ${code} reveals and focuses the relevant control`, async ({ page }) => {
-    await mockWorkspace(page);
+    await mockWorkspace(page, { emptyRoster: true });
     await page.route("**/api/agents", async (route) => {
       if (route.request().method() === "POST") {
         await route.fulfill({ status: 409, json: { code } });

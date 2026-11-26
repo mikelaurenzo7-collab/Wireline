@@ -29,7 +29,11 @@ import {
 } from "../runtime-template-personality";
 import { drizzle, serialQueryBatch } from "../server-context";
 import { validateNativeCalendarSettings } from "../native-calendar-policy";
-import { currentPricingPromptBlock, isStaleBotBoundPricing } from "../usage-billing-catalog";
+import {
+  botSellsBotBound,
+  currentPricingPromptBlock,
+  isStaleBotBoundPricing,
+} from "../usage-billing-catalog";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
@@ -375,7 +379,9 @@ export function composeOpenAIRealtimeInstructions(input: {
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
         : "",
-      `\n${currentPricingPromptBlock()}`,
+      botSellsBotBound({ agentId: input.agent.id, internalPersona: Boolean(internalPolicy) })
+        ? `\n${currentPricingPromptBlock()}`
+        : "",
     ]
       .filter(Boolean)
       .join("\n"),

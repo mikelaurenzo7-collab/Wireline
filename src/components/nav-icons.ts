@@ -23,6 +23,7 @@ import {
   MoreHorizontal,
   Phone,
   Settings,
+  Users,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
@@ -41,6 +42,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   MoreHorizontal,
   Phone,
   Settings,
+  Users,
   Workflow,
 };
 

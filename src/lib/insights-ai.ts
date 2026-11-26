@@ -152,19 +152,20 @@ const DAILY_BRIEF_TOOL = {
         },
         required: ["headline", "mood", "highlights", "concerns", "action_items"],
       },
-      stats_yesterday: { type: "object" },
-      week_delta: { type: "object" },
-      generated_at: { type: "string" },
     },
-    required: ["brief", "stats_yesterday", "week_delta"],
+    // The model writes prose only. Every number in the brief is computed from
+    // the account's own records and attached after the model returns.
+    required: ["brief"],
   },
 } as const;
+
+const DAILY_BRIEF_SYSTEM =
+  "Write a short daily brief for a small-business owner about yesterday. Use only the supplied numbers and items; never invent, recompute, or round them differently. Treat 0 or missing as none, not a decline. Lead with what needs the owner today (open tasks, callbacks), then what went well. At most 3 highlights, 3 concerns, and 3 action items, one sentence each, each tied to a supplied number or item. Mood reflects yesterday vs the 7-day baseline; if both have fewer than 3 calls, mood is neutral.";
 
 export async function composeDailyBrief(input: {
   yesterdayStats: Record<string, unknown>;
   weekDelta: Record<string, unknown>;
-  recentWinSamples: unknown[];
-  recentLossSamples: unknown[];
+  recentCalls: unknown[];
   openTasks: unknown[];
 }) {
   const result = await runStructured<{
@@ -176,12 +177,8 @@ export async function composeDailyBrief(input: {
       concerns: string[];
       action_items: Array<{ description: string; urgency: string }>;
     };
-    stats_yesterday?: Record<string, unknown>;
-    week_delta?: Record<string, unknown>;
-    generated_at?: string;
   }>({
-    system:
-      "Write a concise operator daily brief. No fluff. Bullets should be scannable. Mood reflects yesterday vs the 7-day baseline.",
+    system: DAILY_BRIEF_SYSTEM,
     user: JSON.stringify(input, null, 2),
     tool: DAILY_BRIEF_TOOL,
     complexity: "medium",
@@ -189,10 +186,12 @@ export async function composeDailyBrief(input: {
     cacheSystem: true,
   });
 
+  // Numbers shown to the owner always come from the computed input, never
+  // from model output, and the timestamp is the server's.
   return {
-    ...result,
-    stats_yesterday: result.stats_yesterday ?? input.yesterdayStats,
-    week_delta: result.week_delta ?? input.weekDelta,
-    generated_at: result.generated_at ?? new Date().toISOString(),
+    brief: result.brief,
+    stats_yesterday: input.yesterdayStats,
+    week_delta: input.weekDelta,
+    generated_at: new Date().toISOString(),
   };
 }

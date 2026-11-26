@@ -8,7 +8,7 @@
 
 import { drizzle, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, gte, lt, desc } from "drizzle-orm";
+import { eq, and, gte, lt, desc, count, isNull, notInArray, or } from "drizzle-orm";
 import * as insightsAi from "./insights-ai";
 import { googleApis } from "./google-apis";
 import { buildOAuthClient } from "./oauth-helpers";
@@ -39,146 +39,131 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
   const wStart = new Date();
   wStart.setDate(wStart.getDate() - 7);
 
-  const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await drizzle.transaction((tx) =>
-    serialQueryBatch([
-      tx
-        .select({
-          leadScore: schema.callLogs.leadScore,
-          intentLabel: schema.callLogs.intentLabel,
-          durationSeconds: schema.callLogs.durationSeconds,
-          cost: schema.callLogs.cost,
-          summary: schema.callLogs.summary,
-          customerNumber: schema.callLogs.customerNumber,
-        })
-        .from(schema.callLogs)
-        .where(
-          and(
-            eq(schema.callLogs.userId, userId),
-            gte(schema.callLogs.createdAt, yStart),
-            lt(schema.callLogs.createdAt, yEnd),
+  const [yCalls, wCalls, appts, tasks, leads, recentCalls, openTaskCount] =
+    await drizzle.transaction((tx) =>
+      serialQueryBatch([
+        tx
+          .select({
+            durationSeconds: schema.callLogs.durationSeconds,
+            cost: schema.callLogs.cost,
+          })
+          .from(schema.callLogs)
+          .where(
+            and(
+              eq(schema.callLogs.userId, userId),
+              gte(schema.callLogs.createdAt, yStart),
+              lt(schema.callLogs.createdAt, yEnd),
+            ),
           ),
-        ),
-      tx
-        .select({
-          leadScore: schema.callLogs.leadScore,
-          durationSeconds: schema.callLogs.durationSeconds,
-          cost: schema.callLogs.cost,
-        })
-        .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
-      tx
-        .select({ id: schema.appointments.id })
-        .from(schema.appointments)
-        .where(
-          and(
-            eq(schema.appointments.userId, userId),
-            gte(schema.appointments.createdAt, yStart),
-            lt(schema.appointments.createdAt, yEnd),
+        tx
+          .select({
+            durationSeconds: schema.callLogs.durationSeconds,
+            cost: schema.callLogs.cost,
+          })
+          .from(schema.callLogs)
+          .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
+        // A booking request awaiting confirmation, or a cancelled one, is not
+        // a booked appointment.
+        tx
+          .select({ id: schema.appointments.id })
+          .from(schema.appointments)
+          .where(
+            and(
+              eq(schema.appointments.userId, userId),
+              gte(schema.appointments.createdAt, yStart),
+              lt(schema.appointments.createdAt, yEnd),
+              or(
+                isNull(schema.appointments.status),
+                notInArray(schema.appointments.status, ["Requested", "Cancelled"]),
+              ),
+            ),
           ),
-        ),
-      tx
-        .select({
-          priority: schema.followUpTasks.priority,
-          description: schema.followUpTasks.description,
-        })
-        .from(schema.followUpTasks)
-        .where(
-          and(eq(schema.followUpTasks.userId, userId), eq(schema.followUpTasks.status, "pending")),
-        )
-        .orderBy(desc(schema.followUpTasks.createdAt))
-        .limit(8),
-      tx
-        .select({ id: schema.outboundLeads.id })
-        .from(schema.outboundLeads)
-        .where(
-          and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending")),
-        ),
-      tx
-        .select({
-          customerNumber: schema.callLogs.customerNumber,
-          leadScore: schema.callLogs.leadScore,
-          summary: schema.callLogs.summary,
-        })
-        .from(schema.callLogs)
-        .where(
-          and(
-            eq(schema.callLogs.userId, userId),
-            gte(schema.callLogs.createdAt, yStart),
-            lt(schema.callLogs.createdAt, yEnd),
-            gte(schema.callLogs.leadScore, 70),
+        tx
+          .select({
+            priority: schema.followUpTasks.priority,
+            description: schema.followUpTasks.description,
+          })
+          .from(schema.followUpTasks)
+          .where(
+            and(
+              eq(schema.followUpTasks.userId, userId),
+              eq(schema.followUpTasks.status, "pending"),
+            ),
+          )
+          .orderBy(desc(schema.followUpTasks.createdAt))
+          .limit(8),
+        tx
+          .select({ id: schema.outboundLeads.id })
+          .from(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.userId, userId),
+              eq(schema.outboundLeads.status, "Pending"),
+            ),
           ),
-        )
-        .orderBy(desc(schema.callLogs.leadScore))
-        .limit(3),
-      tx
-        .select({
-          customerNumber: schema.callLogs.customerNumber,
-          leadScore: schema.callLogs.leadScore,
-          summary: schema.callLogs.summary,
-        })
-        .from(schema.callLogs)
-        .where(
-          and(
-            eq(schema.callLogs.userId, userId),
-            gte(schema.callLogs.createdAt, yStart),
-            lt(schema.callLogs.createdAt, yEnd),
-            lt(schema.callLogs.leadScore, 30),
+        // Calls are no longer lead-scored (every new call stores 0), so samples
+        // are yesterday's latest calls with their outcome, not score buckets.
+        tx
+          .select({
+            customerNumber: schema.callLogs.customerNumber,
+            outcomeTag: schema.callLogs.outcomeTag,
+            summary: schema.callLogs.summary,
+          })
+          .from(schema.callLogs)
+          .where(
+            and(
+              eq(schema.callLogs.userId, userId),
+              gte(schema.callLogs.createdAt, yStart),
+              lt(schema.callLogs.createdAt, yEnd),
+            ),
+          )
+          .orderBy(desc(schema.callLogs.createdAt))
+          .limit(5),
+        tx
+          .select({ value: count() })
+          .from(schema.followUpTasks)
+          .where(
+            and(
+              eq(schema.followUpTasks.userId, userId),
+              eq(schema.followUpTasks.status, "pending"),
+            ),
           ),
-        )
-        .orderBy(desc(schema.callLogs.createdAt))
-        .limit(3),
-    ]),
-  );
+      ]),
+    );
 
   const yTotal = yCalls?.length || 0;
   const yMinutes = Math.round(
     (yCalls || []).reduce((s: number, c: any) => s + (c.durationSeconds || 0), 0) / 60,
   );
-  const yAvgScore = yTotal
-    ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / yTotal)
-    : 0;
-  const yHighIntent = (yCalls || []).filter((c: any) => c.intentLabel === "high").length;
   const yCost = Number(
     (yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2),
   );
 
   const wDays = 7;
   const wAvgPerDay = (wCalls?.length || 0) / wDays;
-  const wAvgScore = wCalls?.length
-    ? (wCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / wCalls.length
-    : 0;
   const wAvgCostPerDay =
     (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
 
   const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
-  const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
   const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
 
   const result = await insightsAi.composeDailyBrief({
     yesterdayStats: {
       total_calls: yTotal,
       total_minutes: yMinutes,
-      avg_lead_score: yAvgScore,
-      high_intent_count: yHighIntent,
       cost: yCost,
       appointments_booked: appts?.length || 0,
-      pending_tasks: tasks?.length || 0,
-      new_leads: leads?.length || 0,
+      pending_tasks: Number(openTaskCount?.[0]?.value ?? 0),
+      outbound_leads_waiting: leads?.length || 0,
     },
     weekDelta: {
       calls_pct: Math.round(callsPct),
-      score_pct: Math.round(scorePct),
       cost_pct: Math.round(costPct),
     },
-    recentWinSamples: (wins || []).map((w) => ({
-      customer: w.customerNumber || "Contact",
-      score: w.leadScore || 0,
-      summary: w.summary || "",
-    })),
-    recentLossSamples: (losses || []).map((l) => ({
-      customer: l.customerNumber || "Contact",
-      score: l.leadScore || 0,
-      summary: l.summary || "",
+    recentCalls: (recentCalls || []).map((call) => ({
+      customer: call.customerNumber || "Contact",
+      outcome: call.outcomeTag || "other",
+      summary: call.summary || "",
     })),
     openTasks: (tasks || []).map((t: any) => ({
       priority: t.priority || "medium",
@@ -283,7 +268,7 @@ export function renderDailyBriefEmail(
       
       <div class="stats" role="presentation">
         ${stat("Calls", String(stats.total_calls ?? 0), delta.calls_pct)}
-        ${stat("Avg Score", String(stats.avg_lead_score ?? 0), delta.score_pct)}
+        ${stat("Booked", String(stats.appointments_booked ?? 0))}
         ${stat("Cost", `$${Number(stats.cost ?? 0).toFixed(2)}`, delta.cost_pct)}
       </div>
     </div>
@@ -336,7 +321,7 @@ export function renderDailyBriefEmail(
   lines.push(headline);
   lines.push("");
   lines.push(
-    `Calls: ${stats.total_calls ?? 0}  ·  Lead Score: ${stats.avg_lead_score ?? 0}  ·  Cost: $${Number(stats.cost ?? 0).toFixed(2)}  ·  Booked: ${stats.appointments_booked ?? 0}`,
+    `Calls: ${stats.total_calls ?? 0}  ·  Booked: ${stats.appointments_booked ?? 0}  ·  Cost: $${Number(stats.cost ?? 0).toFixed(2)}`,
   );
   if (highlights.length) {
     lines.push("");

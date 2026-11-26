@@ -61,6 +61,7 @@ import callOpsAnalyticsRouter from "../routes/call-ops-analytics-routes";
 import navCountsTruthRouter from "../routes/nav-counts-truth-routes";
 import operatorTaskRouter from "../routes/operator-task-routes";
 import fleetRouter from "../routes/fleet-routes";
+import peopleRouter from "../routes/people-routes";
 import calendarRouter from "../routes/calendar-routes";
 import computerRouter from "../routes/computer-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
@@ -188,6 +189,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(operatorTaskRouter);
   app.use(fleetRouter);
   app.use(calendarRouter);
+  app.use(peopleRouter);
   app.use(computerRouter);
   app.use(workspaceKnowledgeRouter);
   app.use(icloudMailRouter);

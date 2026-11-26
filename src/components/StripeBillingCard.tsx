@@ -36,6 +36,7 @@ import {
   CONVERSATION_BALANCE_PRESETS_USD,
 } from "../lib/conversation-balance";
 import { Chip } from "./atoms";
+import CheckoutTermsNote from "./billing/CheckoutTermsNote";
 
 import type {
   BillingPlansResponse,
@@ -473,6 +474,7 @@ export default function StripeBillingCard({
           onSelectPlan={startCheckout}
         />
       ) : null}
+      {!hasPlanAccess && billingModel !== "usage" ? <CheckoutTermsNote /> : null}
       {showTrustFooter ? <BillingTrustFooter /> : null}
     </div>
   );

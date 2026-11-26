@@ -6,7 +6,7 @@
 **Effective Date**: 2026-10-29  
 **Target Production Origin**: `https://botbound.app`  
 **Execution Target**: Render (Web/Worker/Cron), Supabase (PostgreSQL 15/16), Vite 6 (SPA)  
-**Classification**: Operational Blueprint & Cutover Standard  
+**Classification**: Operational Blueprint & Cutover Standard
 
 ---
 
@@ -19,39 +19,56 @@ The objective of this roadmap is to execute a flawless, zero-downtime, fully ver
 ## 2. Prioritized Remediation Framework
 
 ### 2.1. P0 Blockers — Launch Critical (Pre-Deployment Invariants)
-*Must be 100% resolved and verified before initiating any production release step.*
 
-| Task ID | Component | Description | Resolution Status | Verification Gate |
-|---|---|---|---|---|
-| **P0-1** | `takeover-alerts.ts` | Fix `schema.users.phoneNumber` non-existent column query and `smsResult.messageSid` mismatch. | **RESOLVED** | `npm run lint:server` (Code 0) |
-| **P0-2** | `agent-runtime-helpers.ts` | Fix union type inference in `computerNames` & `selectedComputerNames` sets with explicit `<string>`. | **RESOLVED** | `npm run lint:server` (Code 0) |
-| **P0-3** | `gemini-media-bridge.ts` | Cast `RESOLVED_GEMINI_LIVE_MODEL as GeminiLiveModel` in `prepareGeminiLiveSessionConfig`. | **RESOLVED** | `npm run lint:server` (Code 0) |
-| **P0-4** | `lead-hunter-routes.ts` | Wrap Zod schemas with `{ body: ... }` object matching `ValidationSchemas` middleware signature. | **RESOLVED** | `npm run lint:server` (Code 0) |
-| **P0-5** | `voice-bridge.ts` | Remove em-dash `—` from `HOLD_TAKEOVER_FILLERS` line 71 to comply with founder brand copy rule. | **RESOLVED** | `npm run design:check` (Code 0) |
-| **P0-6** | Database Pool Headroom | Eliminate un-pooled concurrent connection spikes by serializing tenant snapshot queries within single Drizzle transactions. | **RESOLVED** | `verify:contracts` (411/411 passed) |
-| **P0-7** | Serverless Import Safety | Verify server bundle loads cleanly in container environments where database strings are not yet bound. | **RESOLVED** | `npm run smoke:server` (Code 0) |
+_Must be 100% resolved and verified before initiating any production release step._
+
+| Task ID  | Component                  | Description                                                                                                                 | Resolution Status | Verification Gate                   |
+| -------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------- |
+| **P0-1** | `takeover-alerts.ts`       | Fix `schema.users.phoneNumber` non-existent column query and `smsResult.messageSid` mismatch.                               | **RESOLVED**      | `npm run lint:server` (Code 0)      |
+| **P0-2** | `agent-runtime-helpers.ts` | Fix union type inference in `computerNames` & `selectedComputerNames` sets with explicit `<string>`.                        | **RESOLVED**      | `npm run lint:server` (Code 0)      |
+| **P0-3** | `gemini-media-bridge.ts`   | Cast `RESOLVED_GEMINI_LIVE_MODEL as GeminiLiveModel` in `prepareGeminiLiveSessionConfig`.                                   | **RESOLVED**      | `npm run lint:server` (Code 0)      |
+| **P0-4** | `lead-hunter-routes.ts`    | Wrap Zod schemas with `{ body: ... }` object matching `ValidationSchemas` middleware signature.                             | **RESOLVED**      | `npm run lint:server` (Code 0)      |
+| **P0-5** | `voice-bridge.ts`          | Remove em-dash `—` from `HOLD_TAKEOVER_FILLERS` line 71 to comply with founder brand copy rule.                             | **RESOLVED**      | `npm run design:check` (Code 0)     |
+| **P0-6** | Database Pool Headroom     | Eliminate un-pooled concurrent connection spikes by serializing tenant snapshot queries within single Drizzle transactions. | **RESOLVED**      | `verify:contracts` (411/411 passed) |
+| **P0-7** | Serverless Import Safety   | Verify server bundle loads cleanly in container environments where database strings are not yet bound.                      | **RESOLVED**      | `npm run smoke:server` (Code 0)     |
+
+### 2.1a. Voice and conversation findings, November 26
+
+_From a read of the phone runtime against production records. Phone-prompt and call-session changes take effect only after the drained voice release._
+
+| Task ID | Finding                                                                                                                                                                                                                   | Status                                                                                                                                                                                                        |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **V-1** | The post-call opt-out scan read the Bot's own sales opening ("you can say stop calling"), so every answered sales call would have put the person called on the do-not-call list. No such record exists in production yet. | **Fixed in PR #1533**: only caller lines are scanned (`callerTurnsText`).                                                                                                                                     |
+| **V-2** | BotBound's own price list, ending "Quote only these prices", closed every Bot's prompt on calls and in rehearsal (65 customer Bots across 40 accounts).                                                                   | **Fixed in PR #1533**: only BotBound's internal personas and showcase Bots carry it.                                                                                                                          |
+| **V-3** | The live opt-out detector ends any call, inbound included, on loose matches such as "please don't call me, just text me the quote" or "my ex won't stop calling me".                                                      | Open. Proposal: keep the immediate hangup for outbound sales calls (47 CFR 64.1200(b)(3)); on other calls save explicit first-person requests and let the Bot confirm. Needs the compliance owner's decision. |
+| **V-4** | On calls answered by OpenAI (fallback) and on cloned-voice outbound calls, the caller can talk over the AI disclosure, and the prompt then states it was delivered.                                                       | Open. Accept with `create_response` and `interrupt_response` off until the opening finishes, then turn them on; validate on a live carrier call.                                                              |
+| **V-5** | The saved personality is cut at 1,500 characters on calls and in rehearsal; 28 of 63 saved personalities in production are longer.                                                                                        | Open. Raise the cap with measured turn latency (`latency_p50_ms`, `latency_p95_ms`).                                                                                                                          |
+| **V-6** | Studio rehearsal runs OpenAI Realtime with an OpenAI voice while phone calls run xAI with a mapped voice (ten saved voices map to five).                                                                                  | Open. xAI documents browser sessions through ephemeral tokens over WebSocket (no WebRTC); move rehearsal to xAI so owners hear what callers hear.                                                             |
+| **V-7** | Unverified on a live carrier call: xAI's audio-done event for forced messages, `conversation.item.truncate` support, μ-law formats after an instructions-only update, and the latency cost of "high" reasoning.           | Open. Check each on the founder two-way call.                                                                                                                                                                 |
 
 ### 2.2. P1 Compliance, Security & Data Integrity
-*Required for customer onboarding, legal compliance, and transactional safety.*
 
-| Task ID | Component | Operational Requirement | Configuration & Action |
-|---|---|---|---|
-| **P1-1** | Twilio Lookups v2 & Landline Filter | Ensure all outbound voice/SMS calls screen carrier line type via Lookups v2. Landlines must be rejected for SMS without balance waste. | Handled in `src/lib/twilio-service.ts`. Covered by contract tests. |
-| **P1-2** | TCPA & Spoken Disclosure | Outbound AI calls identify as an automated AI assistant on behalf of the business at the start of the call; inbound identification is `composeInboundOpening` on every inbound call, not the tenant TCPA preset; recording notice plays when recording is enabled; telemarketing calls announce the voice opt-out mechanism per 47 CFR 64.1200(b)(3). | Inbound: `src/lib/voice/inbound-opening.ts`. Outbound prefix: `complianceFirstMessagePrefix` in `src/lib/agent-runtime.ts`, used only by `buildOutboundOpening`. OPEN DECISION (owner): the owner's no-first-turn-disclosure preference conflicts with the outbound disclosure above — resolve before launch; do not silently disable disclosure. |
-| **P1-3** | CAN-SPAM Postal Address | Verify that every commercial email sent through Resend includes a valid physical postal address and unsubscribe mailto header. | Enforced by `WIRELINE_POSTAL_ADDRESS` and `WIRELINE_UNSUBSCRIBE_MAILTO`. |
-| **P1-4** | AgentMail Domain Reputation | Ensure bot email inboxes are provisioned exclusively on verified subdomains (`bots.botbound.app`), never on the apex domain. | Enforced by `AGENTMAIL_DEFAULT_DOMAIN="bots.botbound.app"`. |
-| **P1-5** | Stripe Webhook Cryptographic Verification | Ensure all incoming Stripe events are verified with `STRIPE_WEBHOOK_SECRET` before updating customer status or confirming voice sessions. | Enforced in `src/routes/stripe-routes.ts`. |
-| **P1-6** | Autonomous Goodwill Wallet Policy | Verify hard upper bounds on autonomous bot refunds ($100/month discretionary cap, $25/resolution max). | Enforced in billing policy manager. |
+_Required for customer onboarding, legal compliance, and transactional safety._
+
+| Task ID  | Component                                 | Operational Requirement                                                                                                                                                                                                                                                                                                                               | Configuration & Action                                                                                                                                                                                                                                                                                                                                   |
+| -------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P1-1** | Twilio Lookups v2 & Landline Filter       | Ensure all outbound voice/SMS calls screen carrier line type via Lookups v2. Landlines must be rejected for SMS without balance waste.                                                                                                                                                                                                                | Handled in `src/lib/twilio-service.ts`. Covered by contract tests.                                                                                                                                                                                                                                                                                       |
+| **P1-2** | TCPA & Spoken Disclosure                  | Outbound AI calls identify as an automated AI assistant on behalf of the business at the start of the call; inbound identification is `composeInboundOpening` on every inbound call, not the tenant TCPA preset; recording notice plays when recording is enabled; telemarketing calls announce the voice opt-out mechanism per 47 CFR 64.1200(b)(3). | Inbound: `src/lib/voice/inbound-opening.ts`. Outbound prefix: `complianceFirstMessagePrefix` in `src/lib/agent-runtime.ts`, used only by `buildOutboundOpening`. Resolved in code: every outbound opening passes `outboundAiCall: true` (`src/lib/voice/openai-sip-session.ts`), so the AI disclosure always opens the call; there is no owner override. |
+| **P1-3** | CAN-SPAM Postal Address                   | Verify that every commercial email sent through Resend includes a valid physical postal address and unsubscribe mailto header.                                                                                                                                                                                                                        | Enforced by `WIRELINE_POSTAL_ADDRESS` and `WIRELINE_UNSUBSCRIBE_MAILTO`.                                                                                                                                                                                                                                                                                 |
+| **P1-4** | AgentMail Domain Reputation               | Ensure bot email inboxes are provisioned exclusively on verified subdomains (`bots.botbound.app`), never on the apex domain.                                                                                                                                                                                                                          | Enforced by `AGENTMAIL_DEFAULT_DOMAIN="bots.botbound.app"`.                                                                                                                                                                                                                                                                                              |
+| **P1-5** | Stripe Webhook Cryptographic Verification | Ensure all incoming Stripe events are verified with `STRIPE_WEBHOOK_SECRET` before updating customer status or confirming voice sessions.                                                                                                                                                                                                             | Enforced in `src/routes/stripe-routes.ts`.                                                                                                                                                                                                                                                                                                               |
+| **P1-6** | Autonomous Goodwill Wallet Policy         | Verify hard upper bounds on autonomous bot refunds ($100/month discretionary cap, $25/resolution max).                                                                                                                                                                                                                                                | Enforced in billing policy manager.                                                                                                                                                                                                                                                                                                                      |
 
 ### 2.3. P2 Operational Hardening & Scalability
-*Ensures high availability, fault tolerance, and zero-downtime operations under load.*
 
-| Task ID | Component | Operational Procedure |
-|---|---|---|
-| **P2-1** | Zero-Downtime Voice Drain | Always execute `node deploy/render/drain-voice.mjs` before deploying a new revision to `botbound-voice`. Wait for active calls to reach zero. |
-| **P2-2** | Upstash Redis Distributed Rate Limiting | Guard against brute-force attacks and abuse across API endpoints using Upstash Redis REST token bucket limiter. |
-| **P2-3** | Browserbase Concurrency Isolation | Mirror confirmed appointments via `wireline_jobs` background worker, preventing browser automation from blocking active voice streams. |
-| **P2-4** | Render Cron Synchronization | Disable all legacy Vercel crons permanently; ensure only Render owns cron scheduling (`RENDER_CRON_ENABLED=true`). |
+_Ensures high availability, fault tolerance, and zero-downtime operations under load._
+
+| Task ID  | Component                               | Operational Procedure                                                                                                                         |
+| -------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P2-1** | Zero-Downtime Voice Drain               | Always execute `node deploy/render/drain-voice.mjs` before deploying a new revision to `botbound-voice`. Wait for active calls to reach zero. |
+| **P2-2** | Upstash Redis Distributed Rate Limiting | Guard against brute-force attacks and abuse across API endpoints using Upstash Redis REST token bucket limiter.                               |
+| **P2-3** | Browserbase Concurrency Isolation       | Mirror confirmed appointments via `wireline_jobs` background worker, preventing browser automation from blocking active voice streams.        |
+| **P2-4** | Render Cron Synchronization             | Disable all legacy Vercel crons permanently; ensure only Render owns cron scheduling (`RENDER_CRON_ENABLED=true`).                            |
 
 ---
 
@@ -88,70 +105,89 @@ Before opening production traffic on `botbound.app`, verify the readiness of all
 Execute the complete verification sequence in the exact order below. Every command must exit with code 0:
 
 ### Step 1: Design System & Brand Copy Guard
+
 ```powershell
 npm.cmd run design:check
 ```
-*Expected Output*: BotBound Clear System (10 modules) passed, Command Palette passed, Marketing viewport passed, No-em-dash check passed (1,232+ files).
+
+_Expected Output_: BotBound Clear System (10 modules) passed, Command Palette passed, Marketing viewport passed, No-em-dash check passed (1,232+ files).
 
 ### Step 2: TypeScript Server Compilation
+
 ```powershell
 npm.cmd run lint:server
 ```
-*Expected Output*: Exits with code 0. Zero compiler errors.
+
+_Expected Output_: Exits with code 0. Zero compiler errors.
 
 ### Step 3: TypeScript Audit Modules Compilation
+
 ```powershell
 npm.cmd run lint:audit-modules
 ```
-*Expected Output*: Exits with code 0. Zero compiler errors.
+
+_Expected Output_: Exits with code 0. Zero compiler errors.
 
 ### Step 4: Full Codebase Static Analysis
+
 ```powershell
 npm.cmd run lint
 ```
-*Expected Output*: Exits with code 0. Zero compiler errors.
+
+_Expected Output_: Exits with code 0. Zero compiler errors.
 
 ### Step 5: Master Contract Regression Suite
+
 ```powershell
 npm.cmd run verify:contracts
 ```
-*Expected Output*: 49 passed test files, 411 passed unit tests.
+
+_Expected Output_: 49 passed test files, 411 passed unit tests.
 
 ### Step 6: Server Bundle Build & Import Smoke
+
 ```powershell
 npm.cmd run build:server
 npm.cmd run smoke:server
 ```
-*Expected Output*: `dist/server.cjs` bundled cleanly; smoke test outputs: `server bundle imports without database configuration`.
 
-### Step 7: Custom Voice Bridge & Mirroring Tests
+_Expected Output_: `dist/server.cjs` bundled cleanly; smoke test outputs: `server bundle imports without database configuration`.
+
+### Step 7: Custom Voice Bridge Tests
+
 ```powershell
-npx.cmd vitest run tests/voice-browserbase-bridge.test.ts tests/trade-portal-mirroring.test.ts
+npx.cmd vitest run tests/voice-browserbase-bridge.test.ts
 ```
-*Expected Output*: 2 passed test files, 27 passed tests.
+
+_Expected Output_: 1 passed test file. The trade portal mirror and its tests were removed in November 2026: no booking ever queued its job.
 
 ### Step 8: Production Environment Readiness Probe
+
 ```powershell
 npm.cmd run check-prod-env
 ```
-*Expected Output*: Verifies that all required production environment variables are present and correctly formatted.
+
+_Expected Output_: Verifies that all required production environment variables are present and correctly formatted.
 
 ---
 
 ## 5. Cutover Timeline & Runbook
 
 ### Phase 1: T-Minus 24 Hours (Preparation & Staging)
+
 1. **Code Freeze**: Freeze all non-launch pull requests on `main`.
 2. **Database Backup**: Trigger manual backup snapshot on Supabase Dashboard.
 3. **Environment Audit**: Review Render Secret Store against `docs/launch/ENVIRONMENT_VARIABLES_MATRIX.md`. Ensure all keys are populated.
 4. **Third-Party Health Check**: Confirm status pages for Twilio, Stripe, Resend, AgentMail, Google Gemini, and Render.
 
 ### Phase 2: T-Minus 2 Hours (Infrastructure Synchronization)
+
 1. **Render Blueprint Sync**: Deploy/sync `render.yaml` on Render Dashboard.
 2. **Verify Database Connection**: Execute `npm run db:health` to confirm low latency and zero transaction-pool errors.
 3. **Confirm DNS & SSL**: Verify TLS certificates for `botbound.app`, `api.botbound.app`, and `bots.botbound.app`.
 
 ### Phase 3: Cutover Window (T = 0)
+
 1. **Promote Main Branch**: Merge reviewed launch commit to `main`.
 2. **Monitor Auto-Deploy**:
    - `botbound-api` builds and deploys automatically via `autoDeployTrigger: commit`.
@@ -163,9 +199,10 @@ npm.cmd run check-prod-env
 4. **Health Probe Verification**:
    - `GET https://botbound.app/healthz` -> Expect `200 OK`.
    - `GET https://botbound.app/livez` -> Expect `200 OK`.
-   - `GET https://botbound.app/api/health/launch-readiness` (with `HEALTH_MONITOR_TOKEN`) -> Expect `100% Ready`.
+   - `GET https://botbound.app/api/health/launch-readiness` (with `HEALTH_MONITOR_TOKEN`) -> Expect every capability configured. This checks that configuration is present; it places no call and sends no message, so it is not end-to-end proof.
 
 ### Phase 4: T-Plus 1 Hour (Live Operational Validation)
+
 1. **Live Inbound Call Test**:
    - Dial a provisioned BotBound number.
    - Verify speech synthesis, barge-in response, and conversational status fillers.
@@ -175,10 +212,9 @@ npm.cmd run check-prod-env
 3. **Live Appointment & Calendar Booking**:
    - Book an appointment during the call.
    - Verify 5-minute soft hold, confirmation SMS, and AgentMail email receipt containing the `.ics` calendar attachment.
-4. **Trade Portal Background Mirroring**:
-   - Inspect `wireline_jobs` to verify that the trade portal mirror job enqueued and completed without 409 conflict errors.
 
 ### Phase 5: T-Plus 24 Hours (Post-Launch Monitoring)
+
 1. **Cron Execution Audit**: Verify `botbound-jobs-sweep` runs every minute with zero stale job backlogs.
 2. **Stripe Webhook Delivery**: Confirm 100% 2xx delivery rate in Stripe Webhook Dashboard.
 3. **Error Tracking**: Review Sentry dashboard to ensure error rate remains < 0.01%.

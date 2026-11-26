@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 
 import { authFetch } from "../../lib/api";
+import { announceTextingRegistration } from "../../lib/texting-registration-events";
 import { Button, Input, NativeSelect } from "../atoms";
 import { StatusNotice } from "../molecules";
 
@@ -312,6 +313,7 @@ export default function TextingRegistrationForm() {
       }
       if (body) apply(body);
       setSaved(true);
+      announceTextingRegistration(body?.status ?? "received");
     } catch {
       setError("Your details weren't saved. Check your connection and try again.");
     } finally {
@@ -327,6 +329,7 @@ export default function TextingRegistrationForm() {
       const body = (await response.json().catch(() => null)) as RegistrationResponse | null;
       if (!response.ok || !body) throw new Error("remove");
       apply(body);
+      announceTextingRegistration(body.status);
       setFlow("business");
       setSaved(false);
       setConfirmingRemove(false);

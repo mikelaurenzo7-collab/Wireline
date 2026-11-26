@@ -45,6 +45,7 @@ import {
   recoveryParentId,
 } from "./post-call-finalization-recovery";
 import { jobOwnerId as validatedJobOwnerId } from "./job-owner";
+import { callerTurnsText } from "./call-transcript-lines";
 
 export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
@@ -52,15 +53,7 @@ export type CallOutcomeTag =
 const CALL_LOGS_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/phone?tab=logs`;
 const CALENDAR_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/calendar`;
 
-/** What the caller said, without the Bot's own disclosure, greeting or replies. */
-export function callerTurnsText(transcript: string | null | undefined): string {
-  return (transcript || "")
-    .split("\n")
-    .filter((line) => line.startsWith("Caller: "))
-    .map((line) => line.slice("Caller: ".length).trim())
-    .filter(Boolean)
-    .join("\n");
-}
+export { callerTurnsText };
 
 export function classifyCallOutcome(input: {
   summary?: string | null;
@@ -94,7 +87,10 @@ export function classifyCallOutcome(input: {
     if (!caller.trim() || (input.durationSeconds != null && input.durationSeconds < 8))
       return "unreachable";
     const said = `${caller} ${input.intentLabel || ""}`.toLowerCase();
-    if (/\b(not interested|no thanks|no thank you)\b/.test(said)) return "other";
+    // "Not really interested" must not read as interest: a qualified outbound
+    // lead is marked Completed and is never called again.
+    if (/\b(not (?:\w+ ){0,2}interested|no thanks|no thank you|not for me)\b/.test(said))
+      return "other";
     if (/\b(qualified|interested|hot lead|budget|good fit)\b/.test(said)) return "qualified";
     if (
       /\b(callback|follow.?up|call.?back|call (?:me|us) back|reach out later|next week|send me an? (?:email|text))\b/.test(
@@ -1251,7 +1247,7 @@ async function deliverOwnerDigest(
       recapUrl: core.recapUrl,
       bookingRequest,
     };
-    const subject = `[BotBound · ${bookingRequest ? "BOOKING REQUEST" : core.outcomeTag.toUpperCase()}] ${ctx.agentName || "Agent"} → ${ctx.customerName || ctx.customerNumber || "caller"}`;
+    const subject = `[BotBound · ${bookingRequest ? "Booking request" : digestOutcomeLabel(core.outcomeTag)}] ${ctx.agentName || "Agent"} → ${ctx.customerName || ctx.customerNumber || "caller"}`;
     const sent = await sendEmail({
       to: recipient,
       subject,
@@ -1839,10 +1835,36 @@ export async function pickAccountHolderEmail(userId: string): Promise<string | n
   );
 }
 
-function crmDigestStatusLine(crmLogged: boolean, crmQueuedForApproval: boolean): string {
-  if (crmLogged) return "Logged to your CRM.";
-  if (crmQueuedForApproval) return "CRM note queued for approval in your Approval Inbox.";
-  return "CRM not updated. Review this call in BotBound before adding it to a customer record.";
+/** Plain outcome words for the owner's inbox; the internal tag never shows. */
+const DIGEST_OUTCOME_LABELS: Record<CallOutcomeTag, string> = {
+  booked: "Booked",
+  qualified: "Interested",
+  followup: "Follow-up",
+  dnc: "Do not contact",
+  unreachable: "No conversation",
+  info: "Question",
+  other: "Call",
+};
+
+export function digestOutcomeLabel(tag: string): string {
+  return DIGEST_OUTCOME_LABELS[tag as CallOutcomeTag] ?? "Call";
+}
+
+/** "45 sec" under a minute; whole minutes above. "0 min" told the owner nothing. */
+export function digestDurationLabel(seconds: number | null | undefined): string {
+  const total = Math.max(0, Math.round(Number(seconds) || 0));
+  return total < 60 ? `${total} sec` : `${Math.round(total / 60)} min`;
+}
+
+/**
+ * Calls are no longer sentiment-scored, so the stored default "neutral" says
+ * nothing about the call. Show sentiment only when a real signal set it.
+ */
+function digestSentimentSuffix(sentiment: string | null | undefined): string {
+  const value = String(sentiment || "")
+    .trim()
+    .toLowerCase();
+  return value === "positive" || value === "negative" ? ` · ${value} sentiment` : "";
 }
 
 function escapeHtml(value: string): string {
@@ -1864,15 +1886,12 @@ export function renderDigestEmail(d: {
   sentiment?: string | null;
   outcomeTag: string;
   campaignSource: string | null;
-  crmLogged: boolean;
-  crmQueuedForApproval?: boolean;
   recapUrl?: string | null;
   bookingRequest?: DigestBookingRequest | null;
 }): string {
-  const dur = Math.round((d.durationSeconds || 0) / 60);
   const next = d.bookingRequest ? BOOKING_REQUEST_NEXT_ACTION : nextActionFromOutcome(d.outcomeTag);
-  const identity = `${d.outcomeTag.toUpperCase()}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`;
-  const metadata = `${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`;
+  const identity = `${digestOutcomeLabel(d.outcomeTag)}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`;
+  const metadata = `${d.direction || "Call"} · ${digestDurationLabel(d.durationSeconds)}${digestSentimentSuffix(d.sentiment)}${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`;
   const recapBlock = d.recapUrl
     ? `<p style="margin:0 0 24px;">
         <a href="${escapeHtml(d.recapUrl)}" style="display:inline-block;background:${BRAND.colors.primary};color:#ffffff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;letter-spacing:0.02em;">Open the recap →</a>
@@ -1889,8 +1908,7 @@ export function renderDigestEmail(d: {
     d.bookingRequest
       ? `<p style="margin:0 0 16px;padding:12px 14px;border-left:3px solid ${BRAND.colors.primary};background:#f7f7f9;border-radius:8px;font-size:14px;"><strong>Booking request:</strong> ${escapeHtml(bookingRequestLine(d.bookingRequest))} <a href="${CALENDAR_URL}" style="color:${BRAND.colors.primary};text-decoration:none;">Open Calendar →</a></p>`
       : "",
-    `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${escapeHtml(next)}</p>`,
-    `<p style="margin:0 0 16px;font-size:12px;color:#666;">${escapeHtml(crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false))}</p>`,
+    `<p style="margin:0 0 16px;font-size:13px;"><strong>Next action:</strong> ${escapeHtml(next)}</p>`,
     `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="${CALL_LOGS_URL}" style="color:${BRAND.colors.primary};text-decoration:none;">in BotBound →</a></p>`,
     `</div>`,
   ].join("");
@@ -1906,17 +1924,14 @@ export function renderDigestEmailText(d: {
   sentiment?: string | null;
   outcomeTag: string;
   campaignSource: string | null;
-  crmLogged: boolean;
-  crmQueuedForApproval?: boolean;
   recapUrl?: string | null;
   bookingRequest?: DigestBookingRequest | null;
 }): string {
-  const durationMinutes = Math.round((d.durationSeconds || 0) / 60);
   return [
     "BotBound · Post-call digest",
     "",
-    `${d.outcomeTag.toUpperCase()}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`,
-    `${d.direction || "Call"} · ${durationMinutes} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`,
+    `${digestOutcomeLabel(d.outcomeTag)}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`,
+    `${d.direction || "Call"} · ${digestDurationLabel(d.durationSeconds)}${digestSentimentSuffix(d.sentiment)}${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`,
     "",
     d.summary || "(no summary captured)",
     "",
@@ -1924,7 +1939,6 @@ export function renderDigestEmailText(d: {
       ? `Booking request: ${bookingRequestLine(d.bookingRequest)} ${CALENDAR_URL}`
       : null,
     `Next action: ${d.bookingRequest ? BOOKING_REQUEST_NEXT_ACTION : nextActionFromOutcome(d.outcomeTag)}`,
-    crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false),
     d.recapUrl ? `Recap: ${d.recapUrl}` : null,
     `Open the call: ${CALL_LOGS_URL}`,
   ]
@@ -1935,9 +1949,9 @@ export function renderDigestEmailText(d: {
 export function nextActionFromOutcome(tag: string): string {
   switch (tag) {
     case "booked":
-      return "Verify the calendar confirmation, attach prep notes, and assign the meeting owner.";
+      return "Check the booking in Calendar and add any prep notes.";
     case "qualified":
-      return "Route to the closer or schedule a demo within 48 hours while intent is current.";
+      return "The caller sounded interested. Follow up soon while it's fresh.";
     case "followup":
       return "Review the requested follow-up, contact method and timing before acting.";
     case "dnc":
@@ -1945,8 +1959,8 @@ export function nextActionFromOutcome(tag: string): string {
     case "unreachable":
       return "Review retry policy and voicemail settings before another attempt.";
     case "info":
-      return "Review the unanswered question and add verified guidance to the agent's Training tab.";
+      return "The caller asked a question. Check your Bot answered it; if not, add the answer in Training.";
     default:
-      return "Review the transcript, confirm the outcome, and assign any required follow-up.";
+      return "Read the summary and decide whether anything needs doing.";
   }
 }

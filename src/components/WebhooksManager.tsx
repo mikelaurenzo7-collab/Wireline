@@ -45,10 +45,9 @@ interface WebhookRow {
 
 const EVENT_DESCRIPTIONS: Record<string, string> = {
   "call.completed":
-    "After each voice call. Includes lead scores, extracted data, and CRM-ready payload",
+    "After a voice call with a conversation: call id, Bot, caller number, direction and duration",
   "call.escalated": "Call flagged as angry or requiring human escalation",
   "lead.received": "New lead pushed via your inbound intake API key",
-  "lead.hot": "Lead score crossed 70. High intent detected",
   "email.received": "Inbound email synced from a connected mailbox",
   "appointment.booked": "New appointment booked by an agent or via API",
   "slack.message_sent":
@@ -428,7 +427,9 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               onClick={toggleActive}
               className={cn(
                 "h-auto px-2 py-0.5 rounded-full wl-label border",
-                hook.active ? WL_APP_CLASSES.statusActive : "bg-muted/15 text-muted-foreground border-border",
+                hook.active
+                  ? WL_APP_CLASSES.statusActive
+                  : "bg-muted/15 text-muted-foreground border-border",
               )}
             >
               {hook.active ? "Active" : "Paused"}
@@ -625,7 +626,9 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                         try {d.attempts}/{d.max_attempts}
                       </span>
                       {d.last_status_code !== null && d.last_status_code > 0 && (
-                        <span className="font-mono text-muted-foreground">HTTP {d.last_status_code}</span>
+                        <span className="font-mono text-muted-foreground">
+                          HTTP {d.last_status_code}
+                        </span>
                       )}
                       <span className="text-muted-foreground">{formatDateTime(d.created_at)}</span>
                       {d.last_error && (
