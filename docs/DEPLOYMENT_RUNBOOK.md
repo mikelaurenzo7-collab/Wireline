@@ -471,7 +471,7 @@ Repository branch protection and required checks should be enabled as soon as th
 
 ### OpenAI and Twilio
 
-xAI is the default stock telephone runtime, with OpenAI Realtime as the fallback. OpenAI Realtime also owns browser rehearsals. Cloned ElevenLabs calls use the media bridge below. Twilio owns customer numbers, PSTN transport, and SMS. Vapi is retired.
+xAI is the default stock telephone runtime, with OpenAI Realtime as the fallback. Studio rehearsals follow the phone provider through the API's rehearsal relay and fall back to OpenAI Realtime WebRTC; ChatGPT private simulation stays on OpenAI. Cloned ElevenLabs calls use the media bridge below. Twilio owns customer numbers, PSTN transport, and SMS. Vapi is retired.
 
 ### ElevenLabs cloned phone voices
 
@@ -507,6 +507,8 @@ Cutover, on the release commit:
 2. Set `WIRELINE_PHONE_VOICE_PROVIDER=xai` on both services and deploy all four services together.
 3. As a platform admin, `POST /api/voice/xai/registrations/sync`. Each assigned number is registered with xAI (`origin: byo_trunk`) with generated SIP digest credentials. Its one-time webhook secret is stored as a secret-vault envelope in `wireline_xai_phone_registrations`, which only root (non-tenant) database access can read. `GET /api/voice/xai/status` lists registered phone suffixes.
 4. Place one inbound and one approved outbound call and confirm disclosure playback, transcript, tool use, and hangup.
+
+Studio rehearsals move with the phone provider. The relay runs on botbound-api only, so it ships with an API deploy and needs no voice-worker release. Set `WIRELINE_REHEARSAL_VOICE_PROVIDER=openai` on botbound-api to move rehearsals alone back to OpenAI without a deploy of new code; a rehearsal already running finishes where it started. After a release, run one Studio rehearsal on speakers (no headphones) and confirm the opening and disclosure, a knowledge answer, an interruption that stops the Bot at once without it interrupting itself, a typed line, and End. Logs show `xAI voice rehearsal opened` and `xAI voice rehearsal ended` with reply latency, or `Voice rehearsal fell back to OpenAI Realtime` with its reason.
 
 A number that is not registered keeps answering on OpenAI, so the cutover never strands a line. New lines register automatically when xAI is on, and released lines are deregistered. To roll back, set `WIRELINE_PHONE_VOICE_PROVIDER=openai` and follow the drain/deploy procedure; leaving it unset selects xAI. Calls already running on xAI finish there.
 

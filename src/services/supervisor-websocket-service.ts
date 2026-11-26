@@ -43,7 +43,18 @@ async function isActiveSupervisorSession(payload: JwtPayload): Promise<boolean> 
   });
 }
 
-export function initSupervisorWebSocketServer(server: any) {
+/** Another authenticated WebSocket path served from this same upgrade listener. */
+export type WebSocketUpgradeRoute = (request: IncomingMessage, socket: any, head: any) => void;
+
+/**
+ * The API host has one upgrade listener: it applies the deployment gate, serves
+ * the supervisor stream, hands the explicitly registered `otherRoutes` their
+ * own paths, and refuses everything else.
+ */
+export function initSupervisorWebSocketServer(
+  server: any,
+  otherRoutes: Readonly<Record<string, WebSocketUpgradeRoute>> = {},
+) {
   const wss = new WebSocketServer({ noServer: true });
 
   server.on("upgrade", (request: IncomingMessage, socket: any, head: any) => {
@@ -60,6 +71,11 @@ export function initSupervisorWebSocketServer(server: any) {
       wss.handleUpgrade(request, socket, head, (ws: any) => {
         wss.emit("connection", ws, request);
       });
+      return;
+    }
+    const route = pathname && Object.hasOwn(otherRoutes, pathname) ? otherRoutes[pathname] : null;
+    if (route) {
+      route(request, socket, head);
       return;
     }
     socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");

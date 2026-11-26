@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 
 import { AppError } from "./api-error";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "./voice/openai-realtime-config";
+import { resolveXAIGrokVoiceModel } from "./voice/xai-voice-config";
 import {
   OPENAI_REALTIME_RESERVE_WINDOW_SECONDS,
   realtimeReserveForWindowUsd,
@@ -32,6 +33,11 @@ export async function reserveRealtimeSessionSpend(
   inboundAdmission?: NativeInboundAdmission,
   /** A session hard-stopped sooner than the default window reserves proportionally less. */
   windowSeconds: number = OPENAI_REALTIME_RESERVE_WINDOW_SECONDS,
+  /**
+   * The provider that will answer. xAI keeps the same conservative reserve
+   * (its $0.08/minute is below OpenAI's audio floor) under its own label.
+   */
+  options: { provider?: "openai" | "xai" } = {},
 ): Promise<PlatformCostReservation> {
   const baseReserveUsd = platformCostReserveUsd("openai_realtime_session");
   const reserveUsd =
@@ -41,8 +47,8 @@ export async function reserveRealtimeSessionSpend(
   const decision = await reservePlatformCostRecord({
     userId,
     action: "voice.realtime.session",
-    provider: "openai",
-    model: OPENAI_REALTIME_DEFAULT_MODEL,
+    provider: options.provider ?? "openai",
+    model: options.provider === "xai" ? resolveXAIGrokVoiceModel() : OPENAI_REALTIME_DEFAULT_MODEL,
     costUsd: reserveUsd,
     idempotencyKey,
     requestMeta: {

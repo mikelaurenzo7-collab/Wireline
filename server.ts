@@ -34,6 +34,11 @@ import { deindexFallbackDocument } from "./src/server/not-found-document";
 import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkout-branding-invariant";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
+import {
+  endAllRehearsalRelays,
+  handleRehearsalRelayUpgrade,
+  XAI_REHEARSAL_RELAY_PATH,
+} from "./src/lib/voice/xai-rehearsal-relay";
 import { isProductionDeployment } from "./src/lib/deployment-environment";
 import {
   requireRenderTraffic,
@@ -53,6 +58,8 @@ function gracefulShutdown(signal: string) {
   stopping = true;
   const graceMs = serverShutdownGraceMs();
   log.info("Shutdown received", { signal });
+  // Relayed rehearsals live in this process; tell owners before it exits.
+  endAllRehearsalRelays("restarting");
   // Cloud computer tasks cannot outlive this process: settle them first.
   void interruptCloudComputerTasks()
     .catch((error: unknown) => {
@@ -314,7 +321,10 @@ if (process.env.VERCEL !== "1" && process.env.WIRELINE_IMPORT_SMOKE_NO_SERVER !=
   void startServer().then(() => {
     const port = Number(process.env.PORT) || 3000;
     server = app.listen(port, () => log.info("BotBound server started", { port }));
-    initSupervisorWebSocketServer(server);
+    // Explicit WebSocket routes share the supervisor's gated upgrade listener.
+    initSupervisorWebSocketServer(server, {
+      [XAI_REHEARSAL_RELAY_PATH]: handleRehearsalRelayUpgrade,
+    });
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));
   });

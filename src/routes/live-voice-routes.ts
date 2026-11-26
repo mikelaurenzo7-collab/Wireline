@@ -19,6 +19,18 @@ import {
 import { getEffectiveSubscriptionPlanId, subscriptionPlanToTier } from "../lib/plan-entitlements";
 import { OPENAI_FREE_REHEARSAL_SECONDS } from "../lib/voice/openai-realtime-pricing";
 import { stopOpenAILiveVoiceCall } from "../lib/voice/live-voice-cleanup";
+import { createLiveVoiceCleanupIssuer } from "../lib/voice/live-voice-cleanup-token";
+import {
+  createXAIRehearsalRelay,
+  rehearsalVoiceProvider,
+  stopRehearsalRelay,
+  XAI_REHEARSAL_RELAY_PATH,
+  XAI_REHEARSAL_RELAY_PROTOCOL,
+  XAIRehearsalUnavailableError,
+} from "../lib/voice/xai-rehearsal-relay";
+import { releaseSimulationMinuteQuota } from "../middleware/api-rate-limits";
+import { AppError } from "../lib/api-error";
+import { log } from "../lib/server-context";
 import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./live-voice-profile-routes";
 
@@ -44,16 +56,103 @@ const stopLimiter = createRateLimiter({
   windowMs: 60_000,
   max: 60,
 });
-const sessionSchema = z.object({
-  agentId: z.string().min(1).max(200),
-  sdp: z.string().min(100).max(60_000),
-});
+// A WebRTC offer answers on OpenAI Realtime. A relay request asks for xAI
+// first; the response says "webrtc" when the browser should send an offer.
+const sessionSchema = z.union([
+  z.object({
+    agentId: z.string().min(1).max(200),
+    sdp: z.string().min(100).max(60_000),
+  }),
+  z.object({
+    agentId: z.string().min(1).max(200),
+    transport: z.literal("relay"),
+  }),
+]);
 const stopSchema = z.object({ cleanupToken: z.string().min(1).max(2_048) }).strict();
 const toolSchema = z.object({
   agentId: z.string().min(1).max(200),
   name: z.string().max(80),
   arguments: z.record(z.string(), z.unknown()).optional(),
 });
+
+/**
+ * xAI Grok Voice rehearsal through BotBound's relay, so owners hear the voice
+ * and opening callers hear. Any provider-side failure falls back to the
+ * browser's OpenAI Realtime offer with the reason logged.
+ */
+async function startRelayedRehearsal(
+  req: AuthenticatedRequest,
+  res: Response,
+  windowSeconds: number | undefined,
+) {
+  const choice = rehearsalVoiceProvider();
+  if (choice.provider !== "xai") {
+    await releaseSimulationMinuteQuota(req);
+    log.info("Voice rehearsal answers on OpenAI Realtime", {
+      userId: req.user.id,
+      agentId: req.body.agentId,
+      reason: choice.reason,
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ transport: "webrtc", reason: choice.reason });
+    return;
+  }
+  let issueCleanup: ReturnType<typeof createLiveVoiceCleanupIssuer>;
+  try {
+    issueCleanup = createLiveVoiceCleanupIssuer();
+  } catch {
+    throw AppError.serviceUnavailable("Voice rehearsal cleanup is temporarily unavailable.");
+  }
+  const reservation = await reserveRealtimeSessionSpend(
+    req,
+    req.user.id,
+    "live_voice_session",
+    undefined,
+    undefined,
+    windowSeconds,
+    { provider: "xai" },
+  );
+  let relay: Awaited<ReturnType<typeof createXAIRehearsalRelay>>;
+  try {
+    relay = await createXAIRehearsalRelay({
+      userId: req.user.id,
+      agentId: req.body.agentId,
+      maxDurationSeconds: windowSeconds,
+    });
+  } catch (error) {
+    await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);
+    if (!(error instanceof XAIRehearsalUnavailableError)) throw error;
+    log.warn("Voice rehearsal fell back to OpenAI Realtime", {
+      userId: req.user.id,
+      agentId: req.body.agentId,
+      reason: error.reason,
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ transport: "webrtc", reason: "xai_unavailable" });
+    return;
+  }
+  try {
+    await commitRealtimeSessionSpend(reservation);
+  } catch (error) {
+    stopRehearsalRelay({ userId: req.user.id, callId: relay.callId });
+    throw error;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    transport: "relay",
+    relayPath: XAI_REHEARSAL_RELAY_PATH,
+    protocol: XAI_REHEARSAL_RELAY_PROTOCOL,
+    ticket: relay.ticket,
+    cleanupToken: issueCleanup({
+      userId: req.user.id,
+      agentId: relay.agentId,
+      callId: relay.callId,
+      keyFingerprint: relay.keyFingerprint,
+      maxDurationSeconds: relay.maxDurationSeconds,
+    }),
+    maxDurationSeconds: relay.maxDurationSeconds,
+  });
+}
 
 router.use(liveProfileRouter);
 
@@ -63,7 +162,12 @@ router.get(
   statusLimiter,
   async (_req: AuthenticatedRequest, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
-    res.json(getOpenAILiveVoiceStatus());
+    const rehearsalOnXAI = rehearsalVoiceProvider().provider === "xai";
+    res.json({
+      ...getOpenAILiveVoiceStatus(),
+      defaultProvider: rehearsalOnXAI ? "xai_realtime" : "openai_realtime",
+      fallbackProvider: rehearsalOnXAI ? "openai_realtime" : null,
+    });
   },
 );
 
@@ -84,6 +188,10 @@ router.post(
       subscriptionPlanToTier(await getEffectiveSubscriptionPlanId(req.user.id, req.user.email)) ===
       "free";
     const windowSeconds = freeBuilder ? OPENAI_FREE_REHEARSAL_SECONDS : undefined;
+    if (!("sdp" in req.body)) {
+      await startRelayedRehearsal(req, res, windowSeconds);
+      return;
+    }
     const reservation = await reserveRealtimeSessionSpend(
       req,
       req.user.id,
@@ -161,11 +269,6 @@ router.post(
   sessionLimiter,
   retiredGeminiResponse,
 );
-router.post(
-  "/api/voice/live/gemini/tool",
-  authenticateUser,
-  toolLimiter,
-  retiredGeminiResponse,
-);
+router.post("/api/voice/live/gemini/tool", authenticateUser, toolLimiter, retiredGeminiResponse);
 
 export default router;

@@ -8,9 +8,12 @@ per-number signed webhooks) by default for every number. A line registers with
 xAI when it is activated, and any line that reaches a call unregistered
 registers itself in the background; until that finishes, or whenever xAI is
 unavailable, the call answers on OpenAI Realtime (`gpt-realtime-2.1`).
-`WIRELINE_PHONE_VOICE_PROVIDER=openai` is the operator opt-out. Browser
-rehearsals (authenticated Studio and ChatGPT private simulation) stay on OpenAI
-Realtime WebRTC. The provider travels with the call id, so hangup, transfer,
+`WIRELINE_PHONE_VOICE_PROVIDER=openai` is the operator opt-out. Studio
+rehearsals follow the phone provider: on xAI they run through BotBound's
+rehearsal relay (see below), so owners hear the voice and opening callers hear,
+and they fall back to OpenAI Realtime WebRTC whenever xAI is off or fails to
+open. `WIRELINE_REHEARSAL_VOICE_PROVIDER=openai` moves rehearsals alone back to
+OpenAI. ChatGPT private simulation stays on OpenAI Realtime WebRTC. The provider travels with the call id, so hangup, transfer,
 and recovery always reach the provider that owns the call. See the xAI section
 of `docs/DEPLOYMENT_RUNBOOK.md` for rollback.
 Public and guest audio/call demos are retired. Twilio owns carrier transport,
@@ -22,12 +25,13 @@ Customer surfaces describe the voice as BotBound's and never name the vendor.
 
 ## Transport map
 
-| Surface                                           | Transport                                                                         | Runtime                              |
-| ------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ |
-| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime                      |
-| Inbound phone                                     | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | xAI voice (OpenAI Realtime fallback) |
-| Outbound phone                                    | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | xAI voice (OpenAI Realtime fallback) |
-| SMS                                               | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime           |
+| Surface                                  | Transport                                                                         | Runtime                              |
+| ---------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ |
+| Authenticated Studio rehearsal           | Same-origin BotBound WebSocket relay (`/api/voice/live/relay`)                    | xAI voice (OpenAI WebRTC fallback)   |
+| Authenticated ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime                      |
+| Inbound phone                            | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | xAI voice (OpenAI Realtime fallback) |
+| Outbound phone                           | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | xAI voice (OpenAI Realtime fallback) |
+| SMS                                      | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime           |
 
 The OpenAI project SIP URI is:
 
@@ -178,6 +182,39 @@ saved choice.
 BotBound does not operate a separate voice-cloning provider or accept customer
 voice uploads. Historical presenter/video records retain an explicit OpenAI
 phone fallback, and Studio uses that same fallback for a consistent preview.
+
+## Studio rehearsal on xAI
+
+xAI serves browsers over WebSocket only, and its short-lived client tokens
+cannot carry session settings, so a direct connection would have to send the
+Bot's prompt from the page. Studio therefore asks
+`POST /api/voice/live/session` with `{ agentId, transport: "relay" }`. With the
+same authentication, launch gate, spend cap, minute quota and rate limit as the
+WebRTC path, the server reserves spend (labelled `xai`, at the same conservative
+reserve), builds the session from the phone runtime's private-test surface
+(`browser_test`: the phone prompt with a private-test notice and approved
+knowledge search as the only tool), maps the saved voice exactly as phone
+calls do, and opens and configures the xAI session before answering. The
+response carries a single-use ticket that expires after 20 seconds and the usual
+encrypted cleanup ticket. The browser attaches to `/api/voice/live/relay` with
+the subprotocols `botbound-rehearsal.v1` and `ticket.<ticket>`; the upgrade
+shares the supervisor socket's deployment gate and requires a same-site Origin.
+
+Over the relay the browser sends 24 kHz PCM16 microphone frames and typed lines
+and receives the Bot's PCM16 audio plus a transcript in a small BotBound
+protocol that never names the provider. The server speaks the inbound opening
+with its AI disclosure verbatim and non-interruptible, as on a call (without a
+recording notice, because rehearsals are not recorded), runs knowledge lookups
+in the owner's tenant scope, tells xAI how much of an interrupted reply was
+heard, and ends the session at its time limit, when the browser leaves, on the
+owner's stop ticket, or when the API restarts (the owner is told to start
+again). Each session logs its duration, turns and reply latency.
+
+If xAI is unset, opted out, rejects the session or cannot be reached, the
+reservation and minute quota are released, the reason is logged, and the
+response is `{ "transport": "webrtc" }`; the browser then sends its WebRTC offer
+and the rehearsal answers on OpenAI Realtime below. A cloned voice is not used
+in rehearsal; Studio says so and offers a preview.
 
 Studio opens private rehearsal in Voice. Entering the view or selecting Voice never
 requests a microphone or creates a provider call; the owner must choose Start.
