@@ -680,6 +680,13 @@
       "when": 1795700001000,
       "tag": "0198_retention_purge_thread_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1795786400000,
+      "tag": "0199_appointment_external_calendar",
+      "breakpoints": true
     }
   ]
 }

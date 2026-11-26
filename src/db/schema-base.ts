@@ -773,6 +773,8 @@ export const appointments = pgTable(
     bookingRequestKey: text("booking_request_key"),
     bookingFingerprint: text("booking_fingerprint"),
     bufferMinutes: integer("buffer_minutes").default(0).notNull(),
+    /** The copy of this booking on the owner's own calendar (see owner-calendar-mirror.ts). */
+    externalCalendar: jsonb("external_calendar"),
     // True when the row was inserted by /api/admin/seed-demo-account so
     // the UI can render a "DEMO" pill and account holders won't mistake the
     // seeded showcase rows for real customer activity.

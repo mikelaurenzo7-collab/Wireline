@@ -156,6 +156,49 @@ function buildConnectedMailboxMime(params: ConnectedMailboxSendParams): string {
 /**
  * Unified interface for Calendar and Mail integrations.
  */
+/** The provider event that is the copy of one BotBound booking. */
+export type OwnerCalendarEventRef = {
+  provider: "google" | "microsoft";
+  accountId: string;
+  eventId: string;
+};
+
+export type OwnerCalendarEventInput = {
+  title: string;
+  description: string;
+  /** ISO 8601 instants in UTC. */
+  startTime: string;
+  endTime: string;
+};
+
+function googleEventBody(params: OwnerCalendarEventInput) {
+  return {
+    summary: params.title,
+    description: params.description,
+    start: { dateTime: params.startTime },
+    end: { dateTime: params.endTime },
+  };
+}
+
+function microsoftEventBody(params: OwnerCalendarEventInput) {
+  return {
+    subject: params.title,
+    body: { contentType: "Text", content: params.description },
+    start: { dateTime: params.startTime.replace(/Z$/i, ""), timeZone: "UTC" },
+    end: { dateTime: params.endTime.replace(/Z$/i, ""), timeZone: "UTC" },
+  };
+}
+
+function isGoneFromProvider(error: unknown): boolean {
+  const record = (error ?? {}) as {
+    code?: unknown;
+    status?: unknown;
+    response?: { status?: unknown };
+  };
+  const status = Number(record.response?.status ?? record.status ?? record.code);
+  return status === 404 || status === 410;
+}
+
 export class IntegrationService {
   constructor(private userId: string) {}
 
@@ -321,6 +364,176 @@ export class IntegrationService {
     } catch (err) {
       log.error("Calendar booking failed", { userId: this.userId, error: getErrorMessage(err) });
       return false;
+    }
+  }
+
+  /**
+   * Calendar: write one event to the owner's own calendar, with no meeting
+   * link and no attendees. This is the copy of a booking BotBound already
+   * confirmed against its own rules, so there is no second availability check
+   * here. Returns null when no calendar is connected, the account may not take
+   * live actions, or the provider refuses.
+   */
+  async createOwnerCalendarEvent(
+    params: OwnerCalendarEventInput,
+  ): Promise<OwnerCalendarEventRef | null> {
+    const created = await this.ownerCalendarWork(
+      "owner_calendar_event_create",
+      null,
+      async (accounts): Promise<OwnerCalendarEventRef | null> => {
+        const account = accounts[0];
+        if (!account) return null;
+        if (account.provider === "google") {
+          const auth = await this.getGoogleClient(account);
+          const google = await googleApis();
+          const calendar = google.calendar({ version: "v3", auth });
+          const inserted = await calendar.events.insert({
+            calendarId: "primary",
+            requestBody: googleEventBody(params),
+          });
+          const eventId = inserted.data.id;
+          return eventId ? { provider: "google", accountId: account.id, eventId } : null;
+        }
+        if (account.provider === "microsoft") {
+          const token = await this.getMicrosoftToken(account);
+          const res = await fetchWithTimeout(
+            "https://graph.microsoft.com/v1.0/me/events",
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify(microsoftEventBody(params)),
+            },
+            15_000,
+          );
+          if (!res.ok) {
+            await res.body?.cancel().catch(() => {});
+            return null;
+          }
+          const body = (await res.json().catch(() => null)) as { id?: unknown } | null;
+          return typeof body?.id === "string" && body.id
+            ? { provider: "microsoft", accountId: account.id, eventId: body.id }
+            : null;
+        }
+        return null;
+      },
+    );
+    return created ?? null;
+  }
+
+  /** "missing" means the owner deleted the event; the caller decides whether to recreate it. */
+  async updateOwnerCalendarEvent(
+    ref: OwnerCalendarEventRef,
+    params: OwnerCalendarEventInput,
+  ): Promise<"updated" | "missing" | "failed"> {
+    const outcome = await this.ownerCalendarWork(
+      "owner_calendar_event_update",
+      ref,
+      async (accounts): Promise<"updated" | "missing" | "failed"> => {
+        const account = accounts.find((candidate) => candidate.id === ref.accountId);
+        if (!account || account.provider !== ref.provider) return "missing";
+        if (ref.provider === "google") {
+          const auth = await this.getGoogleClient(account);
+          const google = await googleApis();
+          const calendar = google.calendar({ version: "v3", auth });
+          try {
+            await calendar.events.patch({
+              calendarId: "primary",
+              eventId: ref.eventId,
+              requestBody: googleEventBody(params),
+            });
+            return "updated";
+          } catch (error) {
+            if (isGoneFromProvider(error)) return "missing";
+            throw error;
+          }
+        }
+        const token = await this.getMicrosoftToken(account);
+        const res = await fetchWithTimeout(
+          `https://graph.microsoft.com/v1.0/me/events/${encodeURIComponent(ref.eventId)}`,
+          {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify(microsoftEventBody(params)),
+          },
+          15_000,
+        );
+        await res.body?.cancel().catch(() => {});
+        if (res.ok) return "updated";
+        return res.status === 404 || res.status === 410 ? "missing" : "failed";
+      },
+    );
+    return outcome ?? "failed";
+  }
+
+  /** True when the event is gone afterwards, including when it was already gone. */
+  async deleteOwnerCalendarEvent(ref: OwnerCalendarEventRef): Promise<boolean> {
+    const gone = await this.ownerCalendarWork(
+      "owner_calendar_event_delete",
+      ref,
+      async (accounts): Promise<boolean> => {
+        const account = accounts.find((candidate) => candidate.id === ref.accountId);
+        // A disconnected calendar has nothing left for BotBound to remove.
+        if (!account || account.provider !== ref.provider) return true;
+        if (ref.provider === "google") {
+          const auth = await this.getGoogleClient(account);
+          const google = await googleApis();
+          const calendar = google.calendar({ version: "v3", auth });
+          try {
+            await calendar.events.delete({ calendarId: "primary", eventId: ref.eventId });
+            return true;
+          } catch (error) {
+            if (isGoneFromProvider(error)) return true;
+            throw error;
+          }
+        }
+        const token = await this.getMicrosoftToken(account);
+        const res = await fetchWithTimeout(
+          `https://graph.microsoft.com/v1.0/me/events/${encodeURIComponent(ref.eventId)}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+          15_000,
+        );
+        await res.body?.cancel().catch(() => {});
+        return res.ok || res.status === 404 || res.status === 410;
+      },
+    );
+    return gone ?? false;
+  }
+
+  /**
+   * Shared gate for owner-calendar writes: the account must be allowed live
+   * external actions, and the work holds the deletion fence so an account
+   * purge cannot run halfway through a provider call. Never throws; undefined
+   * means the work did not run or the provider failed.
+   */
+  private async ownerCalendarWork<T>(
+    operation: string,
+    ref: OwnerCalendarEventRef | null,
+    perform: (accounts: Awaited<ReturnType<IntegrationService["getAccounts"]>>) => Promise<T>,
+  ): Promise<T | undefined> {
+    try {
+      let providerWorkStarted = false;
+      const fenced = await runTenantProviderWorkWithDeletionFence<T | undefined>({
+        userId: this.userId,
+        operation,
+        retainOnSuccess: () => providerWorkStarted,
+        perform: async () => {
+          const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+          if (!environmentPolicy.allowed) return undefined;
+          const accounts = await this.getAccounts("calendar");
+          if (accounts.length === 0) return undefined;
+          providerWorkStarted = true;
+          return await perform(accounts);
+        },
+      });
+      return fenced.performed ? fenced.result : undefined;
+    } catch (err) {
+      log.warn("Owner calendar write failed", {
+        userId: this.userId,
+        operation,
+        provider: ref?.provider,
+        error: getErrorMessage(err),
+      });
+      return undefined;
     }
   }
 

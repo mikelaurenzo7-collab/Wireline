@@ -233,7 +233,7 @@ export default function UsagePricingPanel({
                   {tier === id ? (
                     <span className="inline-flex flex-wrap items-center gap-1 text-xs font-semibold text-primary">
                       <Check className="size-4" aria-hidden="true" />
-                      Estimating
+                      In the estimate
                     </span>
                   ) : null}
                 </span>

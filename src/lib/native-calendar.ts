@@ -31,6 +31,16 @@ export type NativeAppointment = Appointment & {
   created: boolean;
 };
 
+/**
+ * Copy a saved change to the owner's own calendar without making the caller
+ * wait. Loaded on demand so booking does not pull in the provider clients.
+ */
+function mirrorToOwnerCalendar(userId: string, appointmentId: string): void {
+  void import("./owner-calendar-mirror")
+    .then((mirror) => mirror.queueOwnerCalendarSync(userId, appointmentId))
+    .catch(() => undefined);
+}
+
 function requireNativeAppointment(row: Appointment, created: boolean): NativeAppointment {
   if (!row.startAt || !row.endAt || !row.timeZone || row.bookingSource !== "native") {
     throw AppError.conflict("This booking needs review in Calendar before it can be confirmed.");
@@ -208,8 +218,10 @@ async function busyIntervals(
       if (legacy) busy.push(legacy);
     }
   }
-  // Imported external events are busy-time snapshots, not an outbound sync.
-  // Provider failure never rewrites a successful native appointment.
+  // Imported external events are busy-time snapshots. An imported event that
+  // is BotBound's own copy of an appointment is skipped: the appointment row
+  // above already holds that time, and counting the copy too would block the
+  // slot against its own reschedule.
   const imported = await tx
     .select({ startAt: schema.calendarEvents.startTime, endAt: schema.calendarEvents.endTime })
     .from(schema.calendarEvents)
@@ -219,6 +231,7 @@ async function busyIntervals(
         sql`coalesce(${schema.calendarEvents.status}, '') not in ('cancelled', 'canceled')`,
         sql`${schema.calendarEvents.startTime} < ${extendedEnd}::timestamptz`,
         sql`${schema.calendarEvents.endTime} > ${day.startTime}::timestamptz`,
+        sql`NOT EXISTS (SELECT 1 FROM wireline_appointments AS copied WHERE copied.user_id = ${userId} AND copied.external_calendar->>'eventId' = ${schema.calendarEvents.externalEventId})`,
       ),
     )
     .limit(5001);
@@ -399,6 +412,7 @@ export async function bookNativeAppointment(
     }),
   );
   invalidateDashboard(userId);
+  if (result.created) mirrorToOwnerCalendar(userId, result.id);
   return result;
 }
 
@@ -509,6 +523,7 @@ export async function updateCalendarAppointment(
     }),
   );
   invalidateDashboard(userId);
+  mirrorToOwnerCalendar(userId, id);
   return result;
 }
 

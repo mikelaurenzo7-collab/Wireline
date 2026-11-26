@@ -307,7 +307,8 @@ function GoogleCalendarCard() {
                 </strong>
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                Refresh busy times after calendar changes. BotBound bookings stay here.
+                Confirmed bookings are added to your Google Calendar. Refresh busy times after you
+                change it.
               </p>
             </div>
           </div>
@@ -356,8 +357,8 @@ function GoogleCalendarCard() {
   return (
     <p className="text-xs leading-relaxed text-muted-foreground">
       {otherCalendarConnected
-        ? "Your connected calendar's busy times are checked before your Bot books. "
-        : "Your Bot books within the hours you set in Availability. To also avoid conflicts with your own calendar, connect Google or Outlook. "}
+        ? "Your Bot checks your connected calendar before it books, and adds confirmed bookings to it. "
+        : "Your Bot books within the hours you set in Availability. Connect Google or Outlook to avoid conflicts with your own calendar and see confirmed bookings there. "}
       <Link
         to="/connections"
         className="font-medium text-foreground underline underline-offset-2 wl-focus-ring-halo"

@@ -12,6 +12,7 @@ import { composeSetupPersonality, replaceDeliveryTone } from "../lib/compose-set
 import { retainFirstUnique } from "../lib/knowledge-dedup";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
+import { isCreateScaffoldLine } from "../lib/create-scaffold-line";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
 import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
 import { LIVE_CUSTOM_VOICE_KEY } from "../lib/voice/live-voice-service";
@@ -226,13 +227,13 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
           content: cleanText(item.content, 2000),
           priority: Math.max(1, Math.min(10, Number(item.priority) || 5)),
         }))
-        .filter((item) => !!item.content)
+        .filter((item) => !!item.content && !isCreateScaffoldLine(item.content))
     : [];
   const knowledge = Array.isArray(raw.knowledge)
     ? raw.knowledge
         .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
         .map((item) => ({ content: cleanText(item.content, 4000) }))
-        .filter((item) => !!item.content)
+        .filter((item) => !!item.content && !isCreateScaffoldLine(item.content))
     : [];
   return {
     directives,
