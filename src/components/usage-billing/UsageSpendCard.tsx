@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../atoms";
+import CheckoutTermsNote from "../billing/CheckoutTermsNote";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { authFetch } from "../../lib/api";
 import { captureSignupIntentFromLocation, usageAddonsFromIntent } from "../../lib/signup-intent";
@@ -9,12 +10,16 @@ import {
   PUBLIC_USAGE_TIERS,
   USAGE_ADDONS,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
+  USAGE_SPEND_ALERT_THRESHOLDS,
   USAGE_TIERS,
   usageTier,
   type UsageTierId,
   formatUsdCents,
 } from "../../lib/usage-billing-catalog";
 import type { UsageSpendResponse } from "../../types/api-billing";
+
+/** The last alert email before the limit (80%) also turns the meter to a warning. */
+const USAGE_WARNING_PCT = Math.max(...USAGE_SPEND_ALERT_THRESHOLDS.filter((pct) => pct < 100));
 
 /**
  * Usage billing in Settings > Billing. Renders nothing while the server flag is
@@ -269,6 +274,7 @@ export default function UsageSpendCard({
           >
             Review Plan
           </Button>
+          <CheckoutTermsNote />
           {message ? (
             <p role="status" className="text-sm text-muted-foreground">
               {message}
@@ -280,6 +286,8 @@ export default function UsageSpendCard({
   }
 
   const pct = Math.min(100, Math.max(0, state.pct));
+  // Matches the 80% alert email so the warning appears in the app as well.
+  const nearCap = !state.at_cap && !state.reconciliation_required && pct >= USAGE_WARNING_PCT;
   return (
     <section className="mt-6" aria-label="Usage this period">
       <article className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
@@ -299,7 +307,17 @@ export default function UsageSpendCard({
           aria-label="Share of monthly limit used"
           className="h-2 overflow-hidden rounded-full bg-muted"
         >
-          <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+          <div
+            className={
+              state.at_cap
+                ? "h-full bg-[var(--wireline-color-status-error)]"
+                : nearCap
+                  ? "h-full bg-[var(--wireline-color-status-warning)]"
+                  : "h-full bg-primary"
+            }
+            data-usage-level={state.at_cap ? "at_cap" : nearCap ? "near_cap" : "ok"}
+            style={{ width: `${pct}%` }}
+          />
         </div>
         {state.reconciliation_required ? (
           <p role="status" className="text-sm font-semibold">
@@ -309,6 +327,11 @@ export default function UsageSpendCard({
           <p role="status" className="text-sm font-semibold">
             Your Bots are paused for new calls, SMS, emails, and Computer tasks until you raise your
             limit or the next period starts.
+          </p>
+        ) : nearCap ? (
+          <p role="status" className="text-sm font-semibold">
+            You have used {Math.round(pct)}% of your monthly limit. Your Bots pause for new work at{" "}
+            {formatUsdCents(state.cap_usd)}. Raise your limit below to keep them working.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
