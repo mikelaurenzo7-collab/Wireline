@@ -321,6 +321,10 @@ export default function CallLogsClaude({
   }, [calls, query]);
 
   const focusSettled = useRef<string | null>(null);
+  // The page passes a new function each render; calling the latest one keeps
+  // it out of the effect below, which must run only when the list changes.
+  const settled = useRef(onFocusSettled);
+  settled.current = onFocusSettled;
   // A link names one call. Until it is found or given up on, the report pane
   // must not fill with the newest call, which belongs to someone else.
   const [focusMissing, setFocusMissing] = useState(false);
@@ -347,7 +351,7 @@ export default function CallLogsClaude({
         setQuery("");
         setSelectedId(match.id);
       }
-      onFocusSettled?.();
+      settled.current?.();
       return;
     }
     if (hasMore && !loadMoreError && calls.length < CALL_PAGE_SIZE * FOCUS_CALL_PAGE_LIMIT) {
@@ -357,8 +361,8 @@ export default function CallLogsClaude({
     focusSettled.current = focusCallId;
     // Say so, instead of leaving another customer's call where theirs should be.
     setFocusMissing(!pickedByOwner.current);
-    onFocusSettled?.();
-  }, [calls, focusCallId, hasMore, loadMore, loadMoreError, loading, loadingMore, onFocusSettled]);
+    settled.current?.();
+  }, [calls, focusCallId, hasMore, loadMore, loadMoreError, loading, loadingMore]);
 
   const paginationControl =
     hasMore || loadMoreError ? (
