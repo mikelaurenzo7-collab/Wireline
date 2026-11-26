@@ -62,7 +62,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.                         |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.                          |
 | [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                                 |
-| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | One-product business focus, role templates and roster-compatible launch framing.                    |
+| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | One-product business focus, one Bot per business and roster-compatible launch framing.              |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                     |
 | [CLOUD_COMPUTER_BROWSER.md](./CLOUD_COMPUTER_BROWSER.md)                                         | Owner browser tools, session privacy, provider limits, and extension/password implementation path. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                            |

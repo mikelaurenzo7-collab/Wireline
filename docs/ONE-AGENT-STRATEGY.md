@@ -10,8 +10,9 @@ BotBound leads with one clear promise:
 
 Customers start with the job, not an audience classification. One Bot can carry
 the conversation across channels under shared knowledge, rules, approvals, and
-memory. SMS retains its sender and recipient permission gates. Role templates change
-the Bot's job; they do not create separate products, account modes or backend policies.
+memory. SMS retains its sender and recipient permission gates. There are no role
+templates: the business profile, knowledge and rules set the Bot's job, and they do not
+create separate products, account modes or backend policies.
 
 **One Bot, one line, one inbox per business is the default.** The Bot takes on more
 work through tasks (answer questions, take messages, book appointments, text and email
