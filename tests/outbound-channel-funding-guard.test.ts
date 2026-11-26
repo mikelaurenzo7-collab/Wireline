@@ -204,6 +204,18 @@ describe("ordinary outbound pre-SIP funding", () => {
     expect(h.claim).not.toHaveBeenCalled();
     expect(h.prepare).not.toHaveBeenCalled();
   });
+  it("places nothing while outbound is paused, before permission, funding, or the carrier", async () => {
+    vi.stubEnv("BOTBOUND_OUTBOUND_CALLS_PAUSED", "true");
+    await expect(placeOutboundCall(input)).resolves.toMatchObject({
+      ok: false,
+      status: 503,
+      code: "OUTBOUND_UNAVAILABLE",
+    });
+    expect(h.permission).not.toHaveBeenCalled();
+    expect(h.claim).not.toHaveBeenCalled();
+    expect(h.prepare).not.toHaveBeenCalled();
+    expect(h.create).not.toHaveBeenCalled();
+  });
   it("places a connected-line call when the general activation flag is unset", async () => {
     vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
     vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");

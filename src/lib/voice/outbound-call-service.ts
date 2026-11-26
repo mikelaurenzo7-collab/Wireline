@@ -185,7 +185,7 @@ async function placeOutboundCallAfterDeletionFence(
       ok: false,
       status: 503,
       code: "OUTBOUND_UNAVAILABLE",
-      error: "Calling is currently available for service, coordination, and requested callbacks.",
+      error: "Outbound calling is paused right now. Incoming calls are not affected.",
     };
   const fromNumber = normalizeOpenAIPhoneNumber(line?.phoneNumber);
   // The legacy column is retained for append-only schema compatibility; an

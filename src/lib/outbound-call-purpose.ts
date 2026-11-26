@@ -52,14 +52,23 @@ export function outboundCallingAvailability(): OutboundCallingAvailability {
 }
 
 /**
+ * Emergency stop for new outbound placements only. Inbound calls, browser
+ * rehearsal, and the owner phone test do not read it. Unset means not paused.
+ */
+export function outboundCallingPaused(): boolean {
+  return process.env.BOTBOUND_OUTBOUND_CALLS_PAUSED === "true";
+}
+
+/**
  * One outbound action. A connected line, plan, screening, and funding are
- * checked separately. An unset activation flag does not hide the call.
+ * checked separately. An unset activation flag does not hide the call. Only
+ * the explicit pause refuses it.
  */
 export function outboundCallingEnabledFor(
   _purpose: OutboundCallPurpose,
   _availability: OutboundCallingAvailability,
 ): boolean {
-  return true;
+  return !outboundCallingPaused();
 }
 
 export function isOutboundCallPurpose(value: unknown): value is OutboundCallPurpose {

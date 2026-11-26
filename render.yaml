@@ -123,6 +123,10 @@ projects:
               # Certified production: true. Dashboard-owned release switch.
               - key: BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED
                 sync: false
+              # Certified production leaves this unset. Dashboard-owned emergency
+              # stop: "true" refuses new outbound calls and leaves inbound alone.
+              - key: BOTBOUND_OUTBOUND_CALLS_PAUSED
+                sync: false
               # Keep secrets server-side; never expose them through VITE_* values.
               - key: POSTGRES_URL
                 sync: false
