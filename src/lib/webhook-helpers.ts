@@ -18,7 +18,6 @@ import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deleti
 
 export type WebhookEvent =
   | "call.completed"
-  | "lead.hot"
   | "call.escalated"
   | "compliance.flagged"
   | "knowledge_updated"
@@ -39,13 +38,12 @@ export type WebhookEvent =
  * All webhook event identifiers that can be subscribed to. Keep in sync with
  * WebhookEvent. Every entry here MUST have a real dispatchWebhook producer —
  * an advertised event with no producer is a customer integration that waits
- * forever with nothing to debug. compliance.flagged, knowledge_updated, and
- * the slo.* trio were removed from the subscribable catalog for exactly that
- * reason; restore them only alongside their producers.
+ * forever with nothing to debug. compliance.flagged, knowledge_updated,
+ * lead.hot, and the slo.* trio were removed from the subscribable catalog for
+ * exactly that reason; restore them only alongside their producers.
  */
 export const WEBHOOK_EVENTS: WebhookEvent[] = [
   "call.completed",
-  "lead.hot",
   "call.escalated",
   "spend.exceeded",
   "spend.warning",
