@@ -15,6 +15,11 @@ import {
   fetchSelfServeCheckoutAvailable,
   isBillingSettingsPath,
 } from "../lib/checkout-availability";
+import {
+  isTextingRegistrationStatus,
+  TEXTING_REGISTRATION_EVENT,
+  textingRegistrationStatusFrom,
+} from "../lib/texting-registration-events";
 
 type PhoneNumberRecord = {
   id: string;
@@ -40,13 +45,20 @@ export function missedCallTextBackCopy(enabled: boolean, covered: boolean): stri
   return "On, but this line's carrier registration doesn't cover missed-call texts yet, so none will send. Contact support@botbound.app to add it.";
 }
 
-/** Plain words for whether carriers accept texts from a line. */
+/**
+ * Plain words for whether carriers accept texts from a line. Business details
+ * the owner already sent are their own state: BotBound registers them, so the
+ * owner is told it is in hand rather than asked for details again.
+ */
 export function lineTextingApprovalCopy(
   approval: PhoneNumberRecord["texting_approval"],
+  detailsReceived = false,
 ): string | null {
   if (approval === "approved") return "Approved by US carriers for texting.";
   if (approval === "pending")
     return "Carrier approval for texting is in review. Texts send once it is approved.";
+  if (approval === "not_approved" && detailsReceived)
+    return "Business details received. BotBound is registering this line with US carriers, which usually takes a few days to two weeks. Texts send once it is approved.";
   if (approval === "not_approved")
     return "Not approved for texting yet. Add your business details under Texting Registration so carriers can approve it.";
   return null;
@@ -143,12 +155,44 @@ export default function PhoneSetupPanel({
 
   const activeNumber =
     numbers.find((number) => number.id === selectedNumberId) || numbers[0] || null;
-  const automaticTextRepliesEnabled =
-    Boolean(activeNumber && automaticTextReplies.enabledNumbers.includes(activeNumber.phone_number));
+  const automaticTextRepliesEnabled = Boolean(
+    activeNumber && automaticTextReplies.enabledNumbers.includes(activeNumber.phone_number),
+  );
   const attachedAgent = useMemo(
     () => agents.find((agent) => agent.id === activeNumber?.agent_id),
     [activeNumber?.agent_id, agents],
   );
+  // Business details the owner already sent, so Lines does not ask again
+  // while BotBound registers them. The form below announces saves.
+  const [textingDetailsReceived, setTextingDetailsReceived] = useState(false);
+  const textingNeedsRegistration = activeNumber?.texting_approval === "not_approved";
+
+  useEffect(() => {
+    if (!textingNeedsRegistration) return;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await authFetch("/api/texting-registration", {
+          signal: controller.signal,
+        });
+        if (!response.ok || controller.signal.aborted) return;
+        const body = (await response.json()) as { status?: unknown };
+        if (isTextingRegistrationStatus(body.status))
+          setTextingDetailsReceived(body.status === "received");
+      } catch {
+        // Keep the request for details when the status cannot be read.
+      }
+    })();
+    const onChange = (event: Event) => {
+      const status = textingRegistrationStatusFrom(event);
+      if (status) setTextingDetailsReceived(status === "received");
+    };
+    window.addEventListener(TEXTING_REGISTRATION_EVENT, onChange);
+    return () => {
+      controller.abort();
+      window.removeEventListener(TEXTING_REGISTRATION_EVENT, onChange);
+    };
+  }, [textingNeedsRegistration]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -195,7 +239,8 @@ export default function PhoneSetupPanel({
         const setting = body.preferences?.missed_call_text_back as
           { enabled?: unknown } | undefined;
         setMissedCallTexts({ enabled: setting?.enabled === true, loaded: true, saving: false });
-        const autoReply = body.preferences?.sms_auto_reply as { enabledNumbers?: unknown } | undefined;
+        const autoReply = body.preferences?.sms_auto_reply as
+          { enabledNumbers?: unknown } | undefined;
         const enabledNumbers = Array.isArray(autoReply?.enabledNumbers)
           ? autoReply.enabledNumbers.filter((value): value is string => typeof value === "string")
           : [];
@@ -208,7 +253,12 @@ export default function PhoneSetupPanel({
   }, [textsOnThisLine, missedCallTexts.loaded, automaticTextReplies.loaded]);
 
   async function toggleAutomaticTextReplies(enabled: boolean) {
-    if (automaticTextReplies.saving || !activeNumber?.agent_id || (enabled && activeNumber.inbound_text_replies_covered !== true)) return;
+    if (
+      automaticTextReplies.saving ||
+      !activeNumber?.agent_id ||
+      (enabled && activeNumber.inbound_text_replies_covered !== true)
+    )
+      return;
     const lineNumber = activeNumber.phone_number;
     setAutomaticTextReplies((current) => ({ ...current, saving: true }));
     setError(null);
@@ -229,7 +279,10 @@ export default function PhoneSetupPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          preferences: { ...(body.preferences ?? {}), sms_auto_reply: { enabledNumbers: nextNumbers } },
+          preferences: {
+            ...(body.preferences ?? {}),
+            sms_auto_reply: { enabledNumbers: nextNumbers },
+          },
         }),
       });
       if (!response.ok) throw new Error("Automatic text replies could not be updated.");
@@ -952,12 +1005,19 @@ export default function PhoneSetupPanel({
                       : texting.enabled
                         ? "Texts are on for another line. Turn them on here to send from this number."
                         : "Texts are off. Turn them on to send and reply from this number."}
-                    {lineTextingApprovalCopy(activeNumber.texting_approval) ? (
+                    {lineTextingApprovalCopy(
+                      activeNumber.texting_approval,
+                      textingDetailsReceived,
+                    ) ? (
                       <span
                         className="mt-1 block"
                         data-texting-approval={activeNumber.texting_approval}
+                        data-texting-details={textingDetailsReceived ? "received" : undefined}
                       >
-                        {lineTextingApprovalCopy(activeNumber.texting_approval)}
+                        {lineTextingApprovalCopy(
+                          activeNumber.texting_approval,
+                          textingDetailsReceived,
+                        )}
                         {activeNumber.texting_approval === "not_approved" ? (
                           <>
                             {" "}
@@ -965,7 +1025,7 @@ export default function PhoneSetupPanel({
                               to={{ search: location.search, hash: "#texting-registration" }}
                               className="font-semibold text-foreground underline underline-offset-2"
                             >
-                              Add business details
+                              {textingDetailsReceived ? "Review details" : "Add business details"}
                             </Link>
                           </>
                         ) : null}
@@ -1022,17 +1082,23 @@ export default function PhoneSetupPanel({
                       ? "Assign a Bot to this line before turning on automatic text replies."
                       : activeNumber.inbound_text_replies_covered === false
                         ? "Automatic replies need carrier approval for customer-initiated texts. This line currently covers another texting use case."
-                      : activeNumber.inbound_text_replies_covered == null
-                        ? "Carrier approval for automatic replies could not be checked. Retry the line connection."
-                      : automaticTextRepliesEnabled
-                        ? "Your Bot answers routine incoming texts from this line. Requests needing a person stay in Inbox."
-                        : "Let your Bot answer routine incoming texts automatically. Requests needing a person stay in Inbox."}
+                        : activeNumber.inbound_text_replies_covered == null
+                          ? "Carrier approval for automatic replies could not be checked. Retry the line connection."
+                          : automaticTextRepliesEnabled
+                            ? "Your Bot answers routine incoming texts from this line. Requests needing a person stay in Inbox."
+                            : "Let your Bot answer routine incoming texts automatically. Requests needing a person stay in Inbox."}
                   </p>
                   <Button
                     type="button"
                     size="sm"
                     variant="secondary"
-                    disabled={!activeNumber.agent_id || (activeNumber.inbound_text_replies_covered !== true && !automaticTextRepliesEnabled) || automaticTextReplies.saving || working}
+                    disabled={
+                      !activeNumber.agent_id ||
+                      (activeNumber.inbound_text_replies_covered !== true &&
+                        !automaticTextRepliesEnabled) ||
+                      automaticTextReplies.saving ||
+                      working
+                    }
                     onClick={() => void toggleAutomaticTextReplies(!automaticTextRepliesEnabled)}
                   >
                     {automaticTextRepliesEnabled

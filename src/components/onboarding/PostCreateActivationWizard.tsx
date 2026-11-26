@@ -428,7 +428,11 @@ export default function PostCreateActivationWizard({
                 <SoftOpenCheckoutNote />
               ) : (
                 <>
-                  <p className="text-sm text-muted-foreground">Calls, SMS, Email, and Computer.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Calls, SMS, Email, and Computer. Calls and email work as soon as your number and
+                    inbox are ready. Texting starts once US carriers approve your business, usually
+                    a few days to two weeks.
+                  </p>
                   <Button asChild size="sm">
                     <Link
                       to={activationPlanPath}
