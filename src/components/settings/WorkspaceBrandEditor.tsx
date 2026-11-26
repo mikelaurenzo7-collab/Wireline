@@ -58,7 +58,7 @@ export default function WorkspaceBrandEditor({
   return (
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
       <div className="mb-5">
-        <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
+        <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-tight text-foreground">
           Business Brand
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -162,7 +162,7 @@ export default function WorkspaceBrandEditor({
                   {name.slice(0, 1).toUpperCase()}
                 </span>
               )}
-              <span className="font-[var(--wireline-font-family-display)] text-lg tracking-[-0.02em] text-foreground">
+              <span className="font-[var(--wireline-font-family-display)] text-lg tracking-tight text-foreground">
                 {name}
               </span>
             </div>

@@ -67,7 +67,7 @@ export default function PrecisionPublicHeader() {
       <div className="wl-public-header__rail mx-auto flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 sm:gap-x-5 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="inline-flex min-h-11 max-w-full shrink-0 items-center rounded-[var(--radius-md)] px-1 text-foreground wl-focus-ring-halo"
+          className="inline-flex min-h-11 max-w-full shrink-0 items-center rounded-md px-1 text-foreground wl-focus-ring-halo"
           aria-label="BotBound home"
         >
           <BotBoundWordmark className="wl-public-header__wordmark" />
@@ -118,7 +118,7 @@ export default function PrecisionPublicHeader() {
             <>
               <Link
                 to="/signin"
-                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 max-[389px]:hidden"
+                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 max-[389px]:hidden"
               >
                 Sign In
               </Link>

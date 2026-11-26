@@ -130,7 +130,10 @@ type Props = {
 type Node = ReactElement<Props>;
 function descendants(node: ReactNode): Node[] {
   if (Array.isArray(node)) return node.flatMap(descendants);
-  return isValidElement<Props>(node) ? [node, ...descendants(node.props.children)] : [];
+  // Slot props such as EmptyState's `action` hold rendered elements too.
+  return isValidElement<Props>(node)
+    ? [node, ...descendants(node.props.children), ...descendants(node.props.action as ReactNode)]
+    : [];
 }
 const close = vi.fn();
 const entries = new Map<string, string>();
@@ -170,14 +173,16 @@ it("opens the reviewed call dialog with the Bot selected in Calls", () => {
   expect(posts()).toHaveLength(0);
 });
 
-let preparedCall: {
-  request_key: string;
-  agent_id: string;
-  phone: string;
-  instruction: string;
-  call_purpose: "service_or_requested" | "callback";
-  expires_at: string;
-} | undefined;
+let preparedCall:
+  | {
+      request_key: string;
+      agent_id: string;
+      phone: string;
+      instruction: string;
+      call_purpose: "service_or_requested" | "callback";
+      expires_at: string;
+    }
+  | undefined;
 function render(open = true) {
   harness.cursor = 0;
   const direct = OutboundDialDialog({
@@ -287,27 +292,43 @@ describe("direct outbound definitive-refusal retry", () => {
   it("explains missing permission beside the disabled action and clears it after review", async () => {
     await settle();
     expect(button("Place call").props.disabled).toBe(true);
-    expect(nodes.some((node) => node.props.children === "Confirm that you have the recipient's permission.")).toBe(true);
+    expect(
+      nodes.some(
+        (node) => node.props.children === "Confirm that you have the recipient's permission.",
+      ),
+    ).toBe(true);
     expect(posts()).toHaveLength(0);
     confirmContact();
     await settle();
     expect(button("Place call").props.disabled).toBe(false);
-    expect(nodes.some((node) => node.props.children === "Confirm that you have the recipient's permission.")).toBe(false);
+    expect(
+      nodes.some(
+        (node) => node.props.children === "Confirm that you have the recipient's permission.",
+      ),
+    ).toBe(false);
   });
 
   it("includes fresh after-hours authorization for a reviewed personal call", async () => {
     postOutcomes.push(response(403));
     await settle();
     const picker = nodes.find((node) => node.type === OutboundPurposePicker);
-    (picker!.props as unknown as { onPurpose: (purpose: "personal") => void }).onPurpose("personal");
+    (picker!.props as unknown as { onPurpose: (purpose: "personal") => void }).onPurpose(
+      "personal",
+    );
     await settle();
     confirmContact();
     await settle();
-    const timingLabel = nodes.find((node) => node.props.children === "The recipient has agreed to be contacted after hours for this non-sales call, and applicable rules permit it.");
+    const timingLabel = nodes.find(
+      (node) =>
+        node.props.children ===
+        "The recipient has agreed to be contacted after hours for this non-sales call, and applicable rules permit it.",
+    );
     expect(timingLabel).toBeDefined();
     const timingCheckbox = nodes.find((node) => node.type === "input" && "checked" in node.props);
     expect(timingCheckbox).toBeDefined();
-    (timingCheckbox!.props.onChange as unknown as (event: { target: { checked: boolean } }) => void)({ target: { checked: true } });
+    (
+      timingCheckbox!.props.onChange as unknown as (event: { target: { checked: boolean } }) => void
+    )({ target: { checked: true } });
     await settle();
     await place();
     expect(posted(0)).toMatchObject({ callPurpose: "personal", afterHoursServiceConfirmed: true });

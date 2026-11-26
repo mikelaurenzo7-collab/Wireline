@@ -159,15 +159,11 @@ function DangerZone() {
                 ? "Scheduling Deletion…"
                 : "Delete Account"}
           </h2>
-          <span
+          {/* A bare chevron, like every other disclosure in Settings. */}
+          <ChevronDown
+            className="size-4 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
             aria-hidden="true"
-            className="grid size-7 shrink-0 place-items-center rounded-md border border-[var(--wireline-color-feedback-error-border)]/70 bg-[var(--wireline-color-feedback-error-surface)]/50 transition-colors"
-          >
-            <ChevronDown
-              className="size-4 shrink-0 transition-transform duration-200 group-open:rotate-180"
-              aria-hidden="true"
-            />
-          </span>
+          />
         </summary>
         {!deletionScheduled && !message ? (
           <p className="mt-3 max-w-[48ch] text-sm leading-6 text-muted-foreground">
@@ -200,7 +196,7 @@ function DangerZone() {
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
                 placeholder="DELETE"
-                className="h-11 rounded-lg border border-border/80 bg-background px-3.5 text-sm font-medium tracking-[0.18em] text-foreground shadow-2xs outline-none transition-colors focus:border-[var(--wireline-color-status-error)] sm:w-44"
+                className="h-11 rounded-lg border border-border/80 bg-background px-3.5 text-sm font-medium tracking-widest text-foreground shadow-2xs outline-none transition-colors focus:border-[var(--wireline-color-status-error)] sm:w-44"
               />
             </label>
             <Button

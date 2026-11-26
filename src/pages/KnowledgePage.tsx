@@ -4,7 +4,6 @@ import { Mic } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
-import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
@@ -142,19 +141,12 @@ export default function KnowledgePage() {
     <WorkspaceShell contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}>
       {!loading && !agents.length ? (
         <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
-          <WorkspacePageIntro title="Knowledge" />
+          <WorkspacePageIntro title="Knowledge" size="compact" />
           {degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />}
         </WorkspacePageFrame>
       ) : (
         <WorkspacePageFrame mode="standard">
-          <WorkspaceControlBand
-            ariaLabel="Knowledge controls"
-            className="gap-2.5 border-border/70 pb-3.5 sm:items-center"
-            primary={
-              <h1 className="text-lg font-semibold tracking-tight text-foreground">Knowledge</h1>
-            }
-            secondary={secondaryControls}
-          />
+          <WorkspacePageIntro title="Knowledge" size="compact" action={secondaryControls} />
 
           {requestedAgentUnavailable && !loading ? (
             <StatusNotice

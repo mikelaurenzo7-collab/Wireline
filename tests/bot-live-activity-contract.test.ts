@@ -8,10 +8,12 @@ const inbox = readFileSync("src/components/EmailInbox.tsx", "utf8");
 describe("Bot Live activity source and action contracts", () => {
   it("reads email timestamps and recipients from the actual snake_case API payload", () => {
     expect(mailRoutes).toContain("mapObjectToSnake(");
-    expect(mailRoutes).toContain("({ ...thread, activityAt: snapshotActivity })");
+    expect(mailRoutes).toMatch(/\(\{\s*\.\.\.thread,\s*activityAt: snapshotActivity,?\s*\}\)/);
     expect(panel).toContain("thread.activity_at || thread.last_message_at || thread.created_at");
     expect(panel).toContain("thread.customer_email");
-    expect(inbox).toContain("text(row.activity_at) || text(row.last_message_at) || text(row.created_at)");
+    expect(inbox).toContain(
+      "text(row.activity_at) || text(row.last_message_at) || text(row.created_at)",
+    );
     expect(panel).not.toContain("thread.snapshotActivity || thread.lastMessageAt");
   });
 
@@ -33,11 +35,13 @@ describe("Bot Live activity source and action contracts", () => {
     expect(panel).toContain("Watch live work");
     expect(panel).toContain('to="/approvals"');
     expect(panel).toContain("Review approvals");
-    expect(panel).toContain('setSourcesUnavailable(successfulSources !== 3)');
+    expect(panel).toContain("setSourcesUnavailable(successfulSources !== 3)");
     expect(panel).toContain("Checking recent activity…");
     expect(panel).toContain("Activity unavailable");
-    expect(panel).toMatch(/sourcesUnavailable\s*\? "Couldn’t load recent activity\."\s*:\s*"No recent activity\."/);
-    expect(panel).toContain('waitingApprovals.length');
+    expect(panel).toMatch(
+      /sourcesUnavailable\s*\? "Couldn’t load recent activity\."\s*:\s*"No recent activity\."/,
+    );
+    expect(panel).toContain("waitingApprovals.length");
     expect(panel).toContain('"Needs review"');
   });
 });

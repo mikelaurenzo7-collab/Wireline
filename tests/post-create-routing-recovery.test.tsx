@@ -179,7 +179,7 @@ describe("setup guide requires confirmed calling", () => {
       expect(text(render())).toContain("Number reserved");
       expect(text(render())).not.toContain("Your live number");
       expect(button("Continue")).toBeUndefined();
-      expect(button("Choose a number")).toBeUndefined();
+      expect(button("Choose a Number")).toBeUndefined();
       expect(button("Retry Connection")?.props.disabled).toBe(false);
       numbers = [line("active")];
       button("Retry Connection")?.props.onClick?.();
@@ -196,7 +196,7 @@ describe("setup guide requires confirmed calling", () => {
     await mount();
     expect(text(render())).not.toContain("(312) 555-0100");
     expect(text(render())).toContain("No phone number yet");
-    expect(button("Choose a number")?.props.disabled).toBe(false);
+    expect(button("Choose a Number")?.props.disabled).toBe(false);
     expect(button("Continue")).toBeUndefined();
   });
 
@@ -228,15 +228,15 @@ describe("setup guide requires confirmed calling", () => {
       stubFetch({ numbers: [] });
       await mount();
       if (route === "picker") {
-        button("Choose a number")?.props.onClick?.();
+        button("Choose a Number")?.props.onClick?.();
         expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
       } else {
-        const launchLater = button("Launch later");
+        const launchLater = button("Launch Later");
         expect(launchLater).toBeDefined();
         launchLater!.props.onClick?.();
         expect(text(render())).toContain("Ready When You Are");
         const phoneSetup = elements(render()).find(
-          (element) => element.type === "a" && text(element) === "Get a number",
+          (element) => element.type === "a" && text(element) === "Get a Number",
         );
         expect(phoneSetup?.props.to).toBe("/phone?tab=setup&agent=bot");
       }
@@ -264,7 +264,7 @@ describe("setup guide requires confirmed calling", () => {
     stubFetch({ numbers: [], checkoutAvailable: false });
     await mount();
     const tree = render();
-    expect(button("Choose a number")).toBeUndefined();
+    expect(button("Choose a Number")).toBeUndefined();
     expect(text(tree)).toContain("Live activation isn't available right now");
     expect(text(tree)).toContain("Keep trying your Bot privately in Set Up, then check back soon.");
     expect(text(tree)).not.toContain("Every paid plan includes a US number");
@@ -287,7 +287,7 @@ describe("setup guide requires confirmed calling", () => {
     };
     stubFetch({ numbers: [], checkoutAvailable: true });
     await mount();
-    expect(button("Choose a number")).toBeUndefined();
+    expect(button("Choose a Number")).toBeUndefined();
     const plan = elements(render()).find(
       (element) => element.type === "a" && text(element) === "Choose Plan",
     );
@@ -311,8 +311,8 @@ describe("setup guide requires confirmed calling", () => {
       expect(text(render())).not.toContain("Live activation isn't available right now");
       expect(text(render())).not.toContain("Choose Plan");
       expect(text(render())).not.toContain("Choose your plan");
-      expect(button("Choose a number")?.props.disabled).toBe(false);
-      button("Choose a number")?.props.onClick?.();
+      expect(button("Choose a Number")?.props.disabled).toBe(false);
+      button("Choose a Number")?.props.onClick?.();
       expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
     },
   );
@@ -331,7 +331,7 @@ it("email-only activation has no phone prerequisite or invented live milestone",
   await mount();
   expect(text(render())).toContain("Open Email");
   expect(text(render())).not.toContain("No phone number");
-  expect(button("Choose a number")).toBeUndefined();
+  expect(button("Choose a Number")).toBeUndefined();
   button("Finish for Now")?.props.onClick?.();
   expect(text(render())).toContain("Your Bot Is Saved");
   expect(h.event.mock.calls.some(([event]) => event.event === "agent_launch_completed")).toBe(

@@ -107,7 +107,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <div className="wl-label text-rose-500">
                   {staleChunk ? "Update required" : "Something broke"}
                 </div>
-                <h2 className="mt-1 font-display text-3xl leading-tight tracking-[-0.025em] text-foreground">
+                <h2 className="mt-1 font-display text-3xl leading-tight tracking-tight text-foreground">
                   {title}
                 </h2>
               </div>

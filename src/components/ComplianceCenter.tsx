@@ -8,6 +8,7 @@ import { formatPhone } from "../lib/safe-number";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
+import { formatActivityTime } from "../lib/safe-date";
 
 type ComplianceCenterSummary = {
   federal_dnc_configured: boolean;
@@ -226,7 +227,7 @@ export default function ComplianceCenter() {
                         {consentEventLabel(entry.event)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
+                        {formatActivityTime(entry.created_at)}
                       </span>
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">

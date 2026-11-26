@@ -324,7 +324,7 @@ function OwnedPhoneTestDialog({
                 <p className="text-sm">When asked, enter</p>
                 <output
                   aria-label="Phone verification code"
-                  className="my-3 block font-mono text-[clamp(1rem,7vw,1.875rem)] font-semibold tracking-[0.08em] tabular-nums"
+                  className="my-3 block font-mono text-[clamp(1rem,7vw,1.875rem)] font-semibold tracking-widest tabular-nums"
                 >
                   {receipt.verification_code}
                 </output>

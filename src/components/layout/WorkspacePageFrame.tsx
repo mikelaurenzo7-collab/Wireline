@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";
+import WorkspaceControlBand from "./WorkspaceControlBand";
 
 export type WorkspacePageMode = "standard" | "narrow" | "operate";
 
@@ -57,6 +58,14 @@ type WorkspacePageIntroProps = {
    * The heading stays in the accessibility tree.
    */
   titleHidden?: boolean | "lg";
+  /**
+   * `"compact"` is the title band for pages without a tab strip. It renders
+   * the shared WorkspaceControlBand with the title as its primary, so it has
+   * the same height and rule as the tab band on Calls, Calendar, Insights and
+   * Settings and every page opens on one header treatment. It ignores
+   * `description`; put supporting copy in the page body.
+   */
+  size?: "display" | "compact";
 };
 
 /** Minimal page title for authenticated workspace surfaces. */
@@ -66,8 +75,24 @@ export function WorkspacePageIntro({
   action,
   align = "start",
   titleHidden = false,
+  size = "display",
 }: WorkspacePageIntroProps) {
   const start = align === "start";
+
+  if (size === "compact") {
+    return (
+      <WorkspaceControlBand
+        ariaLabel={`${title} controls`}
+        className="gap-2.5 pb-3.5 sm:min-h-13 sm:items-center"
+        primary={
+          <h1 className="break-words text-lg font-semibold tracking-tight text-foreground">
+            {title}
+          </h1>
+        }
+        secondary={action}
+      />
+    );
+  }
 
   // Nothing left to show: render the accessible heading alone. `sr-only` is
   // absolutely positioned, so it leaves the frame's flex flow entirely and

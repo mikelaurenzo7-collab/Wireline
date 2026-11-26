@@ -490,7 +490,7 @@ export default function StripeBillingCard({
 /** Shared payment-security + legal row for billing surfaces. */
 export function BillingTrustFooter() {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-widest">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <Shield className="w-3 h-3" aria-hidden="true" />
         {/* Each phrase stays whole: the pair wraps as two lines, never a stray word. */}
@@ -521,7 +521,7 @@ function CreditTopUpCard({
   return (
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
       <div className="border-b border-border pb-5">
-        <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
+        <h3 className="font-semibold tracking-tight text-2xl text-foreground">
           Add {CONVERSATION_BALANCE_COPY.title}
         </h3>
         <p className="text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
@@ -537,7 +537,7 @@ function CreditTopUpCard({
             variant="outline"
             onClick={() => onBuy(a)}
             disabled={busy !== null}
-            className="inline-flex gap-2 px-6 py-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+            className="inline-flex gap-2 px-6 py-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest hover-premium-glow shadow-premium-button border-brand/40 text-brand"
           >
             {busy === a ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -547,7 +547,7 @@ function CreditTopUpCard({
             ${a}
           </ShadButton>
         ))}
-        <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
+        <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Applied to live-work usage
         </span>
@@ -753,11 +753,11 @@ function GrantedPlanAccessCard({
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
               Paid-plan access is granted directly to this workspace.
             </p>
-            <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
+            <p className="font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest text-muted-foreground">
               {agentCount} {agentCount === 1 ? "Bot" : "Bots"} in use
             </p>
             {!isUsagePlanId(sub.plan) && includedNumbers > 0 ? (
-              <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
+              <p className="font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest text-muted-foreground">
                 {includedNumbers} number{includedNumbers === 1 ? "" : "s"} included in your plan
               </p>
             ) : null}

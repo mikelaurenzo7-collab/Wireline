@@ -84,7 +84,7 @@ const DialogTitle = React.forwardRef<
     ref={ref}
     data-slot="dialog-title"
     className={cn(
-      "break-words pr-14 text-left font-[var(--wireline-font-family-display)] text-xl font-semibold leading-[1.15] tracking-[-.025em] text-foreground",
+      "break-words pr-14 text-left font-[var(--wireline-font-family-display)] text-xl font-semibold leading-[1.15] tracking-tight text-foreground",
       className,
     )}
     {...props}
@@ -100,7 +100,7 @@ const DialogDescription = React.forwardRef<
     ref={ref}
     data-slot="dialog-description"
     className={cn(
-      "max-w-prose break-words text-left text-[15px] leading-6 text-muted-foreground",
+      "max-w-prose break-words text-left text-base leading-6 text-muted-foreground",
       className,
     )}
     {...props}

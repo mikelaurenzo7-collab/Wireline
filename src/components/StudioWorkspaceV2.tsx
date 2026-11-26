@@ -84,10 +84,7 @@ function StudioLoadingState() {
       <div className="mx-auto w-full max-w-4xl space-y-4">
         <Skeleton shape="text" className="h-3 w-20" />
         <Skeleton shape="text" className="h-8 w-72 max-w-full" />
-        <Skeleton
-          shape="surface"
-          className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]"
-        />
+        <Skeleton shape="surface" className="h-[min(280px,45dvh)] w-full rounded-xl" />
         <PanelSkeleton rows={2} className="pt-1" />
       </div>
     </main>
@@ -125,7 +122,7 @@ function StudioEmptyState() {
             id="studio-brief"
             value={brief}
             onChange={(event) => setBrief(event.target.value)}
-            className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-[15px]"
+            className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-base"
             placeholder="Answer calls, qualify leads, book appointments…"
           />
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">

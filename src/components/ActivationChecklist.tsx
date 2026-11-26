@@ -213,7 +213,7 @@ export default function ActivationChecklist({ className }: { className?: string 
               <Link
                 to={step.href}
                 className={cn(
-                  "flex min-h-[60px] items-start gap-2 rounded-[var(--wireline-radius-md)] border px-2.5 py-2.5 text-left wl-focus-ring-halo sm:min-h-[76px] sm:gap-3 sm:px-3 sm:py-3",
+                  "flex min-h-[60px] items-start gap-2 rounded-md border px-2.5 py-2.5 text-left wl-focus-ring-halo sm:min-h-[76px] sm:gap-3 sm:px-3 sm:py-3",
                   step.done
                     ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
                     : step.id === next?.id

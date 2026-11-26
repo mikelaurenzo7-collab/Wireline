@@ -103,7 +103,7 @@ export default function KnowledgeQuickAdd({
             id="knowledge-quick-add-title"
             className="text-sm font-semibold text-[var(--wireline-color-text-primary)]"
           >
-            Add knowledge
+            Add Knowledge
           </h2>
           <p className="mt-1 max-w-[72ch] text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
             Facts and rules your Bot can use with customers.
@@ -123,7 +123,7 @@ export default function KnowledgeQuickAdd({
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Service calls are $89. We don't serve Oakland. Transfer emergencies to Mike."
           disabled={disabled || saving || !agentId}
-          className="min-h-24 w-full resize-y rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none transition placeholder:text-[var(--wireline-color-text-tertiary)] focus:border-[var(--wireline-color-action-primary-default)] focus:ring-2 focus:ring-[var(--wireline-color-action-primary-container)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-24 w-full resize-y rounded-md border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none transition placeholder:text-[var(--wireline-color-text-tertiary)] focus:border-[var(--wireline-color-action-primary-default)] focus:ring-2 focus:ring-[var(--wireline-color-action-primary-container)] disabled:cursor-not-allowed disabled:opacity-60"
         />
         <div className="flex justify-end">
           <Button type="submit" disabled={disabled || saving || !agentId || !draft.trim()}>
@@ -142,7 +142,7 @@ export default function KnowledgeQuickAdd({
       {error ? (
         <p
           role="alert"
-          className="mt-3 rounded-[var(--wireline-radius-sm)] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-error)]"
+          className="mt-3 rounded-sm border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-error)]"
         >
           {error}
         </p>
@@ -150,7 +150,7 @@ export default function KnowledgeQuickAdd({
       {notice ? (
         <p
           role="status"
-          className="mt-3 rounded-[var(--wireline-radius-sm)] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-success)]"
+          className="mt-3 rounded-sm border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-success)]"
         >
           {notice}
         </p>

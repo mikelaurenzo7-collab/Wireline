@@ -125,7 +125,7 @@ export default function InsightsView() {
         actions={
           <>
             {periodControl}
-            <CsvExportButton type="calls" label="Export all calls" />
+            <CsvExportButton type="calls" label="Export All Calls" />
           </>
         }
       />

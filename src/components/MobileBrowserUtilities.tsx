@@ -43,9 +43,9 @@ export default function MobileBrowserUtilities() {
       >
         <Settings size={18} aria-hidden="true" />
       </summary>
-      <div className="fixed inset-x-4 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+8.25rem)] max-h-[min(24rem,calc(100dvh-11rem))] overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-background p-2 normal-case tracking-normal text-foreground shadow-[0_24px_60px_-30px_rgba(17,17,17,0.55),var(--wireline-elevation-md)] sm:left-auto sm:right-4 sm:w-[21rem]">
+      <div className="fixed inset-x-4 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+8.25rem)] max-h-[min(24rem,calc(100dvh-11rem))] overflow-y-auto rounded-lg border border-border bg-background p-2 normal-case tracking-normal text-foreground shadow-[0_24px_60px_-30px_rgba(17,17,17,0.55),var(--wireline-elevation-md)] sm:left-auto sm:right-4 sm:w-[21rem]">
         <div className="border-b border-border/70 px-3 py-2 text-left">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <p className="font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-widest text-muted-foreground">
             Controls
           </p>
         </div>
@@ -57,18 +57,18 @@ export default function MobileBrowserUtilities() {
                 key={href}
                 to={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-12 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                className={`flex min-h-12 items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                   active ? "bg-muted text-foreground" : "hover:bg-muted text-foreground"
                 }`}
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-card text-foreground">
+                <span className="grid size-8 shrink-0 place-items-center rounded-sm bg-card text-foreground">
                   <Icon size={15} aria-hidden="true" />
                 </span>
                 <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
                   <span className="truncate font-semibold leading-none text-foreground">
                     {label}
                   </span>
-                  <span className="shrink-0 text-[11px] font-medium leading-none text-muted-foreground">
+                  <span className="shrink-0 text-[length:var(--wireline-typography-overline-size)] font-medium leading-none text-muted-foreground">
                     {detail}
                   </span>
                 </span>

@@ -451,7 +451,7 @@ export default function CreateAgentDialog({
                   tabIndex={-1}
                   id="create-agent-title"
                   data-slot="dialog-title"
-                  className="wl-preserve-case font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
+                  className="wl-preserve-case font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-tight text-foreground"
                 >
                   {language.setupPrompt}
                 </h2>

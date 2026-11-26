@@ -49,7 +49,7 @@ export function CardRowSkeleton({ rows = 4, className }: PanelSkeletonProps) {
     <ul className={cn("flex flex-col gap-2.5", className)} aria-busy="true" aria-label="Loading…">
       {Array.from({ length: rows }, (_, index) => (
         <li key={index}>
-          <Skeleton className="h-[76px] rounded-[var(--wireline-radius-lg)]" shape="surface" />
+          <Skeleton className="h-[76px] rounded-lg" shape="surface" />
         </li>
       ))}
     </ul>

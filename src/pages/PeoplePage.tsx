@@ -438,7 +438,7 @@ function MergeDialog({
                 type="button"
                 disabled={busy}
                 onClick={() => void merge(candidate)}
-                className="flex w-full min-h-11 flex-col items-start rounded-[var(--wireline-radius-md)] px-3 py-2 text-left hover:bg-[var(--wireline-color-action-primary-container)] focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-focus-default)]"
+                className="flex w-full min-h-11 flex-col items-start rounded-md px-3 py-2 text-left hover:bg-[var(--wireline-color-action-primary-container)] focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-focus-default)]"
               >
                 <span className="font-semibold">{personLabel(candidate)}</span>
                 <span className="text-sm text-[var(--wireline-color-text-secondary)]">
@@ -597,10 +597,7 @@ function PersonTimeline({ person, reloadKey }: { person: Person; reloadKey: numb
           {items.map((item) => {
             const href = timelineHref(item);
             return (
-              <li
-                key={item.id}
-                className="flex gap-3 rounded-[var(--wireline-radius-md)] px-1 py-2"
-              >
+              <li key={item.id} className="flex gap-3 rounded-md px-1 py-2">
                 <TimelineIcon item={item} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2">

@@ -63,7 +63,7 @@ export default function BotConfigurator({
 
   return (
     <section
-      className="space-y-6 rounded-[var(--radius-xl)] border border-border bg-card p-5 sm:p-6"
+      className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-6"
       aria-labelledby="bot-configurator-title"
       data-bot-configurator
     >

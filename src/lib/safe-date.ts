@@ -154,3 +154,22 @@ export function formatRelative(input: unknown, fallback = DEFAULT_FALLBACK): str
     fallback,
   );
 }
+
+/**
+ * When something happened, in one shape on every channel (calls, texts,
+ * email, compliance, approvals): "Nov 26, 9:59 AM". The year is added only
+ * outside the current year ("Dec 30, 2025, 4:10 PM"). Booked appointment
+ * times use `appointmentWhen`, which also names the booking's time zone.
+ */
+export function formatActivityTime(input: unknown, fallback = ""): string {
+  const d = toDate(input);
+  if (!d) return fallback;
+  const options: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  };
+  if (d.getFullYear() !== new Date().getFullYear()) options.year = "numeric";
+  return safeFormat(d, (x) => x.toLocaleString("en-US", options), fallback);
+}

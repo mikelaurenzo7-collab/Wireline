@@ -146,7 +146,7 @@ export default function CalendarAvailabilityPanel({
   }
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-4 py-5 sm:px-6">
+    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-4 px-4 py-5 sm:px-6">
       <form onSubmit={save} className="space-y-4">
         <fieldset disabled={saving} className="min-w-0 space-y-4">
           {configured ? (

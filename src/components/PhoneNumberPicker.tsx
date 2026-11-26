@@ -194,7 +194,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
+      <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         Loading available numbers
       </div>
@@ -370,7 +370,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 disableAnimations
                 onClick={searchByAreaCode}
                 disabled={searching || searchAreaCode.length !== 3}
-                className="shrink-0 h-10 rounded-full bg-gradient-to-r from-brand to-brand-deep px-5 text-on-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="shrink-0 h-10 rounded-full bg-gradient-to-r from-brand to-brand-deep px-5 text-on-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {searching ? (
                   <>

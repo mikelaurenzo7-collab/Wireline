@@ -162,7 +162,7 @@ export default function AcceptInvite() {
             )}
           </div>
 
-          <h1 className="mt-4 font-display text-2xl leading-[1.05] tracking-[-.025em] text-foreground sm:text-3xl">
+          <h1 className="mt-4 font-display text-2xl leading-[1.05] tracking-tight text-foreground sm:text-3xl">
             {status === "error"
               ? "Invitation Unavailable"
               : status === "success"

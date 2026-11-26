@@ -20,6 +20,7 @@ export default function ConnectionsPage() {
       <WorkspacePageFrame mode="standard" className="gap-3">
         <WorkspacePageIntro
           title="Connections"
+          size="compact"
           action={
             resolvedId ? (
               <Button asChild variant="secondary" size="sm">
@@ -36,8 +37,8 @@ export default function ConnectionsPage() {
 
         <Accordion type="single" collapsible>
           <AccordionItem value="apps" className="rounded-xl border border-border bg-card">
-            <AccordionTrigger className="wl-preserve-case min-h-16 px-4 py-2 text-base font-semibold text-foreground hover:no-underline data-[state=open]:border-b data-[state=open]:border-border">
-              Other tools
+            <AccordionTrigger className="wl-preserve-case min-h-11 px-4 py-3 text-sm font-semibold text-foreground hover:no-underline data-[state=open]:border-b data-[state=open]:border-border">
+              Other Tools
             </AccordionTrigger>
             <AccordionContent className="px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
               <CrmConnectionCard />

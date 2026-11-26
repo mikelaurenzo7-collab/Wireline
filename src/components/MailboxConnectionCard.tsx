@@ -350,7 +350,7 @@ export default function MailboxConnectionCard() {
                         aria-label="Apple app password"
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      <p className="text-[length:var(--wireline-typography-overline-size)] leading-relaxed text-muted-foreground">
                         Generate one in Apple ID under Sign-In and Security → App-Specific
                         Passwords.
                       </p>

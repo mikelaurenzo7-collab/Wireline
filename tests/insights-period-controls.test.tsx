@@ -75,7 +75,7 @@ describe("Insights period controls", () => {
       expect(elements(tree).some((node) => node.type === "period-control")).toBe(false);
       expect(text(tree)).toContain(label);
       expect(elements(tree).find((node) => node.type === "export")?.props.label).toBe(
-        "Export all calls",
+        "Export All Calls",
       );
     },
   );

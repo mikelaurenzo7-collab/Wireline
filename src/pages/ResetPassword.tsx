@@ -202,7 +202,7 @@ export default function ResetPassword() {
                       setError(null);
                     }
                   }}
-                  className={`auth-input ${showPassword ? "" : "tracking-[0.32em]"}`}
+                  className={`auth-input ${showPassword ? "" : "tracking-widest"}`}
                   placeholder="••••••••••••"
                   autoComplete="new-password"
                 />
@@ -229,7 +229,7 @@ export default function ResetPassword() {
                       setError(null);
                     }
                   }}
-                  className={`auth-input ${showPassword ? "" : "tracking-[0.32em]"}`}
+                  className={`auth-input ${showPassword ? "" : "tracking-widest"}`}
                   placeholder="••••••••••••"
                   autoComplete="new-password"
                 />

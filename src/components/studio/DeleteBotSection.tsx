@@ -263,7 +263,7 @@ export default function DeleteBotSection({
                   onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
                   placeholder="DELETE"
                   autoComplete="off"
-                  className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-[0.18em] text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
+                  className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-widest text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
                 />
               </label>
               <Button

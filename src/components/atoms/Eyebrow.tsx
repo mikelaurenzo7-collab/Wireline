@@ -21,7 +21,7 @@ export interface EyebrowProps {
 
 /**
  * Eyebrow — the letterpress section kicker. Wraps `wl-eyebrow` (mono label +
- * copper wire rule) so surfaces stop hand-rolling `font-mono text-[10px]
+ * copper wire rule) so surfaces stop hand-rolling `font-mono text-[length:var(--wireline-typography-overline-size)]
  * uppercase tracking-[...]` wrappers. Use `tone="primary"` for patina, or
  * `tone="muted"` when the kicker sits under a heavier heading.
  *
