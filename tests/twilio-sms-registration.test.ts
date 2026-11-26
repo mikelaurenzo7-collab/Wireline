@@ -327,44 +327,51 @@ describe("first-contact SMS composition", () => {
   });
 });
 
-describe("carrier list page size", () => {
-  // The SDK sends `limit` as the page size unless a page size is given, and the
-  // carrier refuses a page over 50 on some of these lists. Production failed
-  // every snapshot read this way, so every line read "could not be checked".
-  function strict<T>(rows: T[]) {
-    return async (options: { limit: number; pageSize?: number }): Promise<T[]> => {
-      const page = options.pageSize ?? options.limit;
-      if (page < 1 || page > 50) throw new Error("Page size must be between 1 and 50");
-      return rows;
-    };
-  }
-
-  it("never asks the carrier for a page it refuses", async () => {
-    const services = Object.assign(
-      () => ({
-        phoneNumbers: { list: strict([{ phoneNumber: LOCAL_REGISTERED }]) },
-        usAppToPerson: {
-          list: strict([
-            {
-              campaignStatus: "VERIFIED",
-              description: "Replies when customers text this number after a missed call.",
-            },
-          ]),
-        },
-      }),
-      { list: strict([{ sid: "MGapproved" }]) },
-    );
+describe("registration snapshot paging", () => {
+  it("asks Twilio for pages of at most 50 on every list", async () => {
+    const seen: Array<{ list: string; limit: number; pageSize: number }> = [];
+    const record =
+      <T>(list: string, rows: T[]) =>
+      async (options: { limit: number; pageSize: number }) => {
+        seen.push({ list, ...options });
+        return rows;
+      };
     const client: SmsRegistrationClient = {
-      incomingPhoneNumbers: { list: strict([{ sid: "PN0", phoneNumber: LOCAL_REGISTERED }]) },
-      messaging: { v1: { services, tollfreeVerifications: { list: strict([]) } } },
+      incomingPhoneNumbers: {
+        list: record("incomingPhoneNumbers", [{ sid: "PN0", phoneNumber: LOCAL_REGISTERED }]),
+      },
+      messaging: {
+        v1: {
+          services: Object.assign(
+            () => ({
+              phoneNumbers: {
+                list: record("services.phoneNumbers", [{ phoneNumber: LOCAL_REGISTERED }]),
+              },
+              usAppToPerson: {
+                list: record("services.usAppToPerson", [{ campaignStatus: "VERIFIED" }]),
+              },
+            }),
+            { list: record("services", [{ sid: "MGapproved" }]) },
+          ),
+          tollfreeVerifications: { list: record("tollfreeVerifications", []) },
+        },
+      },
     };
 
-    const registration = await resolveSmsSenderRegistration(LOCAL_REGISTERED, { client });
-    expect(registration).toMatchObject({
-      status: "registered",
-      messagingServiceSid: "MGapproved",
-      coversMissedCalls: true,
-      coversInboundReplies: true,
-    });
+    const snapshot = await readSmsRegistrationSnapshot(client, 1_000);
+
+    expect(classifySmsSender(LOCAL_REGISTERED, snapshot).status).toBe("registered");
+    expect(seen.map((call) => call.list).sort()).toEqual([
+      "incomingPhoneNumbers",
+      "services",
+      "services.phoneNumbers",
+      "services.usAppToPerson",
+      "tollfreeVerifications",
+    ]);
+    for (const call of seen) {
+      expect(call.pageSize, call.list).toBeGreaterThanOrEqual(1);
+      expect(call.pageSize, call.list).toBeLessThanOrEqual(50);
+      expect(call.limit, call.list).toBeGreaterThanOrEqual(call.pageSize);
+    }
   });
 });

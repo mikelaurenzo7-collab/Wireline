@@ -38,30 +38,31 @@ export type SmsSenderRegistration =
     }
   | { status: "unknown"; kind: SmsSenderKind | null; reason: string };
 
-type ListOptions = { limit: number; pageSize?: number };
+/** Every list call names both its total and its page size. */
+export type SmsRegistrationListOptions = { limit: number; pageSize: number };
 
 /** Minimal read surface, so tests can supply a fake without the SDK. */
 export interface SmsRegistrationClient {
   incomingPhoneNumbers: {
-    list(options: ListOptions): Promise<Array<{ sid: string; phoneNumber: string }>>;
+    list(options: SmsRegistrationListOptions): Promise<Array<{ sid: string; phoneNumber: string }>>;
   };
   messaging: {
     v1: {
       services: ((sid: string) => {
         phoneNumbers: {
-          list(options: ListOptions): Promise<Array<{ phoneNumber: string }>>;
+          list(options: SmsRegistrationListOptions): Promise<Array<{ phoneNumber: string }>>;
         };
         usAppToPerson: {
           list(
-            options: ListOptions,
+            options: SmsRegistrationListOptions,
           ): Promise<Array<{ campaignStatus: string; description?: string; messageFlow?: string }>>;
         };
       }) & {
-        list(options: ListOptions): Promise<Array<{ sid: string }>>;
+        list(options: SmsRegistrationListOptions): Promise<Array<{ sid: string }>>;
       };
       tollfreeVerifications: {
         list(
-          options: ListOptions,
+          options: SmsRegistrationListOptions,
         ): Promise<Array<{ tollfreePhoneNumberSid: string; status: string }>>;
       };
     };
@@ -99,16 +100,15 @@ const NANP_E164 = /^\+1\d{10}$/;
 const SNAPSHOT_TTL_MS = 10 * 60_000;
 /** A recent good snapshot outlives a transient read failure. */
 const STALE_SNAPSHOT_MAX_MS = 60 * 60_000;
-const LIST_LIMIT = 1000;
 /**
- * The carrier SDK asks for a whole `limit` in one page unless told otherwise,
- * and some of these lists accept at most 50 a page. A page of 1000 was refused
- * ("Page size must be between 1 and 50"), which failed every snapshot read in
- * production and left every line "could not be checked". Fifty is accepted by
- * all of them; the SDK follows the pages up to `limit`.
+ * The SDK sends `limit` as the page size when no page size is given, and
+ * Twilio refuses a page size above 50 on some of these lists ("Page size must
+ * be between 1 and 50"), which failed every snapshot read and left every
+ * sender `unknown`. A fixed page of 50 lets the SDK page up to the limit.
  */
-export const LIST_PAGE_SIZE = 50;
-const LIST_PAGE: ListOptions = { limit: LIST_LIMIT, pageSize: LIST_PAGE_SIZE };
+const LIST_PAGE_SIZE = 50;
+const LIST_OPTIONS: SmsRegistrationListOptions = { limit: 1000, pageSize: LIST_PAGE_SIZE };
+const CAMPAIGN_LIST_OPTIONS: SmsRegistrationListOptions = { limit: 20, pageSize: 20 };
 
 const PENDING_CAMPAIGN_STATUSES = new Set(["IN_PROGRESS", "PENDING"]);
 const FAILED_CAMPAIGN_STATUSES = new Set(["FAILED", "SUSPENDED", "EXPIRED"]);
@@ -124,9 +124,9 @@ export async function readSmsRegistrationSnapshot(
   nowMs: number = Date.now(),
 ): Promise<SmsRegistrationSnapshot> {
   const [numbers, services, verifications] = await Promise.all([
-    client.incomingPhoneNumbers.list(LIST_PAGE),
-    client.messaging.v1.services.list(LIST_PAGE),
-    client.messaging.v1.tollfreeVerifications.list(LIST_PAGE),
+    client.incomingPhoneNumbers.list(LIST_OPTIONS),
+    client.messaging.v1.services.list(LIST_OPTIONS),
+    client.messaging.v1.tollfreeVerifications.list(LIST_OPTIONS),
   ]);
 
   const numberSids = new Map<string, string>();
@@ -140,8 +140,8 @@ export async function readSmsRegistrationSnapshot(
       if (!service?.sid) return;
       const context = client.messaging.v1.services(service.sid);
       const [senders, campaigns] = await Promise.all([
-        context.phoneNumbers.list(LIST_PAGE),
-        context.usAppToPerson.list({ limit: 20, pageSize: 20 }),
+        context.phoneNumbers.list(LIST_OPTIONS),
+        context.usAppToPerson.list(CAMPAIGN_LIST_OPTIONS),
       ]);
       const pooled: PooledService = {
         serviceSid: service.sid,
