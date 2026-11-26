@@ -96,6 +96,118 @@ describe("public phone catalog isolation", () => {
     expect(result.unavailable).toEqual(["elevenlabs"]);
     expect(JSON.stringify(result)).not.toContain("test");
   });
+  it("pages and searches the public ElevenLabs library without importing voices", async () => {
+    const request = vi.fn().mockImplementation(async () =>
+      json({
+        has_more: true,
+        voices: [
+          {
+            voice_id: "shared-voice-123",
+            public_owner_id: "public-owner-123",
+            name: "Robin",
+            language: "en",
+            preview_url: "https://storage.googleapis.com/eleven-public-prod/robin.mp3",
+          },
+        ],
+      }),
+    );
+    const service = createPhoneCatalogService({ ELEVENLABS_API_KEY: "test" }, request);
+    const result = await service.libraryPage("warm & calm", 78);
+    expect(result).toMatchObject({
+      hasMore: true,
+      voices: [{ name: "Robin", library: { ownerId: "public-owner-123" } }],
+    });
+    const url = new URL(String(request.mock.calls[0][0]));
+    expect(url.searchParams.get("search")).toBe("warm & calm");
+    expect(url.searchParams.get("page")).toBe("78");
+    expect(url.searchParams.get("include_custom_rates")).toBe("true");
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+  it("preserves provider-signed library samples and rejects unrecognized media sources", async () => {
+    const id = "library-example-voice";
+    const valid = `https://api.us.elevenlabs.io/v1/voices/${id}/previews/audio?sample=public`;
+    const rows = [
+      valid,
+      "https://example.com/voice.mp3",
+      "https://storage.googleapis.com/eleven-public-prod/../private/sample",
+    ].map((preview_url) => ({
+      voice_id: id,
+      public_owner_id: "public-owner-123",
+      name: "River",
+      preview_url,
+    }));
+    const service = createPhoneCatalogService({ ELEVENLABS_API_KEY: "test" }, async () =>
+      json({ voices: rows }),
+    );
+    expect((await service.libraryPage("", 0)).voices.map((v) => v.library?.previewUrl)).toEqual([
+      valid,
+      undefined,
+      undefined,
+    ]);
+  });
+  it("imports an eligible public voice once and resolves it on a fresh phone worker", async () => {
+    const row = {
+      voice_id: "shared-voice-123",
+      public_owner_id: "public-owner-123",
+      name: "Robin",
+    };
+    let added = false;
+    const request = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/v1/shared-voices") return json({ voices: [row], has_more: false });
+      if (url.pathname.includes("/add/")) {
+        added = true;
+        return json({ voice_id: row.voice_id });
+      }
+      if (url.pathname === "/v2/voices") {
+        expect(url.searchParams.get("include_custom_rates")).toBe("false");
+        expect(url.searchParams.get("voice_ids")).toBe(row.voice_id);
+        return json({ voices: added ? [row] : [] });
+      }
+      return json({
+        ...row,
+        category: "professional",
+        sharing: {
+          public_owner_id: row.public_owner_id,
+          status: "enabled",
+          enabled_in_library: true,
+        },
+      });
+    });
+    const env = { ELEVENLABS_API_KEY: "test" };
+    const service = createPhoneCatalogService(env, request);
+    const config = {
+      provider: "elevenlabs",
+      id: row.voice_id,
+      library: { ownerId: row.public_owner_id, listingName: row.name },
+    };
+    expect((await service.activate(config))?.id).toBe(row.voice_id);
+    expect((await service.activate(config))?.id).toBe(row.voice_id);
+    expect(request.mock.calls.filter(([input]) => String(input).includes("/add/"))).toHaveLength(1);
+    const cold = createPhoneCatalogService(env, request);
+    expect(
+      (
+        await cold.resolve({
+          [PHONE_CATALOG_VOICE_KEY]: { provider: "elevenlabs", id: row.voice_id },
+        })
+      )?.name,
+    ).toBe("Robin");
+  });
+  it("rejects forged and custom-rate selections when the eligible public listing does not confirm them", async () => {
+    const request = vi.fn(async (input: RequestInfo | URL) => {
+      expect(new URL(String(input)).searchParams.get("include_custom_rates")).toBe("false");
+      return json({ voices: [] });
+    });
+    const service = createPhoneCatalogService({ ELEVENLABS_API_KEY: "test" }, request);
+    expect(
+      await service.activate({
+        provider: "elevenlabs",
+        id: "private-voice-123",
+        library: { ownerId: "public-owner-123", listingName: "Private" },
+      }),
+    ).toBeNull();
+    expect(request).toHaveBeenCalledTimes(1);
+  });
   it("bounds provider responses rather than buffering arbitrary audio", async () => {
     await expect(boundedAudio(new Response(new Uint8Array(12)), 10)).rejects.toThrow("limit");
     await expect(boundedAudio(new Response(new Uint8Array(0)))).rejects.toThrow("empty");

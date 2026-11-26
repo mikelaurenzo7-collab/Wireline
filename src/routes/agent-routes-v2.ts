@@ -1182,6 +1182,17 @@ router.get(
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.notFound("Bot not found.");
     res.setHeader("Cache-Control", "private, no-store");
+    if (req.query.library === "elevenlabs") {
+      const page = Number(req.query.page ?? 0);
+      if (!Number.isSafeInteger(page) || page < 0)
+        throw AppError.badRequest("Invalid voice library page.");
+      try {
+        res.json(await phoneCatalogService.libraryPage(cleanText(req.query.search, 240), page));
+      } catch {
+        throw AppError.fromHttpStatus(503, "ElevenLabs could not load its library. Try again.");
+      }
+      return;
+    }
     res.json(await phoneCatalogService.all());
   },
 );
@@ -1193,13 +1204,21 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.notFound("Bot not found.");
-    const voice = await phoneCatalogService.resolve({ [PHONE_CATALOG_VOICE_KEY]: req.body });
-    if (!voice)
-      throw AppError.fromHttpStatus(409, "That phone voice is unavailable. Choose another voice.");
     if (!catalogCallsConfigured())
       throw AppError.fromHttpStatus(
         503,
         "Phone voices are temporarily unavailable. Try again later.",
+      );
+    let voice;
+    try {
+      voice = await phoneCatalogService.activate(req.body);
+    } catch {
+      throw AppError.fromHttpStatus(503, "ElevenLabs could not activate this voice. Try again.");
+    }
+    if (!voice)
+      throw AppError.fromHttpStatus(
+        409,
+        "This phone voice is unavailable at your included rate. Choose another voice.",
       );
     // One atomic JSON update preserves concurrent changes to unrelated Bot setup.
     const selection = JSON.stringify({ id: voice.id, provider: voice.provider });

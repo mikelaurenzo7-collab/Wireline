@@ -13,6 +13,7 @@
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { AppError } from "../lib/api-error";
+import { campaignAttributionLines } from "../lib/campaign-attribution";
 import { normalizeEmail } from "../lib/email-compliance";
 import { isProviderDeliverySuppressed } from "../lib/email-delivery-suppression";
 import { distributedLimiterStatus, rateLimit } from "../lib/rate-limit";
@@ -151,6 +152,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     const cleanEmail = normalizeEmail(email);
     const cleanSubject = subject.trim();
     const cleanBody = body.trim();
+    const campaignLines = campaignAttributionLines(req.body?.attribution);
 
     if (!ISSUE_TYPES.has(cleanIssueType)) {
       throw AppError.fromHttpStatus(400, "Pick a valid issue type.");
@@ -177,6 +179,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
       ``,
       `─── Body ─────────────────────────────────────────`,
       cleanBody,
+      ...(campaignLines.length ? ["", "Campaign attribution:", ...campaignLines] : []),
     ].join("\n");
 
     const result = await sendSupportEmail({

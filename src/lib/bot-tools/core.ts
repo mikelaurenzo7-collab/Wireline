@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { and, eq } from "drizzle-orm";
 
+import { actionExecutionMode } from "../bot-permission";
 import { superviseClientCommunication } from "../ai-supervisor";
 import * as schema from "../../db/schema";
 import { auditLogger, log as serverLog } from "../server-context";
@@ -269,6 +270,40 @@ export async function handleCoreToolCall(
           result:
             "EMAIL_CONFIRMATION_REQUIRED: No email was sent or follow-up saved. Read back the exact email address and wait for the caller to confirm it before trying again with email_confirmed=true. Do not guess a spelling or correction.",
         };
+      }
+      const callId = message.call?.id || (payload.call as { id?: string } | undefined)?.id;
+      if (typeof callId === "string" && callId) {
+        const [permissions] = await drizzle
+          .select({
+            agentLevel: schema.agents.autonomyLevel,
+            tenantLevel: schema.settings.autonomyLevel,
+          })
+          .from(schema.agents)
+          .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
+          .where(and(eq(schema.agents.id, agent.id), eq(schema.agents.userId, agent.user_id)))
+          .limit(1);
+        if (!permissions)
+          return {
+            toolCallId,
+            result: "Email permission could not be verified. No email was sent.",
+          };
+        if (actionExecutionMode({ ...permissions, actionType: "send_email" }) === "draft") {
+          const { executeAction } = await import("../action-engine");
+          const approval = await executeAction(
+            agent.user_id,
+            { type: "send_email", agentId: agent.id, priority: "medium", payload: emailPayload },
+            { sourceType: "phone_call", sourceId: callId },
+            "draft",
+          );
+          return {
+            toolCallId,
+            result:
+              approval.success && approval.queued
+                ? `DRAFT_SAVED: ${to_email}
+The team has the email request for approval. Say the request was saved and the email is pending. Do not claim submission or promise a delivery time.`
+                : "The email request could not be saved for approval. No email was sent.",
+          };
+        }
       }
       // Throws ClientCommunicationBlockedError on a block — there is no
       // approved:false return, so a blocked send falls through to the catch,

@@ -20,10 +20,22 @@ describe("matchesCarrierKeyword", () => {
     expect(matchesCarrierKeyword(norm("(unsubscribe)"), OPT_OUT)).toBe(true);
   });
 
-  it("matches a leading keyword followed by more words", () => {
+  it("matches a leading keyword when the rest clearly revokes contact", () => {
     expect(matchesCarrierKeyword(norm("STOP CALLING ME"), OPT_OUT)).toBe(true);
-    expect(matchesCarrierKeyword(norm("cancel please"), OPT_OUT)).toBe(true);
+    expect(matchesCarrierKeyword(norm("stop please"), OPT_OUT)).toBe(true);
+    expect(matchesCarrierKeyword(norm("cancel these texts please"), OPT_OUT)).toBe(true);
     expect(matchesCarrierKeyword(norm("end - no more texts"), OPT_OUT)).toBe(true);
+  });
+
+  it.each([
+    "Cancel my appointment",
+    "cancel please",
+    "End my booking",
+    "Stop by Tuesday",
+    "Quit the meeting",
+  ])("routes an ordinary request %j through the conversation", (body) => {
+    expect(matchesCarrierKeyword(norm(body), OPT_OUT)).toBe(false);
+    expect(isPlainLanguageOptOut(norm(body))).toBe(false);
   });
 
   it("still matches multi-word keywords exactly", () => {
@@ -52,10 +64,25 @@ describe("plain-language opt-outs (FCC: any reasonable means, since April 2025)"
     "remove me from your list",
     "Take my number off your list",
     "no more texts please",
-    "how do I opt out",
     "I want to unsubscribe",
     "leave me alone",
     "Don’t message me",
+    "Please stop",
+    "Please do not send me text messages",
+    "I don't want to receive SMS",
+    "Stop receiving messages",
+    "Please stop texting me, thanks",
+    "Stop texting me. I never signed up",
+    "Can you stop texting me?",
+    "Could you please stop messaging me?",
+    "Please stop calling me right now",
+    "Don't text me; call me instead",
+    "Don't text me, call me instead",
+    "Please unsubscribe me, thank you",
+    "Stop texting me, please",
+    "Unsubscribe me from your texts",
+    "Please unsubscribe me from all future text messages",
+    "I want to opt out of these messages",
   ])("treats %j as an opt-out", (body) => {
     expect(isPlainLanguageOptOut(body.trim().toLowerCase())).toBe(true);
   });
@@ -65,8 +92,25 @@ describe("plain-language opt-outs (FCC: any reasonable means, since April 2025)"
     "please call me back",
     "yes, text me the address",
     "don't stop the appointment",
+    "don't stop the texts",
+    "do not cancel my messages",
+    "I don't want to stop receiving texts",
+    "Don't text me the price, call me",
+    "How do I opt out?",
+    "I don't want texts about this appointment, call me",
     "remove the old filter please",
     "what time do you open?",
+    "Cancel my appointment. Thanks",
+    "Don't text me the price. Call me",
+    "I don't want to stop receiving texts. Thanks",
+    "Please call me. Thanks",
+    "Stop by Tuesday. Thanks",
+    "Don't text me about this appointment, call me",
+    "Stop. By Tuesday, please",
+    "How do I opt out? Thanks",
+    "Don't text me the price, please",
+    "Cancel my appointment, please",
+    "Unsubscribe me from the newsletter",
   ])("leaves an ordinary reply %j alone", (body) => {
     expect(isPlainLanguageOptOut(body.trim().toLowerCase())).toBe(false);
   });

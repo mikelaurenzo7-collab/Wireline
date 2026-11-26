@@ -307,6 +307,49 @@ async function microphones(page: Page) {
   );
 }
 
+test("owners can search, page and select a public ElevenLabs phone voice from Setup", async ({
+  page,
+}) => {
+  await mockPilot(page);
+  const library = { ownerId: "public-owner-123", listingName: "River Studio" };
+  const sample = {
+    id: "library-voice-123",
+    name: "River Studio",
+    provider: "elevenlabs",
+    language: "en",
+    gender: null,
+    library,
+  };
+  await page.route("**/phone-voices*", async (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    if (!params.has("library")) return route.fulfill({ json: { voices: [], unavailable: [] } });
+    const secondPage = params.get("page") === "1";
+    await route.fulfill({
+      json: {
+        voices: [{ ...sample, name: secondPage ? "River Studio" : "First Voice" }],
+        hasMore: !secondPage,
+      },
+    });
+  });
+  let saved: unknown;
+  await page.route("**/phone-voice", async (route) => {
+    saved = route.request().postDataJSON();
+    await route.fulfill({ json: { success: true, catalogVoice: sample } });
+  });
+  const voice = await openVoice(page);
+  await voice
+    .locator("summary")
+    .filter({ hasText: "Browse ElevenLabs and other phone voices" })
+    .click();
+  await expect(voice.getByLabel("Voice Provider")).toHaveValue("library");
+  await voice.getByLabel("Search Phone Voices").fill("warm");
+  await expect(voice.getByRole("button", { name: /First Voice ElevenLabs/ })).toBeVisible();
+  await voice.getByRole("button", { name: "Next voices" }).click();
+  await voice.getByRole("button", { name: /River Studio ElevenLabs/ }).click();
+  await expect(voice.getByText("Phone Voice Saved.", { exact: true })).toBeVisible();
+  expect(saved).toEqual({ id: sample.id, provider: sample.provider, library });
+});
+
 test("closed custom-voice pilot stays hidden while all ten OpenAI calling voices remain", async ({
   page,
 }) => {
@@ -326,7 +369,9 @@ test("closed custom-voice pilot stays hidden while all ten OpenAI calling voices
   expect(await microphones(page)).toBe(0);
 });
 
-test("a blocked stock sample can play on another tap without fetching it again", async ({ page }) => {
+test("a blocked stock sample can play on another tap without fetching it again", async ({
+  page,
+}) => {
   await mockPilot(page, { available: false });
   await page.addInitScript(() => {
     let playCount = 0;
@@ -337,7 +382,11 @@ test("a blocked stock sample can play on another tap without fetching it again",
   await page.route("**/api/agent-config/voice-pilot-bot", (route) =>
     route.fulfill({
       json: {
-        voice: { voiceId: "marin", provider: "openai", phoneCall: { provider: "xai", voice: "eve" } },
+        voice: {
+          voiceId: "marin",
+          provider: "openai",
+          phoneCall: { provider: "xai", voice: "eve" },
+        },
       },
     }),
   );

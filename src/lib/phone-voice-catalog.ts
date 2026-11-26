@@ -7,6 +7,7 @@ export type CatalogPhoneVoice = {
   name: string;
   language: string;
   gender: "female" | "male" | null;
+  library?: { ownerId: string; listingName: string; previewUrl?: string };
 };
 
 export function catalogVoiceSelection(

@@ -1,3 +1,4 @@
+import { openSavedChat } from "./helpers/studio-chat-history";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -161,7 +162,7 @@ for (const width of [390, 1440]) {
     const api = await mockWorkspace(page, [
       pastTask("prior-task", bots[0].id, "Research opening hours", "The office opens at nine."),
     ]);
-    await page.route("**/api/agents/*/workspace/messages", (route) =>
+    await page.route("**/api/agents/*/workspace/messages?thread=*", (route) =>
       route.fulfill({
         json: {
           messages: [
@@ -177,7 +178,11 @@ for (const width of [390, 1440]) {
     );
     await page.goto(`/studio?agent=${bots[0].id}`);
     const log = page.getByRole("log", { name: "Conversation", exact: true });
+    await expect(log.getByText("I can help with your day.")).toHaveCount(0);
+    await expect(log.getByText("The office opens at nine.")).toHaveCount(0);
+    await openSavedChat(page);
     await expect(log.getByText("I can help with your day.")).toBeVisible();
+
     await expect(log.getByText("The office opens at nine.")).toBeVisible();
     const message = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
     const inputNode = await message.elementHandle();
@@ -185,6 +190,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".wl-studio-chat__composer textarea")).toHaveCount(1);
     await message.fill("Keep my message draft.");
     await page.getByRole("button", { name: "Computer", exact: true }).click();
+    await expect(log.getByText("The office opens at nine.")).toBeVisible();
     const task = page.getByRole("textbox", { name: "Task for Front Desk", exact: true });
     expect(await inputNode!.evaluate((node) => node.isConnected)).toBe(true);
     await task.fill("Find public opening hours.");
@@ -280,4 +286,68 @@ test("memory persists per Bot and a failed save preserves the note", async ({ pa
   await page.getByText("Memory", { exact: true }).click();
   await page.getByRole("button", { name: "Forget: Use Central time." }).click();
   await expect(page.getByText("No saved memories yet.", { exact: false })).toBeVisible();
+});
+
+test("New chat preserves earlier threads and their projects across a reload", async ({ page }) => {
+  await mockWorkspace(page, []);
+  const chats = new Map<string, { title: string; project: string | null }>();
+  await page.route("**/workspace/messages/stream?thread=*", async (route) => {
+    const id = new URL(route.request().url()).searchParams.get("thread")!;
+    const title = route.request().postDataJSON().content;
+    if (!chats.has(id)) chats.set(id, { title, project: null });
+    await route.fulfill({
+      contentType: "text/event-stream",
+      body: 'event: done\ndata: {"reply":"Saved","messageId":"42"}\n\n',
+    });
+  });
+  await page.route("**/workspace/messages?*", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("view") === "history") {
+      await route.fulfill({
+        json: { threads: Array.from(chats, ([id, chat]) => ({ id, ...chat })), nextCursor: null },
+      });
+      return;
+    }
+    const chat = chats.get(url.searchParams.get("thread")!);
+    if (!chat) return route.fulfill({ status: 404, json: {} });
+    if (route.request().method() === "PATCH") {
+      chat.project = route.request().postDataJSON().project;
+      return route.fulfill({ json: { project: chat.project } });
+    }
+    await route.fulfill({
+      json: {
+        messages: [
+          {
+            id: "41",
+            role: "Account Holder",
+            content: chat.title,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        nextCursor: null,
+      },
+    });
+  });
+  await page.goto(`/studio?agent=${bots[0].id}`);
+  const log = page.getByRole("log", { name: "Conversation", exact: true });
+  const input = page.getByRole("textbox", { name: "Message Front Desk" });
+  for (const title of ["Morning schedule", "Afternoon agenda"]) {
+    await input.fill(title);
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(log.getByText("Saved", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "New chat", exact: true }).click();
+    await expect(log.getByText(title)).toHaveCount(0);
+  }
+  expect(chats.size).toBe(2);
+  await page.reload();
+  await expect(log.getByRole("article")).toHaveCount(0);
+  await page.getByRole("button", { name: "Chat history" }).click();
+  const history = page.getByRole("dialog", { name: "Chat history" });
+  await history.getByRole("button", { name: "Move Morning schedule to project" }).click();
+  await history.getByLabel("Project name").fill("Appointments");
+  await history.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(history.getByRole("heading", { name: "Appointments" })).toBeVisible();
+  await history.getByRole("button", { name: "Morning schedule", exact: true }).click();
+  await expect(log.getByText("Morning schedule")).toBeVisible();
+  await expect(log.getByText("Afternoon agenda")).toHaveCount(0);
 });

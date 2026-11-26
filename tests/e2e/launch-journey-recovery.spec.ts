@@ -1,3 +1,4 @@
+import { openSavedChat } from "./helpers/studio-chat-history";
 import { expect, test, type Page } from "@playwright/test";
 
 const agents = [
@@ -652,11 +653,12 @@ test("Studio keeps a draft unsent until saved conversation history loads", async
   const historyReady = new Promise<void>((resolve) => {
     releaseHistory = resolve;
   });
-  await page.route("**/api/agents/bot-front-desk/workspace/messages", async (route) => {
+  await page.route("**/api/agents/bot-front-desk/workspace/messages?thread=*", async (route) => {
     await historyReady;
     await route.fulfill({ json: { messages: [] } });
   });
   await page.goto("/studio?agent=bot-front-desk&chat=setup");
+  await openSavedChat(page);
   const composer = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
   try {
     await composer.fill("Use a warm, concise greeting.");
@@ -678,15 +680,18 @@ test("switching from Build to Test isolates an unfinished configuration response
   const buildReady = new Promise<void>((resolve) => {
     releaseBuild = resolve;
   });
-  await page.route("**/api/agents/bot-front-desk/workspace/messages/stream", async (route) => {
-    await buildReady;
-    await route
-      .fulfill({
-        contentType: "text/event-stream",
-        body: 'event: done\ndata: {"reply":"Internal configuration reply"}\n\n',
-      })
-      .catch(() => undefined);
-  });
+  await page.route(
+    "**/api/agents/bot-front-desk/workspace/messages/stream?thread=*",
+    async (route) => {
+      await buildReady;
+      await route
+        .fulfill({
+          contentType: "text/event-stream",
+          body: 'event: done\ndata: {"reply":"Internal configuration reply"}\n\n',
+        })
+        .catch(() => undefined);
+    },
+  );
   await page.goto("/studio?agent=bot-front-desk&chat=setup");
   await page
     .getByRole("textbox", { name: "Message Front Desk", exact: true })

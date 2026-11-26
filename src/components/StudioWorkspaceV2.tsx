@@ -12,6 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useStudioSessionState } from "../contexts/StudioSessionContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { hasUnfinishedConversation } from "../lib/studio-session-state";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import {
   clearStudioInspectorSectionParams,
@@ -177,6 +178,22 @@ function StudioWorkspaceContent() {
   const activeAgentId = requestedAgentId || resolvedAgentId;
   const active = activeAgentId ? agents.find((agent) => agent.id === activeAgentId) : undefined;
   const requestedAgentUnavailable = Boolean(requestedAgentId && !active);
+  const threadScope = JSON.stringify([user?.id, activeAgentId]);
+  function entryThread() {
+    const key = `${activeAgentId}:configure`;
+    const existing = workroomConversations.get(key);
+    const resume =
+      existing?.threadId &&
+      (workroomDrafts.get(key)?.text.trim() || hasUnfinishedConversation(existing));
+    return {
+      scope: threadScope,
+      id: resume && existing?.threadId ? existing.threadId : crypto.randomUUID(),
+      saved: Boolean(resume),
+      openedAt: Date.now(),
+    };
+  }
+  const [thread, setThread] = useState(entryThread);
+  if (thread.scope !== threadScope) setThread(entryThread());
 
   const sectionParam = params.get("section");
   const panelParam = params.get("panel");
@@ -561,11 +578,13 @@ function StudioWorkspaceContent() {
     />
   );
 
+  if (thread.scope !== threadScope) return null;
   studioSession.visitBot(active.id);
   const sessionFor = (mode: WorkroomMode) => {
     const key = `${active.id}:${mode}`;
     let session = workroomConversations.get(key);
-    if (!session) {
+    if (!session || (mode === "configure" && session.threadId !== thread.id)) {
+      if (mode === "configure") workroomDrafts.delete(key);
       session = {
         snapshot: {
           messages: [],
@@ -574,13 +593,14 @@ function StudioWorkspaceContent() {
           replyError: null,
           interrupted: false,
         },
-        loaded: false,
+        threadId: mode === "configure" ? thread.id : undefined,
+        loaded: mode === "configure" && !thread.saved,
         operations: new Map(),
         listeners: new Set(),
       };
       workroomConversations.set(key, session);
     }
-    return { key, session };
+    return { key: mode === "configure" ? `${key}:${thread.id}` : key, draftKey: key, session };
   };
 
   const main = sessionFor(mainMode);
@@ -596,9 +616,27 @@ function StudioWorkspaceContent() {
       markKey={active.mark_key}
       initialCommand={mainReceivesCommand ? commandParam || undefined : undefined}
       commandNonce={mainReceivesCommand ? commandNonceParam || undefined : undefined}
-      initialDraft={workroomDrafts.get(main.key)}
-      onDraftChange={(draft) => workroomDrafts.set(main.key, draft)}
+      initialDraft={workroomDrafts.get(main.draftKey)}
+      onDraftChange={(draft) => workroomDrafts.set(main.draftKey, draft)}
       conversationSession={main.session}
+      threadId={thread.id}
+      onSelectThread={(id) => {
+        if (id === thread.id) return true;
+        if (
+          workroomDrafts.get(main.draftKey)?.text.trim() &&
+          !window.confirm("Leave this unsent draft?")
+        )
+          return false;
+        if (!setupChat) requestMessage();
+        setThread({
+          scope: threadScope,
+          id: id || crypto.randomUUID(),
+          saved: Boolean(id),
+          openedAt: Date.now(),
+        });
+        requestAnimationFrame(() => workroomRef.current?.focusComposer());
+        return true;
+      }}
       timelineExtras={[
         ...new Map(
           [
@@ -606,7 +644,14 @@ function StudioWorkspaceContent() {
             ...(computer.selected ? [computer.selected] : []),
             ...(computer.activeTask ? [computer.activeTask] : []),
           ]
-            .filter((task) => task.agentId === active.id)
+            .filter(
+              (task) =>
+                task.agentId === active.id &&
+                (thread.id === "legacy" ||
+                  !setupChat ||
+                  task.id === computer.activeTask?.id ||
+                  Date.parse(task.startedAt) >= thread.openedAt),
+            )
             .map((task) => [task.id, task]),
         ).values(),
       ].map((task) => ({
