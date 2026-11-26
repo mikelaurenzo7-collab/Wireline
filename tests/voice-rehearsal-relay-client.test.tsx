@@ -445,3 +445,31 @@ it("ends a relay that cannot connect through its ticket and rehearses on WebRTC 
   );
   expect(relayProbes).toHaveLength(1);
 });
+
+it("counts a reply the relay marks as answering the owner, even before the owner's transcript", async () => {
+  stubBrowser();
+  h.fetch.mockImplementation(async (url: string) =>
+    url === "/api/voice/live/session"
+      ? new Response(
+          JSON.stringify({
+            transport: "relay",
+            relayPath: "/api/voice/live/relay",
+            protocol: "botbound-rehearsal.v1",
+            ticket: "ticket-1",
+            cleanupToken: "cleanup-1",
+          }),
+        )
+      : new Response(JSON.stringify({ stopped: true })),
+  );
+  click("Start Rehearsal");
+  await vi.waitFor(() => expect(h.sockets).toHaveLength(1));
+  const socket = h.sockets[0]!;
+  socket.readyState = 1;
+  socket.onopen!();
+  socket.onmessage!({ data: JSON.stringify({ type: "ready" }) });
+  socket.onmessage!({
+    data: JSON.stringify({ type: "turn_done", completed: true, answeredOwner: true }),
+  });
+  click("End Rehearsal");
+  expect(h.ended).toHaveBeenCalledExactlyOnceWith({ replied: true, failed: false });
+});

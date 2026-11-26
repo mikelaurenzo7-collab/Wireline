@@ -29,7 +29,7 @@ import {
 } from "../lib/voice/xai-rehearsal-relay";
 import { releaseSimulationMinuteQuota } from "../middleware/api-rate-limits";
 import { AppError } from "../lib/api-error";
-import { log } from "../lib/server-context";
+import { log, tenantStore } from "../lib/server-context";
 import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./live-voice-profile-routes";
 
@@ -117,6 +117,9 @@ async function startRelayedRehearsal(
     windowSeconds,
     { provider: "xai" },
   );
+  // The commit and release run later, from the WebSocket or a timer, so they
+  // re-enter this request's tenant scope for their database writes.
+  const tenant = tenantStore.getStore() ?? req.user.id;
   let relay: Awaited<ReturnType<typeof createXAIRehearsalRelay>>;
   try {
     relay = await createXAIRehearsalRelay({
@@ -125,12 +128,14 @@ async function startRelayedRehearsal(
       maxDurationSeconds: windowSeconds,
       // Committed when the browser attaches; released if it never does.
       spend: {
-        commit: () => commitRealtimeSessionSpend(reservation),
+        commit: () => tenantStore.run(tenant, () => commitRealtimeSessionSpend(reservation)),
         release: () =>
-          releaseRealtimeSessionSpendAfterFailure(
-            req,
-            reservation,
-            new XAIRehearsalUnavailableError("not_attached"),
+          tenantStore.run(tenant, () =>
+            releaseRealtimeSessionSpendAfterFailure(
+              req,
+              reservation,
+              new XAIRehearsalUnavailableError("not_attached"),
+            ),
           ),
       },
     });

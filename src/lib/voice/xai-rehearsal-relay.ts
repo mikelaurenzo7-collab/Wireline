@@ -180,6 +180,8 @@ type RelaySession = {
   autoResponseTimer: ReturnType<typeof setTimeout> | null;
   /** A knowledge result or typed line is waiting for the Bot's reply. */
   replyPending: boolean;
+  /** The owner spoke or typed and the Bot has not yet finished a reply to it. */
+  ownerTurnOpen: boolean;
   /** Tag of the reply BotBound requested and xAI has not yet acknowledged. */
   requestedReply: string | null;
   replyAttempts: number;
@@ -526,6 +528,7 @@ async function openRelaySession(input: RelayInput, env: NodeJS.ProcessEnv, apiKe
     awaitingAutoResponse: false,
     autoResponseTimer: null,
     replyPending: false,
+    ownerTurnOpen: false,
     requestedReply: null,
     replyAttempts: 0,
     replyWatchdog: null,
@@ -756,24 +759,39 @@ function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
 
   if (type === "response.created") {
     // Registered first, so nothing requests another reply while this one runs.
-    session.activeResponses.add(responseId || "unidentified");
+    // Only identified responses are tracked, as on the phone path, so an event
+    // without an id can never block later replies.
+    if (responseId) session.activeResponses.add(responseId);
     session.respondingId = responseId || null;
     const metadata = asRecord(response.metadata);
-    if (session.requestedReply && metadata.botbound_rehearsal_reply === session.requestedReply) {
+    const requested =
+      Boolean(session.requestedReply) &&
+      metadata.botbound_rehearsal_reply === session.requestedReply;
+    // The opening's own response comes first; a requested reply, or anything
+    // after the opening has finished, is a model turn.
+    const isOpening =
+      !requested &&
+      !session.openingDone &&
+      (!session.openingResponseId || responseId === session.openingResponseId);
+    if (isOpening) {
+      session.openingResponseId ??= responseId || "opening";
+      return;
+    }
+    // A model turn starts only after the opening has played.
+    finishOpening(session);
+    // Any reply that starts after a request answers it, whether or not xAI
+    // echoed the tag, so a retry can never make the Bot answer twice.
+    if (session.requestedReply) {
       session.requestedReply = null;
       session.replyAttempts = 0;
       clearReplyWatchdog(session);
-    } else if (session.openingResponseId && responseId !== session.openingResponseId) {
-      // xAI answering the owner by itself sees everything already in the
-      // conversation, including a pending lookup result or typed line.
-      session.awaitingAutoResponse = false;
-      if (session.autoResponseTimer) clearTimeout(session.autoResponseTimer);
-      session.autoResponseTimer = null;
-      session.replyPending = false;
     }
-    if (!session.openingResponseId) session.openingResponseId = responseId || "opening";
-    // A model turn starts only after the opening has played.
-    else if (responseId !== session.openingResponseId) finishOpening(session);
+    // A reply sees everything already in the conversation, including a
+    // pending lookup result or typed line.
+    session.awaitingAutoResponse = false;
+    if (session.autoResponseTimer) clearTimeout(session.autoResponseTimer);
+    session.autoResponseTimer = null;
+    session.replyPending = false;
     return;
   }
 
@@ -850,6 +868,7 @@ function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
   if (type === "input_audio_buffer.speech_stopped" || type === "input_audio_buffer.committed") {
     if (type === "input_audio_buffer.speech_stopped") session.callerTurnEndedAt = Date.now();
     session.callerSpeaking = false;
+    if (session.openingDone) session.ownerTurnOpen = true;
     // xAI creates its reply to the owner next; never insert one into that gap.
     // If none starts, a pending reply goes ahead after a short wait.
     session.awaitingAutoResponse = true;
@@ -900,9 +919,14 @@ function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
         return record.type === "message" && record.role === "assistant";
       });
     if (spoke && !interrupted) session.botTurns += 1;
+    const completed = status === "completed" && spoke && !interrupted;
+    // Known here, before the owner's transcript may have finished arriving.
+    const answeredOwner = completed && !wasOpening && session.ownerTurnOpen;
+    if (answeredOwner) session.ownerTurnOpen = false;
     sendBrowser(session, {
       type: "turn_done",
-      completed: status === "completed" && spoke && !interrupted,
+      completed,
+      ...(answeredOwner ? { answeredOwner: true } : {}),
     });
     requestReplyWhenReady(session);
     return;
@@ -944,6 +968,7 @@ function handleBrowserMessage(session: RelaySession, data: RawData, isBinary: bo
     session.typedLines += 1;
     session.callerTurns += 1;
     session.callerTurnEndedAt = Date.now();
+    session.ownerTurnOpen = true;
     sendUpstream(session, {
       type: "conversation.item.create",
       item: { type: "message", role: "user", content: [{ type: "input_text", text }] },

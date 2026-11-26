@@ -227,9 +227,11 @@ heard, and ends the session at its time limit, when the browser leaves, on the
 owner's stop ticket, or when the API restarts (the owner is told to start
 again; a shutting-down process opens no new relays). The Bot's reply to a
 knowledge result or a typed line is requested only when no response is active,
-the owner is not speaking and xAI is not about to answer by itself, and is
-retried when xAI does not acknowledge it, as on phone calls. Typing over the
-Bot interrupts it. Each session logs its duration, turns and reply latency.
+the owner is not speaking and xAI is not about to answer by itself. Any reply
+that starts afterwards counts as the answer; the request is retried, at most
+twice, only when no reply starts at all. Typing over the Bot interrupts it. The
+commit and release of the spend reservation run in the owner's tenant scope.
+Each session logs its duration, turns and reply latency.
 
 If xAI is unset or opted out, the server answers `{ "transport": "webrtc" }`
 before taking any quota. If xAI rejects the session or cannot be reached, the

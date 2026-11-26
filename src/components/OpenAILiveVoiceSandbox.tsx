@@ -52,6 +52,7 @@ type RelayEvent = {
   append?: unknown;
   active?: unknown;
   completed?: unknown;
+  answeredOwner?: unknown;
   reason?: unknown;
   message?: unknown;
   maxDurationSeconds?: unknown;
@@ -472,7 +473,10 @@ export default function OpenAILiveVoiceSandbox({
     if (type === "turn_done") {
       assistantLineId.current = null;
       userLineId.current = null;
-      if (event.completed === true && ownerSpoke.current) answeredOwner.current = true;
+      // The relay knows when a reply answered the owner, even if the owner's
+      // own transcript is still arriving.
+      if (event.answeredOwner === true || (event.completed === true && ownerSpoke.current))
+        answeredOwner.current = true;
       if (event.completed === true && reportedStarted.current && !reportedCompleted.current) {
         reportedCompleted.current = true;
         onTestCompleted?.();
@@ -596,9 +600,10 @@ export default function OpenAILiveVoiceSandbox({
     if (type === "response.output_text.done" && typeof event.text === "string")
       updateAssistant(event.text, "text", event.item_id, true);
     if (
-      type === "conversation.item.input_audio_transcription.completed" &&
-      typeof event.transcript === "string" &&
-      event.transcript.trim()
+      type === "input_audio_buffer.committed" ||
+      (type === "conversation.item.input_audio_transcription.completed" &&
+        typeof event.transcript === "string" &&
+        event.transcript.trim())
     )
       ownerSpoke.current = true;
     if (

@@ -642,6 +642,63 @@ describe("xAI rehearsal replies", () => {
     expect(replyRequests()).toHaveLength(2);
   });
 
+  it("counts any reply that starts after a request as its answer, tagged or not", async () => {
+    const browser = await openedRelay();
+    browser.browser.send(JSON.stringify({ type: "user_text", text: "Hours?" }));
+    await waitFor(() => replyRequests().length === 1, "reply request");
+    // xAI starts the reply without echoing the tag.
+    toXai({ type: "response.created", response: { id: "resp-untagged" } });
+    toXai({
+      type: "response.done",
+      response: {
+        id: "resp-untagged",
+        status: "completed",
+        output: [{ type: "message", role: "assistant" }],
+      },
+    });
+    await pause(450);
+    // No retry: the Bot answers the line once.
+    expect(replyRequests()).toHaveLength(1);
+    // The relay tells the browser this reply answered the owner.
+    expect(browser.events).toContainEqual({
+      type: "turn_done",
+      completed: true,
+      answeredOwner: true,
+    });
+    // The opening's own turn never counts as answering the owner.
+    expect(browser.events.find((event) => event.type === "turn_done")).toEqual({
+      type: "turn_done",
+      completed: true,
+    });
+  });
+
+  it("never lets a response without an id block later replies", async () => {
+    const browser = await openedRelay();
+    toXai({ type: "response.created", response: {} });
+    toXai({ type: "response.done", response: { id: "resp-other", status: "completed" } });
+    browser.browser.send(JSON.stringify({ type: "user_text", text: "Still there?" }));
+    await waitFor(() => replyRequests().length === 1, "reply request");
+  });
+
+  it("marks a spoken reply as answering the owner once the owner has spoken", async () => {
+    const browser = await openedRelay();
+    toXai({ type: "input_audio_buffer.speech_started" });
+    toXai({ type: "input_audio_buffer.speech_stopped" });
+    toXai({ type: "response.created", response: { id: "resp-answer" } });
+    toXai({
+      type: "response.done",
+      response: {
+        id: "resp-answer",
+        status: "completed",
+        output: [{ type: "message", role: "assistant" }],
+      },
+    });
+    await waitFor(
+      () => browser.events.some((event) => event.answeredOwner === true),
+      "answered turn",
+    );
+  });
+
   it("lets xAI answer the owner by itself instead of adding a second reply", async () => {
     h.tool.mockResolvedValue({ found: true, matches: [] });
     await openedRelay({ replyAckMs: 150, autoResponseMs: 2_000 });
@@ -724,7 +781,14 @@ describe("xAI rehearsal wiring contracts", () => {
     expect(probe).toContain('res.json({ transport: "webrtc", reason: choice.reason });');
     const helper = route.slice(route.indexOf("async function startRelayedRehearsal("));
     expect(helper).toContain("await releaseSimulationMinuteQuota(req).catch(() => undefined);");
-    expect(helper).toContain("commit: () => commitRealtimeSessionSpend(reservation),");
+    // Commit and release run later, outside the request, in its tenant scope.
+    expect(helper).toContain("const tenant = tenantStore.getStore() ?? req.user.id;");
+    expect(helper).toContain(
+      "commit: () => tenantStore.run(tenant, () => commitRealtimeSessionSpend(reservation)),",
+    );
+    expect(helper).toContain(
+      "tenantStore.run(tenant, () =>\n            releaseRealtimeSessionSpendAfterFailure(",
+    );
     expect(helper).toContain('new XAIRehearsalUnavailableError("not_attached"),');
     expect(helper).toContain('log.warn("Voice rehearsal fell back to OpenAI Realtime"');
     expect(helper).toContain("if (!(error instanceof XAIRehearsalUnavailableError)) throw error;");
