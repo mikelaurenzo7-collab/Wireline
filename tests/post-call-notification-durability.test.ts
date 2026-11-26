@@ -393,7 +393,9 @@ describe("durable post-call customer follow-up", () => {
     );
     const digest = read("src/lib/post-call-digest.ts");
     expect(digest).toContain('eq(schema.appointments.status, "Requested")');
-    expect(digest).toContain('bookingRequest ? "BOOKING REQUEST" : core.outcomeTag.toUpperCase()');
+    expect(digest).toContain(
+      'bookingRequest ? "Booking request" : digestOutcomeLabel(core.outcomeTag)',
+    );
   });
 
   it("prefers a connected mailbox and falls back to the login email", async () => {
