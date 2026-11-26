@@ -374,3 +374,74 @@ it("falls back to the OpenAI WebRTC offer when the server answers webrtc", async
   expect(offer.agentId).toBe("bot-a");
   expect(offer.sdp).toMatch(/^v=0/);
 });
+
+it("ends a relay that cannot connect through its ticket and rehearses on WebRTC instead", async () => {
+  stubBrowser();
+  const peers: unknown[] = [];
+  vi.stubGlobal(
+    "RTCPeerConnection",
+    class {
+      iceGatheringState = "complete";
+      localDescription = { sdp: `v=0${"a".repeat(120)}` };
+      constructor() {
+        peers.push(this);
+      }
+      createDataChannel() {
+        return {
+          readyState: "connecting",
+          close: vi.fn(),
+          send: vi.fn(),
+          addEventListener: vi.fn(),
+        };
+      }
+      addTrack() {}
+      async createOffer() {
+        return { sdp: this.localDescription.sdp };
+      }
+      async setLocalDescription() {}
+      async setRemoteDescription() {}
+      close() {}
+    },
+  );
+  h.fetch.mockImplementation(async (url: string, init: RequestInit) => {
+    if (url === "/api/voice/live/session/stop")
+      return new Response(JSON.stringify({ stopped: true }));
+    const body = JSON.parse(String(init.body));
+    return new Response(
+      JSON.stringify(
+        body.transport === "relay"
+          ? {
+              transport: "relay",
+              relayPath: "/api/voice/live/relay",
+              protocol: "botbound-rehearsal.v1",
+              ticket: "ticket-1",
+              cleanupToken: "cleanup-relay",
+            }
+          : { sdp: "v=0 answer", cleanupToken: "cleanup-webrtc" },
+      ),
+    );
+  });
+  click("Start Rehearsal");
+  await vi.waitFor(() => expect(h.sockets).toHaveLength(1));
+  // A network that blocks WebSockets closes the socket before the session is ready.
+  h.sockets[0]!.onclose!();
+  await vi.waitFor(() => expect(peers).toHaveLength(1));
+  const stop = h.fetch.mock.calls.find(([url]) => url === "/api/voice/live/session/stop");
+  expect(JSON.parse(stop![1].body)).toEqual({ cleanupToken: "cleanup-relay" });
+  const offers = h.fetch.mock.calls.filter(
+    ([url, init]) => url === "/api/voice/live/session" && "sdp" in JSON.parse(String(init.body)),
+  );
+  expect(offers).toHaveLength(1);
+  expect(statusText()).not.toBe("Live Voice Needs Attention");
+
+  // Later rehearsals in this view go straight to WebRTC.
+  click("End Rehearsal");
+  click("Start Rehearsal");
+  await vi.waitFor(() => expect(peers).toHaveLength(2));
+  expect(h.sockets).toHaveLength(1);
+  const relayProbes = h.fetch.mock.calls.filter(
+    ([url, init]) =>
+      url === "/api/voice/live/session" && JSON.parse(String(init.body)).transport === "relay",
+  );
+  expect(relayProbes).toHaveLength(1);
+});

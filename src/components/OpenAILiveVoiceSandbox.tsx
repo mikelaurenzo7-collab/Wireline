@@ -261,6 +261,11 @@ export default function OpenAILiveVoiceSandbox({
   const testEnded = useRef(onTestEnded);
   testEnded.current = onTestEnded;
   const endingOnError = useRef(false);
+  // The owner spoke or typed, and the Bot then finished a reply to them.
+  const ownerSpoke = useRef(false);
+  const answeredOwner = useRef(false);
+  // The relay could not connect from this browser; later rehearsals use WebRTC.
+  const relayBlocked = useRef(false);
 
   function clearTranscript() {
     completedText.current = [];
@@ -367,7 +372,7 @@ export default function OpenAILiveVoiceSandbox({
     endingOnError.current = false;
     if (reportedStarted.current) {
       reportedStarted.current = false;
-      testEnded.current?.({ replied: reportedCompleted.current, failed });
+      testEnded.current?.({ replied: answeredOwner.current, failed });
     }
   }, [releaseServerCall]);
 
@@ -449,7 +454,10 @@ export default function OpenAILiveVoiceSandbox({
     }
     if (type === "caller_text" && typeof event.text === "string") {
       updateUserTranscript(event.text, event.id, event.append !== true);
-      if (event.final === true) userLineId.current = null;
+      if (event.final === true) {
+        userLineId.current = null;
+        if (event.text.trim()) ownerSpoke.current = true;
+      }
       return;
     }
     if (type === "interrupt") {
@@ -464,6 +472,7 @@ export default function OpenAILiveVoiceSandbox({
     if (type === "turn_done") {
       assistantLineId.current = null;
       userLineId.current = null;
+      if (event.completed === true && ownerSpoke.current) answeredOwner.current = true;
       if (event.completed === true && reportedStarted.current && !reportedCompleted.current) {
         reportedCompleted.current = true;
         onTestCompleted?.();
@@ -533,20 +542,23 @@ export default function OpenAILiveVoiceSandbox({
     };
     socket.onclose = () => {
       if (currentGeneration !== generation.current) return;
+      if (!relayReady.current) {
+        // The relay never became ready here (a network that blocks WebSockets,
+        // or a restart). End that server session through its ticket, which
+        // returns its allowance, and rehearse on the backup voice instead.
+        relayBlocked.current = true;
+        stop();
+        void start();
+        return;
+      }
       const ended = relayEnd.current;
-      const wasReady = relayReady.current;
       // The server already closed the provider session; nothing to clean up.
       cleanupToken.current = null;
       if (ended?.reason === "stopped" || ended?.reason === "time_limit") {
         stop();
         return;
       }
-      fail(
-        ended?.message ||
-          (wasReady
-            ? "Live voice connection ended. Start the rehearsal again to continue."
-            : "Live voice is unavailable for this agent."),
-      );
+      fail(ended?.message || "Live voice connection ended. Start the rehearsal again to continue.");
     };
   };
 
@@ -584,6 +596,12 @@ export default function OpenAILiveVoiceSandbox({
     if (type === "response.output_text.done" && typeof event.text === "string")
       updateAssistant(event.text, "text", event.item_id, true);
     if (
+      type === "conversation.item.input_audio_transcription.completed" &&
+      typeof event.transcript === "string" &&
+      event.transcript.trim()
+    )
+      ownerSpoke.current = true;
+    if (
       type === "conversation.item.input_audio_transcription.completed" ||
       type === "conversation.item.input_audio_transcription.delta"
     )
@@ -616,6 +634,7 @@ export default function OpenAILiveVoiceSandbox({
         );
         return;
       }
+      if (ownerSpoke.current && completedAssistantReply(response)) answeredOwner.current = true;
       if (
         reportedStarted.current &&
         !reportedCompleted.current &&
@@ -682,11 +701,13 @@ export default function OpenAILiveVoiceSandbox({
     setLines((current) => [...current, line]);
     const socket = relaySocket.current;
     if (socket?.readyState === WebSocket.OPEN && relayReady.current) {
+      ownerSpoke.current = true;
       socket.send(JSON.stringify({ type: "user_text", text: content }));
       return;
     }
     const dataChannel = channel.current;
     if (dataChannel?.readyState === "open") {
+      ownerSpoke.current = true;
       dataChannel.send(
         JSON.stringify({
           type: "conversation.item.create",
@@ -737,13 +758,16 @@ export default function OpenAILiveVoiceSandbox({
     const currentGeneration = generation.current;
     reportedStarted.current = false;
     reportedCompleted.current = false;
+    ownerSpoke.current = false;
+    answeredOwner.current = false;
     setVoiceError("");
     setTypedError("");
     setState("connecting");
     // Created inside the click so the browser lets relayed replies play.
     let context: AudioContext | null = null;
     try {
-      context = typeof AudioContext === "function" ? new AudioContext() : null;
+      context =
+        !relayBlocked.current && typeof AudioContext === "function" ? new AudioContext() : null;
     } catch {
       context = null;
     }

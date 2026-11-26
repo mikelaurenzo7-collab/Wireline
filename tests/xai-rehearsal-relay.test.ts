@@ -9,6 +9,27 @@ const h = vi.hoisted(() => ({
   xaiUrl: "",
   tool: vi.fn(),
   toolTenant: [] as Array<string | undefined>,
+  policy: vi.fn(async () => undefined),
+  fencePerforms: true,
+  fences: [] as Array<Record<string, unknown>>,
+}));
+
+vi.mock("../src/lib/account-environment-policy", () => ({
+  assertPrivateVoiceSimulationAllowed: h.policy,
+}));
+vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
+  runTenantProviderWorkWithDeletionFence: async (input: {
+    perform: () => Promise<unknown>;
+    [key: string]: unknown;
+  }) => {
+    h.fences.push({ ...input, perform: undefined });
+    return h.fencePerforms
+      ? { performed: true, result: await input.perform() }
+      : { performed: false };
+  },
+}));
+vi.mock("../src/lib/background-work", () => ({
+  runInBackground: (_label: string, work: () => Promise<unknown>) => void work(),
 }));
 
 vi.mock("../src/lib/server-context", async () => {
@@ -69,6 +90,7 @@ import { tenantStore } from "../src/lib/server-context";
 import { buildOpenAIRealtimeAgentRuntime } from "../src/lib/voice/openai-phone-agent-runtime";
 import {
   activeRehearsalRelayCount,
+  closeRehearsalRelays,
   createXAIRehearsalRelay,
   endAllRehearsalRelays,
   handleRehearsalRelayUpgrade,
@@ -142,6 +164,9 @@ afterEach(() => {
   xaiMode = "accept";
   h.tool.mockReset();
   h.toolTenant = [];
+  h.policy.mockReset().mockResolvedValue(undefined);
+  h.fencePerforms = true;
+  h.fences = [];
 });
 
 afterAll(async () => {
@@ -464,12 +489,221 @@ describe("xAI rehearsal relay", () => {
     expect((missingKey as XAIRehearsalUnavailableError).reason).toBe("xai_not_configured");
   });
 
-  it("limits each owner to two open rehearsals", async () => {
+  it("limits each owner to two rehearsals, counting ones still being opened", async () => {
+    const results = await Promise.allSettled([
+      createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env }),
+      createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env }),
+      createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env }),
+    ]);
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(2);
+    const refused = results.find((result) => result.status === "rejected");
+    expect((refused as PromiseRejectedResult).reason).toMatchObject({
+      status: 429,
+      code: "REHEARSAL_ALREADY_ACTIVE",
+    });
+    expect(activeRehearsalRelayCount()).toBe(2);
+  });
+
+  it("applies the account-environment policy and the account-deletion fence", async () => {
     await createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env });
-    await createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env });
+    expect(h.policy).toHaveBeenCalledWith("user-1", "xai_rehearsal_relay");
+    expect(h.fences[0]).toMatchObject({
+      userId: "user-1",
+      operation: "xai_rehearsal_relay_create",
+      retainOnSuccess: true,
+    });
+
+    h.policy.mockRejectedValueOnce(Object.assign(new Error("No environment"), { status: 403 }));
     await expect(
       createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env }),
-    ).rejects.toMatchObject({ status: 429, code: "REHEARSAL_ALREADY_ACTIVE" });
+    ).rejects.toThrow("No environment");
+    h.fencePerforms = false;
+    await expect(
+      createXAIRehearsalRelay({ userId: "user-2", agentId: "bot-a", env }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(activeRehearsalRelayCount()).toBe(1);
+  });
+
+  it("commits spend when the browser attaches and returns it if the browser never does", async () => {
+    const order: string[] = [];
+    const spend = {
+      commit: vi.fn(async () => {
+        order.push("commit");
+      }),
+      release: vi.fn(async () => {
+        order.push("release");
+      }),
+    };
+    const attached = await createXAIRehearsalRelay({
+      userId: "user-1",
+      agentId: "bot-a",
+      env,
+      spend,
+    });
+    expect(spend.commit).not.toHaveBeenCalled();
+    const { events } = attach(attached.ticket);
+    await waitFor(() => events.some((event) => event.type === "ready"), "ready");
+    expect(order).toEqual(["commit"]);
+    stopRehearsalRelay({ userId: "user-1", callId: attached.callId });
+    expect(spend.release).not.toHaveBeenCalled();
+
+    // A browser that cannot connect stops the session through its ticket.
+    const unused = { commit: vi.fn(async () => undefined), release: vi.fn(async () => undefined) };
+    const never = await createXAIRehearsalRelay({
+      userId: "user-1",
+      agentId: "bot-a",
+      env,
+      spend: unused,
+    });
+    stopRehearsalRelay({ userId: "user-1", callId: never.callId });
+    expect(unused.commit).not.toHaveBeenCalled();
+    expect(unused.release).toHaveBeenCalledOnce();
+
+    // A commit that fails ends the session before anything is heard.
+    const failing = {
+      commit: vi.fn(async () => {
+        throw new Error("budget row locked");
+      }),
+      release: vi.fn(async () => undefined),
+    };
+    const refused = await createXAIRehearsalRelay({
+      userId: "user-1",
+      agentId: "bot-a",
+      env,
+      spend: failing,
+    });
+    const blocked = attach(refused.ticket);
+    await waitFor(() => blocked.events.some((event) => event.type === "ended"), "ended");
+    expect(blocked.events).toEqual([
+      {
+        type: "ended",
+        reason: "spend_unavailable",
+        message:
+          "BotBound could not confirm this rehearsal against your allowance. Try again shortly.",
+      },
+    ]);
+    expect(failing.release).toHaveBeenCalledOnce();
+  });
+});
+
+describe("xAI rehearsal replies", () => {
+  async function openedRelay(timing = { replyAckMs: 150, autoResponseMs: 150 }) {
+    const relay = await createXAIRehearsalRelay({
+      userId: "user-1",
+      agentId: "bot-a",
+      env,
+      timing,
+    });
+    const browser = attach(relay.ticket);
+    await waitFor(() => browser.events.some((event) => event.type === "ready"), "ready");
+    toXai({ type: "response.created", response: { id: "resp-open" } });
+    toXai({ type: "response.done", response: { id: "resp-open", status: "completed" } });
+    await waitFor(() => browser.events.some((event) => event.type === "turn_done"), "opening");
+    return browser;
+  }
+  const replyRequests = () =>
+    xaiReceived.filter((event) => event.type === "response.create") as Array<{
+      response?: { metadata?: { botbound_rehearsal_reply?: string } };
+    }>;
+  const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it("asks for the reply to a lookup only once its response ends, and retries a lost acknowledgement", async () => {
+    h.tool.mockResolvedValue({ found: true, matches: [] });
+    await openedRelay();
+    toXai({ type: "response.created", response: { id: "resp-tool" } });
+    toXai({
+      type: "response.function_call_arguments.done",
+      response_id: "resp-tool",
+      call_id: "call-1",
+      name: "search_agent_knowledge",
+      arguments: "{}",
+    });
+    await waitFor(
+      () => xaiReceived.some((event) => (event.item as Sent)?.type === "function_call_output"),
+      "lookup result",
+    );
+    await pause(40);
+    // xAI would refuse a second active response.
+    expect(replyRequests()).toHaveLength(0);
+    toXai({ type: "response.done", response: { id: "resp-tool", status: "completed" } });
+    await waitFor(() => replyRequests().length === 1, "reply request");
+    const first = replyRequests()[0]!.response?.metadata?.botbound_rehearsal_reply;
+    expect(first).toMatch(/^[0-9a-f-]{36}$/);
+
+    // No acknowledgement: the request is retried with a new tag.
+    await waitFor(() => replyRequests().length === 2, "retry");
+    const second = replyRequests()[1]!.response?.metadata?.botbound_rehearsal_reply;
+    expect(second).not.toBe(first);
+    toXai({
+      type: "response.created",
+      response: { id: "resp-reply", metadata: { botbound_rehearsal_reply: second } },
+    });
+    await pause(450);
+    expect(replyRequests()).toHaveLength(2);
+  });
+
+  it("lets xAI answer the owner by itself instead of adding a second reply", async () => {
+    h.tool.mockResolvedValue({ found: true, matches: [] });
+    await openedRelay({ replyAckMs: 150, autoResponseMs: 2_000 });
+    toXai({ type: "input_audio_buffer.speech_started" });
+    toXai({ type: "input_audio_buffer.speech_stopped" });
+    toXai({
+      type: "response.function_call_arguments.done",
+      call_id: "call-2",
+      name: "search_agent_knowledge",
+      arguments: "{}",
+    });
+    await waitFor(
+      () => xaiReceived.some((event) => (event.item as Sent)?.type === "function_call_output"),
+      "lookup result",
+    );
+    // xAI's own reply to the owner starts and sees the result.
+    toXai({ type: "response.created", response: { id: "resp-auto" } });
+    toXai({ type: "response.done", response: { id: "resp-auto", status: "completed" } });
+    await pause(250);
+    expect(replyRequests()).toHaveLength(0);
+  });
+
+  it("interrupts the Bot for a typed line and answers once the interrupted reply ends", async () => {
+    const browser = await openedRelay();
+    toXai({ type: "response.created", response: { id: "resp-talking" } });
+    browser.browser.send(JSON.stringify({ type: "user_text", text: "One" }));
+    browser.browser.send(JSON.stringify({ type: "user_text", text: "Two" }));
+    await waitFor(
+      () => xaiReceived.filter((event) => (event.item as Sent)?.type === "message").length === 2,
+      "both typed lines",
+    );
+    // Neither line is dropped, the Bot is cut off, and one reply covers both.
+    expect(xaiReceived.filter((event) => event.type === "response.cancel")).toHaveLength(2);
+    expect(browser.events).toContainEqual({ type: "interrupt" });
+    expect(replyRequests()).toHaveLength(0);
+    toXai({ type: "response.done", response: { id: "resp-talking", status: "cancelled" } });
+    await waitFor(() => replyRequests().length === 1, "reply after the interruption");
+  });
+});
+
+describe("xAI rehearsal shutdown", () => {
+  // Runs last: closing is permanent for this process, as in production.
+  it("opens no new relays and refuses attaches once the process is closing", async () => {
+    const open = await createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env });
+    const { browser, events } = attach(open.ticket);
+    await waitFor(() => events.some((event) => event.type === "ready"), "ready");
+    const closed = new Promise((resolve) => browser.once("close", resolve));
+    closeRehearsalRelays();
+    await closed;
+    expect(events.at(-1)).toMatchObject({ type: "ended", reason: "restarting" });
+    const late = await createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env }).catch(
+      (reason: unknown) => reason,
+    );
+    expect(late).toBeInstanceOf(XAIRehearsalUnavailableError);
+    expect((late as XAIRehearsalUnavailableError).reason).toBe("restarting");
+    const refused = attach("x".repeat(43));
+    const status = await new Promise<number>((resolve) =>
+      refused.browser.on("unexpected-response", (_request, response) =>
+        resolve(response.statusCode || 0),
+      ),
+    );
+    expect(status).toBe(503);
   });
 });
 
@@ -482,9 +716,16 @@ describe("xAI rehearsal wiring contracts", () => {
     expect(route).toContain(
       '    if (!("sdp" in req.body)) {\n      await startRelayedRehearsal(req, res, windowSeconds);',
     );
+    // Without xAI the probe is answered before any quota is taken.
+    expect(route).toContain(
+      "validateBody(sessionSchema),\n  answerWebRtcWithoutRelay,\n  simulationMinuteQuota,",
+    );
+    const probe = route.slice(route.indexOf("function answerWebRtcWithoutRelay("));
+    expect(probe).toContain('res.json({ transport: "webrtc", reason: choice.reason });');
     const helper = route.slice(route.indexOf("async function startRelayedRehearsal("));
-    expect(helper).toContain("await releaseSimulationMinuteQuota(req);");
-    expect(helper).toContain('res.json({ transport: "webrtc", reason: choice.reason });');
+    expect(helper).toContain("await releaseSimulationMinuteQuota(req).catch(() => undefined);");
+    expect(helper).toContain("commit: () => commitRealtimeSessionSpend(reservation),");
+    expect(helper).toContain('new XAIRehearsalUnavailableError("not_attached"),');
     expect(helper).toContain('log.warn("Voice rehearsal fell back to OpenAI Realtime"');
     expect(helper).toContain("if (!(error instanceof XAIRehearsalUnavailableError)) throw error;");
     // The cleanup capability is proven before spend is reserved or a session opens.
@@ -507,7 +748,8 @@ describe("xAI rehearsal wiring contracts", () => {
     );
     const server = read("server.ts");
     const shutdown = server.slice(server.indexOf("function gracefulShutdown("));
-    expect(shutdown.indexOf('endAllRehearsalRelays("restarting");')).toBeLessThan(
+    expect(shutdown.indexOf("closeRehearsalRelays();")).toBeGreaterThan(-1);
+    expect(shutdown.indexOf("closeRehearsalRelays();")).toBeLessThan(
       shutdown.indexOf("closeServerAndDrain(server, graceMs)"),
     );
     const upgrades = read("src/services/supervisor-websocket-service.ts");

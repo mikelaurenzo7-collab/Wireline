@@ -805,24 +805,33 @@ test("after a rehearsal in which the Bot answered, Studio offers a real call to 
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
   const nextStep = page.getByTestId("rehearsal-next-step");
 
-  // A rehearsal that ends before the Bot answers offers nothing yet.
+  // A rehearsal in which only the opening played offers nothing yet.
   await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  relay.send(JSON.stringify({ type: "turn_done", completed: true }));
   await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
   await expect(nextStep).toHaveCount(0);
 
   await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
   relay.send(
+    JSON.stringify({ type: "caller_text", id: "c1", text: "When are you open?", final: true }),
+  );
+  relay.send(
     JSON.stringify({ type: "bot_text", id: "r1", text: "We open at eight.", final: true }),
   );
   relay.send(JSON.stringify({ type: "turn_done", completed: true }));
+  await expect(page.getByText("We open at eight.", { exact: true })).toBeVisible();
   await expect(nextStep).toHaveCount(0);
   await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
   await expect(nextStep).toBeVisible();
   await expect(nextStep).toContainText("Hear It on a Real Call");
 
   await nextStep.getByRole("button", { name: "Call My Phone", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Phone Test", exact: true })).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "Phone Test", exact: true });
+  await expect(dialog).toBeVisible();
   await expect(nextStep).toHaveCount(0);
+  // Closing the dialog returns keyboard focus to Start, not the page body.
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeFocused();
 });

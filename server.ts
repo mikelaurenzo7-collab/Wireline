@@ -35,7 +35,7 @@ import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkou
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
 import {
-  endAllRehearsalRelays,
+  closeRehearsalRelays,
   handleRehearsalRelayUpgrade,
   XAI_REHEARSAL_RELAY_PATH,
 } from "./src/lib/voice/xai-rehearsal-relay";
@@ -58,8 +58,9 @@ function gracefulShutdown(signal: string) {
   stopping = true;
   const graceMs = serverShutdownGraceMs();
   log.info("Shutdown received", { signal });
-  // Relayed rehearsals live in this process; tell owners before it exits.
-  endAllRehearsalRelays("restarting");
+  // Relayed rehearsals live in this process: open no more, and tell owners
+  // in open ones to start again before it exits.
+  closeRehearsalRelays();
   // Cloud computer tasks cannot outlive this process: settle them first.
   void interruptCloudComputerTasks()
     .catch((error: unknown) => {

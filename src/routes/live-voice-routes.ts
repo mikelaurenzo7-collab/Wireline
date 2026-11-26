@@ -1,4 +1,4 @@
-import express, { type Request, type Response } from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 
 import { authenticateUser } from "../middleware/auth";
@@ -23,7 +23,6 @@ import { createLiveVoiceCleanupIssuer } from "../lib/voice/live-voice-cleanup-to
 import {
   createXAIRehearsalRelay,
   rehearsalVoiceProvider,
-  stopRehearsalRelay,
   XAI_REHEARSAL_RELAY_PATH,
   XAI_REHEARSAL_RELAY_PROTOCOL,
   XAIRehearsalUnavailableError,
@@ -76,6 +75,23 @@ const toolSchema = z.object({
 });
 
 /**
+ * Without xAI, a relay request takes no quota or spend: the browser goes
+ * straight to its WebRTC offer, which passes every gate on its own request.
+ */
+function answerWebRtcWithoutRelay(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if ("sdp" in req.body) return next();
+  const choice = rehearsalVoiceProvider();
+  if (choice.provider === "xai") return next();
+  log.info("Voice rehearsal answers on OpenAI Realtime", {
+    userId: req.user.id,
+    agentId: req.body.agentId,
+    reason: choice.reason,
+  });
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ transport: "webrtc", reason: choice.reason });
+}
+
+/**
  * xAI Grok Voice rehearsal through BotBound's relay, so owners hear the voice
  * and opening callers hear. Any provider-side failure falls back to the
  * browser's OpenAI Realtime offer with the reason logged.
@@ -85,22 +101,11 @@ async function startRelayedRehearsal(
   res: Response,
   windowSeconds: number | undefined,
 ) {
-  const choice = rehearsalVoiceProvider();
-  if (choice.provider !== "xai") {
-    await releaseSimulationMinuteQuota(req);
-    log.info("Voice rehearsal answers on OpenAI Realtime", {
-      userId: req.user.id,
-      agentId: req.body.agentId,
-      reason: choice.reason,
-    });
-    res.setHeader("Cache-Control", "no-store");
-    res.json({ transport: "webrtc", reason: choice.reason });
-    return;
-  }
   let issueCleanup: ReturnType<typeof createLiveVoiceCleanupIssuer>;
   try {
     issueCleanup = createLiveVoiceCleanupIssuer();
   } catch {
+    await releaseSimulationMinuteQuota(req).catch(() => undefined);
     throw AppError.serviceUnavailable("Voice rehearsal cleanup is temporarily unavailable.");
   }
   const reservation = await reserveRealtimeSessionSpend(
@@ -118,6 +123,16 @@ async function startRelayedRehearsal(
       userId: req.user.id,
       agentId: req.body.agentId,
       maxDurationSeconds: windowSeconds,
+      // Committed when the browser attaches; released if it never does.
+      spend: {
+        commit: () => commitRealtimeSessionSpend(reservation),
+        release: () =>
+          releaseRealtimeSessionSpendAfterFailure(
+            req,
+            reservation,
+            new XAIRehearsalUnavailableError("not_attached"),
+          ),
+      },
     });
   } catch (error) {
     await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);
@@ -130,12 +145,6 @@ async function startRelayedRehearsal(
     res.setHeader("Cache-Control", "no-store");
     res.json({ transport: "webrtc", reason: "xai_unavailable" });
     return;
-  }
-  try {
-    await commitRealtimeSessionSpend(reservation);
-  } catch (error) {
-    stopRehearsalRelay({ userId: req.user.id, callId: relay.callId });
-    throw error;
   }
   res.setHeader("Cache-Control", "no-store");
   res.json({
@@ -180,6 +189,7 @@ router.post(
   enforceVoiceLaunchHardGate,
   enforcePrivateVoiceSimulationSpendCap,
   validateBody(sessionSchema),
+  answerWebRtcWithoutRelay,
   simulationMinuteQuota,
   async (req: AuthenticatedRequest, res: Response) => {
     // Free Builder rehearses in shorter sessions that reserve less, so its

@@ -1,14 +1,17 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import { eq } from "drizzle-orm";
 import WebSocket, { WebSocketServer, type RawData } from "ws";
 
 import * as schema from "../../db/schema";
+import { assertPrivateVoiceSimulationAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
+import { runInBackground } from "../background-work";
 import { markRealtimeProviderCallOutcome } from "../realtime-provider-outcome";
 import { drizzle, log, serialQueryBatch, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { composeInboundOpening } from "./inbound-opening";
 import { runOpenAILiveVoiceTool } from "./openai-live-agent-service";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
@@ -55,7 +58,26 @@ const MAX_ACTIVE_RELAYS = 24;
 const MAX_ACTIVE_RELAYS_PER_USER = 2;
 const MAX_BROWSER_FRAME_BYTES = 32_768;
 const MAX_TYPED_LINE_CHARS = 2_000;
-const MIN_TYPED_LINE_INTERVAL_MS = 750;
+const MAX_TYPED_LINES = 200;
+/** Holds account deletion off for the longest rehearsal plus its attach window. */
+const RELAY_DELETION_LEASE_MS = 10 * 60_000;
+/**
+ * A reply BotBound requests must be acknowledged; xAI can drop that
+ * acknowledgement (see the phone session), so retry a bounded number of times.
+ */
+const REPLY_ACK_TIMEOUT_MS = 4_000;
+const MAX_REPLY_ATTEMPTS = 3;
+/** After the owner stops talking, xAI's own reply normally starts within this. */
+const AUTO_RESPONSE_WAIT_MS = 3_000;
+
+export type RelayTiming = { replyAckMs?: number; autoResponseMs?: number };
+
+/**
+ * The route's spend reservation. It is committed when the browser attaches
+ * and released if the rehearsal ends before that, so a browser that cannot
+ * connect never uses up the owner's allowance.
+ */
+export type RelaySpend = { commit: () => Promise<void>; release: () => Promise<void> };
 
 /** Rehearsal follows the phone line's provider so owners hear what callers hear. */
 export type RehearsalVoiceProviderChoice =
@@ -102,12 +124,15 @@ type EndReason =
   | "attach_timeout"
   | "provider_closed"
   | "reply_failed"
+  | "spend_unavailable"
   | "restarting";
 
 const END_MESSAGES: Partial<Record<EndReason, string>> = {
   time_limit: "This rehearsal reached its time limit.",
   provider_closed: "The voice connection ended. Start the rehearsal again to continue.",
   reply_failed: "The Bot could not finish its voice reply. Start the rehearsal again.",
+  spend_unavailable:
+    "BotBound could not confirm this rehearsal against your allowance. Try again shortly.",
   restarting: "BotBound is updating. Start the rehearsal again in a moment.",
 };
 
@@ -141,19 +166,38 @@ type RelaySession = {
   playback: Map<string, PlaybackItem>;
   interruptedResponses: Set<string>;
   pendingTools: Promise<void>;
-  lastTypedAt: number;
+  typedLines: number;
   callerTurnEndedAt: number | null;
   replyLatenciesMs: number[];
   respondingId: string | null;
   callerTurns: number;
   botTurns: number;
+  /** Responses the provider has started and not finished. */
+  activeResponses: Set<string>;
+  callerSpeaking: boolean;
+  /** The owner just finished speaking; xAI's own reply is about to start. */
+  awaitingAutoResponse: boolean;
+  autoResponseTimer: ReturnType<typeof setTimeout> | null;
+  /** A knowledge result or typed line is waiting for the Bot's reply. */
+  replyPending: boolean;
+  /** Tag of the reply BotBound requested and xAI has not yet acknowledged. */
+  requestedReply: string | null;
+  replyAttempts: number;
+  replyWatchdog: ReturnType<typeof setTimeout> | null;
+  timing: Required<RelayTiming>;
+  spend: RelaySpend | null;
+  spendState: "reserved" | "committing" | "committed" | "released";
 };
 
 const sessionsByTicket = new Map<string, RelaySession>();
 const sessionsById = new Map<string, RelaySession>();
+// Counted from before the first await, so concurrent starts respect the limits.
+const pendingByUser = new Map<string, number>();
+let pendingTotal = 0;
+let acceptingRelays = true;
 
 function activeSessionsForUser(userId: string): number {
-  let count = 0;
+  let count = pendingByUser.get(userId) ?? 0;
   for (const session of sessionsById.values()) if (session.userId === userId) count += 1;
   return count;
 }
@@ -218,8 +262,17 @@ function endSession(session: RelaySession, reason: EndReason): void {
   if (session.attachTimer) clearTimeout(session.attachTimer);
   if (session.deadlineTimer) clearTimeout(session.deadlineTimer);
   if (session.openingTimer) clearTimeout(session.openingTimer);
+  if (session.autoResponseTimer) clearTimeout(session.autoResponseTimer);
+  if (session.replyWatchdog) clearTimeout(session.replyWatchdog);
   sessionsByTicket.delete(session.ticket);
   sessionsById.delete(session.publicId);
+  // Nothing was spoken before the browser attached, so its reservation and
+  // minute quota go back to the owner.
+  const spend = session.spend;
+  if (spend && session.spendState === "reserved") {
+    session.spendState = "released";
+    runInBackground("xAI rehearsal reservation release", () => spend.release());
+  }
   const message = END_MESSAGES[reason];
   const browser = session.browser;
   if (browser && browser.readyState === WebSocket.OPEN) {
@@ -247,9 +300,18 @@ function endSession(session: RelaySession, reason: EndReason): void {
   });
 }
 
-/** End every relayed rehearsal, e.g. while this process shuts down. */
+/** End every relayed rehearsal and tell each owner to start again. */
 export function endAllRehearsalRelays(reason: Extract<EndReason, "restarting"> = "restarting") {
   for (const session of [...sessionsById.values()]) endSession(session, reason);
+}
+
+/**
+ * Shutdown: open no new relays (owners fall back to OpenAI until the new
+ * process is up) and end the open ones with a start-again message.
+ */
+export function closeRehearsalRelays(): void {
+  acceptingRelays = false;
+  endAllRehearsalRelays("restarting");
 }
 
 /** Owner stop through the cleanup ticket; a missing session already ended. */
@@ -323,16 +385,22 @@ function configureUpstream(upstream: WebSocket, session: Record<string, unknown>
  * Open and configure the provider session for an authenticated owner. The
  * browser then has a short window to attach with the single-use ticket.
  */
-export async function createXAIRehearsalRelay(input: {
+type RelayInput = {
   userId: string;
   agentId: string;
   maxDurationSeconds?: number;
   env?: NodeJS.ProcessEnv;
-}) {
+  spend?: RelaySpend;
+  /** Test hook; production uses the defaults above. */
+  timing?: RelayTiming;
+};
+
+export async function createXAIRehearsalRelay(input: RelayInput) {
   const env = input.env ?? process.env;
   const apiKey = String(env.XAI_API_KEY || "").trim();
   if (!apiKey) throw new XAIRehearsalUnavailableError("xai_not_configured");
-  if (sessionsById.size >= MAX_ACTIVE_RELAYS) {
+  if (!acceptingRelays) throw new XAIRehearsalUnavailableError("restarting");
+  if (sessionsById.size + pendingTotal >= MAX_ACTIVE_RELAYS) {
     throw new XAIRehearsalUnavailableError("relay_capacity");
   }
   if (activeSessionsForUser(input.userId) >= MAX_ACTIVE_RELAYS_PER_USER) {
@@ -342,6 +410,34 @@ export async function createXAIRehearsalRelay(input: {
       "A voice rehearsal is already running. End it before starting another.",
     );
   }
+  pendingTotal += 1;
+  pendingByUser.set(input.userId, (pendingByUser.get(input.userId) ?? 0) + 1);
+  try {
+    // The same account checks as the WebRTC rehearsal: environment policy,
+    // and a deletion lease so an account purge waits for this session.
+    await assertPrivateVoiceSimulationAllowed(input.userId, "xai_rehearsal_relay");
+    const outcome = await runTenantProviderWorkWithDeletionFence({
+      userId: input.userId,
+      operation: "xai_rehearsal_relay_create",
+      ttlMs: RELAY_DELETION_LEASE_MS,
+      retainOnSuccess: true,
+      perform: () => openRelaySession(input, env, apiKey),
+    });
+    if (!outcome.performed) {
+      throw AppError.conflict(
+        "This workspace has reached its account-deletion deadline. A new rehearsal cannot start.",
+      );
+    }
+    return outcome.result;
+  } finally {
+    pendingTotal -= 1;
+    const left = (pendingByUser.get(input.userId) ?? 1) - 1;
+    if (left > 0) pendingByUser.set(input.userId, left);
+    else pendingByUser.delete(input.userId);
+  }
+}
+
+async function openRelaySession(input: RelayInput, env: NodeJS.ProcessEnv, apiKey: string) {
   // Owner and Bot errors (missing Bot, review hold) surface as-is; only
   // provider trouble falls back to OpenAI.
   const runtime = await buildOpenAIRealtimeAgentRuntime({
@@ -419,12 +515,26 @@ export async function createXAIRehearsalRelay(input: {
     playback: new Map(),
     interruptedResponses: new Set(),
     pendingTools: Promise.resolve(),
-    lastTypedAt: 0,
+    typedLines: 0,
     callerTurnEndedAt: null,
     replyLatenciesMs: [],
     respondingId: null,
     callerTurns: 0,
     botTurns: 0,
+    activeResponses: new Set(),
+    callerSpeaking: false,
+    awaitingAutoResponse: false,
+    autoResponseTimer: null,
+    replyPending: false,
+    requestedReply: null,
+    replyAttempts: 0,
+    replyWatchdog: null,
+    timing: {
+      replyAckMs: input.timing?.replyAckMs ?? REPLY_ACK_TIMEOUT_MS,
+      autoResponseMs: input.timing?.autoResponseMs ?? AUTO_RESPONSE_WAIT_MS,
+    },
+    spend: input.spend ?? null,
+    spendState: "reserved",
   };
   sessionsByTicket.set(session.ticket, session);
   sessionsById.set(session.publicId, session);
@@ -491,6 +601,56 @@ function markInterrupted(session: RelaySession): void {
   sendBrowser(session, { type: "interrupt" });
 }
 
+function clearReplyWatchdog(session: RelaySession): void {
+  if (session.replyWatchdog) clearTimeout(session.replyWatchdog);
+  session.replyWatchdog = null;
+}
+
+/**
+ * Ask for the Bot's reply to a knowledge result or typed line only when no
+ * response is active, the owner is not talking, and xAI is not about to answer
+ * the owner by itself; xAI rejects a second active response, which would leave
+ * the Bot silent. The same gate guards phone calls (openai-sip-session.ts).
+ */
+function requestReplyWhenReady(session: RelaySession): void {
+  if (session.ended || !session.replyPending || !session.openingDone) return;
+  if (
+    session.activeResponses.size ||
+    session.callerSpeaking ||
+    session.awaitingAutoResponse ||
+    session.requestedReply ||
+    session.upstream.readyState !== WebSocket.OPEN
+  )
+    return;
+  session.replyPending = false;
+  const tag = randomUUID();
+  session.requestedReply = tag;
+  session.replyAttempts += 1;
+  sendUpstream(session, {
+    type: "response.create",
+    response: { metadata: { botbound_rehearsal_reply: tag } },
+  });
+  clearReplyWatchdog(session);
+  session.replyWatchdog = setTimeout(() => {
+    session.replyWatchdog = null;
+    if (session.ended || session.requestedReply !== tag) return;
+    // The acknowledgement never came: release the claim and retry, a bounded
+    // number of times, instead of leaving the owner in silence.
+    session.requestedReply = null;
+    log.warn("xAI rehearsal reply was not acknowledged", {
+      rehearsalId: session.publicId,
+      attempt: session.replyAttempts,
+    });
+    if (session.replyAttempts >= MAX_REPLY_ATTEMPTS) {
+      session.replyAttempts = 0;
+      return;
+    }
+    session.replyPending = true;
+    requestReplyWhenReady(session);
+  }, session.timing.replyAckMs);
+  session.replyWatchdog.unref?.();
+}
+
 function normalizedSpeech(value: string): string {
   return value
     .toLowerCase()
@@ -504,6 +664,8 @@ function finishOpening(session: RelaySession): void {
   session.openingPlaybackUntil = Math.max(Date.now(), session.queuedUntil);
   if (session.openingTimer) clearTimeout(session.openingTimer);
   session.openingTimer = null;
+  // A line typed during the opening is answered once it has played.
+  requestReplyWhenReady(session);
 }
 
 /**
@@ -569,7 +731,9 @@ async function runKnowledgeTool(session: RelaySession, event: Record<string, unk
     type: "conversation.item.create",
     item: { type: "function_call_output", call_id: callId, output: JSON.stringify(result) },
   });
-  sendUpstream(session, { type: "response.create" });
+  // The response that asked for the lookup is usually still active.
+  session.replyPending = true;
+  requestReplyWhenReady(session);
 }
 
 function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
@@ -591,10 +755,25 @@ function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
   const interrupted = Boolean(responseId && session.interruptedResponses.has(responseId));
 
   if (type === "response.created") {
+    // Registered first, so nothing requests another reply while this one runs.
+    session.activeResponses.add(responseId || "unidentified");
+    session.respondingId = responseId || null;
+    const metadata = asRecord(response.metadata);
+    if (session.requestedReply && metadata.botbound_rehearsal_reply === session.requestedReply) {
+      session.requestedReply = null;
+      session.replyAttempts = 0;
+      clearReplyWatchdog(session);
+    } else if (session.openingResponseId && responseId !== session.openingResponseId) {
+      // xAI answering the owner by itself sees everything already in the
+      // conversation, including a pending lookup result or typed line.
+      session.awaitingAutoResponse = false;
+      if (session.autoResponseTimer) clearTimeout(session.autoResponseTimer);
+      session.autoResponseTimer = null;
+      session.replyPending = false;
+    }
     if (!session.openingResponseId) session.openingResponseId = responseId || "opening";
     // A model turn starts only after the opening has played.
     else if (responseId !== session.openingResponseId) finishOpening(session);
-    session.respondingId = responseId || null;
     return;
   }
 
@@ -664,11 +843,23 @@ function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
   if (type === "input_audio_buffer.speech_started") {
     // As on a call, the opening is not interruptible.
     if (!session.openingDone || Date.now() < session.openingPlaybackUntil) return;
+    session.callerSpeaking = true;
     markInterrupted(session);
     return;
   }
-  if (type === "input_audio_buffer.speech_stopped") {
-    session.callerTurnEndedAt = Date.now();
+  if (type === "input_audio_buffer.speech_stopped" || type === "input_audio_buffer.committed") {
+    if (type === "input_audio_buffer.speech_stopped") session.callerTurnEndedAt = Date.now();
+    session.callerSpeaking = false;
+    // xAI creates its reply to the owner next; never insert one into that gap.
+    // If none starts, a pending reply goes ahead after a short wait.
+    session.awaitingAutoResponse = true;
+    if (session.autoResponseTimer) clearTimeout(session.autoResponseTimer);
+    session.autoResponseTimer = setTimeout(() => {
+      session.autoResponseTimer = null;
+      session.awaitingAutoResponse = false;
+      requestReplyWhenReady(session);
+    }, session.timing.autoResponseMs);
+    session.autoResponseTimer.unref?.();
     return;
   }
 
@@ -686,6 +877,8 @@ function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
 
   if (type === "response.done") {
     const status = typeof response.status === "string" ? response.status : "";
+    if (responseId) session.activeResponses.delete(responseId);
+    else session.activeResponses.clear();
     const wasOpening =
       !session.openingDone && (!responseId || responseId === session.openingResponseId);
     if (wasOpening) finishOpening(session);
@@ -711,6 +904,7 @@ function handleUpstreamEvent(session: RelaySession, raw: RawData): void {
       type: "turn_done",
       completed: status === "completed" && spoke && !interrupted,
     });
+    requestReplyWhenReady(session);
     return;
   }
 
@@ -746,25 +940,29 @@ function handleBrowserMessage(session: RelaySession, data: RawData, isBinary: bo
   }
   if (message.type === "user_text" && typeof message.text === "string") {
     const text = message.text.trim().slice(0, MAX_TYPED_LINE_CHARS);
-    const now = Date.now();
-    if (!text || now - session.lastTypedAt < MIN_TYPED_LINE_INTERVAL_MS) return;
-    session.lastTypedAt = now;
+    if (!text || session.typedLines >= MAX_TYPED_LINES) return;
+    session.typedLines += 1;
     session.callerTurns += 1;
-    session.callerTurnEndedAt = now;
-    if (session.openingDone && (session.respondingId || session.playback.size)) {
-      markInterrupted(session);
-    }
+    session.callerTurnEndedAt = Date.now();
     sendUpstream(session, {
       type: "conversation.item.create",
       item: { type: "message", role: "user", content: [{ type: "input_text", text }] },
     });
-    sendUpstream(session, { type: "response.create" });
+    // Lines typed in quick succession share one reply.
+    session.replyPending = true;
+    if (session.openingDone && (session.activeResponses.size || session.playback.size)) {
+      // Typing over the Bot interrupts it, as speaking would; the reply
+      // follows once the interrupted response has finished.
+      markInterrupted(session);
+      if (session.activeResponses.size) sendUpstream(session, { type: "response.cancel" });
+    }
+    requestReplyWhenReady(session);
   } else if (message.type === "stop") {
     endSession(session, "stopped");
   }
 }
 
-function attachBrowser(session: RelaySession, browser: WebSocket): void {
+async function attachBrowser(session: RelaySession, browser: WebSocket): Promise<void> {
   if (session.attachTimer) clearTimeout(session.attachTimer);
   session.attachTimer = null;
   sessionsByTicket.delete(session.ticket);
@@ -773,6 +971,24 @@ function attachBrowser(session: RelaySession, browser: WebSocket): void {
   browser.on("message", (data, isBinary) => handleBrowserMessage(session, data, isBinary));
   browser.on("close", () => endSession(session, "browser_closed"));
   browser.on("error", () => endSession(session, "browser_closed"));
+  // As on the WebRTC path, the session is committed before anything is heard.
+  const spend = session.spend;
+  if (spend && session.spendState === "reserved") {
+    session.spendState = "committing";
+    try {
+      await spend.commit();
+      session.spendState = "committed";
+    } catch (error) {
+      session.spendState = "reserved";
+      log.error("xAI rehearsal spend could not be committed", {
+        rehearsalId: session.publicId,
+        error: getErrorMessage(error),
+      });
+      endSession(session, "spend_unavailable");
+      return;
+    }
+  }
+  if (session.ended) return;
   sendBrowser(session, {
     type: "ready",
     sampleRate: XAI_REHEARSAL_SAMPLE_RATE,
@@ -842,6 +1058,7 @@ export function handleRehearsalRelayUpgrade(
   socket: Duplex,
   head: Buffer,
 ): void {
+  if (!acceptingRelays) return refuse(socket, "503 Service Unavailable");
   if (!sameOriginUpgrade(request)) return refuse(socket, "403 Forbidden");
   const protocols = offeredProtocols(request);
   const ticket = protocols
@@ -865,6 +1082,6 @@ export function handleRehearsalRelayUpgrade(
       browser.close(1000, "Rehearsal ended");
       return;
     }
-    attachBrowser(session, browser);
+    void attachBrowser(session, browser);
   });
 }

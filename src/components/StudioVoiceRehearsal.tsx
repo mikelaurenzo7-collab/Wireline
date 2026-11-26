@@ -176,6 +176,8 @@ export default function StudioVoiceRehearsal({
             <button
               type="button"
               onClick={() => {
+                // This card goes away; the dialog returns focus to Start instead.
+                document.getElementById(studioVoiceStartId(agentId))?.focus();
                 setSuggestPhoneTest(false);
                 onCallMyPhone();
               }}

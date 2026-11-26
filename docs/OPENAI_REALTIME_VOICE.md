@@ -100,7 +100,7 @@ and funding controls.
    mid-call, crash recovery keeps the turns recorded so far. Ordinary calls
    record no live transcript.
 
-After a voice rehearsal in which the Bot answered, Studio offers **Call My Phone**
+After a voice rehearsal that ended cleanly and in which the Bot answered the owner, Studio offers **Call My Phone**
 as the next step when the account can place the test.
 
 Verification and AI conversation share one canonical funding and usage identity.
@@ -204,9 +204,11 @@ xAI serves browsers over WebSocket only, and its short-lived client tokens
 cannot carry session settings, so a direct connection would have to send the
 Bot's prompt from the page. Studio therefore asks
 `POST /api/voice/live/session` with `{ agentId, transport: "relay" }`. With the
-same authentication, launch gate, spend cap, minute quota and rate limit as the
-WebRTC path, the server reserves spend (labelled `xai`, at the same conservative
-reserve), builds the session from the phone runtime's private-test surface
+same authentication, launch gate, spend cap, minute quota, rate limit,
+account-environment policy and account-deletion fence as the WebRTC path, the
+server reserves spend (labelled `xai`, at the same conservative reserve; it is
+committed when the browser attaches and released if it never does), builds the
+session from the phone runtime's private-test surface
 (`browser_test`: the phone prompt with a private-test notice and approved
 knowledge search as the only tool), maps the saved voice exactly as phone
 calls do, and opens and configures the xAI session before answering. The
@@ -223,13 +225,20 @@ recording notice, because rehearsals are not recorded), runs knowledge lookups
 in the owner's tenant scope, tells xAI how much of an interrupted reply was
 heard, and ends the session at its time limit, when the browser leaves, on the
 owner's stop ticket, or when the API restarts (the owner is told to start
-again). Each session logs its duration, turns and reply latency.
+again; a shutting-down process opens no new relays). The Bot's reply to a
+knowledge result or a typed line is requested only when no response is active,
+the owner is not speaking and xAI is not about to answer by itself, and is
+retried when xAI does not acknowledge it, as on phone calls. Typing over the
+Bot interrupts it. Each session logs its duration, turns and reply latency.
 
-If xAI is unset, opted out, rejects the session or cannot be reached, the
+If xAI is unset or opted out, the server answers `{ "transport": "webrtc" }`
+before taking any quota. If xAI rejects the session or cannot be reached, the
 reservation and minute quota are released, the reason is logged, and the
-response is `{ "transport": "webrtc" }`; the browser then sends its WebRTC offer
-and the rehearsal answers on OpenAI Realtime below. A cloned voice is not used
-in rehearsal; Studio says so and offers a preview.
+answer is the same. If the browser cannot connect to the relay, it ends that
+session through its cleanup ticket (returning its reservation) and uses WebRTC
+for this and later rehearsals in the view. In each case the browser sends its
+WebRTC offer and the rehearsal answers on OpenAI Realtime below. A cloned voice
+is not used in rehearsal; Studio says so and offers a preview.
 
 Studio opens private rehearsal in Voice. Entering the view or selecting Voice never
 requests a microphone or creates a provider call; the owner must choose Start.
