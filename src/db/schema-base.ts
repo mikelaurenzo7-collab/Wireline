@@ -422,6 +422,11 @@ export const agents = pgTable(
     autonomyLevel: text("autonomy_level").default("inherit"),
     channels: text("channels").array(),
     slackChannelId: text("slack_channel_id"),
+    /**
+     * Named for Zoom, which BotBound no longer connects. It now means
+     * "put a video meeting on bookings this Bot makes", issued by the
+     * connected calendar provider. Renaming the column needs a migration.
+     */
     autoZoomLink: boolean("auto_zoom_link").default(false),
     businessHours: jsonb("business_hours"),
     timezone: text("timezone").default("UTC"),
@@ -1902,7 +1907,7 @@ export const crmConnections = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
-    provider: text("provider").notNull(), // 'hubspot', 'salesforce', 'slack', 'x', 'zoom', …
+    provider: text("provider").notNull(), // 'slack', 'microsoft_teams', 'google_sheets', …
     crmType: text("crm_type"), // legacy alias/extra info
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token"),
@@ -1911,8 +1916,8 @@ export const crmConnections = pgTable(
     instanceUrl: text("instance_url"),
     /**
      * Human-readable account label written by the OAuth callbacks: the
-     * Salesforce/HubSpot owner email, the Slack workspace name, or the
-     * Zoom account type. Surfaced by GET /api/oauth/crm/status so the
+     * Slack workspace name, or the connected Microsoft or Google account.
+     * Surfaced by GET /api/oauth/crm/status so the
      * Account Holder can confirm which workspace/account is connected without
      * re-running the OAuth flow.
      */

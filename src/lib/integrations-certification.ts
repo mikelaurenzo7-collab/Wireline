@@ -18,21 +18,10 @@ const SUPPORTED_IDS = new Set([
   "resend",
   "google-workspace",
   "microsoft-365",
-  "hubspot",
   "slack",
-  "shopify",
 ]);
 
-const BETA_IDS = new Set([
-  "salesforce",
-  "docusign",
-  "apollo",
-  "meta",
-  "zoom",
-  "x",
-  "x-ads",
-  "yahoo",
-]);
+const BETA_IDS = new Set(["docusign"]);
 
 export function buyerTierForIntegration(id: string): BuyerTier {
   if (SUPPORTED_IDS.has(id)) return "supported";

@@ -7,8 +7,8 @@ import { Badge, Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 
-type MailboxProvider = "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
-type ConnectableMailboxProvider = Exclude<MailboxProvider, "agentmail" | "yahoo">;
+type MailboxProvider = "google" | "microsoft" | "icloud" | "agentmail";
+type ConnectableMailboxProvider = Exclude<MailboxProvider, "agentmail">;
 type MailboxAccount = {
   id: string;
   emailAddress: string;

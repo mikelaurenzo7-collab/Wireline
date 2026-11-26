@@ -53,7 +53,7 @@ describe("runtime integrations registry launch policy", () => {
     expect(source).not.toContain("OneDrive, and PowerPoint.");
     expect(source).toContain('"Yahoo"');
     expect(source).toContain(
-      "Yahoo sign-in is supported. Yahoo Mail read and send actions are not yet available.",
+      "Yahoo account sign-in only. BotBound does not connect, read, or send Yahoo mail.",
     );
   });
 });

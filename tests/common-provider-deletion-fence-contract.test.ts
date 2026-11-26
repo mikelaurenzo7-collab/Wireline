@@ -20,12 +20,11 @@ describe("common provider deletion-fence contract", () => {
     expect(booking).toContain("runTenantProviderWorkWithDeletionFence");
     expect(booking).toContain('operation: "integration_calendar_booking"');
     expect(booking).toContain("retainOnSuccess: () => providerWorkStarted");
-    expect(booking.indexOf("runTenantProviderWorkWithDeletionFence")).toBeLessThan(
-      booking.indexOf("createZoomMeeting"),
-    );
-    expect(booking.indexOf("runTenantProviderWorkWithDeletionFence")).toBeLessThan(
-      booking.indexOf("createGoogleEvent"),
-    );
+    for (const providerCall of ["createGoogleEvent", "createMicrosoftEvent"]) {
+      expect(booking.indexOf("runTenantProviderWorkWithDeletionFence")).toBeLessThan(
+        booking.indexOf(providerCall),
+      );
+    }
 
     expect(email).toContain("runTenantProviderWorkWithDeletionFence");
     expect(email).toContain('operation: "integration_email_send"');

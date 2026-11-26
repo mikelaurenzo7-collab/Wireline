@@ -112,7 +112,6 @@ const ROUTE_SOURCE_FILES = [
   "src/routes/oauth/google-sheets.ts",
   "src/routes/oauth/microsoft.ts",
   "src/routes/oauth/microsoft-graph.ts",
-  "src/routes/oauth/yahoo.ts",
   "src/routes/oauth/index.ts",
   "src/routes/oauth/status.ts",
 ];

@@ -6,8 +6,6 @@ import { drizzle, log } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { authenticateUser } from "../../middleware/auth";
 import { slackOAuthConfigured } from "../../lib/slack-service";
-import { xOAuthConfigured } from "../../lib/x-service";
-import { zoomOAuthConfigured } from "../../lib/zoom-service";
 import { microsoftGraphConfigured } from "../../lib/microsoft-graph-service";
 import { googleSheetsConfigured } from "../../lib/google-sheets-service";
 import { computeIntegrationHealth } from "../../lib/integration-health";
@@ -48,8 +46,6 @@ router.get(
         row: (typeof connections)[number] | undefined,
       ): row is (typeof connections)[number] => !!row && row.active !== false;
       const slackConn = findBy("slack");
-      const xConn = findBy("x");
-      const zoomConn = findBy("zoom");
       const teamsConn = findBy("microsoft_teams");
       const excelConn = findBy("microsoft_excel");
       const sheetsConn = findBy("google_sheets");
@@ -67,27 +63,6 @@ router.get(
                 null,
             }
           : { connected: false, configured: slackOAuthConfigured() },
-        x: isLive(xConn)
-          ? {
-              connected: true,
-              configured: xOAuthConfigured(),
-              email: xConn.connectedEmail,
-              instance_url: xConn.instanceUrl,
-              connected_at: xConn.createdAt,
-              username:
-                (xConn.metadata as { username?: string } | null)?.username ??
-                xConn.connectedEmail?.replace(/^@/, "") ??
-                null,
-            }
-          : { connected: false, configured: xOAuthConfigured() },
-        zoom: isLive(zoomConn)
-          ? {
-              connected: true,
-              configured: zoomOAuthConfigured(),
-              instance_url: zoomConn.instanceUrl,
-              connected_at: zoomConn.createdAt,
-            }
-          : { connected: false, configured: zoomOAuthConfigured() },
         microsoft_teams: isLive(teamsConn)
           ? {
               connected: true,

@@ -73,7 +73,7 @@ describe("demo tenant external actions stop before providers", () => {
     expect(supervise).not.toHaveBeenCalled();
   }, 60_000);
 
-  it("does not call Slack or Zoom when the workspace is demo-classified", async () => {
+  it("does not call Slack when the workspace is demo-classified", async () => {
     const fetchSpy = vi.fn();
     const fetchWithTimeout = vi.fn();
     const select = vi.fn();
@@ -88,11 +88,7 @@ describe("demo tenant external actions stop before providers", () => {
     }));
 
     const { postAgentNotification } = await import("../src/lib/slack-service");
-    const { createMeeting } = await import("../src/lib/zoom-service");
     await expect(postAgentNotification("demo-user", "A customer needs help")).resolves.toBe(false);
-    await expect(
-      createMeeting("demo-user", { topic: "Demo", startTime: new Date().toISOString() }),
-    ).resolves.toBeNull();
 
     expect(select).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -10,8 +10,6 @@ const STATIC_INTEGRATION_CALLBACKS = {
   "src/routes/oauth/google-sheets.ts": "/api/oauth/google_sheets/callback",
   "src/routes/oauth/microsoft.ts": "/api/oauth/microsoft/callback",
   "src/routes/oauth/slack.ts": "/api/oauth/slack/callback",
-  "src/routes/oauth/x.ts": "/api/oauth/x/callback",
-  "src/routes/oauth/zoom.ts": "/api/oauth/zoom/callback",
 } as const;
 
 const SIGN_IN_CALLBACKS = [
@@ -102,12 +100,11 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(inventory).not.toContain("VITE_PUBLIC_SITE_URL");
   });
 
-  it("keeps Yahoo sign-in live while excluding the unfinished mailbox callback", () => {
-    const yahoo = read("src/routes/oauth/yahoo.ts");
+  it("keeps Yahoo sign-in live after the mailbox connector was retired", () => {
     const inventory = read("scripts/print-oauth-redirects.mjs");
-    expect(yahoo).toContain("YAHOO_MAIL_CONNECTION_AVAILABLE = false");
-    expect(yahoo).toContain("Yahoo Mail connection is not available");
+    expect(existsSync(resolve(root, "src/routes/oauth/yahoo.ts"))).toBe(false);
+    expect(read("src/routes/oauth/index.ts")).not.toContain("yahoo");
     expect(inventory).toContain('["Yahoo sign-in", "/api/auth/yahoo/callback"]');
-    expect(inventory).not.toContain('["Yahoo", "/api/oauth/yahoo/callback"]');
+    expect(inventory).not.toContain("/api/oauth/yahoo/callback");
   });
 });

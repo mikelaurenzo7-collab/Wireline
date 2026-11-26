@@ -74,7 +74,7 @@ existing /api/auth/* or provider callback paths during the brand/domain cutover.
 printGroup("ACCOUNT SIGN-IN CALLBACKS", signInCallbacks);
 printGroup("CONNECTED-INTEGRATION CALLBACKS", integrationCallbacks);
 console.log(
-  "\nDEFERRED: Yahoo Mail connection is not registered until XOAUTH2 read/send execution ships. Yahoo sign-in remains active.\n",
+  "\nRETIRED: the Yahoo Mail connection was deleted on 2026-11-24 and has no callback to register. Yahoo sign-in remains active.\n",
 );
 
 console.log(`

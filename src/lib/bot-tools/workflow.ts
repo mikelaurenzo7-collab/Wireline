@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { NotificationService } from "../notifications";
-import { createMeeting as createZoomMeeting } from "../zoom-service";
 import { sanitizePhone } from "../agent-runtime-helpers";
 import {
   CALLER_LINKED_LIVE_WRITE_DENIAL,
@@ -47,29 +46,6 @@ export async function handleWorkflowToolCall(
     context;
 
   // Workflow Handlers
-  if (fn === "generate_zoom_link") {
-    try {
-      const { topic, start_time, duration } = args || {};
-      const zoomMeeting = await createZoomMeeting(agent.user_id, {
-        topic,
-        startTime: start_time,
-        duration: duration ? Number(duration) : undefined,
-      });
-      return {
-        toolCallId,
-        result: zoomMeeting
-          ? `Meeting link created: ${zoomMeeting.join_url}`
-          : "The Zoom meeting link was not confirmed. No follow-up task was saved. Offer to create one with create_followup_task and confirm it only after the tool succeeds.",
-      };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "The Zoom meeting link was not confirmed. No follow-up task was saved. Offer to create one with create_followup_task and confirm it only after the tool succeeds.",
-      };
-    }
-  }
-
   if (fn === "log_payment_promise") {
     try {
       const { amount_promised, payment_date, payment_method } = args || {};

@@ -181,16 +181,7 @@ describe("auth OAuth browser binding contract", () => {
     // the completing user's provider tokens to the initiator's Wireline
     // account. Every provider callback resolves the linked user exclusively
     // through the state-initiator/session equality check.
-    const providers = [
-      "google",
-      "google-sheets",
-      "microsoft",
-      "microsoft-graph",
-      "slack",
-      "x",
-      "yahoo",
-      "zoom",
-    ];
+    const providers = ["google", "google-sheets", "microsoft", "microsoft-graph", "slack"];
     for (const provider of providers) {
       const route = read(`src/routes/oauth/${provider}.ts`);
       expect(route).toContain("resolveLinkedOAuthUserId(req");

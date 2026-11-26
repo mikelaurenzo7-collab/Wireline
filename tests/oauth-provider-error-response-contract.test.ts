@@ -9,9 +9,6 @@ const oauthCallbackRoutes = [
   "src/routes/oauth/microsoft-graph.ts",
   "src/routes/oauth/microsoft.ts",
   "src/routes/oauth/slack.ts",
-  "src/routes/oauth/x.ts",
-  "src/routes/oauth/yahoo.ts",
-  "src/routes/oauth/zoom.ts",
 ] as const;
 
 describe("OAuth provider-error responses", () => {
@@ -44,9 +41,6 @@ describe("OAuth provider-error responses", () => {
       "src/routes/oauth/microsoft-graph.ts",
       "src/routes/oauth/microsoft.ts",
       "src/routes/oauth/slack.ts",
-      "src/routes/oauth/x.ts",
-      "src/routes/oauth/yahoo.ts",
-      "src/routes/oauth/zoom.ts",
     ] as const;
 
     for (const path of connectStarts) {

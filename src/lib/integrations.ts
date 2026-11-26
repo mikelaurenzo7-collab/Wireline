@@ -5,7 +5,6 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
-import { createMeeting as createZoomMeeting } from "./zoom-service";
 import { fetchIcloudInbox, findIcloudReplyThreading, sendIcloudMail } from "./icloud-mail";
 import { fetchAgentMailInbox, findAgentMailReplyThreading, sendAgentMail } from "./agentmail-mail";
 import {
@@ -38,7 +37,7 @@ export type InboxMessagePreview = {
   subject: string;
   snippet: string;
   receivedAt: Date;
-  provider: "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
+  provider: "google" | "microsoft" | "icloud" | "agentmail";
 };
 
 /** A connected mailbox whose fetch failed: dead token, revoked grant, outage. */
@@ -306,8 +305,12 @@ export class IntegrationService {
             if (!busy || busy.length > 0) return false;
           }
 
-          // Check if the agent has auto_zoom_link enabled.
-          let zoomUrl: string | undefined;
+          // `auto_zoom_link` predates the Zoom retirement. It now means
+          // "put a video meeting on this booking", issued by the calendar
+          // provider itself rather than by a third connector. Renaming the
+          // column needs a migration on the shared database, so the name
+          // stays until that is approved.
+          let attachOnlineMeeting = false;
           if (params.agentId) {
             const [agent] = await drizzle
               .select({ autoZoomLink: schema.agents.autoZoomLink })
@@ -316,30 +319,16 @@ export class IntegrationService {
                 and(eq(schema.agents.id, params.agentId), eq(schema.agents.userId, this.userId)),
               )
               .limit(1);
-
-            if (agent?.autoZoomLink) {
-              providerWorkStarted = true;
-              const meeting = await createZoomMeeting(this.userId, {
-                topic: params.title,
-                startTime: params.startTime,
-                duration: Math.round(
-                  (new Date(params.endTime).getTime() - new Date(params.startTime).getTime()) /
-                    60_000,
-                ),
-              });
-              if (meeting) {
-                zoomUrl = meeting.join_url;
-              }
-            }
+            attachOnlineMeeting = Boolean(agent?.autoZoomLink);
           }
 
           const bookingParams = {
             ...params,
-            description: zoomUrl
-              ? `${params.description}\n\nZoom Meeting: ${zoomUrl}`
-              : params.description,
-            location: zoomUrl || undefined,
-            generateMeetLink: !zoomUrl,
+            // Google has always issued a Meet link for these bookings, so
+            // that stays unconditional. Microsoft never did, and now gets a
+            // Teams meeting when the Account Holder asked for a link.
+            generateMeetLink: true,
+            attachOnlineMeeting,
           };
 
           // Pick the first account as the primary for booking.
@@ -546,7 +535,7 @@ export class IntegrationService {
    * and the manual "Sync inbox" button. Returns a unified shape
    * regardless of provider so callers don't branch.
    *
-   * Yahoo inbox retrieval is not implemented; report that account as
+   * A provider with no implemented retrieval reports that account as
    * unavailable rather than treating an unattempted fetch as a healthy inbox.
    */
   async fetchInboxMessages(
@@ -622,9 +611,6 @@ export class IntegrationService {
     }
     if (account.provider === "microsoft") {
       return this.fetchMicrosoftInbox(account, opts);
-    }
-    if (account.provider === "yahoo") {
-      throw new Error("Yahoo inbox refresh is not available yet.");
     }
     if (account.provider === "icloud") {
       return this.fetchIcloudInbox(account, opts);
@@ -882,12 +868,16 @@ export class IntegrationService {
                 },
               });
             }
-            if (account.provider === "yahoo") {
-              log.warn("Yahoo Mail send refused because XOAUTH2 transport is not implemented", {
-                userId: this.userId,
-              });
-              return false;
-            }
+            // A connected tenant mailbox whose provider has no send transport
+            // must never fall through to the platform sender below: the
+            // customer's mail would leave from BotBound's own Resend identity
+            // instead of theirs. Yahoo used to be that provider by name; the
+            // guard now closes the door on any unimplemented provider row.
+            log.warn("Email send refused, the connected mailbox provider has no send transport", {
+              userId: this.userId,
+              provider: String(account.provider ?? "unknown"),
+            });
+            return false;
           }
 
           // A tenant cadence must leave from the tenant's own mailbox. Sending a
@@ -1516,6 +1506,11 @@ export class IntegrationService {
             emailAddress: { address: email },
             type: "required",
           })),
+          // Graph creates the Teams meeting with the event and returns its
+          // join URL on the event, so no extra call and no extra scope.
+          ...(params.attachOnlineMeeting
+            ? { isOnlineMeeting: true, onlineMeetingProvider: "teamsForBusiness" }
+            : {}),
         }),
       },
       15_000,

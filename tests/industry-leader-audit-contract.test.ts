@@ -83,7 +83,7 @@ describe("industry-leader audit hardening contracts", () => {
     expect(team).toContain('import("../lib/email-service")');
   });
 
-  it("keeps Yahoo out of mailbox connect UI until fetch/send ship", () => {
+  it("keeps the retired Yahoo mailbox out of the connect UI", () => {
     const mailbox = read("src/components/MailboxConnectionCard.tsx");
     expect(mailbox).not.toMatch(/id:\s*"yahoo"/);
     expect(mailbox).toContain('id: "google"');

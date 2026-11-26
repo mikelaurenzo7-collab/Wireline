@@ -47,16 +47,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(helpers).toContain("claimOAuthStateNonce");
     expect(helpers).toContain("wireline:oauth:state-nonce:");
 
-    const oauthDir = [
-      "google",
-      "google-sheets",
-      "microsoft",
-      "microsoft-graph",
-      "slack",
-      "yahoo",
-      "x",
-      "zoom",
-    ];
+    const oauthDir = ["google", "google-sheets", "microsoft", "microsoft-graph", "slack"];
     for (const name of oauthDir) {
       const src = read(`src/routes/oauth/${name}.ts`);
       expect(src).toContain("verifyAndClaimOAuthState");

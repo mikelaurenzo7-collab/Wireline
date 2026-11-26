@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 457
-**Protected:** 376
-**Public (allowlisted):** 81
+**Routes scanned:** 448
+**Protected:** 370
+**Public (allowlisted):** 78
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -57,9 +57,6 @@
 | `GET /api/oauth/microsoft_teams/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/microsoft/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/slack/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/oauth/x/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/oauth/yahoo/callback` | OAuth initiation/callback (state-validated) |
-| `GET /api/oauth/zoom/callback` | OAuth initiation/callback (state-validated) |
 | `POST /api/twilio-webhook/openai-inbound` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-inbound-dial-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-inbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -405,15 +402,6 @@
 | oauth/slack.ts | GET | `/api/oauth/slack/url` | inline | — | yes | Protected |
 | oauth/status.ts | GET | `/api/oauth/crm/status` | inline | — | yes | Protected |
 | oauth/status.ts | GET | `/api/oauth/integration-health` | inline | — | yes | Protected |
-| oauth/x.ts | GET | `/api/oauth/x/callback` | — | — | yes | Public (allowlisted) |
-| oauth/x.ts | POST | `/api/oauth/x/disconnect` | inline | — | yes | Protected |
-| oauth/x.ts | GET | `/api/oauth/x/url` | inline | — | yes | Protected |
-| oauth/yahoo.ts | GET | `/api/oauth/yahoo/callback` | — | — | yes | Public (allowlisted) |
-| oauth/yahoo.ts | POST | `/api/oauth/yahoo/disconnect` | inline | — | yes | Protected |
-| oauth/yahoo.ts | GET | `/api/oauth/yahoo/url` | inline | — | yes | Protected |
-| oauth/zoom.ts | GET | `/api/oauth/zoom/callback` | — | — | yes | Public (allowlisted) |
-| oauth/zoom.ts | POST | `/api/oauth/zoom/disconnect` | inline | — | yes | Protected |
-| oauth/zoom.ts | GET | `/api/oauth/zoom/url` | inline | — | yes | Protected |
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound` | — | — | yes | Public (allowlisted) |
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound-dial-complete` | — | — | yes | Public (allowlisted) |
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound-fallback` | — | — | yes | Public (allowlisted) |

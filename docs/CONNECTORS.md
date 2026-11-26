@@ -4,7 +4,7 @@
 
 ## Current direction
 
-BotBound owns the Bot identity, People record, communication channels, Computer runtime, approvals and billing. All external tools enter through a reviewed Connector Gateway. Native adapters and vetted remote MCP servers are permitted; arbitrary MCP endpoints or unrestricted tool surfaces are not. Google Workspace and Microsoft 365 adapters come first; Slack may return as a new write-first connector. Legacy provider paths are retired in tested stages after verifying account ownership, grants and dependencies. Preserve history, revocation and deletion coverage; destructive schema changes require reviewed promotion after deployed code no longer depends on them.
+BotBound owns the Bot identity, People record, communication channels, Computer runtime, approvals and billing. All external tools enter through a reviewed Connector Gateway. Native adapters and vetted remote MCP servers are permitted; arbitrary MCP endpoints or unrestricted tool surfaces are not. Google Workspace and Microsoft 365 adapters come first; the retained Slack adapter can be narrowed to reviewed write-first actions. Legacy provider paths are retired in tested stages after verifying account ownership, grants and dependencies. Preserve history, revocation and deletion coverage; destructive schema changes require reviewed promotion after deployed code no longer depends on them.
 
 Every invocation uses server-side tenant and Bot authorization, Full / Auto / Ask, environment gates, consent, idempotency, audit and metering. Tokens stay encrypted and inaccessible to models. External results are untrusted data. Dedicated connector OAuth clients and least-privilege scopes are required; restricted Google access remains gated on applicable verification. Carrier and production release restrictions are unchanged. No roadmap item is a claim of availability.
 
@@ -12,6 +12,12 @@ Every invocation uses server-side tenant and Bot authorization, Full / Auto / As
 
 This section records what the code now does, so the proposals below read as
 intent rather than as a description of main.
+
+**The keep list, decided November 24, 2026.** The owner's direction is to keep
+Google Workspace and the Google connectors, and to keep Microsoft including
+Excel. Slack stays with them as the team-chat surface. The October 27 plan to
+delete all of those is superseded for those providers; X, Zoom and Yahoo Mail
+were not on the keep list and are all deleted.
 
 **Removed outright, not deprecated.** Salesforce, HubSpot, Apollo, Meta, Shopify,
 and Square are deleted: services, OAuth routes, the Meta webhook, the Salesforce
@@ -24,23 +30,65 @@ lead-hunter module and proactive lead enrichment went with them, along with the
 used any of it, so there is no migration path to preserve and no saved grant to
 disconnect.
 
+X and Zoom are deleted on the same terms: `x-service.ts`, `x-ads-service.ts`,
+`bot-tools/x.ts`, `zoom-service.ts`, both OAuth routes, the eight X tool names and
+`generate_zoom_link`, their registry, env-validator, `.env.example` and
+`render.yaml` entries, their playbooks, their connection-card rows and their
+logos. Nothing replaces the X tools. The Zoom meeting link is replaced by the
+calendar provider's own: a Google booking has always carried a Meet link, and a
+Microsoft booking now carries a Teams meeting, which Graph creates with the event
+and needs no extra scope. The switch for it is still the `auto_zoom_link` column,
+which now means "put a video meeting on this booking"; renaming the column needs a
+migration on the shared database.
+
+Yahoo Mail is deleted and Yahoo sign-in is untouched. The mailbox half never
+worked: `src/routes/oauth/yahoo.ts` carried `YAHOO_MAIL_CONNECTION_AVAILABLE =
+false`, so its connect route answered 503 and its callback answered 410, and no
+`wireline_email_accounts` row in the shared database has ever had
+`provider = 'yahoo'`. The route file, the mail scopes, the dead Yahoo branch in
+the mailbox revocation switch, the connection-card provider, the logo, and the
+beta-tier claim are gone. `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` stay,
+because sign-in needs the same Yahoo app: `src/lib/yahoo-openid.ts`,
+`/api/auth/yahoo/*`, the `oauth_yahoo` consent method, and the Yahoo button in
+`AuthAccessPanel.tsx` all remain live.
+
+One guard outlived the provider. The Yahoo send branch existed to stop a tenant
+with a connected mailbox falling through to BotBound's own Resend identity when
+their provider had no send transport. That branch is now provider-agnostic, so
+the next unimplemented provider row inherits the refusal instead of sending a
+customer's mail from the wrong sender.
+
 Public research survived: `gemini_ground` lives in `src/lib/bot-tools/research.ts`
 and still resolves for Bots that already store the tool name.
 
 **What `src/routes/oauth/` still holds.** Google, Google Sheets, Microsoft,
-Microsoft Graph, Slack, X, Yahoo, and Zoom, plus `index.ts` and `status.ts`.
+Microsoft Graph and Slack, plus `index.ts` and `status.ts`.
 
-**What the connections card still offers.** Slack, X, Zoom, Microsoft Teams,
-Microsoft Excel, and Google Sheets.
+Account sign-in is not in that directory. It lives in
+`src/routes/auth-oauth-routes.ts` and `src/routes/auth-oauth-browser-binding.ts`,
+and that is where Yahoo still appears.
+
+**What the connections card still offers.** Slack, Microsoft Teams, Microsoft
+Excel, and Google Sheets.
 
 **Beta ledger disposition.** Meta Lead Ads is gone, so its beta flag is resolved
-by deletion rather than by validation. Zoom, Microsoft Teams, Excel, and Google
-Sheets still carry beta flags in `src/components/CrmConnectionCard.tsx`.
+by deletion rather than by validation. Microsoft Teams, Excel, and Google Sheets
+still carry beta flags in `src/components/CrmConnectionCard.tsx`.
 
 **Role templates are gone.** One Bot holds the whole toolbox it is allowed to
 hold, so there is no per-role connector subset left for a connector to key off.
 A connector grant is therefore workspace-level by construction, which is the
 shape the Connector Gateway below assumes.
+
+**Leftovers from the earlier deletion.** Retired provider ids were still listed
+as supported or beta in `src/lib/integrations-certification.ts`, and
+`src/lib/oauth-provider-revocation.ts` still carried dead revoke branches. Both
+are cleaned. Retired logos remain in `src/components/layout/IntegrationLogos.tsx`,
+along with references in `IntegrationHealthBanner.tsx`, `integration-health.ts`,
+`EnrichLeadForm.tsx`, `workspace-planner.ts`, `api-validation-base.ts`,
+`preview-spend-policy.ts`, `audit-middleware.ts`, `compliance-checklist-status.ts`
+and `src/constants/navigation.ts`. Those need a consumer check per file, so they
+are a separate pass.
 
 **Not done.** The Connector Gateway itself, the workspace connector catalog and
 policy, and the owner screen for connecting servers. Nothing below describing the
