@@ -687,6 +687,13 @@
       "when": 1795786400000,
       "tag": "0199_appointment_external_calendar",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1795786401000,
+      "tag": "0200_person_events_no_update",
+      "breakpoints": true
     }
   ]
 }

@@ -22,7 +22,15 @@ describe("real-database test lane", () => {
 
   it("mirrors production security, including the unique indexes the schema omits", () => {
     const fixture = read("tests/db/fixtures/production-security.sql");
-    expect(fixture.match(/CREATE POLICY /g)).toHaveLength(110);
+    expect(fixture.match(/CREATE POLICY /g)).toHaveLength(113);
+    for (const table of ["people", "person_identifiers", "person_events"]) {
+      expect(fixture).toContain(
+        `CREATE POLICY tenant_isolation ON public.wireline_${table} AS PERMISSIVE FOR ALL TO wireline_server`,
+      );
+      expect(fixture).toMatch(
+        new RegExp(`GRANT [A-Z, ]+ ON public\\.wireline_${table} TO wireline_server`),
+      );
+    }
     expect(fixture.match(/CREATE UNIQUE INDEX IF NOT EXISTS /g)).toHaveLength(30);
     expect(fixture).toContain("wireline_dnc_list_user_phone_unique");
     expect(fixture).toContain("uq_consent_log_twilio_message_sid");

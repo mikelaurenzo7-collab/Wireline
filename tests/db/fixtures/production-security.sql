@@ -1,8 +1,8 @@
 -- Production row-level security, policies, wireline_server grants and the
 -- unique indexes the Drizzle schema omits, for the
 -- real-database test lane. Generated from the live catalog (pg_policies,
--- pg_class.relrowsecurity, information_schema.role_table_grants) on 2026-11-23:
--- 93 RLS tables, 110 policies, 89 granted tables, 19 sequences. Refresh with
+-- pg_class.relrowsecurity, information_schema.role_table_grants) on 2026-11-26:
+-- 96 RLS tables, 113 policies, 92 granted tables, 19 sequences. Refresh with
 -- scripts/db/export-security-fixture.sql (read-only) when production changes.
 -- Every statement is guarded: tables absent from the Drizzle schema are skipped.
 
@@ -80,6 +80,9 @@ ALTER TABLE IF EXISTS public.wireline_outbound_dial_reservations ENABLE ROW LEVE
 ALTER TABLE IF EXISTS public.wireline_outbound_leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wireline_outbound_purpose_audit ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wireline_password_reset_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.wireline_people ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.wireline_person_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.wireline_person_identifiers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wireline_personality ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wireline_phone_numbers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wireline_quota_limits ENABLE ROW LEVEL SECURITY;
@@ -153,6 +156,9 @@ DO $$ BEGIN IF to_regclass('public.wireline_onboarding_progress') IS NOT NULL TH
 DO $$ BEGIN IF to_regclass('public.wireline_outbound_campaigns') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_outbound_campaigns AS PERMISSIVE FOR ALL TO public USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_outbound_leads') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_outbound_leads AS PERMISSIVE FOR ALL TO public USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_password_reset_tokens') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_password_reset_tokens AS PERMISSIVE FOR ALL TO public USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
+DO $$ BEGIN IF to_regclass('public.wireline_people') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_people AS PERMISSIVE FOR ALL TO wireline_server USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
+DO $$ BEGIN IF to_regclass('public.wireline_person_events') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_person_events AS PERMISSIVE FOR ALL TO wireline_server USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
+DO $$ BEGIN IF to_regclass('public.wireline_person_identifiers') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_person_identifiers AS PERMISSIVE FOR ALL TO wireline_server USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_personality') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_personality AS PERMISSIVE FOR ALL TO public USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_phone_numbers') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_phone_numbers AS PERMISSIVE FOR ALL TO public USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_quota_limits') IS NOT NULL THEN CREATE POLICY tenant_isolation ON public.wireline_quota_limits AS PERMISSIVE FOR ALL TO public USING ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))) WITH CHECK ((user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))); END IF; END $$;
@@ -282,6 +288,9 @@ DO $$ BEGIN IF to_regclass('public.wireline_outbound_dial_reservations') IS NOT 
 DO $$ BEGIN IF to_regclass('public.wireline_outbound_leads') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_outbound_leads TO wireline_server; END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_outbound_purpose_audit') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_outbound_purpose_audit TO wireline_server; END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_password_reset_tokens') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_password_reset_tokens TO wireline_server; END IF; END $$;
+DO $$ BEGIN IF to_regclass('public.wireline_people') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_people TO wireline_server; END IF; END $$;
+DO $$ BEGIN IF to_regclass('public.wireline_person_events') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_person_events TO wireline_server; END IF; END $$;
+DO $$ BEGIN IF to_regclass('public.wireline_person_identifiers') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_person_identifiers TO wireline_server; END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_personality') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_personality TO wireline_server; END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_phone_numbers') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_phone_numbers TO wireline_server; END IF; END $$;
 DO $$ BEGIN IF to_regclass('public.wireline_quota_limits') IS NOT NULL THEN GRANT DELETE, INSERT, SELECT, UPDATE ON public.wireline_quota_limits TO wireline_server; END IF; END $$;
