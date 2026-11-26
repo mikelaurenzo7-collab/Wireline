@@ -6,7 +6,7 @@ import {
   buildOpenAIOutboundSipUri,
 } from "./openai-sip-config";
 import { configuredPhoneVoiceProvider, type RealtimeVoiceProvider } from "./realtime-provider";
-import { buildXAISipUri, xaiSipConfigured } from "./xai-sip-config";
+import { buildXAISipUri, xaiSipConfigured, xaiSipReadiness } from "./xai-sip-config";
 import { registerXAIPhoneNumber, xaiSipCredentialsFor } from "./xai-phone-registration";
 
 /** Where Twilio bridges one call leg, and how it authenticates there. */
@@ -57,17 +57,50 @@ function registerNumberInBackground(phoneNumber: string): void {
   selfRegisterInFlight.set(phoneNumber, attempt);
 }
 
-/** Test seam: forget background registration attempts. */
+const STANDBY_NOTE_INTERVAL_MS = 10 * 60_000;
+const standbyNotedAt = new Map<string, number>();
+
+/**
+ * Calls that answer on the OpenAI standby say why, at most once per reason
+ * every 10 minutes per process. These two reasons used to be silent, so a
+ * misconfigured deployment could move every call to the standby unnoticed.
+ */
+function noteOpenAIStandby(
+  reason: "operator_setting" | "xai_not_configured",
+  details: Record<string, unknown>,
+): void {
+  const now = Date.now();
+  if (now - (standbyNotedAt.get(reason) ?? 0) < STANDBY_NOTE_INTERVAL_MS) return;
+  standbyNotedAt.set(reason, now);
+  if (reason === "operator_setting") {
+    log.info("Phone calls answer on OpenAI: WIRELINE_PHONE_VOICE_PROVIDER=openai", details);
+  } else {
+    log.warn("xAI is the default phone voice but is not configured here; using OpenAI", details);
+  }
+}
+
+/** Test seam: forget background registration attempts and standby notes. */
 export function resetRealtimeSipSelfRegistrationForTests(): void {
   selfRegisterInFlight.clear();
   selfRegisterLastAttempt.clear();
+  standbyNotedAt.clear();
 }
 
 async function xaiTarget(
   ourNumber: string,
   header: { name: string; token: string },
 ): Promise<RealtimeSipTarget | null> {
-  if (configuredPhoneVoiceProvider() !== "xai" || !xaiSipConfigured()) return null;
+  if (configuredPhoneVoiceProvider() !== "xai") {
+    noteOpenAIStandby("operator_setting", { phoneSuffix: ourNumber.slice(-4) });
+    return null;
+  }
+  if (!xaiSipConfigured()) {
+    noteOpenAIStandby("xai_not_configured", {
+      phoneSuffix: ourNumber.slice(-4),
+      ...xaiSipReadiness(),
+    });
+    return null;
+  }
   try {
     const credentials = await xaiSipCredentialsFor(ourNumber);
     if (!credentials) {

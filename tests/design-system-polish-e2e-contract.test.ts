@@ -29,14 +29,12 @@ describe("design system polish e2e verified wins", () => {
     expect(landing).not.toContain("landing-stage__lane-icon");
   });
 
-  it("keeps trust and retired Live Video titles period-free and icon-light", () => {
+  it("keeps trust titles period-free and icon-light", () => {
     const trust = withoutComments(read("src/components/marketing/TrustSignals.tsx"));
-    const spotlight = withoutComments(read("src/components/marketing/LiveVideoSpotlight.tsx"));
 
     expect(trust).toContain("Built to Stay Under Your Control");
     expect(trust).not.toContain("Built to stay under your control.");
     expect(trust).not.toContain("LockKeyhole");
-    expect(spotlight).not.toMatch(/CHANNELS = \[[\s\S]*icon:/);
   });
 
   it("puts Compare CTAs in the shared Title Case action tier", () => {

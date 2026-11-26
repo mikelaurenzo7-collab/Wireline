@@ -66,7 +66,8 @@ const MARKET_OPTIONS = [
   {
     name: "Bland",
     price: "$0 platform · $0.14/min",
-    usage: "Model and speech included; carrier costs separate; transfers $0.05/min",
+    usage:
+      "Model and speech included. Carrier costs are separate. Transfers cost $0.05/min on Start with Bland telephony.",
     fit: "Developers who want API based voice with bundled model and speech costs",
     href: "https://www.bland.ai/pricing",
     source: "Bland pricing",
@@ -231,7 +232,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on October 11, 2026 and may
+            Public prices were checked on the linked official pages on November 25, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
             and usage patterns can change the effective total. This is a buying model reference, not
             a claim that unlike products are feature by feature equivalents.

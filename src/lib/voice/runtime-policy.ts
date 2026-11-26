@@ -1,8 +1,10 @@
 /**
  * Voice lane descriptors for diagnostics and source contracts.
  *
- * xAI voice is the default for every phone call and every number. Browser
- * rehearsals stay on OpenAI Realtime WebRTC (browserRuntime).
+ * xAI voice is the default for every phone call and every number. Studio
+ * rehearsals follow it through BotBound's relay (browserRuntime), with OpenAI
+ * Realtime WebRTC as their fallback (browserFallbackRuntime); see
+ * xai-rehearsal-relay.ts. ChatGPT private simulation stays on OpenAI WebRTC.
  * Actual phone admission is owned by realtime-sip-target.ts: a number registers with xAI
  * automatically, and OpenAI Realtime answers only when xAI is unavailable or a
  * line is still finishing that registration (or when an operator sets
@@ -15,16 +17,20 @@ export const VOICE_RUNTIME_POLICY = {
   founderShowcase: {
     owner: "botbound_founder",
     runtime: "xai_realtime",
-    browserTransport: "webrtc",
-    browserRuntime: "openai_realtime",
+    browserTransport: "botbound_relay",
+    browserRuntime: "xai_realtime",
+    browserFallbackTransport: "webrtc",
+    browserFallbackRuntime: "openai_realtime",
     phoneTransport: "xai_sip",
     carrier: "twilio",
     fallbackRuntime: "openai_realtime",
   },
   customer: {
     runtime: "xai_realtime",
-    browserTransport: "webrtc",
-    browserRuntime: "openai_realtime",
+    browserTransport: "botbound_relay",
+    browserRuntime: "xai_realtime",
+    browserFallbackTransport: "webrtc",
+    browserFallbackRuntime: "openai_realtime",
     phoneTransport: "xai_sip",
     carrier: "twilio",
     sms: "twilio",

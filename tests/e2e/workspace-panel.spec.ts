@@ -1,3 +1,4 @@
+import { openSavedChat } from "./helpers/studio-chat-history";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -220,11 +221,15 @@ test("the desktop roster opens each Bot's own work and its identity details", as
   ]);
   await page.goto(`/studio?agent=${bots[0].id}`);
 
+  const transcript = page.getByRole("log", { name: "Conversation", exact: true });
   const roster = page.getByRole("navigation", { name: "Bot conversations" });
   const front = roster.getByRole("link", { name: "Open Front Desk conversation" });
   const sales = roster.getByRole("link", { name: "Open Sales Bot conversation" });
   await expect(front).toHaveAttribute("aria-current", "page", { timeout: 20_000 });
-  await expect(page.getByText("Front desk result")).toBeVisible();
+  await expect(transcript.getByText("Front desk result")).toHaveCount(0);
+  await computerMode(page).click();
+  await expect(transcript.getByText("Front desk result")).toBeVisible();
+  await computerMode(page).click();
   await conversation(page).fill("Keep this draft with Front Desk");
 
   await page.getByRole("button", { name: "Front Desk details" }).click();
@@ -259,8 +264,11 @@ test("the desktop roster opens each Bot's own work and its identity details", as
 
   await sales.click();
   await expect(sales).toHaveAttribute("aria-current", "page");
-  await expect(page.getByText("Sales result")).toBeVisible();
-  await expect(page.getByText("Front desk result")).toHaveCount(0);
+  await expect(transcript.getByText("Sales result")).toHaveCount(0);
+  await computerMode(page).click();
+  await expect(transcript.getByText("Sales result")).toBeVisible();
+  await computerMode(page).click();
+  await expect(transcript.getByText("Front desk result")).toHaveCount(0);
   await expect(conversation(page, "Sales Bot")).toHaveValue("");
   await front.click();
   await expect(conversation(page)).toHaveValue("Keep this draft with Front Desk");
@@ -418,7 +426,7 @@ test("Configure with history keeps a usable composer and actions at 320px with e
   const api = await mockWorkspace(page);
   let sends = 0;
   let clears = 0;
-  await page.route("**/api/agents/*/workspace/messages", (route) => {
+  await page.route("**/api/agents/*/workspace/messages?thread=*", (route) => {
     if (route.request().method() === "DELETE") {
       clears += 1;
       return route.fulfill({ json: { cleared: true } });
@@ -436,7 +444,7 @@ test("Configure with history keeps a usable composer and actions at 320px with e
       },
     });
   });
-  await page.route("**/api/agents/*/workspace/messages/stream", (route) => {
+  await page.route("**/api/agents/*/workspace/messages/stream?thread=*", (route) => {
     sends += 1;
     return route.fulfill({
       contentType: "text/event-stream",
@@ -450,6 +458,7 @@ test("Configure with history keeps a usable composer and actions at 320px with e
     });
   });
   await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
+  await openSavedChat(page);
   const room = page.getByRole("region", { name: "Front Desk workroom", exact: true });
   await expect(
     room.getByText("Your saved instructions are ready to edit.", { exact: true }),
@@ -1738,6 +1747,7 @@ test("phone Studio keeps the composer compact while reading task history", async
     ),
   ]);
   await page.goto(`/studio?agent=${bots[0].id}`);
+  await openSavedChat(page);
   const log = page.getByRole("log", { name: "Conversation", exact: true });
   const browserTool = page.getByRole("button", { name: "Computer", exact: true });
   const handsFree = page.getByRole("button", { name: "Hands-free", exact: true });

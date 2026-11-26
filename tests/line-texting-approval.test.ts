@@ -15,6 +15,27 @@ describe("line texting approval", () => {
     expect(lineTextingApprovalCopy(undefined)).toBeNull();
   });
 
+  it("does not ask again for business details the owner already sent", () => {
+    const received = lineTextingApprovalCopy("not_approved", true);
+    expect(received).toContain("Business details received");
+    expect(received).toContain("a few days to two weeks");
+    expect(received).not.toContain("Add your business details");
+    // Approval states read from Twilio win over the local submission.
+    expect(lineTextingApprovalCopy("approved", true)).toBe("Approved by US carriers for texting.");
+    expect(lineTextingApprovalCopy("pending", true)).toContain("in review");
+    const panel = readFileSync(
+      resolve(process.cwd(), "src/components/PhoneSetupPanel.tsx"),
+      "utf8",
+    );
+    expect(panel).toContain('authFetch("/api/texting-registration"');
+    expect(panel).toContain("window.addEventListener(TEXTING_REGISTRATION_EVENT, onChange)");
+    const form = readFileSync(
+      resolve(process.cwd(), "src/components/settings/TextingRegistrationForm.tsx"),
+      "utf8",
+    );
+    expect(form.match(/announceTextingRegistration\(/g)).toHaveLength(2);
+  });
+
   it("reads approval from the same Twilio snapshot as the send path, bounded in time", () => {
     const route = readFileSync(
       resolve(process.cwd(), "src/routes/native-phone-routing-routes.ts"),

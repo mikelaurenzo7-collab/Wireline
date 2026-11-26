@@ -188,6 +188,39 @@ describe("self-phone-test parent duration accounting", () => {
 });
 
 describe("included-only voice completion", () => {
+  it("records zero wallet overage for a call funded by the shared usage meter, including a pending legacy retry", async () => {
+    const db = database();
+    const call = { userId: "user", vapiCallId: "openai:usage-plan", durationSeconds: 76 };
+    h.funding.mockResolvedValue({
+      maxSeconds: 3600,
+      includedMinutes: 0,
+      rateUsd: 0.25,
+      planId: "usage",
+      periodKey: "paid:usage:1",
+    });
+    h.settle.mockRejectedValueOnce(new Error("retry settlement"));
+    await expect(trackVoiceMinutes(call)).rejects.toThrow("retry settlement");
+    expect(db.event).toMatchObject({
+      billableMinutes: 2,
+      incrementalOverageMinutes: 0,
+      overageCostUsd: "0",
+      chargedAt: null,
+    });
+
+    // A previous release could have stopped after writing the rounded wallet estimate.
+    Object.assign(db.event, { incrementalOverageMinutes: 2, overageCostUsd: "0.50" });
+    await trackVoiceMinutes(call);
+    expect(h.settle).toHaveBeenLastCalledWith(
+      expect.objectContaining({ costUsd: 0, billableMinutes: 0 }),
+    );
+    expect(db.event.incrementalOverageMinutes).toBe(0);
+    expect(Number(db.event.overageCostUsd)).toBe(0);
+    expect(db.event.chargedAt).toBeInstanceOf(Date);
+    await trackVoiceMinutes(call);
+    expect(db.monthlyUsed).toBe(2);
+    expect(h.settle).toHaveBeenCalledTimes(2);
+  });
+
   it("does not resurrect usage or debt after a definitive funding release", async () => {
     const db = database();
     h.funding.mockResolvedValue({ released: true, rateUsd: 0.22, planId: "voice" });

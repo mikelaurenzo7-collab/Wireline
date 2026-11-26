@@ -42,6 +42,8 @@ const STATUS_LABELS = {
   uncertain: "Checking call status",
   cancelled: "Call ended",
 } as const;
+/** Checks after the call ends, 4 seconds apart, for its final transcript. */
+const FINAL_TRANSCRIPT_CHECKS = 4;
 
 function savedRequest(storageKey: string): string | null {
   try {
@@ -87,8 +89,16 @@ function OwnedPhoneTestDialog({
   const busyRef = useRef(false);
   const alive = useRef(true);
   const opener = useRef<HTMLElement | null>(null);
+  const transcriptBox = useRef<HTMLDivElement | null>(null);
   const terminal = Boolean(receipt && phoneTestIsTerminal(receipt.status));
   const pending = Boolean(requestKey && !terminal);
+  const transcript = receipt?.transcript ?? [];
+
+  useEffect(() => {
+    // Follow the newest turn as the call goes on.
+    const box = transcriptBox.current;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [transcript.length]);
 
   useEffect(() => {
     alive.current = true;
@@ -99,15 +109,25 @@ function OwnedPhoneTestDialog({
 
   function accept(result: PhoneTestReceipt) {
     if (!alive.current) return;
-    setReceipt(result);
+    // Only status checks carry the transcript; keep the call's lines on screen
+    // when an end request answers with its status alone.
+    setReceipt((previous) =>
+      result.transcript || previous?.id !== result.id || !previous.transcript
+        ? result
+        : { ...result, transcript: previous.transcript },
+    );
     setError(null);
   }
 
   useEffect(() => {
-    if (!open || !requestKey || terminal) return;
+    if (!open || !requestKey) return;
     let disposed = false;
+    // After the call ends its final transcript is saved a moment later, so a
+    // few more checks pick it up; a live call is checked until it ends.
+    let checksLeft = terminal ? FINAL_TRANSCRIPT_CHECKS : Number.POSITIVE_INFINITY;
     async function refresh() {
-      if (busyRef.current) return;
+      if (busyRef.current || checksLeft <= 0) return;
+      checksLeft -= 1;
       busyRef.current = true;
       try {
         const result = await checkPhoneTest(agentId, requestKey!);
@@ -123,7 +143,8 @@ function OwnedPhoneTestDialog({
     }
     void refresh();
     const timer = setInterval(() => {
-      void refresh();
+      if (checksLeft <= 0) clearInterval(timer);
+      else void refresh();
     }, 4_000);
     return () => {
       disposed = true;
@@ -307,6 +328,32 @@ function OwnedPhoneTestDialog({
                 >
                   {receipt.verification_code}
                 </output>
+              </div>
+            ) : null}
+            {transcript.length ? (
+              <div
+                ref={transcriptBox}
+                role="log"
+                aria-live="polite"
+                aria-label="Call transcript"
+                className="max-h-64 min-w-0 space-y-2 overflow-y-auto rounded-xl border border-border bg-secondary/40 p-3"
+              >
+                {transcript.map((line, index) => (
+                  <p
+                    key={index}
+                    className="break-words text-sm leading-5 text-foreground [overflow-wrap:anywhere]"
+                  >
+                    <span className="font-semibold">
+                      {line.speaker === "bot" ? (
+                        <span className="wl-preserve-case">{agentName}</span>
+                      ) : (
+                        "You"
+                      )}
+                      :
+                    </span>{" "}
+                    {line.text}
+                  </p>
+                ))}
               </div>
             ) : null}
             {receipt?.error || error ? (

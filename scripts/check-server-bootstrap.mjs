@@ -106,8 +106,12 @@ assert(
 );
 
 assert(
-  server.includes("initSupervisorWebSocketServer(server)"),
+  /initSupervisorWebSocketServer\(server[,)]/.test(server),
   "canonical server must start the supervisor WebSocket upgrade handler after listen",
+);
+assert(
+  server.includes("[XAI_REHEARSAL_RELAY_PATH]: handleRehearsalRelayUpgrade,"),
+  "canonical server must serve the Studio rehearsal relay from the gated upgrade listener",
 );
 
 if (!process.exitCode) {

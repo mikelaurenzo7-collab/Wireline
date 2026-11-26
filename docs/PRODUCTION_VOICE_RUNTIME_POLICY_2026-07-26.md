@@ -11,10 +11,10 @@ stable policy path used by release checklists.
 | Surface              | Production path                                                                    | Policy                                                                                                                                                  |
 | -------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Phone calls          | Twilio carrier/PSTN through signed BotBound routing to the admitted voice provider | xAI voice by default for every number; lines register with xAI automatically and OpenAI Realtime is the fallback. Eligible inbound calls can recover through OpenAI during the call. |
-| Browser/mobile voice | Authenticated same-origin BotBound SDP exchange → OpenAI Realtime WebRTC           | Private Studio rehearsals and authenticated ChatGPT simulation only; public and guest audio/call demos are retired                                      |
+| Browser/mobile voice | Authenticated same-origin BotBound relay → xAI voice; SDP exchange → OpenAI Realtime WebRTC as the fallback | Private Studio rehearsals follow the phone provider; authenticated ChatGPT simulation stays on OpenAI WebRTC; public and guest audio/call demos are retired |
 | SMS                  | Twilio signed webhooks and Messaging Service/number                                | Twilio owns sender and carrier delivery only                                                                                                            |
 | Presenter/video      | Retired live-video compatibility surface                                           | Presenter identity never becomes the phone voice; phone fallback is OpenAI                                                                              |
-| Studio speech        | OpenAI Realtime WebRTC                                                             | Same saved 10-voice catalog as phone calls                                                                                                              |
+| Studio speech        | xAI voice through the rehearsal relay (OpenAI Realtime WebRTC fallback)            | Same saved choice and the same xAI voice mapping as phone calls                                                                                         |
 
 ## Available phone voices
 
@@ -22,7 +22,7 @@ Customers select the built-in OpenAI Realtime voice roster:
 `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`,
 and `cedar`. `marin` is the default. The selected voice stays fixed during an
 active session and may change between sessions. Invalid or historical voice ids
-normalize at the application and database boundaries. Browser rehearsals use that OpenAI voice; xAI phone calls (the default) map the saved choice to the matching xAI phone voice, or speak the Bot's consented cloned voice when one is selected. `realtime-sip-target.ts` owns admission and `realtime-provider.ts` binds subsequent control to the call id. A new-call flag cannot switch an active call's provider.
+normalize at the application and database boundaries. xAI phone calls (the default) map the saved choice to the matching xAI phone voice, or speak the Bot's consented cloned voice when one is selected. Studio rehearsals on xAI use that same mapped voice (stock, even when a clone is selected); a rehearsal that falls back to OpenAI uses the saved OpenAI voice. `realtime-sip-target.ts` owns admission and `realtime-provider.ts` binds subsequent control to the call id. A new-call flag cannot switch an active call's provider.
 
 ## Cloned live voices
 

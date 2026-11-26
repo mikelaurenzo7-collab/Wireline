@@ -20,7 +20,7 @@ describe("QA pass polish", () => {
 
   it("names the plan the pricing estimate uses and draws the Plan Details toggle", () => {
     const pricing = read("src/components/usage-billing/UsagePricingPanel.tsx");
-    expect(pricing).toContain("Estimating");
+    expect(pricing).toContain("In the estimate");
     expect(pricing).toContain("[&::-webkit-details-marker]:hidden");
     expect(pricing).toContain("group-open:rotate-180");
   });

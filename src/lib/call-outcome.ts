@@ -266,3 +266,31 @@ export function callOutcomeDetail(outcome: CallOutcome): string {
       return "There is not enough recorded information to say what happened on this call.";
   }
 }
+
+/**
+ * Nobody "missed" a call the Bot placed. The missed bucket also holds outbound
+ * attempts that never connected (busy, no answer, refused before dialing), so
+ * the per-call label and sentence follow the call's direction. The bucket
+ * itself is unchanged, which keeps Reliability's totals equal to the Calls list.
+ */
+function isOutboundCall(direction: string | null | undefined): boolean {
+  return (direction || "").trim().toLowerCase() === "outbound";
+}
+
+export function callOutcomeLabelFor(
+  outcome: CallOutcome,
+  direction: string | null | undefined,
+): string {
+  return outcome === "missed" && isOutboundCall(direction)
+    ? "Not reached"
+    : callOutcomeLabel(outcome);
+}
+
+export function callOutcomeDetailFor(
+  outcome: CallOutcome,
+  direction: string | null | undefined,
+): string {
+  return outcome === "missed" && isOutboundCall(direction)
+    ? "The call did not connect. Nobody was reached."
+    : callOutcomeDetail(outcome);
+}

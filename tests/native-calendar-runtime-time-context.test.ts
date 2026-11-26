@@ -54,6 +54,13 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("native Calendar runtime date authority", () => {
+  it("keeps a corrected department handoff distinct from a booked appointment on the phone", () => {
+    const prompt = compose(DEFAULT_NATIVE_CALENDAR);
+    expect(prompt).toContain("A correction replaces the previous request");
+    expect(prompt).toContain("including their exact spelling");
+    expect(prompt).toContain("Once the caller accepts, stay with the message");
+    expect(prompt).toContain("Only send a booking confirmation after a successful booking");
+  });
   it("uses Chicago Sunday/tomorrow Monday for scheduling without changing the Bot timezone", () => {
     const saved = {
       ...structuredClone(DEFAULT_NATIVE_CALENDAR),

@@ -133,6 +133,15 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: "xai or openai",
   },
   {
+    name: "WIRELINE_REHEARSAL_VOICE_PROVIDER",
+    group: "voice",
+    required: false,
+    description:
+      "Studio voice rehearsal provider; unset follows the phone provider (xAI by default), openai is the rehearsal-only opt-out",
+    validate: (value) => ["xai", "openai"].includes(value.trim().toLowerCase()),
+    formatHint: "xai or openai",
+  },
+  {
     name: "OPENAI_API_KEY",
     group: "ai",
     required: false,

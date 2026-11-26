@@ -18,6 +18,7 @@ import {
   Mic,
   Monitor,
   Phone,
+  Plus,
   Square,
   Trash2,
   X,
@@ -39,6 +40,8 @@ import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 import { retainStudioConversationMessages } from "../lib/studio-session-state";
 import LinkifiedText from "./ui/LinkifiedText";
 import BotMark from "./BotMark";
+import StudioChatHistory from "./studio/StudioChatHistory";
+import { notifyStudioChatsChanged } from "../lib/studio-active-chat";
 import StudioHandsFree from "./studio/StudioHandsFree";
 import { useStudioTaskComposer } from "../hooks/useStudioTaskComposer";
 
@@ -53,6 +56,8 @@ export type StudioMessage = {
 };
 
 export type StudioConversationSession = {
+  threadId?: string;
+  before?: string | null;
   snapshot: {
     messages: StudioMessage[];
     clearing: boolean;
@@ -151,6 +156,8 @@ const StudioWorkroom = forwardRef<
     initialDraft?: StudioWorkroomDraft;
     onDraftChange?: (draft: StudioWorkroomDraft) => void;
     conversationSession?: StudioConversationSession;
+    threadId?: string;
+    onSelectThread?: (id: string | null) => boolean;
     layout?: "standalone" | "canvas" | "split";
     mode?: WorkroomMode;
     onModeChange?: (mode: WorkroomMode) => void;
@@ -178,6 +185,8 @@ const StudioWorkroom = forwardRef<
     initialDraft,
     onDraftChange,
     conversationSession,
+    threadId,
+    onSelectThread,
     layout = "standalone",
     mode = "configure",
     onModeChange,
@@ -340,7 +349,39 @@ const StudioWorkroom = forwardRef<
     setVoiceStartFocusRequested(false);
   }, [agentId, mode, voiceStartFocusRequested, voiceVisible]);
 
-  const endpoint = `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`;
+  const base = `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`;
+  const threadQuery = threadId ? `?thread=${encodeURIComponent(threadId)}` : "";
+  const endpoint = `${base}/stream${threadQuery}`;
+  const [earlier, setEarlier] = useState<StudioMessage[]>([]);
+  const [before, setBefore] = useState(session.before);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
+  const [earlierError, setEarlierError] = useState("");
+  const earlierRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => earlierRequest.current?.abort(), []);
+  async function loadEarlier() {
+    if (!before || earlierRequest.current) return;
+    const controller = new AbortController();
+    earlierRequest.current = controller;
+    setLoadingEarlier(true);
+    setEarlierError("");
+    try {
+      const query = new URLSearchParams({ thread: threadId || "legacy", before });
+      const response = await authFetch(`${base}?${query}`, { signal: controller.signal });
+      if (!response.ok) throw new Error();
+      const payload = await response.json();
+      if (!Array.isArray(payload.messages)) throw new Error();
+      if (controller.signal.aborted) return;
+      followLatest.current = false;
+      setBefore(payload.nextCursor);
+      setEarlier((current) => [...payload.messages, ...current]);
+    } catch {
+      if (!controller.signal.aborted)
+        setEarlierError("Earlier messages could not load. Try again.");
+    } finally {
+      earlierRequest.current = null;
+      if (!controller.signal.aborted) setLoadingEarlier(false);
+    }
+  }
 
   const loadMessages = useCallback(
     async (signal?: AbortSignal) => {
@@ -356,14 +397,13 @@ const StudioWorkroom = forwardRef<
       setLoading(true);
       setError(null);
       try {
-        const response = await authFetch(
-          `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
-          { signal },
-        );
+        const response = await authFetch(`${base}${threadQuery}`, { signal });
         if (!response.ok) throw new Error("Conversation could not be loaded.");
         const payload = await response.json();
         if (signal?.aborted) return;
         if (!Array.isArray(payload.messages)) throw new Error("Conversation could not be loaded.");
+        session.before = payload.nextCursor;
+        setBefore(payload.nextCursor);
         session.loaded = true;
         setMessages(payload.messages);
       } catch (reason) {
@@ -373,7 +413,7 @@ const StudioWorkroom = forwardRef<
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [agentId, mode, session, setMessages, setError],
+    [base, threadQuery, mode, session, setMessages, setError],
   );
 
   const {
@@ -404,6 +444,7 @@ const StudioWorkroom = forwardRef<
       ]);
       setSending(false);
       resetStream();
+      notifyStudioChatsChanged();
       if (!handsFreeActive.current) requestAnimationFrame(() => inputRef.current?.focus());
     },
     onError: (message) => {
@@ -535,18 +576,21 @@ const StudioWorkroom = forwardRef<
     updateSession({ clearing: true, clearError: null });
     setError(null);
     try {
-      const response = await authFetch(
-        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
-        {
-          method: "DELETE",
-        },
-      );
+      const response = await authFetch(`${base}${threadQuery}`, {
+        method: "DELETE",
+      });
       if (!response.ok) throw new Error("Conversation could not be cleared.");
       const payload = await response.json();
       if (payload?.cleared !== true)
         throw new Error("Conversation clear was not confirmed. Try again.");
+      earlierRequest.current?.abort();
+      session.before = null;
+      setBefore(null);
+      setEarlier([]);
+      setEarlierError("");
       updateSession({ messages: [], interrupted: false });
       session.operations.clear();
+      notifyStudioChatsChanged();
     } catch (reason) {
       updateSession({
         clearError: reason instanceof Error ? reason.message : "Conversation could not be cleared.",
@@ -554,7 +598,7 @@ const StudioWorkroom = forwardRef<
     } finally {
       updateSession({ clearing: false });
     }
-  }, [agentId, clearing, loading, mode, sending, session, setError, updateSession]);
+  }, [base, threadQuery, clearing, loading, mode, sending, session, setError, updateSession]);
 
   const workingLabel =
     streamState.phase === "connecting" || streamState.phase === "preparing"
@@ -597,6 +641,29 @@ const StudioWorkroom = forwardRef<
       className="wl-studio-chat flex h-full min-h-0 flex-col overflow-y-auto bg-background"
       aria-label={mode === "test" ? `${agentName} voice rehearsal` : `${agentName} workroom`}
     >
+      {mode === "configure" && onSelectThread && (
+        <nav
+          aria-label="Chats"
+          className="mx-auto flex w-full max-w-3xl shrink-0 flex-wrap items-center justify-between gap-1 px-3"
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-11"
+            disabled={sending || clearing || handsFreeActive.current}
+            onClick={() => onSelectThread(null)}
+          >
+            <Plus aria-hidden="true" />
+            New chat
+          </Button>
+          <StudioChatHistory
+            agentId={agentId}
+            disabled={sending || clearing || handsFreeActive.current}
+            onSelect={onSelectThread}
+          />
+        </nav>
+      )}
       {modeControls === "header" || mode === "test" ? (
         <header
           className={`wl-studio-chat__header shrink-0 ${split ? "px-3 py-2 sm:px-4" : "px-4 py-2 sm:px-6"}`}
@@ -675,6 +742,7 @@ const StudioWorkroom = forwardRef<
               agentName={agentName}
               markKey={markKey}
               phoneNumber={phoneNumber}
+              onCallMyPhone={allowOutbound ? () => setShowPhoneTest(true) : undefined}
             />
           ) : null}
         </div>
@@ -729,12 +797,23 @@ const StudioWorkroom = forwardRef<
           >
             <div className="mx-auto min-h-full w-full max-w-3xl">
               {timelineNotice}
+              {before && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={loadingEarlier || clearing}
+                  onClick={() => void loadEarlier()}
+                >
+                  Earlier messages
+                </Button>
+              )}
+              {earlierError && <p role="alert">{earlierError}</p>}
               {loading ? (
                 <MessageSkeletons />
               ) : messages.length || timelineExtras.length ? (
                 <div className="flex flex-col gap-5">
                   {[
-                    ...messages.map((message) => ({
+                    ...[...earlier, ...messages].map((message) => ({
                       id: `message-${message.id}`,
                       createdAt: message.createdAt,
                       node: (

@@ -6,11 +6,10 @@
  *
  * Two match modes, because over-matching is not symmetric:
  *
- * - `"leading-word"` (opt-out only). Exact-matching the whole trimmed body
- *   missed real-world opt-outs like "STOP." (trailing punctuation) and
- *   "STOP CALLING ME" (leading keyword + trailing words), silently keeping a
- *   consumer subscribed — a TCPA/carrier violation. Over-matching here fails
- *   safe: the consumer stops receiving messages.
+ * - `"leading-word"` (opt-out only). Honor standalone carrier words and
+ *   unmistakable requests with extra words. A broad prefix match would turn
+ *   "Cancel my appointment" or "Stop by Tuesday" into an unsubscribe and
+ *   discard the customer's actual request before it reaches the Bot.
  *
  * - `"exact"` (opt-in and HELP). The same generosity applied to START/YES/HELP
  *   fails UNSAFE in both directions. "Yes please, Tuesday works" registered as
@@ -33,8 +32,9 @@ export function matchesCarrierKeyword(
   const normalized = trimmedLower.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, "");
   if (keywords.has(normalized)) return true;
   if (mode === "exact") return false;
-  const firstWord = normalized.split(/\s+/)[0] ?? "";
-  return firstWord.length > 0 && keywords.has(firstWord);
+  // A prefix alone is not enough: CANCEL, END and STOP also start ordinary
+  // service requests. All non-standalone variants need an explicit revocation.
+  return isPlainLanguageOptOut(normalized);
 }
 
 /**
@@ -111,16 +111,47 @@ export function twilioAnswersKeyword(body: string): boolean {
  * the person stops receiving texts and can reply START.
  */
 const PLAIN_LANGUAGE_OPT_OUT: readonly RegExp[] = [
-  /\b(?:stop|quit|cease)\s+(?:texting|messaging|sending|contacting|calling|spamming)\b/,
-  /\b(?:don'?t|do not|never)\s+(?:text|message|contact|call)\s+(?:me|us|this number|my number)\b/,
-  /\b(?:remove|delete|take)\s+(?:me|my number|this number)\s+(?:off|from)\b/,
-  /\bno\s+more\s+(?:texts|text messages|messages)\b/,
-  /\b(?:unsubscribe|opt\s*-?\s*out)\b/,
-  /\bleave\s+me\s+alone\b/,
+  /^(?:please\s+)?stop(?:\s+please)?$/,
+  /^(?:please\s+|(?:can|could|would) you(?: please)?\s+)?(?:stop|quit|cease)\s+(?:texting|messaging|sending|contacting|calling|spamming)\s+(?:me|us|this number)(?:\s+(?:again|anymore|please|now|right now|immediately|from now on))?$/,
+  /^(?:please\s+|can you\s+|could you\s+)?(?:stop|quit|cease)\s+(?:sending|receiving)\s+(?:me\s+)?(?:these|the|all|my|your)?\s*(?:texts?|text messages?|messages?|sms|notifications)?(?:\s+please)?$/,
+  /^(?:please\s+)?(?:stop|cancel|end|quit)\s+(?:the|these|all|my|your)?\s*(?:texts?|text messages?|messages?|sms|notifications)(?:\s+please)?$/,
+  /^(?:stop|cancel|end|quit)\s*[-,:]\s*no more\s+(?:texts?|messages?|sms)$/,
+  /^(?:please\s+)?(?:don'?t|do not|never)\s+(?:text|message|contact|call)\s+(?:me|us|this number|my number)(?:\s+(?:again|anymore|please))?$/,
+  /^(?:please\s+)?(?:don'?t|do not|never)\s+send\s+(?:me|us|this number|my number)\s+(?:any\s+more\s+)?(?:texts?|text messages?|messages?|sms)(?:\s+please)?$/,
+  /^(?:i\s+)?(?:don'?t|do not)\s+want\s+to\s+receive\s+(?:any\s+more\s+)?(?:texts?|text messages?|messages?|sms|calls?)(?:\s+again)?$/,
+  /^(?:please\s+)?(?:remove|delete|take)\s+(?:me|my number|this number)\s+(?:off|from)\s+(?:your|the)?\s*(?:text|messaging|contact)?\s*list(?:\s+please)?$/,
+  /^(?:please\s+)?(?:remove|delete|take)\s+(?:me|my number|this number)\s+(?:off|from)(?:\s+your\s+list)?(?:\s+please)?$/,
+  /^(?:please\s+)?(?:no\s+more|i\s+(?:don'?t|do not)\s+want\s+(?:any\s+)?more)\s+(?:texts?|text messages?|messages?|sms|calls?)(?:\s+please)?$/,
+  /^(?:please\s+)?(?:i\s+want\s+to\s+)?(?:unsubscribe|opt\s*-?\s*out)(?:\s+me)?(?:\s+(?:from|of)\s+(?:(?:all|any|the|your|these|future)\s+)*(?:texts?|text messages?|messages?|sms))?(?:\s+please)?$/,
+  /^(?:please\s+)?leave\s+me\s+alone(?:\s+please)?$/,
 ];
 
 /** True for a plain-language opt-out request; callers check the carrier keywords first. */
 export function isPlainLanguageOptOut(trimmedLower: string): boolean {
-  const text = trimmedLower.replace(/[’‘]/g, "'").replace(/\s+/g, " ");
-  return PLAIN_LANGUAGE_OPT_OUT.some((pattern) => pattern.test(text));
+  const text = trimmedLower
+    .trim()
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+$/, "")
+    .trim();
+  const matches = (candidate: string) =>
+    PLAIN_LANGUAGE_OPT_OUT.some((pattern) => pattern.test(candidate));
+  if (matches(text)) return true;
+
+  // A polite sign-off does not change a complete revocation into a request.
+  const withoutSignOff = text
+    .replace(/(?:[,;]\s*|\s+)(?:please|(?:thanks|thank you)(?:\s+very much)?)$/, "")
+    .trim();
+  if (withoutSignOff !== text && matches(withoutSignOff)) return true;
+
+  // Keep the anchored intent check, but also honor a complete opening
+  // revocation followed by a separate statement or a different contact
+  // channel. Do not treat an isolated "stop" fragment as a complete clause.
+  const firstClause = text
+    .match(/^([^.!?;,]+)(?:[.!;]\s+|,\s+(?=(?:please\s+)?(?:call|email)\s+me\b))/)?.[1]
+    ?.trim();
+  return Boolean(
+    firstClause && !/^(?:please\s+)?stop(?:\s+please)?$/.test(firstClause) && matches(firstClause),
+  );
 }

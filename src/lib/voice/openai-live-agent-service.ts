@@ -30,7 +30,11 @@ import {
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
 import { clampRuntimePromptPreservingTail } from "../agent-runtime-helpers";
-import { currentPricingPromptBlock, isStaleBotBoundPricing } from "../usage-billing-catalog";
+import {
+  botSellsBotBound,
+  currentPricingPromptBlock,
+  isStaleBotBoundPricing,
+} from "../usage-billing-catalog";
 import {
   founderInternalRuntimeAuthorityBoundary,
   founderInternalRuntimePolicyBlock,
@@ -284,7 +288,9 @@ export function composeOpenAILiveInstructions(
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
         : "",
-      `\n${currentPricingPromptBlock()}`,
+      botSellsBotBound({ agentId: agent.id, internalPersona: Boolean(internalPolicy) })
+        ? `\n${currentPricingPromptBlock()}`
+        : "",
     ]
       .filter(Boolean)
       .join("\n"),

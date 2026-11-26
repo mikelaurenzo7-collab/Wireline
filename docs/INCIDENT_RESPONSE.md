@@ -50,7 +50,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 1. **Confirm the blast radius.** Check runtime health, voice status, deployment state, runtime errors/logs, database health, and provider status.
 2. **Protect integrity before availability.** If billing, tenant isolation, webhook authenticity, or data correctness is uncertain, fail closed on the risky mutation path.
 3. **Identify the failing layer.** Separate BotBound deployment/configuration from database, Twilio carrier/PSTN/SIP transport, OpenAI Realtime call control, the structured-model provider chain, email, payments, and rate-limit/cache dependencies.
-4. **Mitigate using an already-tested path.** Prefer a configured structured-model fallback, bounded degraded mode, feature pause, or rollback over an improvised production change. Voice failures remain on the observable OpenAI Realtime path and do not switch providers.
+4. **Mitigate using an already-tested path.** Prefer a configured structured-model fallback, bounded degraded mode, feature pause, or rollback over an improvised production change. Stock phone calls run on xAI voice for registered numbers and on OpenAI Realtime otherwise; an eligible inbound xAI call can recover to OpenAI during the same call (outbound and owner-test calls cannot). Check which provider the affected calls recorded before triaging.
 5. **Verify recovery.** Re-run the exact health surface that detected the issue and verify representative end-to-end behavior before declaring resolution.
 6. **Communicate material customer impact.** Use BotBound product messaging and the appropriate support channel; do not publish an unverified root cause.
 
@@ -69,7 +69,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 ## 4. Provider triage
 
-Use the relevant official provider status/support surface for the component actually in the call or transaction path. Current production dependencies include managed hosting, Postgres, Twilio carrier/PSTN/SIP transport, OpenAI Realtime voice and call control, the configured structured-model provider chain, Stripe, email delivery, and Upstash Redis. Voice incidents must not be routed to xAI, Vapi, or ElevenLabs: those providers are retired from the production voice runtime, and BotBound does not silently fail an active call over to another voice provider.
+Use the relevant official provider status/support surface for the component actually in the call or transaction path. Current production dependencies include managed hosting (Render), Postgres, Twilio carrier/PSTN/SIP transport, xAI voice (the default for stock phone calls on registered numbers), OpenAI Realtime voice and call control (unregistered numbers, rehearsals and inbound recovery), ElevenLabs speech for cloned voices, the configured structured-model provider chain, Stripe, email delivery, and Upstash Redis. Route a voice incident to the provider the affected calls recorded (`src/lib/voice/realtime-provider.ts`); Vapi is retired.
 
 Never infer an upstream outage solely from one failed health request. Re-probe after the public-health cache TTL and compare against provider status plus BotBound runtime logs.
 
@@ -138,7 +138,7 @@ If cross-tenant access, credential exposure, webhook forgery, payment corruption
 
 - Public status is evidence, not an uptime guarantee.
 - Public demo voice and its demo-line canary are retired; authenticated reliability evidence is the supported voice-health path.
-- Vercel cron is the source of truth for Vercel-scheduled jobs.
+- Render cron jobs (`botbound-jobs-sweep` every minute, `botbound-daily-brief` every 15 minutes) are the source of truth for scheduled work. A sweep exits non-zero when any scheduled operation failed; the failing job's error is in `wireline_jobs` and Sentry.
 - Sentry alert destinations must be verified in Sentry; code presence alone does not prove a Slack/SMS/email rule.
 - Provider fallback claims must match the active runtime policy and vendor configuration.
 - Any contractual response time, recovery objective, support channel, or service credit belongs in the signed customer agreement, not this internal runbook.

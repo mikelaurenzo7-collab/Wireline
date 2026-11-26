@@ -18,14 +18,10 @@ export function normalizeEmailAddress(value: unknown): string {
 /** A completed live send stores SUBMISSION_OK and the accepted address in the tool result. */
 export function emailResultAcceptedForRecipient(result: unknown, recipient: unknown): boolean {
   const email = normalizeEmailAddress(recipient);
-  const text = typeof result === "string" ? result : "";
-  if (!email || !text.startsWith("SUBMISSION_OK")) return false;
-  const haystack = text.toLowerCase();
-  const at = haystack.indexOf(email);
-  if (at < 0) return false;
-  const before = at === 0 ? " " : haystack[at - 1];
-  const after = haystack[at + email.length] ?? " ";
-  return /[\s:]/.test(before) && /[\s.]/.test(after);
+  if (!email || typeof result !== "string") return false;
+  const receipt =
+    /^SUBMISSION_OK: Email accepted by the sending service for\s+(\S+)\s*\.(?:\s|$)/.exec(result);
+  return normalizeEmailAddress(receipt?.[1]) === email;
 }
 
 export function toolAuditResultText(metadata: unknown): string {
@@ -39,14 +35,22 @@ export function toolAuditResultText(metadata: unknown): string {
   return typeof record.result === "string" ? record.result : "";
 }
 
-/** The live email tool already accepted this recipient, so a second draft would send it again. */
-export function sendEmailDraftAlreadyDelivered(
+/** A live submission or saved approval for this recipient already covers the requested follow-up. */
+export function liveEmailAlreadyHandled(
   action: ExtractedBusinessAction,
   completedResults: readonly unknown[],
 ): boolean {
   if (action.type !== "send_email") return false;
   const recipient = action.payload?.to;
-  return completedResults.some((result) => emailResultAcceptedForRecipient(result, recipient));
+  const email = normalizeEmailAddress(recipient);
+  if (!email) return false;
+  return completedResults.some(
+    (result) =>
+      emailResultAcceptedForRecipient(result, email) ||
+      (typeof result === "string" &&
+        result.startsWith("DRAFT_SAVED: ") &&
+        normalizeEmailAddress(result.split("\n", 1)[0].slice("DRAFT_SAVED: ".length)) === email),
+  );
 }
 
 export function postCallFollowUpAction(action: ExtractedBusinessAction): ExtractedBusinessAction {

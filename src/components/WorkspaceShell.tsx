@@ -30,6 +30,7 @@ import {
   type ShellNavItem,
 } from "../constants/navigation";
 import { navIcon } from "./nav-icons";
+import StudioChatRail from "./studio/StudioChatRail";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/shadcn/Tooltip";
 
 // Legacy persistence/native identifiers intentionally remain stable through the
@@ -337,6 +338,10 @@ function DesktopRail({
             </p>
           ) : null}
         </nav>
+
+        {!collapsed && selectedAgent ? (
+          <StudioChatRail agentId={selectedAgent.id} onStudio={pathname === "/studio"} />
+        ) : null}
 
         <DesktopNavGroup
           label="Work"

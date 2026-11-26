@@ -56,11 +56,9 @@ export type JobType =
   | "consent_check" // Pre-call TCPA gateway check
   | "purge_old_data" // GDPR data-retention TTL purge (nightly, per-tenant)
   | "purge_deleted_account" // GDPR Phase 1.5 — hard-delete account after 30-day grace
-  | "google_drive_ingest" // Sync documents via Gemini
   | "adaptive_optimization" // Auto-tune agent from low-scoring calls
   | "v2a_action_extraction" // Voice-to-Action: extract action items from a call transcript
   | "execute_action" // Execute an extracted action via the Action Engine
-  | "calendar_sync" // Sync Google/Outlook calendars
   | "knowledge_from_url" // Async site crawl → structured knowledge entries
   | "cadence_tick" // Multi-touch outbound cadence step processor
   | "callback_tick" // Caller-requested callback executor (due callback_scheduled_at rows)

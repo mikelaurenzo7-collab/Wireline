@@ -50,6 +50,8 @@ import {
   runtimeReservationReferenceForJob,
 } from "./provider-spend-job-pause";
 import { assertProviderSpendJobEnvironmentAllowed } from "./provider-spend-job-environment";
+import { AppError } from "./api-error";
+import { NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED } from "./account-environment-policy";
 import { runWithProviderIdentity } from "./provider-identity-context";
 import { stopRenewalForDeletion } from "./account-deletion-billing";
 import {
@@ -152,6 +154,14 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
     .update(schema.jobs)
     .set({ result, updatedAt: new Date() })
     .where(eq(schema.jobs.id, jobId));
+}
+
+function isNonProductionWorkspaceRefusal(error: unknown): boolean {
+  return (
+    error instanceof AppError &&
+    error.status === 403 &&
+    error.code === NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED
+  );
 }
 
 async function hasPersistedResult(jobId: string): Promise<boolean> {
@@ -566,7 +576,23 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
 
 async function dispatchJob(job: JobRow): Promise<void> {
   const userId = jobOwnerId(job).trim();
-  await assertProviderSpendJobEnvironmentAllowed({ type: job.type, userId });
+  try {
+    await assertProviderSpendJobEnvironmentAllowed({ type: job.type, userId });
+  } catch (error) {
+    // A demo or test workspace can never run provider-spending work, so
+    // retrying that refusal only dead-letters the job and reports an error.
+    // Finish it with the reason recorded. An unclassified workspace (503)
+    // still retries: its classification may be completed shortly.
+    if (isNonProductionWorkspaceRefusal(error)) {
+      await persistJobResult(job.id, { skipped: "non_production_workspace" });
+      log.info("Provider-spend job skipped in a demo or test workspace", {
+        jobId: job.id,
+        type: job.type,
+      });
+      return;
+    }
+    throw error;
+  }
   if (!userId || userId === SYSTEM_USER_ID) {
     await dispatchJobInProviderContext(job);
     return;

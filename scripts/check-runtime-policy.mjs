@@ -18,6 +18,7 @@ const sipTarget = read("src/lib/voice/realtime-sip-target.ts");
 const sipSession = read("src/lib/voice/openai-sip-session.ts");
 const sipRoutes = read("src/routes/openai-sip-routes.ts");
 const studioVoice = read("src/lib/voice/openai-live-agent-service.ts");
+const rehearsalRelay = read("src/lib/voice/xai-rehearsal-relay.ts");
 const mcpVoice = read("src/routes/chatgpt-mcp-account-routes.ts");
 const routes = read("src/server/register-api-routes.ts");
 const voiceCatalog = read("src/lib/voice-catalog.ts");
@@ -35,7 +36,27 @@ forbidText(providerPolicy, '"gemini",', "Gemini is retired from the structured r
 requireText(
   studioVoice,
   "await createServerManagedOpenAIRealtimeCall({",
-  "Studio private microphone rehearsal must use server-managed OpenAI Realtime.",
+  "Studio rehearsal's OpenAI fallback must use server-managed OpenAI Realtime.",
+);
+requireText(
+  rehearsalRelay,
+  'surface: "browser_test"',
+  "Studio xAI rehearsal must use the phone runtime's private-test surface (knowledge lookup only).",
+);
+requireText(
+  rehearsalRelay,
+  'configuredPhoneVoiceProvider(env) === "openai"',
+  "Studio rehearsal must follow the phone provider so owners hear what callers hear.",
+);
+requireText(
+  rehearsalRelay,
+  "markRealtimeProviderCallOutcome(this, false)",
+  "An unavailable xAI rehearsal must release its reservation so the OpenAI fallback can start.",
+);
+forbidText(
+  rehearsalRelay,
+  "client_secrets",
+  "xAI rehearsal must not mint browser client secrets; the prompt and key stay on the server.",
 );
 requireText(
   mcpVoice,
@@ -54,7 +75,12 @@ requireText(
 );
 requireText(
   sipTarget,
-  'configuredPhoneVoiceProvider() !== "xai" || !xaiSipConfigured()',
+  'if (configuredPhoneVoiceProvider() !== "xai") {',
+  "xAI SIP targets must honor the operator opt-out and require configuration.",
+);
+requireText(
+  sipTarget,
+  "if (!xaiSipConfigured()) {",
   "xAI SIP targets must honor the operator opt-out and require configuration.",
 );
 requireText(
@@ -170,5 +196,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Source runtime policy checked: OpenAI private rehearsal; default xAI phone routing with self-registration and OpenAI fallback over Twilio; call-id-bound control. Live workflow evidence remains separate.",
+  "Source runtime policy checked: xAI Studio rehearsal relay with OpenAI fallback; default xAI phone routing with self-registration and OpenAI fallback over Twilio; call-id-bound control. Live workflow evidence remains separate.",
 );

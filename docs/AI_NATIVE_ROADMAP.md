@@ -20,18 +20,19 @@ BotBound is the system of record for a small business's customer conversations. 
 - [x] Remove the X, Zoom and Yahoo mail paths in reviewed changes. Slack, Google Sheets, Microsoft Teams and Excel are on the owner's November 24 keep list and stay, as do Yahoo sign-in and the supported Google/Microsoft mail and calendar paths.
 - [ ] Preserve disconnect/revoke, historical receipts, account deletion and audit until absence of dependent data is established.
 - [ ] Only after deployed readers/writers are gone, review append-only migration for legacy connections, agent teams/members and call queues. No destructive migration before approval.
-- [ ] Reconcile missing schema indexes/tables against live catalog (the real-database lane documents 30 unique indexes absent from schema.ts); remove retired Gemini runtime and dependency after reference audit.
+- [ ] Reconcile missing schema indexes/tables against live catalog (the real-database lane documents 30 unique indexes absent from schema.ts).
+- [x] Remove the retired Gemini runtime and dependency: `voice/gemini-live-client.ts`, the Gemini voice catalog and `@google/genai` are gone (no production Bot used a Gemini voice).
 - [ ] Separate sign-in and connector OAuth clients; narrow Drive access to selected files where feasible. Gate restricted Gmail/Drive access on required verification.
 - [ ] Archive superseded audits and reconcile draft #1437.
 
 Repo debt the November 24 audit found and a second read of the tree confirmed:
 - Rename `agent-routes-v2.ts`, `qa-routes-v2.ts` and `google-drive-sync-v2.ts`; no v1 exists for any of them.
-- Retired Live Video: `src/lib/video-presenter/` (12 files), `LiveVideoPresenter.tsx`, `LiveVideoStudioPage.tsx`, `stripe-live-video-addon.ts`.
-- No importer in `src/`: `voice/gemini-live-client.ts` (a test only) and `cloud-computer/trade-portal-mirroring.ts` (its own tests only). The `wireline_design_integrations` table is read only by the account-deletion registry. The `calendar_sync` and `google_drive_ingest` job types are declared in `job-queue-base.ts` with no producer.
+- Retired Live Video: the dead modules, never-mounted presenter routers, page and components are removed (November 26). Still in use and kept: `liveavatar-service.ts`, `resolve-agent-presenter.ts`, `copy.ts` and `types.ts` (agent and mobile routes), `live-video-entitlements.ts` and `live-video-policy.ts` (billing), `stripe-live-video-addon.ts` (leftover add-on subscriptions) and the 410 for `/api/billing/live-video-checkout`. Dropping the `video_presenter_*` and `live_video_addon_enabled` columns needs a separate reviewed migration, because database functions reference them.
+- The `wireline_design_integrations` table is read only by the account-deletion registry. Removed: `voice/gemini-live-client.ts` (only a test imported it), `cloud-computer/trade-portal-mirroring.ts` and its tests, and the producer-less `calendar_sync` and `google_drive_ingest` job types (no production job of any of the three types existed).
 - Vercel leftovers: the `api/` directory and `src/entrypoints/chatgpt-mcp-api.ts`, to remove once the rollback path is retired.
 - Vapi-era naming: `vapiCallId` appears in 37 source files and the outbound webhook payload still carries `vapi_call_id`. Renaming needs an append-only migration and a versioned webhook payload.
-- Docs to reconcile: `CODEBASE_HEALTH.md` cites `apps/desktop/`, which does not exist; confirm `OPENAI_REALTIME_VOICE.md` and `CODEBASE_HEALTH.md` agree with the code that xAI Grok Voice is the default phone provider; dated documents that still say "Status: Active".
-- Retention: the 365-day purge deletes call logs, email, appointments and leads but not SMS. People must be exempt, and retention should be consistent per object.
+- Docs to reconcile (the `apps/desktop/` and `SalesforceIntegrationPage` references are fixed): confirm `OPENAI_REALTIME_VOICE.md` and `CODEBASE_HEALTH.md` agree with the code that xAI Grok Voice is the default phone provider; dated documents that still say "Status: Active".
+- Retention: the 365-day purge deleted call logs, email, appointments and leads but not SMS, and it purged email threads by `created_at`, so the cascade removed recent messages in long-running threads. `0198_retention_purge_thread_activity` purges messages and SMS send operations by `created_at`, and email and SMS threads by `last_message_at` once nothing younger remains under them. People and the outbound purpose audit stay exempt. It is journalled and still needs the reviewed schema promotion.
 
 ## Phase 1 — People and helpers
 People is tenant-owned, with one person and multiple normalized identifiers, interaction provenance, follow-ups, reversible deduplication and explicit identity conflicts. Do not auto-merge ambiguous identities. Tenant RLS, server grants, deletion/export and cross-tenant tests are mandatory. Seed only verified founder/demo accounts; preserve channel receipts. Add permissioned find_person, record_interaction and update_person, UI timeline, and outward MCP people.read/people.write scopes. Keep customer records separate from model memory.
@@ -41,6 +42,12 @@ Starting point, from the audit: every channel stores the customer as plain text 
 - The timeline is a read-time union over the existing channel tables joined through identifiers. Nullable person ids on the large tables come later, only if the union proves slow.
 - Live calls keep today's rule: no record reads while the caller is unverified. After the call, an internal update_person action (replacing the removed CRM update action) writes through the existing autonomy, draft and approval path.
 - MCP people writes are an owner opt-in, like connected-app Training writes. No pipelines, deals or custom-object builder until owners ask.
+
+Progress:
+- [x] Tables and owner surface in code: migration 0197 (`wireline_people`, `wireline_person_identifiers`, `wireline_person_events`) with tenant RLS, composite same-tenant keys and no UPDATE grant on events; `src/lib/people/`; `/api/people`; the People page at `/people` with search, recent contacts not yet saved, phones and email, details, notes, reversible merge and the read-time timeline. Account deletion and export cover all three tables; the 365-day purge does not. Applying 0197 to the shared database is a separate, reviewed step; until then the routes answer 503 `PEOPLE_UNAVAILABLE`.
+- [ ] Bot actions: `find_person` (owner and post-call contexts only; never while a live caller is unverified), `record_interaction` and `update_person` through the existing autonomy, draft and approval path, plus the reviewed tool-list migration that preserves owner opt-outs.
+- [ ] Outward MCP `people.read` and opt-in `people.write`, with the ChatGPT and Claude connector submissions updated together.
+- [ ] Links from call, text, email and booking views into the person, and a "save to People" action there.
 
 Helpers use one per-Bot toggle, initially thinking-only, at most one level and two calls per parent task, with bounded context/time/output. Parent authorization, environment, budget and cancellation apply. Existing explicit tool lists require a reviewed migration that preserves owner opt-outs. Record parent-child trace and usage without double billing. Slow work uses durable task handles; never block a live call indefinitely.
 

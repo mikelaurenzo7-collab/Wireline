@@ -1,5 +1,6 @@
 /** Stripe accepts meter events asynchronously. HTTP acceptance is not settlement. */
 import { and, eq, inArray, sql } from "drizzle-orm";
+import type Stripe from "stripe";
 import { usageBillingPeriods, usageMeterEvents } from "../db/usage-billing-schema";
 import { drizzle, log } from "./server-context";
 import { usageMeterEventName } from "./usage-billing-config";
@@ -136,7 +137,12 @@ export async function reconcileStripeMeterErrors(): Promise<void> {
   for await (const event of stripe.v2.core.events.list({
     types: USAGE_METER_ERROR_TYPES,
     limit: 100,
-    created: { gte: Math.floor(Date.now() / 1000) - 29 * 86400 },
+    // Stripe's v2 endpoint requires RFC 3339, although stripe-node 22.6.0
+    // shares the numeric v1 RangeQueryParam declaration. Keep this cast local
+    // to the request boundary; do not change v1 meter-event timestamps.
+    created: {
+      gte: new Date(Date.now() - 29 * 86_400_000).toISOString(),
+    } as unknown as Stripe.V2.Core.EventListParams["created"],
   })) {
     if (++scanned > 1000)
       throw new Error("Stripe meter reconciliation backlog exceeds its safety limit");

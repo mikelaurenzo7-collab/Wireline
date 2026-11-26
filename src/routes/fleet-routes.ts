@@ -227,6 +227,9 @@ router.get(
         .from(schema.followUpTasks)
         .leftJoin(schema.agents, eq(schema.followUpTasks.agentId, schema.agents.id))
         .where(and(...whereClauses))
+        // Newest first, so an account past 1,000 tasks sees its latest work
+        // rather than an arbitrary sample.
+        .orderBy(desc(schema.followUpTasks.createdAt))
         .limit(1000);
 
       const sortedTasks = await annotateRecordedCallTexts(

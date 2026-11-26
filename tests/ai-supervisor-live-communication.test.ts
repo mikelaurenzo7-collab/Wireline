@@ -11,6 +11,7 @@ vi.mock("../src/lib/ai-structured", () => ({
 import {
   ClientCommunicationBlockedError,
   clientFacingAgentName,
+  reviewOutputTokenBudget,
   superviseClientCommunication,
 } from "../src/lib/ai-supervisor";
 
@@ -78,8 +79,8 @@ describe("live-call communication supervision", () => {
   });
 
   it("keeps internal identifiers out of reviewer context and fallback subjects", async () => {
-    expect(clientFacingAgentName("agent-0123456789abcdef")).toBe("BotBound");
-    expect(clientFacingAgentName("11111111-1111-1111-1111-111111111111")).toBe("BotBound");
+    expect(clientFacingAgentName("agent-0123456789abcdef")).toBe("");
+    expect(clientFacingAgentName("11111111-1111-1111-1111-111111111111")).toBe("");
     expect(clientFacingAgentName("Avery")).toBe("Avery");
     expect(clientFacingAgentName("A".repeat(120))).toHaveLength(80);
 
@@ -99,10 +100,63 @@ describe("live-call communication supervision", () => {
         recipient: "caller@example.com",
         body: "Here is the link you requested.",
       }),
-    ).resolves.toMatchObject({ subject: "Follow-up from BotBound" });
+    ).resolves.toMatchObject({ subject: "Follow-up" });
 
-    expect(runStructuredMock).toHaveBeenCalledWith(
-      expect.objectContaining({ user: expect.stringContaining("Agent: BotBound") }),
+    const user = runStructuredMock.mock.calls[0][0].user as string;
+    expect(user).toContain("Agent: the business's Bot");
+    expect(user).not.toContain("agent-0123456789abcdef");
+    expect(user).not.toContain("BotBound");
+  });
+
+  it("writes as the business: its name leads the fallback subject, never the platform's", async () => {
+    runStructuredMock.mockResolvedValue({
+      approved: true,
+      subject: "",
+      body: "Here is the quote you asked for.",
+      rationale: "Approved.",
+    });
+
+    await expect(
+      superviseClientCommunication({
+        channel: "email",
+        agentName: "Avery",
+        businessName: "Riverside Plumbing",
+        source: "action_engine",
+        purpose: "post-call follow-up",
+        recipient: "caller@example.com",
+        body: "Here is the quote you asked for.",
+      }),
+    ).resolves.toMatchObject({ subject: "Follow-up from Riverside Plumbing" });
+
+    const request = runStructuredMock.mock.calls[0][0];
+    expect(request.user).toContain("Business: Riverside Plumbing\nAgent: Avery");
+    expect(request.system).toContain("do not add a signature or sign-off");
+    expect(request.system).toContain("not by BotBound");
+  });
+
+  it("sizes the reviewer's output to the message it must return", async () => {
+    expect(reviewOutputTokenBudget("", "short")).toBe(1500);
+    // A 12,000-character email needs about 4,000 tokens echoed back; the old
+    // fixed 1,200-token cap truncated it into unparseable output.
+    expect(reviewOutputTokenBudget("Quote", "x".repeat(12_000))).toBe(4802);
+    expect(reviewOutputTokenBudget("", "x".repeat(40_000))).toBe(6000);
+
+    runStructuredMock.mockResolvedValue({
+      approved: true,
+      subject: "Quote",
+      body: "x".repeat(9_000),
+      rationale: "Approved.",
+    });
+    await superviseClientCommunication({
+      channel: "email",
+      source: "action_engine",
+      purpose: "post-call follow-up",
+      recipient: "caller@example.com",
+      subject: "Quote",
+      body: "x".repeat(9_000),
+    });
+    expect(runStructuredMock.mock.calls[0][0].maxTokens).toBe(
+      reviewOutputTokenBudget("Quote", "x".repeat(9_000)),
     );
   });
 });

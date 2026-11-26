@@ -34,7 +34,8 @@ describe("code review hardening contracts", () => {
   it("starts supervisor websocket upgrades from the canonical server entrypoint", () => {
     const server = read("server.ts");
     expect(server).toContain("import { initSupervisorWebSocketServer }");
-    expect(server).toContain("initSupervisorWebSocketServer(server)");
+    expect(server).toContain("initSupervisorWebSocketServer(server, {");
+    expect(server).toContain("[XAI_REHEARSAL_RELAY_PATH]: handleRehearsalRelayUpgrade,");
   });
 
   it("fails CORS closed in production when no allowlist is configured", () => {

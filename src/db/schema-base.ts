@@ -653,17 +653,7 @@ export const agentLessons = pgTable(
   }),
 );
 
-// Per-agent Account Holder chat thread. Persistent, ongoing — distinct from
-// /train which is structural agent configuration. Think of this as the
-// private DM channel the Account Holder has with each AI agent: ongoing
-// direction, coaching, "how did the calls go this week?", file-attached
-// context. Memory is the thread itself plus the agent's flow + recent
-// call summaries injected as context at LLM time.
-//
-// One thread per (userId, agentId). When the Account Holder sends, we store
-// a row with role="Account Holder". Claude reads thread history + agent
-// config + recent calls, replies, and we store the reply with
-// role="agent". Soft-delete on agent delete via cascade.
+// Studio conversations share Bot configuration. Null thread IDs contain the original chat.
 export const agentConversationMessages = pgTable(
   "wireline_agent_conversation_messages",
   {
@@ -676,6 +666,9 @@ export const agentConversationMessages = pgTable(
     // lives in the migration (this Drizzle version doesn't expose .$type()).
     role: text("role").notNull(),
     content: text("content").notNull(),
+    threadId: uuid("thread_id"),
+    /** Project label lives on the first message of a conversation. */
+    projectName: text("project_name"),
     /** Planner reasoning text for this message (nullable). */
     reasoning: text("reasoning"),
     /** Validated Studio review cards and owner approval receipts for this turn. */
@@ -685,7 +678,8 @@ export const agentConversationMessages = pgTable(
     }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  () => ({
+  (t) => ({
+    threadIdx: index("idx_agent_conv_thread").on(t.userId, t.agentId, t.threadId, t.id),
     userAgentIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_conv_user_agent ON wireline_agent_conversation_messages USING btree (user_id, agent_id, created_at DESC)`,
   }),
 );
@@ -784,6 +778,8 @@ export const appointments = pgTable(
     bookingRequestKey: text("booking_request_key"),
     bookingFingerprint: text("booking_fingerprint"),
     bufferMinutes: integer("buffer_minutes").default(0).notNull(),
+    /** The copy of this booking on the owner's own calendar (see owner-calendar-mirror.ts). */
+    externalCalendar: jsonb("external_calendar"),
     // True when the row was inserted by /api/admin/seed-demo-account so
     // the UI can render a "DEMO" pill and account holders won't mistake the
     // seeded showcase rows for real customer activity.

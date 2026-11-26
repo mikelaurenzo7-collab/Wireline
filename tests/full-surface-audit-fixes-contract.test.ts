@@ -36,8 +36,9 @@ describe("call-log reliability truth", () => {
 
   it("the claimed OpenAI call row receives the session's terminal reliability outcome", () => {
     const claimIdx = handlers.indexOf("let callLogId = preclaimedCallLogId ?? null");
+    // Owner phone tests also pass the live transcript recorder, stopped first in `finally`.
     const sessionCall =
-      /outcome = await runRealtimeSession\(\s*input,\s*runtime,\s*ownerFence\.signal,\s*accountElapsed,\s*providerUsage\?\.observe,?\s*\)/.exec(
+      /outcome = await runRealtimeSession\(\s*input,\s*runtime,\s*ownerFence\.signal,\s*accountElapsed,\s*providerUsage\?\.observe,\s*(?:liveTranscript\?\.notify,?\s*)?\)/.exec(
         handlers,
       );
     const sessionIdx = sessionCall?.index ?? -1;
@@ -45,7 +46,9 @@ describe("call-log reliability truth", () => {
     const enqueueIdx = handlers.indexOf("await enqueuePostCallDigest(", finalizerIdx);
     expect(claimIdx).toBeGreaterThan(0);
     expect(sessionIdx).toBeGreaterThan(claimIdx);
-    expect(handlers.slice(sessionIdx)).toMatch(/finally\s*\{\s*await providerUsage\?\.flush\(\)/);
+    expect(handlers.slice(sessionIdx)).toMatch(
+      /finally\s*\{\s*(?:liveTranscript\?\.stop\(\);\s*)?await providerUsage\?\.flush\(\)/,
+    );
     expect(finalizerIdx).toBeGreaterThan(0);
     expect(enqueueIdx).toBeGreaterThan(finalizerIdx);
     const terminalWrite = handlers.slice(finalizerIdx, enqueueIdx);

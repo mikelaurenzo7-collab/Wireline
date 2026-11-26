@@ -8,14 +8,27 @@ import {
   validateUsageMeter,
   validateUsagePrice,
 } from "../scripts/stripe-usage-billing-setup.mjs";
-vi.mock("../src/lib/server-context", () => ({ drizzle: {}, log: { error: vi.fn() } }));
-import { meterErrorScope } from "../src/lib/usage-billing-reconciliation";
+const meterWorkLimit = vi.hoisted(() => vi.fn());
+const meterErrorList = vi.hoisted(() => vi.fn());
+vi.mock("../src/lib/server-context", () => ({
+  drizzle: {
+    select: () => ({ from: () => ({ where: () => ({ limit: meterWorkLimit }) }) }),
+  },
+  log: { error: vi.fn() },
+}));
+import {
+  meterErrorScope,
+  reconcileStripeMeterErrors,
+} from "../src/lib/usage-billing-reconciliation";
 import { stripeUsageIdentifier } from "../src/lib/usage-billing-ledger";
 import { validateUsageCheckoutCatalog } from "../src/lib/usage-stripe-validation";
 import { USAGE_PRICE_ENV, USAGE_TIER_PRICE_ENV } from "../src/lib/usage-billing-config";
 const meterCreate = vi.hoisted(() => vi.fn());
 vi.mock("../src/lib/stripe-helpers", () => ({
-  stripe: { billing: { meterEvents: { create: meterCreate } } },
+  stripe: {
+    billing: { meterEvents: { create: meterCreate } },
+    v2: { core: { events: { list: meterErrorList } } },
+  },
 }));
 import { createStripeMeterClient } from "../src/lib/usage-billing-store";
 
@@ -211,6 +224,29 @@ describe("meter HTTP retry identity", () => {
 });
 
 describe("asynchronous meter failures", () => {
+  it("uses an RFC 3339 cutoff for the Stripe v2 scan without changing its 29-day window", async () => {
+    meterWorkLimit.mockReset().mockResolvedValue([{ id: "receipt" }]);
+    meterErrorList.mockReset().mockReturnValue([]);
+    const clock = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-24T23:00:00.000Z"));
+    try {
+      await reconcileStripeMeterErrors();
+      expect(meterErrorList).toHaveBeenCalledExactlyOnceWith({
+        types: ["v1.billing.meter.error_report_triggered", "v1.billing.meter.no_meter_found"],
+        limit: 100,
+        created: { gte: "2026-10-26T23:00:00.000Z" },
+      });
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("does not scan Stripe before a meter reporting attempt exists", async () => {
+    meterWorkLimit.mockReset().mockResolvedValue([]);
+    meterErrorList.mockReset();
+    await reconcileStripeMeterErrors();
+    expect(meterErrorList).not.toHaveBeenCalled();
+  });
+
   const notice = (count: number, ids: Array<string | undefined>) => ({
     id: "evt_error",
     type: "v1.billing.meter.error_report_triggered",

@@ -27,6 +27,7 @@ import { hasInboundCapacityInTransaction } from "../inbound-concurrency";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
 import { enqueuePostCallDigest, type OpenAISipFinalizationContext } from "../post-call-digest";
+import { callerTurnsText } from "../call-transcript-lines";
 import { reportError } from "../error-reporter";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import {
@@ -125,6 +126,8 @@ const PRE_SESSION_CLAIM_LEASE_MS = 2 * 60_000;
 const RUNNING_CLAIM_LEASE_MS = 90_000;
 const RUNNING_CLAIM_HEARTBEAT_MS = 30_000;
 const RUNNING_CLAIM_LOCAL_FENCE_MS = RUNNING_CLAIM_LEASE_MS - 15_000;
+/** How often an owner phone test's transcript-so-far may be written. */
+const LIVE_TRANSCRIPT_INTERVAL_MS = 1_500;
 const IN_PROGRESS_SUMMARY = "OpenAI Realtime voice call in progress.";
 const RECOVERED_SUMMARY =
   "OpenAI Realtime voice call ended before its terminal state could be persisted.";
@@ -1006,6 +1009,70 @@ export function markOpenAISipCallRunning(input: {
   });
 }
 
+/**
+ * Coalesce transcript progress into at most one write per interval, in order.
+ * `notify` takes a snapshot function so compaction runs only when a write is due.
+ */
+export function createTranscriptProgressRecorder(
+  write: (transcript: string) => Promise<void>,
+  onError: (error: unknown) => void,
+  intervalMs: number = LIVE_TRANSCRIPT_INTERVAL_MS,
+) {
+  let snapshot: (() => string) | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastWritten = "";
+  let stopped = false;
+  let writes: Promise<void> = Promise.resolve();
+  const flush = () => {
+    timer = null;
+    if (stopped || !snapshot) return;
+    const transcript = snapshot();
+    snapshot = null;
+    if (!transcript || transcript === lastWritten) return;
+    lastWritten = transcript;
+    writes = writes.then(() => write(transcript)).catch(onError);
+  };
+  return {
+    notify(next: () => string) {
+      if (stopped) return;
+      snapshot = next;
+      if (timer) return;
+      timer = setTimeout(flush, intervalMs);
+      timer.unref?.();
+    },
+    /** No later writes; the final call record owns the transcript from here. */
+    stop() {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+    },
+  };
+}
+
+/**
+ * Owner phone tests show the call in Studio while it runs. Each write is
+ * fenced to this session's running claim, so a write that lands late can never
+ * replace the final transcript written when the call ends.
+ */
+function recordLivePhoneTestTranscript(
+  call: OpenAISipIncomingCall,
+  claim: OpenAISipCallClaim,
+  transcript: string,
+): Promise<void> {
+  return drizzle
+    .update(schema.callLogs)
+    .set({ transcript })
+    .where(
+      and(
+        eq(schema.callLogs.id, claim.callLogId),
+        eq(schema.callLogs.userId, call.userId),
+        eq(schema.callLogs.openaiSipPhase, "running"),
+        eq(schema.callLogs.openaiSipOwnerToken, claim.ownerToken),
+      ),
+    )
+    .then(() => undefined);
+}
+
 async function renewOpenAISipCallLease(input: {
   call: OpenAISipIncomingCall;
   claim: OpenAISipCallClaim;
@@ -1580,7 +1647,10 @@ async function persistFinishedCall(input: {
   );
 
   await runFinalizerStep("transcript_dnc", input.call, async () => {
-    const optOut = detectOptOut(input.transcript || "");
+    // Only the caller can opt out. The Bot's own lines include the sales
+    // opening's "you can say stop calling", which would otherwise put every
+    // answered sales call on the do-not-call list.
+    const optOut = detectOptOut(callerTurnsText(input.transcript));
     if (optOut.kind !== "dnc") return;
     await persistTranscriptDncSuppression({
       userId: input.call.userId,
@@ -1869,7 +1939,8 @@ export async function replayOpenAISipPostCallFinalization(input: {
     openingPlaybackConfirmed: input.finalization.openingPlaybackConfirmed,
   });
 
-  const optOut = detectOptOut(transcript);
+  // Caller lines only, as in the finalizer: the Bot's opening names the opt-out phrase.
+  const optOut = detectOptOut(callerTurnsText(transcript));
   if (optOut.kind === "dnc") {
     await persistTranscriptDncSuppression({
       userId: input.userId,
@@ -1906,6 +1977,8 @@ async function runRealtimeSession(
   ownershipSignal?: AbortSignal,
   accountElapsed?: (seconds: number) => Promise<void>,
   observeUsage?: (event: Record<string, unknown>) => void,
+  /** Owner phone tests: told after each turn so the transcript can be shown live. */
+  onTranscriptProgress?: (snapshot: () => string) => void,
 ): Promise<RealtimeSessionOutcome> {
   const provider = realtimeProviderForCallId(input.callId);
   const apiKey = realtimeApiKey(provider);
@@ -2155,10 +2228,13 @@ async function runRealtimeSession(
   const sessionHandle = { notifyTransferred };
   liveSipSessions.set(input.callId, sessionHandle);
 
+  const reportTranscriptProgress = () =>
+    onTranscriptProgress?.(() => compactOpenAITranscript(transcriptLines));
   const flushAssistantTurn = () => {
     const text = assistantTurn.trim();
     if (text) transcriptLines.push({ role: "Agent", text });
     assistantTurn = "";
+    if (text) reportTranscriptProgress();
   };
 
   const finishExactOpeningIfNeeded = (delivered: boolean) => {
@@ -2664,16 +2740,17 @@ async function runRealtimeSession(
       requestToolContinuationWhenReady();
       return;
     }
-    if (
-      provider === "xai" &&
-      awaitingExactOpeningPlayback &&
-      type === "response.created"
-    ) {
+    if (provider === "xai" && awaitingExactOpeningPlayback && type === "response.created") {
       // xAI starts no model turn until a non-interruptible line has played, so
       // the first response after the opening's own proves it was heard.
       const responseId = String(asRecord(event.response).id || "");
       if (!xaiOpeningResponseId) xaiOpeningResponseId = responseId || "opening";
-      else if (!isXaiCarrier && responseId !== xaiOpeningResponseId && finishExactOpeningIfNeeded(true)) return;
+      else if (
+        !isXaiCarrier &&
+        responseId !== xaiOpeningResponseId &&
+        finishExactOpeningIfNeeded(true)
+      )
+        return;
     }
     if (type === "input_audio_buffer.speech_started" || type === "input_audio_buffer.committed") {
       // xAI drops caller audio while the opening plays, so speech cannot cut
@@ -2689,6 +2766,7 @@ async function runRealtimeSession(
       const itemId = String(event.item_id || "caller");
       const transcript = typeof event.transcript === "string" ? event.transcript : "";
       upsertOrderedCallerTranscript(transcriptLines, callerTranscriptIndexes, itemId, transcript);
+      if (transcript.trim()) reportTranscriptProgress();
       const optOut = detectOptOut(transcript);
       if (optOut.kind === "dnc") {
         await endForCallerDnc(optOut.matched_pattern);
@@ -3400,6 +3478,17 @@ export async function runOpenAISipCallSession(
               runtime.session.audio?.input?.transcription?.model || "",
             )
           : undefined;
+      const liveTranscript =
+        input.phoneTest && claim
+          ? createTranscriptProgressRecorder(
+              (transcript) => recordLivePhoneTestTranscript(input, claim, transcript),
+              (error) =>
+                log.warn("Phone test live transcript could not be recorded", {
+                  callId: providerCallId(input.callId),
+                  errorClass: error instanceof Error ? error.name : typeof error,
+                }),
+            )
+          : null;
       try {
         outcome = await runRealtimeSession(
           input,
@@ -3407,8 +3496,10 @@ export async function runOpenAISipCallSession(
           ownerFence.signal,
           accountElapsed,
           providerUsage?.observe,
+          liveTranscript?.notify,
         );
       } finally {
+        liveTranscript?.stop();
         await providerUsage?.flush();
       }
     } catch (error) {

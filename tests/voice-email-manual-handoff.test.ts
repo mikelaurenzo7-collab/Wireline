@@ -4,9 +4,12 @@ const h = vi.hoisted(() => ({
   supervise: vi.fn(),
   sendEmail: vi.fn(),
   saveTask: vi.fn(),
+  permission: vi.fn(),
+  approve: vi.fn(),
   environment: vi.fn(),
   entity: vi.fn(),
 }));
+vi.mock("../src/lib/action-engine", () => ({ executeAction: h.approve }));
 vi.mock("../src/lib/ai-supervisor", () => ({ superviseClientCommunication: h.supervise }));
 vi.mock("../src/lib/integrations", () => ({
   IntegrationService: class {
@@ -53,12 +56,18 @@ const context = {
   message: { call: { id: "call-owned" } },
   agent: { id: "agent-owned", user_id: "tenant-owned" },
   webhookAgentId: "agent-owned",
-  drizzle: { insert: () => ({ values: h.saveTask }) },
+  drizzle: {
+    insert: () => ({ values: h.saveTask }),
+    select: () => ({
+      from: () => ({ leftJoin: () => ({ where: () => ({ limit: h.permission }) }) }),
+    }),
+  },
   log: { warn: vi.fn(), error: vi.fn() },
 };
 
 beforeEach(() => {
   vi.resetAllMocks();
+  h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "draft" }]);
   h.environment.mockResolvedValue({ allowed: true });
   h.entity.mockResolvedValue({ allowed: true });
   h.supervise.mockResolvedValue({ subject: "Reviewed pricing", body: "Reviewed details." });
@@ -83,6 +92,23 @@ describe("live email delivery and manual handoff", () => {
     },
   );
 
+  it("submits a supervised email for approval and gives the caller the pending outcome", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "supervised", tenantLevel: "auto" }]);
+    h.approve.mockResolvedValue({ success: true, queued: true });
+    const result = await handleCoreToolCall("send_email", args, context);
+    expect(result?.result).toContain("DRAFT_SAVED: confirmed@example.test");
+    expect(h.sendEmail).not.toHaveBeenCalled();
+    expect(h.approve).toHaveBeenCalledWith(
+      "tenant-owned",
+      expect.objectContaining({ type: "send_email", agentId: "agent-owned" }),
+      { sourceType: "phone_call", sourceId: "call-owned" },
+      "draft",
+    );
+    h.approve.mockResolvedValue({ success: false });
+    expect((await handleCoreToolCall("send_email", args, context))?.result).not.toContain(
+      "DRAFT_SAVED",
+    );
+  });
   it("saves an unconfirmed send as completable manual work with the exact reviewed recipient and message", async () => {
     const result = await handleCoreToolCall("send_email", args, context);
     expect(h.sendEmail).toHaveBeenCalledExactlyOnceWith({

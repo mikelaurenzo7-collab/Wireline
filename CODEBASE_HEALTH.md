@@ -25,15 +25,16 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` both resolve to `/studio`             |
 | Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                    |
 | Training             | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/`                                        |
-| Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                 |
+| Launch / Connections | `src/pages/ConnectionsPage.tsx`                                                                                                            |
 | Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                |
+| People               | `src/pages/PeoplePage.tsx`, `src/lib/people/`, `src/routes/people-routes.ts`, `src/db/people-schema.ts`                                    |
 | Shell                | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx`                                                                  |
 | Design               | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 | Billing              | `src/lib/usage-billing-catalog.ts`, `docs/USAGE_BILLING.md`; `src/lib/plan-catalog.ts` and `src/lib/conversation-balance.ts` retain legacy contracts |
 | Voice                | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md`                                             |
-| Video presenter      | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts`                                |
+| Video presenter      | Retired. `src/lib/video-presenter/` keeps identity-badge config and add-on billing compatibility; no presenter routes, UI or sessions      |
 | Browser extension    | `apps/browser-extension/`                                                                                                                  |
-| Native clients       | `ios/`, `android/`; owner-controlled computer companion in `apps/desktop/` (internal validation)                                             |
+| Native clients       | `ios/`, `android/`                                                                                                                         |
 | ChatGPT App          | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md`                                                   |
 
 ## Source-control rules

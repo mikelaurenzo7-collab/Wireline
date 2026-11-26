@@ -10,8 +10,10 @@ import {
   handlePhoneTestStatus,
   phoneTestHangupTwiml,
   normalizePhoneTestCarrierErrorCode,
+  readPhoneTestTranscript,
   type PhoneTestCarrierInput,
 } from "../lib/voice/phone-test";
+import { log } from "../lib/server-context";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
@@ -53,13 +55,23 @@ router.get(
   authenticateUser,
   asyncHandler(async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
-    res.json({
-      test: await getPhoneTest(
-        (req as AuthenticatedRequest).user.id,
-        req.params.agentId,
-        req.params.requestKey.toLowerCase(),
-      ),
-    });
+    const userId = (req as AuthenticatedRequest).user.id;
+    const requestKey = req.params.requestKey.toLowerCase();
+    const test = await getPhoneTest(userId, req.params.agentId, requestKey);
+    // Studio shows the call as it happens; a transcript never hides the status.
+    const transcript =
+      test.status === "creating" || test.status === "ringing" || test.status === "verifying"
+        ? []
+        : await readPhoneTestTranscript(userId, req.params.agentId, requestKey).catch(
+            (error: unknown) => {
+              log.warn("Phone test transcript could not be read", {
+                userId,
+                errorClass: error instanceof Error ? error.name : typeof error,
+              });
+              return [];
+            },
+          );
+    res.json({ test, ...(transcript.length ? { transcript } : {}) });
   }),
 );
 router.delete(

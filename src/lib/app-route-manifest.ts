@@ -71,7 +71,7 @@ export const APP_ROUTE_FAMILIES: readonly AppRouteFamily[] = [
     "/voices",
     "/voice-clone",
   ]),
-  ...branch("workspace", ["/studio", "/connections", "/settings", "/admin", "/apps"]),
+  ...branch("workspace", ["/studio", "/connections", "/settings", "/admin", "/apps", "/people"]),
 ];
 
 export function normalizeAppPath(pathname: string): string {

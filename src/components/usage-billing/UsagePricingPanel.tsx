@@ -228,12 +228,12 @@ export default function UsagePricingPanel({
                 onClick={() => setTier(id)}
                 className="w-full flex-1 rounded-2xl p-6 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
-                <span className="flex items-center justify-between gap-2 text-lg font-semibold">
+                <span className="flex min-w-0 flex-wrap items-center justify-between gap-2 text-lg font-semibold">
                   {option.name}
                   {tier === id ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                    <span className="inline-flex flex-wrap items-center gap-1 text-xs font-semibold text-primary">
                       <Check className="size-4" aria-hidden="true" />
-                      Estimating
+                      In the estimate
                     </span>
                   ) : null}
                 </span>

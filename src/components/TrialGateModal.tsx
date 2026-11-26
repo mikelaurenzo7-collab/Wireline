@@ -28,6 +28,7 @@ import { getPlanDisplayLabel } from "../lib/plan-display";
 import type { BillingPlansResponse, ClientPlan } from "../types/api-billing";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import ChannelPlanPicker, { hasChannelPlanDetails } from "./ChannelPlanPicker";
+import CheckoutTermsNote from "./billing/CheckoutTermsNote";
 
 type CheckoutTier = {
   id: string;
@@ -643,6 +644,7 @@ export default function TrialGateModal() {
                   </Link>
                 </div>
               )}
+              {showPlanCheckout && <CheckoutTermsNote className="mt-3" onNavigate={closeModal} />}
             </div>
           </motion.div>
         </motion.div>

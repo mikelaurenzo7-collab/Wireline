@@ -64,6 +64,17 @@ const expectedPromotionPreflightBody = normalizeSqlFunctionBody(
     .replace(managedVoicePromotionCount, presenterResourcePromotionCount),
 );
 
+// The retention purge is certified byte-for-byte against its newest migration
+// body, in addition to the semantic checks below that name what went wrong.
+const retentionPurgeMigration = readFileSync(
+  new URL("../drizzle/migrations/0198_retention_purge_thread_activity.sql", import.meta.url),
+  "utf8",
+);
+const expectedRetentionPurgeBody = extractMigrationFunctionBody(
+  retentionPurgeMigration,
+  "wireline_purge_old_data",
+);
+
 // Match the deployed runtime's connection precedence. Migrations may use the
 // direct POSTGRES_URL, but the release gate must certify the database the app
 // will actually open after deployment.
@@ -492,6 +503,8 @@ try {
       `),
     pool.query(`
         SELECT pg_get_functiondef(p.oid) AS function_def,
+               p.prosrc AS function_body,
+               p.prosecdef AS security_definer,
                p.proconfig
           FROM pg_proc p
          WHERE p.oid = to_regprocedure('public.wireline_purge_old_data(uuid,integer)')
@@ -1184,8 +1197,12 @@ try {
 
   // A function name is not evidence that its latest CREATE OR REPLACE body
   // landed. Migration 0148 removes live webhook and intake-key configuration
-  // from the retention sweep, and 0149 makes unexpected DELETE failures abort
-  // so the durable job retries instead of recording a false success.
+  // from the retention sweep, 0149 makes unexpected DELETE failures abort
+  // so the durable job retries instead of recording a false success, and 0198
+  // purges email and SMS threads by last_message_at only once no message or
+  // send operation remains under them (a created_at thread purge cascaded away
+  // recent messages), adds SMS history, and keeps People and the 5-year
+  // outbound purpose audit out of the sweep.
   // Certify those semantics after every production migration run so an old
   // body cannot pass merely because the routine already exists.
   const retentionFunction = retentionFunctionResult.rows[0];
@@ -1213,6 +1230,36 @@ try {
     }
     if (!proconfig.some((value) => /search_path=public,\s*pg_temp/i.test(value))) {
       failures.push("retention:purge_function_search_path_not_pinned");
+    }
+    if (
+      !/'wireline_email_threads',\s*'user_id',\s*'last_message_at'/.test(definition) ||
+      !/'wireline_sms_threads',\s*'user_id',\s*'last_message_at'/.test(definition)
+    ) {
+      failures.push("retention:threads_not_purged_by_last_activity");
+    }
+    if (!definition.includes("child.thread_id = target.id")) {
+      failures.push("retention:thread_purge_can_cascade_recent_messages");
+    }
+    if (
+      !/'wireline_sms_messages',\s*'user_id',\s*'created_at'/.test(definition) ||
+      !/'wireline_sms_send_operations',\s*'user_id',\s*'created_at'/.test(definition) ||
+      !/'wireline_sms_threads',/.test(definition)
+    ) {
+      failures.push("retention:sms_history_not_purgeable");
+    }
+    if (/wireline_(people|person_identifiers|person_events)\b/.test(definition)) {
+      failures.push("retention:people_purgeable");
+    }
+    if (definition.includes("wireline_outbound_purpose_audit")) {
+      failures.push("retention:outbound_purpose_audit_purgeable");
+    }
+    // The worker calls the purge at root scope after checking the payload
+    // owner; it must keep running with the caller's rights.
+    if (retentionFunction.security_definer === true) {
+      failures.push("retention:purge_function_security_definer");
+    }
+    if (normalizeSqlFunctionBody(retentionFunction.function_body) !== expectedRetentionPurgeBody) {
+      failures.push("retention:purge_body_drift");
     }
   }
 

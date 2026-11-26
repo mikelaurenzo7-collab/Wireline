@@ -3,13 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const registration = vi.hoisted(() => ({
   credentials: vi.fn(),
   register: vi.fn(),
-}));
-
-vi.mock("../src/lib/server-context", () => ({
+  configured: vi.fn(() => true),
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
+
+vi.mock("../src/lib/server-context", () => ({ log: registration.log }));
 vi.mock("../src/lib/voice/xai-sip-config", () => ({
-  xaiSipConfigured: () => true,
+  xaiSipConfigured: registration.configured,
+  xaiSipReadiness: () => ({ xaiApiKey: true, secretVault: true, voiceWorker: false }),
   buildXAISipUri: (number: string) => `sip:${number}@sip.voice.x.ai`,
 }));
 vi.mock("../src/lib/voice/openai-sip-config", () => ({
@@ -36,6 +37,10 @@ describe("xAI default phone routing without manual registration", () => {
     resetRealtimeSipSelfRegistrationForTests();
     registration.credentials.mockReset();
     registration.register.mockReset();
+    registration.configured.mockReset();
+    registration.configured.mockReturnValue(true);
+    registration.log.info.mockReset();
+    registration.log.warn.mockReset();
   });
   afterEach(() => vi.unstubAllEnvs());
 
@@ -73,5 +78,23 @@ describe("xAI default phone routing without manual registration", () => {
     expect(target.provider).toBe("openai");
     expect(registration.credentials).not.toHaveBeenCalled();
     expect(registration.register).not.toHaveBeenCalled();
+    expect(registration.log.info).toHaveBeenCalledWith(
+      "Phone calls answer on OpenAI: WIRELINE_PHONE_VOICE_PROVIDER=openai",
+      { phoneSuffix: "0142" },
+    );
+  });
+
+  it("says which xAI prerequisite is missing when calls fall back, once per window", async () => {
+    registration.configured.mockReturnValue(false);
+    for (let call = 0; call < 3; call += 1) {
+      const target = await resolveInboundSipTarget({ calledNumber: NUMBER, token: "tok" });
+      expect(target.provider).toBe("openai");
+    }
+    expect(registration.credentials).not.toHaveBeenCalled();
+    expect(registration.log.warn).toHaveBeenCalledTimes(1);
+    expect(registration.log.warn).toHaveBeenCalledWith(
+      "xAI is the default phone voice but is not configured here; using OpenAI",
+      { phoneSuffix: "0142", xaiApiKey: true, secretVault: true, voiceWorker: false },
+    );
   });
 });

@@ -176,6 +176,11 @@ projects:
               # worker mirrors it so both services always agree.
               - key: WIRELINE_PHONE_VOICE_PROVIDER
                 sync: false
+              # Studio rehearsal follows the phone provider (xAI by default,
+              # relayed by this API). openai is an instant rehearsal-only
+              # rollback; the worker never serves rehearsals.
+              - key: WIRELINE_REHEARSAL_VOICE_PROVIDER
+                sync: false
               - key: PERPLEXITY_API_KEY
                 sync: false
               - key: TWILIO_ACCOUNT_SID

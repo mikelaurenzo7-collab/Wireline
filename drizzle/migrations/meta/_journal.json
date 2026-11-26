@@ -659,6 +659,34 @@
       "when": 1793100000001,
       "tag": "0195_computer_tasks_agent_id_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1795615200000,
+      "tag": "0196_studio_chat_threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1795700000000,
+      "tag": "0197_people",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1795700001000,
+      "tag": "0198_retention_purge_thread_activity",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1795786400000,
+      "tag": "0199_appointment_external_calendar",
+      "breakpoints": true
     }
   ]
 }

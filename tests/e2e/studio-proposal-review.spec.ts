@@ -1,3 +1,4 @@
+import { openSavedChat } from "./helpers/studio-chat-history";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // One conversation owns messages, tasks and private rehearsal. Bot details and
@@ -72,7 +73,7 @@ async function mockWorkspace(page: Page) {
                   : { accounts: [], data: [], numbers: [], integrations: [], messages: [] },
     });
   });
-  await page.route("**/api/agents/*/workspace/messages/stream", (route) =>
+  await page.route("**/api/agents/*/workspace/messages/stream?thread=*", (route) =>
     route.fulfill({
       contentType: "text/event-stream",
       body: `event: done\ndata: ${JSON.stringify(plan)}\n\n`,
@@ -104,7 +105,7 @@ for (const field of ["transfer_phone", "escalation_phone"] as const) {
       value: "+1 (512) 555-0100",
       summary: "Use this destination.",
     };
-    await page.route("**/api/agents/bot-front-desk/workspace/messages/stream", (route) =>
+    await page.route("**/api/agents/bot-front-desk/workspace/messages/stream?thread=*", (route) =>
       route.fulfill({
         contentType: "text/event-stream",
         body: `event: done\ndata: ${JSON.stringify({ reply: "Review this handoff destination.", changes: [change], toolToggles: [], actions: [], messageId: "42" })}\n\n`,
@@ -143,9 +144,10 @@ for (const field of ["transfer_phone", "escalation_phone"] as const) {
 test("Studio review cards and saved receipts survive a full page reload", async ({ page }) => {
   await mockWorkspace(page);
   let persisted = false;
+  let savedThread = "";
   let saved = false;
   const writes: unknown[] = [];
-  await page.route("**/api/agents/bot-front-desk/workspace/messages", (route) =>
+  await page.route("**/api/agents/bot-front-desk/workspace/messages?thread=*", (route) =>
     route.fulfill({
       json: {
         messages: persisted
@@ -163,8 +165,9 @@ test("Studio review cards and saved receipts survive a full page reload", async 
       },
     }),
   );
-  await page.route("**/api/agents/bot-front-desk/workspace/messages/stream", (route) => {
+  await page.route("**/api/agents/bot-front-desk/workspace/messages/stream?thread=*", (route) => {
     persisted = true;
+    savedThread = new URL(route.request().url()).searchParams.get("thread")!;
     return route.fulfill({
       contentType: "text/event-stream",
       body: `event: done\ndata: ${JSON.stringify({
@@ -191,6 +194,7 @@ test("Studio review cards and saved receipts survive a full page reload", async 
 
   await requestProposal(page);
   await page.reload();
+  await openSavedChat(page, savedThread);
   const review = page.getByRole("region", { name: "Review Opening greeting", exact: true });
   await expect(review.getByRole("button", { name: "Save Opening greeting" })).toBeVisible();
   await review.getByRole("button", { name: "Save Opening greeting" }).click();
@@ -210,6 +214,7 @@ test("Studio review cards and saved receipts survive a full page reload", async 
     },
   ]);
   await page.reload();
+  await openSavedChat(page, savedThread);
   await expect(review.getByText("Saved", { exact: true })).toBeVisible();
   await expect(review.getByRole("button", { name: "Save Opening greeting" })).toHaveCount(0);
   await expect(review.getByText(opening.value, { exact: true })).toBeHidden();
@@ -240,7 +245,7 @@ test("Studio reviews and saves distinct operating rules independently", async ({
     (value) => ({ field: "operating_rule", label: "Operating rule", value, summary: value }),
   );
   const writes: Array<{ field: string; value: string; proposalKey: string }> = [];
-  await page.route("**/api/agents/bot-front-desk/workspace/messages/stream", (route) =>
+  await page.route("**/api/agents/bot-front-desk/workspace/messages/stream?thread=*", (route) =>
     route.fulfill({
       contentType: "text/event-stream",
       body: `event: done\ndata: ${JSON.stringify({
@@ -585,7 +590,7 @@ test("a delayed clear remains pending across remounts and cannot restore deleted
   const deleteReady = new Promise<void>((resolve) => {
     releaseDelete = resolve;
   });
-  await page.route("**/api/agents/bot-front-desk/workspace/messages", async (route) => {
+  await page.route("**/api/agents/bot-front-desk/workspace/messages?thread=*", async (route) => {
     if (route.request().method() === "DELETE") {
       deleteCount += 1;
       await deleteReady;

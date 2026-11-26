@@ -28,9 +28,10 @@ describe("post-call CRM identity boundary", () => {
     expect(effect).not.toContain("CRMService");
     expect(effect).not.toContain("executeAction");
     expect(effect).not.toContain("drizzle");
-    expect(digest).toContain(
-      "CRM not updated. Review this call in BotBound before adding it to a customer record.",
-    );
+    // With no CRM integration, the owner's digest carries no CRM status line:
+    // "CRM not updated" on every email read like an error.
+    expect(digest).not.toContain("CRM not updated");
+    expect(digest).not.toContain("crmDigestStatusLine");
     expect(digest).not.toContain("No CRM connected, connect HubSpot or Salesforce to auto-log.");
   });
 });

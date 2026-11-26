@@ -12,7 +12,9 @@ import { composeSetupPersonality, replaceDeliveryTone } from "../lib/compose-set
 import { retainFirstUnique } from "../lib/knowledge-dedup";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
+import { isCreateScaffoldLine } from "../lib/create-scaffold-line";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
+import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
 import { LIVE_CUSTOM_VOICE_KEY } from "../lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
 import { phoneCatalogService, CARTESIA_SPEECH_MODEL } from "../lib/voice/phone-catalog-service";
@@ -225,13 +227,13 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
           content: cleanText(item.content, 2000),
           priority: Math.max(1, Math.min(10, Number(item.priority) || 5)),
         }))
-        .filter((item) => !!item.content)
+        .filter((item) => !!item.content && !isCreateScaffoldLine(item.content))
     : [];
   const knowledge = Array.isArray(raw.knowledge)
     ? raw.knowledge
         .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
         .map((item) => ({ content: cleanText(item.content, 4000) }))
-        .filter((item) => !!item.content)
+        .filter((item) => !!item.content && !isCreateScaffoldLine(item.content))
     : [];
   return {
     directives,
@@ -857,6 +859,9 @@ router.get(
         phoneCall,
         phoneCallReady,
         catalogVoice,
+        // Studio rehearsal speaks this same stock phone voice (see xai-rehearsal-relay.ts).
+        rehearsalHearsPhoneVoice:
+          !catalogVoice && Boolean(phoneCall) && rehearsalVoiceProvider().provider === "xai",
       },
       personality: personalities[0]?.content || "",
       directives,
@@ -1178,6 +1183,17 @@ router.get(
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.notFound("Bot not found.");
     res.setHeader("Cache-Control", "private, no-store");
+    if (req.query.library === "elevenlabs") {
+      const page = Number(req.query.page ?? 0);
+      if (!Number.isSafeInteger(page) || page < 0)
+        throw AppError.badRequest("Invalid voice library page.");
+      try {
+        res.json(await phoneCatalogService.libraryPage(cleanText(req.query.search, 240), page));
+      } catch {
+        throw AppError.fromHttpStatus(503, "ElevenLabs could not load its library. Try again.");
+      }
+      return;
+    }
     res.json(await phoneCatalogService.all());
   },
 );
@@ -1189,13 +1205,21 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.notFound("Bot not found.");
-    const voice = await phoneCatalogService.resolve({ [PHONE_CATALOG_VOICE_KEY]: req.body });
-    if (!voice)
-      throw AppError.fromHttpStatus(409, "That phone voice is unavailable. Choose another voice.");
     if (!catalogCallsConfigured())
       throw AppError.fromHttpStatus(
         503,
         "Phone voices are temporarily unavailable. Try again later.",
+      );
+    let voice;
+    try {
+      voice = await phoneCatalogService.activate(req.body);
+    } catch {
+      throw AppError.fromHttpStatus(503, "ElevenLabs could not activate this voice. Try again.");
+    }
+    if (!voice)
+      throw AppError.fromHttpStatus(
+        409,
+        "This phone voice is unavailable at your included rate. Choose another voice.",
       );
     // One atomic JSON update preserves concurrent changes to unrelated Bot setup.
     const selection = JSON.stringify({ id: voice.id, provider: voice.provider });
@@ -1296,6 +1320,9 @@ router.patch(
         phoneVoiceId: savedVoice?.phoneVoiceId ?? null,
         phoneVoiceProvider: savedVoice?.phoneVoiceProvider ?? null,
         phoneCall: phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId),
+        rehearsalHearsPhoneVoice:
+          Boolean(phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId)) &&
+          rehearsalVoiceProvider().provider === "xai",
       },
       customVoiceCleared,
     });

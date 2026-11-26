@@ -12,8 +12,8 @@ import {
 
 import { authFetch } from "../lib/api";
 import {
-  callOutcomeDetail,
-  callOutcomeLabel,
+  callOutcomeDetailFor,
+  callOutcomeLabelFor,
   classifyCallOutcome,
   type CallOutcome,
 } from "../lib/call-outcome";
@@ -99,7 +99,7 @@ function statusTone(value: string | null | undefined) {
   if (/email|booked|message/.test(normalized)) {
     return "text-[var(--wireline-color-status-success)]";
   }
-  if (/missed|failed|busy|unreachable|voicemail|do not call/.test(normalized)) {
+  if (/missed|not reached|failed|busy|unreachable|voicemail|do not call/.test(normalized)) {
     return "text-[var(--wireline-color-status-warning)]";
   }
   return "text-muted-foreground";
@@ -304,7 +304,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         call.agent_name,
         call.summary,
         call.outcome_tag,
-        call.happened ? callOutcomeLabel(call.happened) : null,
+        call.happened ? callOutcomeLabelFor(call.happened, call.direction) : null,
         call.direction,
       ]
         .filter(Boolean)
@@ -434,9 +434,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                           </span>
                         ) : null}
                         <span
-                          className={`text-[10px] font-medium ${statusTone(callOutcomeLabel(reportHappened(call)))}`}
+                          className={`text-[10px] font-medium ${statusTone(callOutcomeLabelFor(reportHappened(call), call.direction))}`}
                         >
-                          {callOutcomeLabel(reportHappened(call))}
+                          {callOutcomeLabelFor(reportHappened(call), call.direction)}
                         </span>
                       </div>
                     </div>
@@ -477,9 +477,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           </div>
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span
-              className={`inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-semibold ${statusTone(callOutcomeLabel(reportHappened(selected)))}`}
+              className={`inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-semibold ${statusTone(callOutcomeLabelFor(reportHappened(selected), selected.direction))}`}
             >
-              {callOutcomeLabel(reportHappened(selected))}
+              {callOutcomeLabelFor(reportHappened(selected), selected.direction)}
             </span>
             {reportHappened(selected) !== "missed" && (selected.duration_seconds ?? 0) > 0 ? (
               <span className="inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 font-mono text-xs font-medium text-muted-foreground">
@@ -567,8 +567,8 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 pt-3 border-t border-border/60">
           {[
-            ["Outcome", callOutcomeLabel(reportHappened(selected))],
-            ["What happened", callOutcomeDetail(reportHappened(selected))],
+            ["Outcome", callOutcomeLabelFor(reportHappened(selected), selected.direction)],
+            ["What happened", callOutcomeDetailFor(reportHappened(selected), selected.direction)],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border/70 bg-background/50 p-3">
               <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -775,11 +775,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       )}
 
       <OutboundDialDialog
-        key={
-          dialDraft
-            ? `${dialDraft.number ?? ""}:${dialDraft.purpose ?? "review"}`
-            : "closed"
-        }
+        key={dialDraft ? `${dialDraft.number ?? ""}:${dialDraft.purpose ?? "review"}` : "closed"}
         open={dialDraft !== null}
         onClose={() => setDialDraft(null)}
         initialAgentId={dialDraft?.agentId}
