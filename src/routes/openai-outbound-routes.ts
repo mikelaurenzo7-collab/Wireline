@@ -40,6 +40,7 @@ import {
 import { trackVoiceMinutes } from "../lib/voice-usage";
 import { liveRecordingDialAttributes } from "../lib/voice/live-call-recording";
 import { carrierMediaTwiml, clonedCallTwiml } from "../lib/voice/cloned-call-routing";
+import { CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY } from "../lib/voice/call-summary-copy";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "../lib/voice-call-identity";
 import {
   handleFundedOutboundCarrierEvent,
@@ -690,7 +691,7 @@ router.post(
           // event after TwiML is served. Preserve the placement for that late
           // attachment instead of prematurely re-queuing it.
           patch.status = LEAD_STATUS.ERROR;
-          patch.lastContactSummary = "The customer leg ended before native voice was confirmed.";
+          patch.lastContactSummary = CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY;
           nextNativeVoice.state = "carrier_completed_without_openai_confirmation";
         } else {
           const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
@@ -708,13 +709,13 @@ router.post(
           } else if (neverBridgedNativeVoice(nativeVoice)) {
             const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
             patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts, lead.campaignId);
-            patch.lastContactSummary = "The customer leg ended before native voice was confirmed.";
+            patch.lastContactSummary = CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY;
             nextNativeVoice.state = "carrier_completed_without_openai_confirmation";
           } else {
             // Bridged or identity-voicemail: keep a recoverable Error so a late
             // OpenAI attachment can still claim a live conversation.
             patch.status = LEAD_STATUS.ERROR;
-            patch.lastContactSummary = "The customer leg ended before native voice was confirmed.";
+            patch.lastContactSummary = CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY;
             nextNativeVoice.state = "carrier_completed_without_openai_confirmation";
           }
         }

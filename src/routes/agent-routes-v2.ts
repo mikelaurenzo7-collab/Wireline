@@ -214,8 +214,11 @@ function extractionReply(parsed: SavedExtraction) {
   if (parsed.knowledge.length)
     parts.push(`Saved ${parsed.knowledge.length} fact${parsed.knowledge.length === 1 ? "" : "s"}.`);
   if (parsed.personality) parts.push("Updated the tone guidance.");
+  // One saved item is "it", not "they".
+  const savedOne =
+    parsed.directives.length + parsed.knowledge.length + (parsed.personality ? 1 : 0) === 1;
   return parts.length
-    ? `${parts.join(" ")} They now appear under Knowledge.`
+    ? `${parts.join(" ")} ${savedOne ? "It now appears under Knowledge." : "They now appear under Knowledge."}`
     : "I did not find a clear rule, fact, or tone change. Tell me what this agent must do, must avoid, or needs to know.";
 }
 

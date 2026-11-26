@@ -160,3 +160,21 @@ describe("the person chip on a call, text or email", () => {
     expect(client).not.toContain("/api/people/lookup?");
   });
 });
+
+describe("summaries written when a call never became a conversation", () => {
+  it("say what happened without naming a vendor, a protocol or a call leg", async () => {
+    const copy = await import("../src/lib/voice/call-summary-copy");
+    for (const text of [
+      copy.CALL_STOPPED_BEFORE_CONNECT_SUMMARY,
+      copy.CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY,
+    ]) {
+      expect(text).not.toMatch(/openai|xai|grok|twilio|sip|native voice|customer leg/i);
+    }
+    expect(read("src/lib/voice/openai-sip-session.ts")).not.toContain(
+      "before an OpenAI SIP session started",
+    );
+    expect(read("src/routes/openai-outbound-routes.ts")).not.toContain(
+      "before native voice was confirmed",
+    );
+  });
+});

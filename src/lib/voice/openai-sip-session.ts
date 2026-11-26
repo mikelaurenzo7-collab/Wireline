@@ -68,6 +68,7 @@ import {
 } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
+import { CALL_STOPPED_BEFORE_CONNECT_SUMMARY } from "./call-summary-copy";
 import { adoptOutboundPlacementSipFunding } from "./outbound-placement-funding";
 import { normalizeOpenAIPhoneNumber, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
 import {
@@ -1148,7 +1149,7 @@ export function settleOpenAISipPreSessionFailure(input: {
         .update(schema.callLogs)
         .set({
           durationSeconds: 0,
-          summary: "BotBound rejected this call before an OpenAI SIP session started.",
+          summary: CALL_STOPPED_BEFORE_CONNECT_SUMMARY,
           outcomeTag: "unreachable",
           endedReason: input.claim.resumed ? "pre-session-recovery" : "pre-session-rejected",
           pipelineError: input.reason,
@@ -1238,7 +1239,7 @@ export function settleOpenAISipPreSessionFailure(input: {
       }
       await settleOutboundLeadInTransaction(tx, {
         call: input.call,
-        summary: "BotBound rejected this call before an OpenAI SIP session started.",
+        summary: CALL_STOPPED_BEFORE_CONNECT_SUMMARY,
         endedReason: "pre-session-rejected",
         pipelineError: input.reason,
       });
