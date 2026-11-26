@@ -96,8 +96,9 @@ and funding controls.
    it can never replace the final transcript written when the call ends. The
    status check returns those lines only to the owner, for that Bot and the exact
    carrier call the test placed, and only after verification. After the call ends
-   the dialog checks four more times for the final record. Ordinary calls record
-   no live transcript.
+   the dialog checks four more times for the final record. If the worker stops
+   mid-call, crash recovery keeps the turns recorded so far. Ordinary calls
+   record no live transcript.
 
 After a voice rehearsal in which the Bot answered, Studio offers **Call My Phone**
 as the next step when the account can place the test.
