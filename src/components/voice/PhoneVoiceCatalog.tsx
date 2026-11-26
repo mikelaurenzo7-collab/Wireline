@@ -76,8 +76,7 @@ export default function PhoneVoiceCatalog({
           setHasMore(result.hasMore === true);
         }
       } catch {
-        if (!controller.signal.aborted)
-          setError("The ElevenLabs library could not load. Try again.");
+        if (!controller.signal.aborted) setError("The voice library could not load. Try again.");
       } finally {
         if (!controller.signal.aborted) setLibraryLoading(false);
       }
@@ -196,7 +195,7 @@ export default function PhoneVoiceCatalog({
       }}
     >
       <summary className="min-h-12 cursor-pointer rounded-xl px-3 py-3 text-sm font-semibold wl-focus-ring-halo">
-        {selected ? `Phone Voice · ${selected.name}` : "Browse ElevenLabs and other phone voices"}
+        {selected ? `Phone Voice · ${selected.name}` : "Browse More Phone Voices"}
       </summary>
       <div className="space-y-3 border-t border-border p-3">
         <div className="flex flex-wrap gap-2">
@@ -214,7 +213,7 @@ export default function PhoneVoiceCatalog({
             className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm wl-focus-ring-halo"
           />
           <select
-            aria-label="Voice Provider"
+            aria-label="Voice Collection"
             value={provider}
             onChange={(event) => {
               stop();
@@ -226,10 +225,9 @@ export default function PhoneVoiceCatalog({
             }}
             className="min-h-11 rounded-lg border border-border bg-background px-2 text-sm wl-focus-ring-halo"
           >
-            <option value="all">Built-in phone catalog</option>
-            <option value="library">ElevenLabs Voice Library</option>
-            <option value="cartesia">Cartesia</option>
-            <option value="elevenlabs">ElevenLabs stock voices</option>
+            {/* Owners pick a voice, not a vendor: BotBound is the product they bought. */}
+            <option value="all">Built-in Phone Voices</option>
+            <option value="library">Voice Library</option>
           </select>
         </div>
         {error ? <StatusNotice tone="warning">{error}</StatusNotice> : null}
@@ -262,7 +260,6 @@ export default function PhoneVoiceCatalog({
                     <span className="min-w-0">
                       <span className="block break-words text-sm font-semibold">{voice.name}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {voice.provider === "cartesia" ? "Cartesia" : "ElevenLabs"} ·{" "}
                         {voice.language.toUpperCase()}
                       </span>
                     </span>
@@ -336,8 +333,8 @@ export default function PhoneVoiceCatalog({
         ) : null}
         {library ? (
           <p className="text-xs text-muted-foreground">
-            Hear the original ElevenLabs sample. Select a voice to check availability for your
-            calls. Custom-rate voices are preview only.
+            Hear the original sample. Select a voice to check availability for your calls.
+            Custom-rate voices are preview only.
           </p>
         ) : null}
         {!selected ? (

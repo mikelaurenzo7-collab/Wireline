@@ -337,15 +337,12 @@ test("owners can search, page and select a public ElevenLabs phone voice from Se
     await route.fulfill({ json: { success: true, catalogVoice: sample } });
   });
   const voice = await openVoice(page);
-  await voice
-    .locator("summary")
-    .filter({ hasText: "Browse ElevenLabs and other phone voices" })
-    .click();
-  await expect(voice.getByLabel("Voice Provider")).toHaveValue("library");
+  await voice.locator("summary").filter({ hasText: "Browse More Phone Voices" }).click();
+  await expect(voice.getByLabel("Voice Collection")).toHaveValue("library");
   await voice.getByLabel("Search Phone Voices").fill("warm");
-  await expect(voice.getByRole("button", { name: /First Voice ElevenLabs/ })).toBeVisible();
+  await expect(voice.getByRole("button", { name: /First Voice/ })).toBeVisible();
   await voice.getByRole("button", { name: "Next voices" }).click();
-  await voice.getByRole("button", { name: /River Studio ElevenLabs/ }).click();
+  await voice.getByRole("button", { name: /River Studio/ }).click();
   await expect(voice.getByText("Phone Voice Saved.", { exact: true })).toBeVisible();
   expect(saved).toEqual({ id: sample.id, provider: sample.provider, library });
 });
