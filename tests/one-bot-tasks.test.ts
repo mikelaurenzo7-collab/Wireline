@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "../src/lib/agent-capabilities";
+import {
+  AGENT_TOOL_NAME_VALUES,
+  ALWAYS_ON_AGENT_TOOL_NAMES,
+  type AgentToolName,
+} from "../src/lib/agent-capabilities";
 import {
   ANOTHER_BOT_HREF,
   canOfferAnotherBot,
@@ -75,24 +79,55 @@ describe("Bot tasks", () => {
   });
 
   it("turns a task off without removing an action another task still needs", () => {
+    const wide = {
+      id: "wide",
+      label: "Wide",
+      description: "test",
+      tools: ["create_support_ticket", "schedule_callback"] as AgentToolName[],
+    };
     const shared = {
       id: "callbacks",
       label: "Callbacks",
       description: "test",
       tools: ["schedule_callback"] as AgentToolName[],
     };
-    const tasks = [...BOT_TASKS, shared];
+    const tasks = [...BOT_TASKS, wide, shared];
     const enabled = setBotTaskEnabled(
-      setBotTaskEnabled([], task("messages"), true, everyTool, tasks),
+      setBotTaskEnabled([], wide, true, everyTool, tasks),
       shared,
       true,
       everyTool,
       tasks,
     );
-    const off = setBotTaskEnabled(enabled, task("messages"), false, everyTool, tasks);
+    const off = setBotTaskEnabled(enabled, wide, false, everyTool, tasks);
     expect(off).toEqual(["schedule_callback"]);
-    expect(isBotTaskEnabled(task("messages"), new Set(off), everyTool)).toBe(false);
+    expect(isBotTaskEnabled(wide, new Set(off), everyTool)).toBe(false);
     expect(isBotTaskEnabled(shared, new Set(off), everyTool)).toBe(true);
+  });
+
+  // Looking up what it was taught, taking a message and honouring a
+  // do-not-call request are allowed to run whatever is ticked. They were
+  // checkboxes all the same, and unticking one changed nothing.
+  it("shows what every Bot does as always on, with nothing to switch", () => {
+    const always = BOT_TASKS.filter((item) => item.alwaysOn);
+    expect(always.map((item) => item.id)).toEqual(["answer", "messages", "dnc"]);
+    expect(always.flatMap((item) => item.tools).sort()).toEqual(
+      [...ALWAYS_ON_AGENT_TOOL_NAMES].sort(),
+    );
+    for (const item of always) {
+      expect(isBotTaskEnabled(item, new Set(), everyTool)).toBe(true);
+      expect(setBotTaskEnabled(["send_email"], item, false, everyTool)).toEqual(["send_email"]);
+      expect(setBotTaskEnabled(["send_email"], item, true, everyTool)).toEqual(["send_email"]);
+    }
+    // No other task depends on one of them.
+    for (const item of BOT_TASKS.filter((candidate) => !candidate.alwaysOn)) {
+      for (const tool of item.tools) {
+        expect(ALWAYS_ON_AGENT_TOOL_NAMES as readonly string[], item.id).not.toContain(tool);
+      }
+    }
+    const panel = read("src/components/AgentToolPermissions.tsx");
+    expect(panel).toContain("!ALWAYS_ON_TOOLS.has(tool.name) &&");
+    expect(panel).toContain("Always on</span>");
   });
 
   it("ignores actions this workspace cannot configure", () => {

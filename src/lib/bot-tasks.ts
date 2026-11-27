@@ -11,20 +11,41 @@ export type BotTask = {
   label: string;
   description: string;
   tools: readonly AgentToolName[];
+  /**
+   * What every Bot does, whatever is ticked (ALWAYS_ON_AGENT_TOOL_NAMES). It
+   * is shown without a switch: these used to be checkboxes that changed
+   * nothing, because the Bot is always allowed to do them.
+   */
+  alwaysOn?: boolean;
 };
 
 export const BOT_TASKS: readonly BotTask[] = [
   {
     id: "answer",
     label: "Answer questions",
-    description: "Answer from what you taught it, and hand anything tricky to you.",
-    tools: ["search_knowledge_base", "escalate_to_human"],
+    description: "Answer from what you taught it.",
+    tools: ["search_knowledge_base"],
+    alwaysOn: true,
   },
   {
     id: "messages",
     label: "Take messages",
     description: "Note who reached out and what they need, and leave you a follow-up.",
-    tools: ["capture_customer_profile", "create_followup_task", "schedule_callback"],
+    tools: ["create_followup_task"],
+    alwaysOn: true,
+  },
+  {
+    id: "dnc",
+    label: "Respect do-not-call requests",
+    description: "Add anyone who asks not to be contacted again to your do-not-call list.",
+    tools: ["add_to_dnc"],
+    alwaysOn: true,
+  },
+  {
+    id: "handoff",
+    label: "Bring you in",
+    description: "Alert you, or transfer the call, when a caller asks for a person.",
+    tools: ["escalate_to_human"],
   },
   {
     id: "book",
@@ -70,6 +91,7 @@ export function isBotTaskEnabled(
   enabled: ReadonlySet<AgentToolName>,
   visible: ToolFilter,
 ): boolean {
+  if (task.alwaysOn) return true;
   const tools = botTaskTools(task, visible);
   return tools.length > 0 && tools.every((tool) => enabled.has(tool));
 }
@@ -85,12 +107,17 @@ export function setBotTaskEnabled(
   visible: ToolFilter,
   tasks: readonly BotTask[] = BOT_TASKS,
 ): AgentToolName[] {
+  // Nothing to switch: the Bot does these whatever the list holds.
+  if (task.alwaysOn) return [...enabled];
   const tools = botTaskTools(task, visible);
   if (on) return [...enabled, ...tools.filter((tool) => !enabled.includes(tool))];
   const current = new Set(enabled);
   const stillNeeded = new Set(
     tasks
-      .filter((other) => other.id !== task.id && isBotTaskEnabled(other, current, visible))
+      .filter(
+        (other) =>
+          other.id !== task.id && !other.alwaysOn && isBotTaskEnabled(other, current, visible),
+      )
       .flatMap((other) => botTaskTools(other, visible)),
   );
   return enabled.filter((tool) => !tools.includes(tool) || stillNeeded.has(tool));

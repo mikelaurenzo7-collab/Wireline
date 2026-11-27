@@ -161,21 +161,25 @@ test("Actions keeps the owner's selection until the saved tools are confirmed", 
   const actions = page.getByRole("region", { name: "Actions", exact: true });
   await actions.getByRole("button", { name: "Actions", exact: true }).click();
   await actions.locator("summary", { hasText: "Platform Actions" }).click();
-  const knowledge = actions.getByRole("checkbox", { name: /^Search knowledge base/ });
+  // An action the owner can switch. Knowledge search no longer has a
+  // checkbox: every Bot has it.
+  await expect(actions.getByRole("checkbox", { name: /^Search knowledge base/ })).toHaveCount(0);
+  await expect(actions.getByText("Always on", { exact: true })).toHaveCount(3);
+  const knowledge = actions.getByRole("checkbox", { name: /^Create support ticket/ });
   await expect(knowledge).not.toBeChecked();
   await knowledge.check();
   await actions.getByRole("button", { name: "Save Actions", exact: true }).click();
   await expect(actions.getByText(/Actions could not be confirmed\./)).toBeVisible();
   await expect(actions.getByText(/Try the updated actions/)).toHaveCount(0);
   await expect(knowledge).toBeChecked();
-  expect(writes).toEqual([{ enabled_tools: ["search_knowledge_base"] }]);
+  expect(writes).toEqual([{ enabled_tools: ["create_support_ticket"] }]);
   await actions.getByRole("button", { name: "Save Actions", exact: true }).click();
   await expect(actions.getByText(/Try the updated actions/)).toBeVisible();
   await expect(actions.getByText(/Actions could not be confirmed\./)).toHaveCount(0);
   await expect(knowledge).toBeChecked();
   expect(writes).toEqual([
-    { enabled_tools: ["search_knowledge_base"] },
-    { enabled_tools: ["search_knowledge_base"] },
+    { enabled_tools: ["create_support_ticket"] },
+    { enabled_tools: ["create_support_ticket"] },
   ]);
 });
 
