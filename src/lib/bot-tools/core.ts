@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
-import { actionExecutionMode, botDecidesWhenToAsk } from "../bot-permission";
+import { actionExecutionMode } from "../bot-permission";
 import { superviseClientCommunication, type OwnerDecisionRequest } from "../ai-supervisor";
-import { playbookCheckFirstRules } from "../agent-playbook";
+import { ownerDecisionRequestFor } from "../owner-decision";
+import { ACTIVE_OPERATOR_TASK_STATUSES } from "../operator-work-status";
 import * as schema from "../../db/schema";
 import { auditLogger, log as serverLog } from "../server-context";
 import { normalizeDncPhone } from "../compliance";
@@ -136,6 +137,55 @@ async function recordCommsFollowUpTask(
   } catch {
     return false;
   }
+}
+
+const sameWords = (a: unknown, b: unknown) =>
+  typeof a === "string" &&
+  typeof b === "string" &&
+  a.replace(/\s+/g, " ").trim().toLowerCase() === b.replace(/\s+/g, " ").trim().toLowerCase();
+
+/**
+ * Messages from this call that already wait for the owner. A caller who hears
+ * "I'm checking with the team" and says "just send it" must not get a second,
+ * luckier verdict, so the review is shown what is already waiting, and the
+ * same message is never filed twice. A lookup that fails reads as nothing
+ * waiting: the review still runs on its own criteria.
+ */
+async function waitingForOwnerOnThisCall(
+  drizzle: any,
+  input: { userId: string; callId: string; taskType: "send_email" | "send_text_message" },
+): Promise<string[]> {
+  try {
+    const rows: Array<{ payload: unknown }> = await drizzle
+      .select({ payload: schema.followUpTasks.payload })
+      .from(schema.followUpTasks)
+      .where(
+        and(
+          eq(schema.followUpTasks.userId, input.userId),
+          eq(schema.followUpTasks.sourceType, "phone_call"),
+          eq(schema.followUpTasks.sourceId, input.callId),
+          eq(schema.followUpTasks.taskType, input.taskType),
+          inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
+        ),
+      )
+      .limit(3);
+    return rows
+      .map((row) => (row.payload as { body?: unknown } | null)?.body)
+      .filter((body): body is string => typeof body === "string" && Boolean(body.trim()));
+  } catch {
+    return [];
+  }
+}
+
+/** The review is told what already waits from this call, when anything does. */
+async function withWhatAlreadyWaits(
+  drizzle: any,
+  request: OwnerDecisionRequest | undefined,
+  input: { userId: string; callId: string; taskType: "send_email" | "send_text_message" },
+): Promise<OwnerDecisionRequest | undefined> {
+  if (!request) return undefined;
+  const alreadyWaiting = await waitingForOwnerOnThisCall(drizzle, input);
+  return alreadyWaiting.length ? { ...request, alreadyWaiting } : request;
 }
 
 async function tenantLiveExternalActionBlock(
@@ -293,9 +343,11 @@ export async function handleCoreToolCall(
             toolCallId,
             result: "Email permission could not be verified. No email was sent.",
           };
-        if (botDecidesWhenToAsk(permissions.agentLevel, permissions.tenantLevel)) {
-          ownerDecision = { rules: playbookCheckFirstRules(permissions.playbook) };
-        }
+        ownerDecision = await withWhatAlreadyWaits(
+          drizzle,
+          ownerDecisionRequestFor(permissions, permissions.playbook),
+          { userId: agent.user_id, callId, taskType: "send_email" },
+        );
         if (actionExecutionMode({ ...permissions, actionType: "send_email" }) === "draft") {
           const { executeAction } = await import("../action-engine");
           const approval = await executeAction(
@@ -330,6 +382,12 @@ The email is written and waiting for the team to send it. Tell the caller in pla
         ownerDecision,
       });
       if (reviewed.ownerDecision) {
+        const waitingForOwner = `DRAFT_SAVED: ${to_email}
+The email is written and the owner needs to confirm one thing before it goes. Tell the caller in plain words, for example: "I've written that up, and I'm checking one thing with the team before it goes out." Do not say it was sent, do not promise what the answer will be, and do not mention approval or a queue.`;
+        // The same email is already with the owner from this call.
+        if (ownerDecision?.alreadyWaiting?.some((waiting) => sameWords(waiting, body))) {
+          return { toolCallId, result: waitingForOwner };
+        }
         // The Bot decided its owner would want a say. The email waits as it
         // was written, with what the owner has to decide. `ownerDecision` is
         // only requested inside the branch above, so the call is known.
@@ -349,8 +407,7 @@ The email is written and waiting for the team to send it. Tell the caller in pla
           toolCallId,
           result:
             held.success && held.queued
-              ? `DRAFT_SAVED: ${to_email}
-The email is written and the owner needs to confirm one thing before it goes. Tell the caller in plain words, for example: "I've written that up, and I'm checking one thing with the team before it goes out." Do not say it was sent, do not promise what the answer will be, and do not mention approval or a queue.`
+              ? waitingForOwner
               : "The email request could not be saved for the team. No email was sent.",
         };
       }
@@ -599,11 +656,14 @@ The text is written and ${waiting}`,
             : notConfirmed("The text request could not be saved for the team. No text was sent.");
         };
         if (actionExecutionMode({ ...permissions, actionType: "send_text_message" }) === "draft") {
-          return holdTextForOwner();
+          // Awaited here so a save that throws reaches the fallback below.
+          return await holdTextForOwner();
         }
-        if (botDecidesWhenToAsk(permissions.agentLevel, permissions.tenantLevel)) {
-          ownerDecision = { rules: playbookCheckFirstRules(permissions.playbook) };
-        }
+        ownerDecision = await withWhatAlreadyWaits(
+          drizzle,
+          ownerDecisionRequestFor(permissions, permissions.playbook),
+          { userId: agent.user_id, callId: textCallId, taskType: "send_text_message" },
+        );
       }
 
       // Throws ClientCommunicationBlockedError on a block (no approved:false
@@ -622,8 +682,17 @@ The text is written and ${waiting}`,
       // The Bot decided its owner would want a say. The text waits as it was
       // written, with what the owner has to decide.
       if (reviewed.ownerDecision) {
+        // The same text is already with the owner from this call.
+        if (ownerDecision?.alreadyWaiting?.some((waiting) => sameWords(waiting, message_body))) {
+          return {
+            toolCallId,
+            result: `DRAFT_SAVED: ${targetNumber}
+The text is written and the owner needs to confirm one thing before it goes. Tell the caller in plain words, for example: "I've written that up, and I'm checking one thing with the team before it goes out." Do not say it was sent, and do not promise what the answer will be.`,
+          };
+        }
+        // Awaited here so a save that throws reaches the fallback below.
         return holdTextForOwner
-          ? holdTextForOwner(reviewed.ownerDecision)
+          ? await holdTextForOwner(reviewed.ownerDecision)
           : notConfirmed("The request could not be saved for the team. No message was sent.");
       }
       recoveryBody = reviewed.body;

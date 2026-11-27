@@ -182,19 +182,33 @@ describe("a text after a call, on Auto", () => {
     });
   });
 
-  it("is never asked for that decision on a Bot set to work on its own, always", async () => {
-    h.playbook = { checkFirst: ["A customer asks for a refund"] };
+  it("uses no judgement of its own on a Bot set to never ask, only the owner's rules", async () => {
+    // With no rules from the owner there is nothing to ask the review.
     botWorking("full");
     expect(await executeAction("tenant", refund, context)).toEqual({ success: true });
     expect(h.supervise).toHaveBeenCalledOnce();
     expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
     expect(h.send).toHaveBeenCalledOnce();
 
+    // "Never asks" is about the Bot's own judgement. A case the owner named
+    // is still the owner's, so the review is asked about the rules alone.
+    h.supervise.mockClear();
+    h.playbook = { checkFirst: ["A customer asks for a refund"] };
+    botWorking("full");
+    await executeAction("tenant", refund, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+      rulesOnly: true,
+    });
+
     // A workspace on Full covers a Bot that follows it.
     h.supervise.mockClear();
     botWorking("inherit", "full");
     await executeAction("tenant", refund, context);
-    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+      rulesOnly: true,
+    });
   });
 
   it("does not second-guess an owner who already decided", async () => {

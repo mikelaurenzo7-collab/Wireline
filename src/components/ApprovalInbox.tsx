@@ -111,23 +111,21 @@ function approvalResultMessage(
   return "Done.";
 }
 
+/** The two items whose button really does send a message to a customer. */
 function isMessageTask(task: FollowUpTaskRow): boolean {
   const type = rawTaskType(task).toLowerCase();
-  return (
-    type.includes("email") ||
-    type.includes("text") ||
-    type.includes("sms") ||
-    type.includes("contract")
-  );
+  return type === "send_email" || type === "send_text_message";
 }
 
-/** The main button says what pressing it does. */
+/**
+ * The main button says what pressing it does. A booking reads "Book it"
+ * rather than "Confirm": when Calendar itself is set to check first, pressing
+ * it files the request in Calendar, and the result message says so.
+ */
 function primaryActionLabel(task: FollowUpTaskRow, manualTask: boolean): string {
   if (manualTask) return "I handled this";
   if (isMessageTask(task)) return "Send";
-  const type = rawTaskType(task).toLowerCase();
-  if (type.includes("calendar") || type.includes("book") || type.includes("meeting"))
-    return "Confirm booking";
+  if (rawTaskType(task).toLowerCase() === "schedule_calendar") return "Book it";
   return "Go ahead";
 }
 

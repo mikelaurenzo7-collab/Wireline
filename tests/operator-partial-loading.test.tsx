@@ -271,7 +271,7 @@ describe("what a Needs You card tells the owner", () => {
     [
       "schedule_calendar",
       { event_name: "Estimate", date: "2026-12-01", time: "10:00", customer_name: "Dana" },
-      "Confirm booking",
+      "Book it",
       "Dismiss",
     ],
     ["update_crm_lead", { status: "won" }, "Go ahead", "Dismiss"],

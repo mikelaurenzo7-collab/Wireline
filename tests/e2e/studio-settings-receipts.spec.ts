@@ -109,21 +109,29 @@ test("Human Handoff preserves routing after a different destination and confirms
 });
 
 test("Permission rejects another Bot's receipt and confirms a safe retry", async ({ page }) => {
-  await mockStudio(page, { permission: "auto" });
+  // The server answers in today's names (`autonomy`) and, for a tab opened
+  // before them, in the old ones (`permission`). The screen reads only the first.
+  await mockStudio(page, { autonomy: "messages", permission: "auto" });
   const writes: unknown[] = [];
   await page.route(`**/api/agents/${bot.id}/permission`, (route) => {
     writes.push(route.request().postDataJSON());
     return route.fulfill({
-      json: { id: writes.length === 1 ? "another-bot" : bot.id, permission: "ask" },
+      json: { id: writes.length === 1 ? "another-bot" : bot.id, autonomy: "ask" },
     });
   });
   await openSetup(page);
   const permission = page.getByLabel("How Your Bot Works", { exact: true });
-  await expect(permission).toHaveValue("auto");
+  await expect(permission).toHaveValue("messages");
+  await expect(permission.locator("option")).toHaveText([
+    "Auto: it decides when to check with me",
+    "On its own, always",
+    "Check with me before it emails or texts a customer",
+    "Check with me before it does anything",
+  ]);
   await permission.selectOption("ask");
   await expect(page.getByText(/That change could not be confirmed\./)).toBeVisible();
-  await expect(permission).toHaveValue("auto");
-  expect(writes).toEqual([{ level: "ask" }]);
+  await expect(permission).toHaveValue("messages");
+  expect(writes).toEqual([{ autonomy: "ask" }]);
   await permission.selectOption("ask");
   await expect(permission).toHaveValue("ask");
   await expect(page.getByText(/That change could not be confirmed\./)).toHaveCount(0);

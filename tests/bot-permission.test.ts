@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   actionExecutionMode,
+  autonomyFromLegacyPermissionLevel,
   autonomyFromPermissionLevel,
   BOT_PERMISSION_LABELS,
   BOT_PERMISSION_LEVELS,
@@ -10,6 +11,9 @@ import {
   DEFAULT_NEW_BOT_AUTONOMY,
   DEFAULT_WORKSPACE_AUTONOMY,
   effectiveAutonomy,
+  isLegacyPermissionLevel,
+  LEGACY_PERMISSION_LEVELS,
+  legacyPermissionLevelFromAutonomy,
   nativeAppointmentStatus,
   permissionLevelFromAutonomy,
   STORED_AUTONOMY_VALUES,
@@ -146,7 +150,7 @@ describe("per-bot permission", () => {
     expect(panel).toContain("{BOT_PERMISSION_LABELS[level]}");
     expect(panel).toContain("{BOT_PERMISSION_SUMMARIES[permission]}");
     expect(panel).toContain(
-      'permission: isBotPermissionLevel(data.permission) ? data.permission : "auto",',
+      'permission: isBotPermissionLevel(data.autonomy) ? data.autonomy : "auto",',
     );
     for (const retired of ["Full access", "Ask for approval", ">Auto<"]) {
       expect(panel, retired).not.toContain(retired);
@@ -245,9 +249,45 @@ describe("per-bot permission", () => {
   it("shows the workspace permission when a Bot is stored as inherit", () => {
     const route = readFileSync("src/routes/agent-routes-v2.ts", "utf8");
     expect(route).toContain(
-      "permissionLevelFromAutonomy(\n        effectiveAutonomy(record?.autonomyLevel, tenantSettings[0]?.autonomyLevel),",
+      "autonomy: permissionLevelFromAutonomy(\n        effectiveAutonomy(record?.autonomyLevel, tenantSettings[0]?.autonomyLevel),",
     );
-    expect(route).not.toContain("permission: permissionLevelFromAutonomy(record?.autonomyLevel)");
+    expect(route).not.toContain("permissionLevelFromAutonomy(record?.autonomyLevel)");
+  });
+
+  it("keeps the old option names meaning what they meant, in their own field", () => {
+    // A tab opened before Auto existed still sends these. Read as today's
+    // names, "auto" would set a Bot to send on its own while the old screen
+    // showed "check before it emails or texts" as saved.
+    expect([...LEGACY_PERMISSION_LEVELS]).toEqual(["full", "auto", "ask"]);
+    expect(autonomyFromLegacyPermissionLevel("auto")).toBe("supervised");
+    expect(autonomyFromLegacyPermissionLevel("ask")).toBe("draft");
+    // The old "On its own" stores the value every release can read, never
+    // `full`, which a service still on the previous release reads as "wait".
+    expect(autonomyFromLegacyPermissionLevel("full")).toBe("auto");
+    // An old screen is told the setting in the names it knows.
+    expect(legacyPermissionLevelFromAutonomy("supervised")).toBe("auto");
+    expect(legacyPermissionLevelFromAutonomy("draft")).toBe("ask");
+    for (const stored of ["auto", "full", "inherit", null]) {
+      expect(legacyPermissionLevelFromAutonomy(stored), String(stored)).toBe("full");
+    }
+    expect(legacyPermissionLevelFromAutonomy("high")).toBe("ask");
+    expect(isLegacyPermissionLevel("messages")).toBe(false);
+
+    const route = readFileSync("src/routes/agent-routes-v2.ts", "utf8");
+    // Today's names are read from `autonomy`, the old ones only from `level`,
+    // and a request that names both is not guessed at.
+    expect(route).toContain("const choice = isBotPermissionLevel(req.body?.autonomy)");
+    expect(route).toContain(
+      ": req.body?.autonomy === undefined && isLegacyPermissionLevel(req.body?.level)",
+    );
+    expect(route).toContain("stored: autonomyFromLegacyPermissionLevel(req.body.level),");
+    expect(route).toContain("receipt: { permission: req.body.level },");
+    expect(route).toContain("receipt: { autonomy: req.body.autonomy },");
+    expect(route).toContain("permission: legacyPermissionLevelFromAutonomy(");
+    const panel = readFileSync("src/components/StudioAgentWorkspacePanel.tsx", "utf8");
+    expect(panel).toContain("body: JSON.stringify({ autonomy: level }),");
+    expect(panel).toContain("receipt.autonomy !== level");
+    expect(panel).not.toContain("JSON.stringify({ level })");
   });
 
   it("starts a new Bot following its workspace, from one shared default", () => {

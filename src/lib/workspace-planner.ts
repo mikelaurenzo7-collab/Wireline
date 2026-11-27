@@ -308,8 +308,7 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
             field: { type: "string", enum: WORKSPACE_FIELD_KEYS },
             value: {
               type: "string",
-              description:
-                "The exact new value. For personality_vibe use one of: warm, playful, authoritative. For autonomy_level use one of: auto, supervised, draft. For booleans, use 'true' or 'false'.",
+              description: `The exact new value. For personality_vibe use one of: warm, playful, authoritative. For autonomy_level use one of: ${WORKSPACE_AUTONOMY_OPTIONS.join(", ")}. For booleans, use 'true' or 'false'.`,
             },
             summary: {
               type: "string",

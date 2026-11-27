@@ -527,8 +527,9 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
                   }}
                 />
                 <span className={hintClass}>
-                  One per line. Your Bot will not agree to these on its own. It tells the customer
-                  it will check, and a message they apply to waits for you in Needs You.
+                  One per line. Your Bot will not agree to these on its own. On a call it says it
+                  will check, and a text or email they apply to waits for you in Needs You instead
+                  of going out.
                 </span>
               </label>
             </fieldset>

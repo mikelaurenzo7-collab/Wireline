@@ -53,7 +53,8 @@ type StudioAgentWorkspacePanelProps = {
 
 type AgentSetupResponse = {
   mark_key?: string | null;
-  permission?: BotPermissionLevel;
+  /** Today's level names; `permission` carries the older names for older tabs. */
+  autonomy?: BotPermissionLevel;
   personality?: string;
   openingGreeting?: string | null;
   firstMessage?: string | null;
@@ -229,7 +230,7 @@ export default function StudioAgentWorkspacePanel({
             tone: inferPersonality(personality),
             greeting: existingGreeting(data),
             knowledge: "",
-            permission: isBotPermissionLevel(data.permission) ? data.permission : "auto",
+            permission: isBotPermissionLevel(data.autonomy) ? data.autonomy : "auto",
           },
           startedRevision,
         );
@@ -286,15 +287,15 @@ export default function StudioAgentWorkspacePanel({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ level }),
+          body: JSON.stringify({ autonomy: level }),
         },
       );
       if (!response.ok) throw new Error("Permission could not be saved.");
       const receipt = (await response.json().catch(() => null)) as {
         id?: unknown;
-        permission?: unknown;
+        autonomy?: unknown;
       } | null;
-      if (receipt?.id !== permissionAgentId || receipt.permission !== level)
+      if (receipt?.id !== permissionAgentId || receipt.autonomy !== level)
         throw new Error("Permission could not be confirmed.");
       setupDrafts.confirm(permissionAgentId, {}, { permission: level });
     } catch {

@@ -452,13 +452,13 @@ router.patch(
       if (result === "recipient_changed") {
         return res.status(409).json({
           code: "TASK_RECIPIENT_CHANGED",
-          error: "Recipient changed. Review the latest task before approving.",
+          error: "Recipient changed. Review the latest task before you go ahead.",
         });
       }
       if (result === "content_changed") {
         return res.status(409).json({
           code: "TASK_CONTENT_CHANGED",
-          error: "Task changed. Review the latest details before approving.",
+          error: "Task changed. Review the latest details before you go ahead.",
         });
       }
 
@@ -524,7 +524,7 @@ router.post(
       ) {
         return res.status(409).json({
           code: "TASK_CONTENT_CHANGED",
-          error: "Task changed. Review the latest details before approving.",
+          error: "Task changed. Review the latest details before you go ahead.",
         });
       }
       if (expectedPayload !== undefined) {
@@ -540,7 +540,7 @@ router.post(
         if (!isDeepStrictEqual(task.payload ?? task.customerInfo ?? {}, expectedPayload)) {
           return res.status(409).json({
             code: "TASK_CONTENT_CHANGED",
-            error: "Task changed. Review the latest details before approving.",
+            error: "Task changed. Review the latest details before you go ahead.",
           });
         }
       }
@@ -553,7 +553,7 @@ router.post(
         if (currentTo !== expectedTo) {
           return res.status(409).json({
             code: "TASK_RECIPIENT_CHANGED",
-            error: "Recipient changed. Review the latest task before approving.",
+            error: "Recipient changed. Review the latest task before you go ahead.",
           });
         }
       }
@@ -570,7 +570,7 @@ router.post(
       ) {
         return res.status(400).json({
           code: "REVIEW_SNAPSHOT_REQUIRED",
-          error: "Review the latest task details before approving.",
+          error: "Review the latest task details before you go ahead.",
         });
       }
 
@@ -649,7 +649,7 @@ router.post(
       if (result.queued && !nativeCalendarRequestResolved) {
         return res.status(409).json({
           code: "ACTION_NOT_EXECUTED",
-          error: "This action is still a draft. Refresh and review it before approving.",
+          error: "This action is still a draft. Refresh and review it before you go ahead.",
         });
       }
       if (result.success) {
@@ -727,7 +727,7 @@ router.post(
     } catch (error: any) {
       rethrowIfAppError(error);
       log.error("Task approval failed", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to approve task");
+      throw AppError.fromHttpStatus(500, "That could not be done. Refresh to check its outcome.");
     }
   },
 );

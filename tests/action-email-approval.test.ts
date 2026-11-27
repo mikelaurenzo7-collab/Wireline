@@ -163,6 +163,10 @@ describe("email approval supervision", () => {
       body: "Reviewed body.",
     });
     expect(h.insert).not.toHaveBeenCalled();
+    // What the owner approved is the owner's to promise: the review is told
+    // so, and is never asked whether the owner should see it first.
+    expect(h.supervise.mock.calls[0][0].ownerApproved).toBe(true);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
   });
 
   it("does not turn unexpected supervisor failures into another task", async () => {

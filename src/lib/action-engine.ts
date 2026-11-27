@@ -16,8 +16,7 @@ import { type AgentToolName } from "./agent-capabilities";
 import { OWNER_DECISION_NEEDED, type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { IntegrationService } from "./integrations";
-import { actionExecutionMode, botDecidesWhenToAsk } from "./bot-permission";
-import { playbookCheckFirstRules } from "./agent-playbook";
+import { actionExecutionMode } from "./bot-permission";
 import { queueNeedsYouNotice } from "./needs-you-notice";
 import { bookNativeAppointment, getNativeCalendarConfiguration } from "./native-calendar";
 import { touchNavCounts } from "./nav-counts-invalidate";
@@ -37,6 +36,7 @@ import {
   superviseClientCommunication,
   type OwnerDecisionRequest,
 } from "./ai-supervisor";
+import { ownerDecisionRequestFor } from "./owner-decision";
 import { resolveClientSenderIdentity } from "./client-sender-identity";
 import { dispatchWebhook } from "./webhook-helpers";
 import { runInBackground } from "./background-work";
@@ -232,17 +232,21 @@ async function resolveActionPolicy(
         nativeCalendarConfigured: Boolean(connections.native_calendar_configured),
       });
 
+    // An owner who approved the item, or a caller of this function who chose
+    // how it runs, has already decided. Otherwise a Bot on Auto decides for
+    // itself whether its owner would want a say, and a Bot set to never ask
+    // still holds what its owner's own rules name.
+    const ownerDecision = autonomyOverride
+      ? undefined
+      : ownerDecisionRequestFor(
+          { agentLevel: agentRow.autonomyLevel, tenantLevel: agentRow.tenantAutonomyLevel },
+          agentRow.playbook,
+        );
     return {
       action: scopedAction,
       autonomy,
       agentTimeZone: agentRow.timeZone || "UTC",
-      // An owner who approved the item, or a caller of this function who
-      // chose how it runs, has already decided. Otherwise a Bot on Auto
-      // decides for itself whether its owner would want a say.
-      ...(!autonomyOverride &&
-      botDecidesWhenToAsk(agentRow.autonomyLevel, agentRow.tenantAutonomyLevel)
-        ? { ownerDecision: { rules: playbookCheckFirstRules(agentRow.playbook) } }
-        : {}),
+      ...(ownerDecision ? { ownerDecision } : {}),
     };
   }
 
@@ -373,6 +377,10 @@ async function executeAutonomousAction(
           subject: action.payload.subject,
           body: action.payload.body,
           context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
+          // Only an email the owner approved or asked for reaches this
+          // review (one nobody chose was filed above), so what it offers
+          // is the owner's to offer.
+          ownerApproved: true,
         });
       } catch (err) {
         // Keep an existing approval pending and editable. Only autonomous work
@@ -382,7 +390,7 @@ async function executeAutonomousAction(
             return {
               success: false,
               errorCode: "COMMUNICATION_BLOCKED",
-              error: `Edit this email before approving: ${err.message}`,
+              error: `Edit this email before sending: ${err.message}`,
             };
           }
           return handleSendEmail(

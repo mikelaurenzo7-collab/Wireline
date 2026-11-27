@@ -79,6 +79,42 @@ export function autonomyFromPermissionLevel(level: BotPermissionLevel): StoredAu
 }
 
 /**
+ * The names the Set Up screen used before Auto existed, kept on the wire
+ * exactly as they were. A browser tab opened before a release keeps sending
+ * them, and two of the three were later given other meanings: read as today's
+ * names, the old "auto" (check before it emails or texts) would have set a Bot
+ * to send on its own while the old screen showed the owner's choice as saved.
+ * They are accepted only in the old field, with the old meaning; today's
+ * names travel in a field of their own.
+ */
+export const LEGACY_PERMISSION_LEVELS = ["full", "auto", "ask"] as const;
+export type LegacyPermissionLevel = (typeof LEGACY_PERMISSION_LEVELS)[number];
+
+export function isLegacyPermissionLevel(value: unknown): value is LegacyPermissionLevel {
+  return value === "full" || value === "auto" || value === "ask";
+}
+
+/**
+ * What each old name stored. The old "On its own" stores `auto`, which every
+ * release can read; it never stores `full`, which an older release cannot.
+ */
+export function autonomyFromLegacyPermissionLevel(level: LegacyPermissionLevel): StoredAutonomy {
+  if (level === "ask") return "draft";
+  if (level === "auto") return "supervised";
+  return "auto";
+}
+
+/** The old name an old screen shows for a stored value. Auto and Full both read "On its own". */
+export function legacyPermissionLevelFromAutonomy(
+  value: string | null | undefined,
+): LegacyPermissionLevel {
+  const level = effectiveAutonomy(value, null);
+  if (level === "draft") return "ask";
+  if (level === "supervised") return "auto";
+  return "full";
+}
+
+/**
  * The Bot's own choice wins; a Bot that follows the workspace takes the
  * workspace's. Nothing stored anywhere means nobody chose a level, so the
  * Bot runs on Auto. A stored value this code does not recognise is not that:

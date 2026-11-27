@@ -115,7 +115,7 @@ describe("omnichannel outcome loop", () => {
     // "approve" or "reject" the Bot's work.
     expect(approvals).toContain('if (manualTask) return "I handled this";');
     expect(approvals).toContain('if (isMessageTask(task)) return "Send";');
-    expect(approvals).toContain('return "Confirm booking";');
+    expect(approvals).toContain('return "Book it";');
     expect(approvals).toContain(
       'return !manualHandoff && isMessageTask(task) ? "Don\'t send" : "Dismiss";',
     );
