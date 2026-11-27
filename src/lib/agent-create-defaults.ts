@@ -10,11 +10,12 @@ import {
   type AgentToolName,
 } from "./agent-capabilities";
 import { composeAgentPersonality } from "./agent-personality";
+import { generatedBotGreeting } from "./bot-name";
 
 const UNRESOLVED_GREETING_TOKEN = /\[[^\]]+\]|\{\{?[^{}]+\}\}?/;
 
 export function resolveCreateFirstMessage(raw: unknown, agentName: string): string {
-  const fallback = `Hi, this is ${agentName}. How can I help?`;
+  const fallback = generatedBotGreeting(agentName);
   if (typeof raw !== "string") return fallback;
   const value = raw.trim().slice(0, 500);
   if (!value || UNRESOLVED_GREETING_TOKEN.test(value)) return fallback;

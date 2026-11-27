@@ -37,6 +37,7 @@ import {
   pronunciationTouchesRequiredWording,
 } from "../lib/voice/call-delivery";
 import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
+import { BOT_NAME_MAX_CHARS, renamedBotFields } from "../lib/bot-name";
 import { inboundGreetingPreview } from "../lib/voice/inbound-opening";
 import { LIVE_CUSTOM_VOICE_KEY, currentBotVariables } from "../lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
@@ -782,6 +783,35 @@ router.patch(
       .returning({ id: schema.agents.id });
     if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
     res.json({ id: saved.id, ...choice.receipt });
+  },
+);
+
+// A Bot's name is the owner's to change. Every Bot starts as Bo, so this is
+// how one becomes theirs. The greeting follows only while it is still the one
+// the Bot was created with.
+router.patch(
+  "/api/agents/:id/name",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const name = cleanText(req.body?.name, BOT_NAME_MAX_CHARS).replace(/\s+/g, " ");
+    if (!name) throw AppError.badRequest("Give your Bot a name.");
+    const saved = await drizzle.transaction(async (tx) => {
+      const [current] = await tx
+        .select({ name: schema.agents.name, firstMessage: schema.agents.firstMessage })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+        .for("update")
+        .limit(1);
+      if (!current) throw AppError.fromHttpStatus(404, "Agent not found");
+      const fields = renamedBotFields(current, name);
+      await tx
+        .update(schema.agents)
+        .set(fields)
+        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+      return fields;
+    });
+    res.json({ id: req.params.id, name: saved.name });
   },
 );
 

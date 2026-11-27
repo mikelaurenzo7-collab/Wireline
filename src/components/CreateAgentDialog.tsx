@@ -14,6 +14,7 @@ import { Button, Input, Textarea } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
+import { startingBotName } from "../lib/bot-name";
 import { useAuth } from "../contexts/AuthContext";
 import {
   CREATE_BRIEF_MAX_CHARS,
@@ -67,11 +68,17 @@ function templateForKey(value: string | null | undefined) {
   );
 }
 
-function defaultName(templateKey: TemplateKey) {
+/** What a Bot is called for its role, when the workspace already has a Bo. */
+function roleName(templateKey: TemplateKey) {
   const template = templateForKey(templateKey);
   if (template.key === "custom") return "My Bot";
   if (template.key === "front-desk") return "Front Desk";
   return `${template.name} Bot`;
+}
+
+/** The name a Bot gets when its owner leaves the field empty. */
+function defaultName(templateKey: TemplateKey, existingNames: readonly string[]) {
+  return startingBotName(existingNames, roleName(templateKey));
 }
 
 async function applyStartingBrief({
@@ -185,6 +192,7 @@ export default function CreateAgentDialog({
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
   const { agents, rememberCreatedAgent } = useAgents();
+  const existingNames = useMemo(() => agents.map((agent) => agent.name), [agents]);
   const { user } = useAuth();
   const activeUserIdRef = useRef(user?.id ?? null);
   const createAbortRef = useRef<AbortController | null>(null);
@@ -312,7 +320,7 @@ export default function CreateAgentDialog({
       );
       return;
     }
-    const finalName = name.trim() || defaultName(templateKey);
+    const finalName = name.trim() || defaultName(templateKey, existingNames);
     // Business or personal posture. It never creates a second customer-facing
     // workspace and never changes which Bot gets created.
     const legacyCapabilityProfile = !PERSONAL_STARTER_KEYS.has(templateKey);
@@ -543,7 +551,7 @@ export default function CreateAgentDialog({
                 disabled={creating}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="e.g. Nora or Alex"
+                placeholder={defaultName(templateKey, existingNames)}
                 autoComplete="off"
               />
             </label>
@@ -559,7 +567,7 @@ export default function CreateAgentDialog({
               >
                 <span className="min-w-0 flex-1">
                   <span className="wl-preserve-case block truncate text-sm font-semibold text-foreground">
-                    {name.trim() || defaultName(templateKey)}
+                    {name.trim() || defaultName(templateKey, existingNames)}
                   </span>
                   <span className="block text-xs text-muted-foreground">Appearance</span>
                 </span>
@@ -580,7 +588,7 @@ export default function CreateAgentDialog({
                     setMarkKey(nextMarkKey);
                   }}
                   seed={`new:${templateKey}`}
-                  name={name.trim() || defaultName(templateKey)}
+                  name={name.trim() || defaultName(templateKey, existingNames)}
                   compact
                   disabled={creating}
                   unavailableKeys={unavailableMarkKeys}

@@ -98,7 +98,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will Customers Know They Are Talking to a Bot?",
-        a: 'Yes, unless you choose otherwise. Your Bot introduces itself once, in your business name, for example "Hi, I\'m Sarah, an AI assistant with Premier HVAC." You can have it open with your own greeting instead, and it is told to say it is an AI whenever a caller asks. If you turn on recording, the Bot says that too. Disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
+        a: 'Yes, unless you choose otherwise. Your Bot introduces itself once, in your business name, for example "Hi, I\'m Bo, an AI assistant with Premier HVAC." You can have it open with your own greeting instead, and it is told to say it is an AI whenever a caller asks. If you turn on recording, the Bot says that too. Disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
       },
       {
         q: "What Happens If the Bot Does Not Know the Answer?",

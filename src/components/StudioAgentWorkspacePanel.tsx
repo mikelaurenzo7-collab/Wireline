@@ -36,6 +36,7 @@ import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
+import BotNameField from "./studio/BotNameField";
 import DeleteBotSection from "./studio/DeleteBotSection";
 import HumanHandoffEditor from "./HumanHandoffEditor";
 import PlaybookEditor from "./PlaybookEditor";
@@ -447,6 +448,10 @@ export default function StudioAgentWorkspacePanel({
         {trainingBrief && readPostCreateWizard()?.agentId !== agentId ? (
           <StatusNotice tone="info">Applying your starting brief…</StatusNotice>
         ) : null}
+
+        <section className={sectionClass} aria-label="Name">
+          <BotNameField agentId={agentId} agentName={agentName} />
+        </section>
 
         <section className={sectionClass} aria-label="Tone and knowledge">
           {loadingSetup ? (
