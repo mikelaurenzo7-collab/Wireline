@@ -91,8 +91,11 @@ for (const receipt of [
     await page.goto("/calendar");
     await expect(page.getByText("Google Calendar connected", { exact: true })).toBeVisible();
     await expect(page.getByText("2-way sync", { exact: true })).toHaveCount(0);
+    // Confirmed bookings are copied to the owner's Google Calendar.
     await expect(
-      page.getByText("Refresh busy times after calendar changes. BotBound bookings stay here."),
+      page.getByText(
+        "Confirmed bookings are added to your Google Calendar. Refresh busy times after you change it.",
+      ),
     ).toBeVisible();
     await page.getByRole("button", { name: "Refresh busy times", exact: true }).click();
     await expect(page.getByText(/Google busy times could not be fully refreshed/)).toBeVisible();

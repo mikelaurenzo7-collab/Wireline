@@ -62,6 +62,8 @@ BotBound is an omnichannel autonomous AI workforce platform for service business
 
 *(Note: R5 Synthetic Rehearsal Suite and R6 SMS Vision Modal are pruned per explicit user directives. Conceptual note on direct wearable streaming is preserved in documentation.)*
 
+**Status in production (checked 2026-11-27 against the import graph of every entry point).** The libraries for features 1–4, 8–12, 15 and 16 exist with tests but are connected to nothing a caller or an owner uses: no route, tool, job or screen imports `cloud-computer/voice-bridge.ts`, the `cloud-computer/takeover-*` modules, `stripe-voice-session.ts`, `goodwill-wallet-policy.ts`, `calendar-holds.ts`, `ics-generator.ts`, `agentmail-transactional.ts` or `agentmail-triage.ts`. "COMPLETE" below means built and tested, not live. Connecting or removing them is an open product decision.
+
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|

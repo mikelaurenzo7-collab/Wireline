@@ -146,11 +146,14 @@ export default function CalendarAvailabilityPanel({
   }
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-4 px-4 py-5 sm:px-6">
+    // Side padding is in pixels on a phone. In rem it doubles with the text:
+    // at 200% text on a 320px screen the gutters and card padding took 112px
+    // and the time fields and the longest day name no longer fit.
+    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-4 px-[16px] py-5 sm:px-6">
       <form onSubmit={save} className="space-y-4">
         <fieldset disabled={saving} className="min-w-0 space-y-4">
           {configured ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 sm:p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-[12px] py-3 sm:p-4">
               <label
                 htmlFor="calendar-enabled"
                 className="min-w-0 break-words text-sm font-semibold"
@@ -172,7 +175,7 @@ export default function CalendarAvailabilityPanel({
 
           <section
             aria-labelledby="calendar-hours-heading"
-            className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-3 sm:p-4"
+            className="min-w-0 space-y-4 rounded-xl border border-border bg-card px-[12px] py-3 sm:p-4"
           >
             <h2 id="calendar-hours-heading" className="text-sm font-semibold">
               Weekly Hours
@@ -250,7 +253,7 @@ export default function CalendarAvailabilityPanel({
 
           <section
             aria-labelledby="calendar-rules-heading"
-            className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-3 sm:p-4"
+            className="min-w-0 space-y-4 rounded-xl border border-border bg-card px-[12px] py-3 sm:p-4"
           >
             <h2 id="calendar-rules-heading" className="text-sm font-semibold">
               Booking Rules

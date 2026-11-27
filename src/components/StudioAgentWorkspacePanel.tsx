@@ -503,8 +503,13 @@ export default function StudioAgentWorkspacePanel({
                 </div>
               </fieldset>
 
-              <label className="grid gap-2" htmlFor="setup-greeting">
-                <span className="text-sm font-semibold text-foreground">Opening Greeting</span>
+              {/* The label holds only the field's name. It used to wrap the help
+                  text as well, so a screen reader announced the whole
+                  paragraph as the field's name; the help is its description. */}
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-foreground" htmlFor="setup-greeting">
+                  Opening Greeting
+                </label>
                 <textarea
                   id="setup-greeting"
                   disabled={applyingSetup}
@@ -522,7 +527,7 @@ export default function StudioAgentWorkspacePanel({
                   Your Bot introduces itself first, then says this. To have callers hear it exactly
                   as written, choose Your Greeting As Written under Phone Voice.
                 </span>
-              </label>
+              </div>
 
               <div className="grid gap-2">
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
