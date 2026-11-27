@@ -36,6 +36,22 @@ describe("how the Bot talks on a live call", () => {
     expect(block).toMatch(/If the caller is mid-thought, wait/);
   });
 
+  // A phone line carries road noise, a TV, a second person in the room. The
+  // phone engine has no noise filter to set, so the Bot is told what to do
+  // with speech it could not make out. Its own guide asks for both rules.
+  it("asks again instead of guessing at speech it could not make out", () => {
+    expect(block).toMatch(
+      /could not make out what the caller said, or it was cut off, do not guess/,
+    );
+    expect(block).toMatch(/ask them to say it again/);
+    expect(block).toMatch(/Noise, a TV or another voice in the room is not a request/);
+  });
+
+  it("says numbers so they can be written down", () => {
+    expect(block).toMatch(/one digit at a time in short groups, never as one large number/);
+    expect(block).toMatch(/Read back one you were given once/);
+  });
+
   it("stays small, because every live prompt carries it inside a fixed budget", () => {
     // The block is a guardrail the prompt clamp never trims, so growth here
     // comes straight out of the room left for an owner's Training.

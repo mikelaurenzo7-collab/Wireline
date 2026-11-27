@@ -356,6 +356,33 @@ describe("funded inbound runtime construction", () => {
     expect(result.session.instructions).toContain("AFTER-HOURS MODE");
     expect(result.session.instructions).toContain("answer business questions");
   });
+  it("tells an after-hours caller which business they reached, not the Bot's name", () => {
+    const afterHours = { mode: "take_message" as const, reason: "after_hours" as const };
+    const named = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+      ...call,
+      businessName: "Ridge Dental",
+      admission: afterHours,
+    });
+    expect(named.greeting).toBe(
+      "Hi, you've reached Ridge Dental. We're currently closed, but I can take a message for the team.",
+    );
+    // With no business name set, the Bot's name is all there is to say.
+    const unnamed = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+      ...call,
+      businessName: "  ",
+      admission: afterHours,
+    });
+    expect(unnamed.greeting).toBe(
+      "Hi, you've reached Bo. We're currently closed, but I can take a message for the team.",
+    );
+    // An owner's own after-hours message is said as they wrote it.
+    const own = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+      ...call,
+      businessName: "Ridge Dental",
+      admission: { ...afterHours, greeting: "We're closed for the holiday." },
+    });
+    expect(own.greeting).toBe("We're closed for the holiday.");
+  });
   it("lets the after-hours message-taker say when the business opens", () => {
     const hours =
       "BUSINESS HOURS (America/Chicago): Monday to Friday 8 AM to 5 PM.\nIt is Friday 6:02 PM there, and the business is closed right now.";
