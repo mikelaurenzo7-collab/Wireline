@@ -340,9 +340,14 @@ test("owners can search, page and select a public ElevenLabs phone voice from Se
   await voice.locator("summary").filter({ hasText: "Browse More Phone Voices" }).click();
   await expect(voice.getByLabel("Voice Collection")).toHaveValue("library");
   await voice.getByLabel("Search Phone Voices").fill("warm");
-  await expect(voice.getByRole("button", { name: /First Voice/ })).toBeVisible();
+  // Each voice has a select button named for the voice and a play button
+  // whose name ("Play First Voice Library Sample") also contains it.
+  await expect(voice.getByRole("button", { name: /^First Voice/ })).toBeVisible();
+  await expect(
+    voice.getByRole("button", { name: "Play First Voice Library Sample", exact: true }),
+  ).toBeVisible();
   await voice.getByRole("button", { name: "Next voices" }).click();
-  await voice.getByRole("button", { name: /River Studio/ }).click();
+  await voice.getByRole("button", { name: /^River Studio/ }).click();
   await expect(voice.getByText("Phone Voice Saved.", { exact: true })).toBeVisible();
   expect(saved).toEqual({ id: sample.id, provider: sample.provider, library });
 });
