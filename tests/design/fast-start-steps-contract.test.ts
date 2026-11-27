@@ -9,6 +9,9 @@ describe("Fast Start brief-first flow contract", () => {
 
   it("keeps creation on one brief-first screen without a role gallery", () => {
     expect(create).toContain("{language.setupPrompt}");
+    // A workspace's first Bot is Bo, and the dialog says so under the question.
+    expect(create).toContain("Your Bot is called {botName}. You can rename it any time.");
+    expect(create).toContain("const firstBot = agents.length === 0;");
     expect(create).not.toContain("Start from a Role");
     expect(create).not.toContain("{language.setupDescription}");
     expect(create).not.toContain("BOT_ROLE_TEMPLATES.map");
@@ -30,7 +33,9 @@ describe("Fast Start brief-first flow contract", () => {
     expect(create).toContain(
       'setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary))',
     );
-    expect(create).toContain("briefIsTemplateTextRef.current");
+    // The chips that could replace a prefilled brief are gone, and with them
+    // the flag that tracked whether the brief was still the prefilled one.
+    expect(create).not.toContain("briefIsTemplateTextRef");
     expect(create).toContain('nextTemplate.key === "custom" ? "" : nextTemplate.summary');
     expect(create).toContain("const finalBrief = brief.trim() || selectedTemplate.summary");
     expect(create).toContain("if (finalBrief) {");

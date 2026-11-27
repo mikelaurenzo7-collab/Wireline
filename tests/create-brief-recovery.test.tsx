@@ -25,6 +25,10 @@ const h = vi.hoisted(() => ({
   onCreated: vi.fn(),
   userId: "founder",
   botId: "bot",
+  businessName: "",
+  starter: null as string | null,
+  updateBranding: vi.fn(),
+  toast: vi.fn(),
   sequence: 0,
 }));
 vi.mock("react", async (original) => ({
@@ -59,6 +63,13 @@ vi.mock("../src/contexts/AgentsContext", () => ({
   useAgents: () => ({ agents: [], rememberCreatedAgent: vi.fn() }),
   AGENTS_CHANGED_EVENT: "agents-changed",
 }));
+vi.mock("../src/contexts/BrandingContext", () => ({
+  useBranding: () => ({
+    branding: { business_name: h.businessName },
+    updateBranding: h.updateBranding,
+  }),
+}));
+vi.mock("../src/contexts/ToastContext", () => ({ useToast: () => ({ toast: h.toast }) }));
 vi.mock("../src/lib/api", () => ({
   authFetch: (...args: unknown[]) => h.fetch(...args),
   safeJson: (response: Response) => response.json(),
@@ -112,6 +123,7 @@ function render() {
         onClose: h.onClose,
         onCreated: h.onCreated,
         initialBrief: brief,
+        initialTemplateKey: h.starter,
       })
     : StudioAgentWorkspacePanel({
         agentId: h.botId,
@@ -156,6 +168,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.userId = "founder";
   h.botId = `bot-${++h.sequence}`;
+  h.businessName = "";
+  h.starter = null;
   const storage = new Map<string, string>();
   vi.stubGlobal("sessionStorage", {
     getItem: (key: string) => storage.get(key) ?? null,
@@ -360,5 +374,93 @@ describe("pending brief ownership", () => {
     expect(h.fetch.mock.calls.some(([path]) => path === "/api/train/extract")).toBe(false);
     expect(window.dispatchEvent).not.toHaveBeenCalled();
     expect(text(render())).not.toContain("Saved. Run a test");
+  });
+});
+
+/**
+ * Creating the first Bot is the owner's first conversation about it. It is
+ * called Bo, nothing is picked from a list, and the one thing asked besides
+ * the job is the business name, because callers hear it in Bo's first sentence.
+ */
+describe("creating the first Bot", () => {
+  type Field = ReactElement<{
+    placeholder?: string;
+    onChange?: (event: { target: { value: string } }) => void;
+  }>;
+  const businessField = () =>
+    (elements(render()) as unknown as Field[]).find(
+      (element) => element.type === "input" && element.props.placeholder === "Ridge Dental",
+    );
+  const submit = () =>
+    elements(render()).find((element) => element.type === "form")!.props.onSubmit!({
+      preventDefault: vi.fn(),
+    });
+  const sentTo = (path: string) =>
+    h.fetch.mock.calls
+      .filter(([called]) => called === path)
+      .map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+
+  it("says the Bot is called Bo, and offers no starter to pick", async () => {
+    await mount("create");
+    const screen = text(render());
+    expect(screen).toContain("Your Bot is called Bo. You can rename it any time.");
+    for (const starter of ["Sales Rep", "Appointment Setter", "Customer Support", "Recruiter"]) {
+      expect(screen).not.toContain(starter);
+    }
+  });
+
+  it("saves the business name in the workspace's business profile and tells the Bot", async () => {
+    await mount("create");
+    businessField()!.props.onChange!({ target: { value: "  Ridge Dental  " } });
+    await submit();
+    expect(sentTo("/api/company-identity")).toEqual([{ business_name: "Ridge Dental" }]);
+    expect(h.updateBranding).toHaveBeenCalledWith({ business_name: "Ridge Dental" });
+    expect(h.toast).not.toHaveBeenCalled();
+    expect(h.navigate).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(sentTo("/api/train/extract")).toHaveLength(1));
+    expect(sentTo("/api/train/extract")[0].message).toContain("Business name: Ridge Dental.");
+  });
+
+  it("opens the new Bot and says so when the business name could not be saved", async () => {
+    const usualFetch = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string) =>
+      path === "/api/company-identity"
+        ? Promise.resolve(json({ error: "Unavailable" }, 503))
+        : usualFetch(path),
+    );
+    await mount("create");
+    businessField()!.props.onChange!({ target: { value: "Ridge Dental" } });
+    await submit();
+    expect(h.updateBranding).not.toHaveBeenCalled();
+    expect(h.toast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "warning", title: "Business Name Not Confirmed" }),
+    );
+    expect(h.onCreated).toHaveBeenCalledOnce();
+    expect(h.navigate).toHaveBeenCalledOnce();
+  });
+
+  it("sends nothing about the business when the field is left empty", async () => {
+    await create();
+    expect(sentTo("/api/company-identity")).toEqual([]);
+    await vi.waitFor(() => expect(sentTo("/api/train/extract")).toHaveLength(1));
+    expect(sentTo("/api/train/extract")[0].message).not.toContain("Business name:");
+  });
+
+  it("does not ask a workspace that already has a business name", async () => {
+    h.businessName = "Ridge Dental";
+    await mount("create");
+    expect(businessField()).toBeUndefined();
+    await submit();
+    expect(sentTo("/api/company-identity")).toEqual([]);
+  });
+
+  it("does not ask for a business name when the Bot is for personal use", async () => {
+    // A signup link for everyday use carries this starter; there is no business.
+    h.starter = "personal-assistant";
+    await mount("create");
+    expect(businessField()).toBeUndefined();
+    await submit();
+    expect(sentTo("/api/company-identity")).toEqual([]);
+    expect(sentTo("/api/agents")[0]).toMatchObject({ is_business_agent: false });
   });
 });
