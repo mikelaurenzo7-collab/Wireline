@@ -182,15 +182,15 @@ describe("authenticated Bot flow", () => {
   });
 
   it("keeps the retired template gallery from coming back as a create surface", () => {
-    // One Bot means nothing to browse: the create dialog offers a short row of
-    // starting briefs and the gallery, its search, and its category filter are
-    // gone rather than hidden.
+    // One Bot means nothing to browse or pick: the gallery, its search, its
+    // category filter and the later row of starter chips are gone rather than
+    // hidden. The dialog asks what the Bot should do, in the owner's words.
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     expect(existsSync("src/components/AgentTemplates.tsx")).toBe(false);
     expect(existsSync("src/pages/TemplatesPage.tsx")).toBe(false);
     expect(createDialog).not.toMatch(/searchableTemplateText|Search templates|activeCategory/);
-    expect(createDialog).toContain('aria-label="Starting briefs"');
-    expect(createDialog).toContain("What should it handle first?");
+    expect(createDialog).not.toMatch(/\bSTARTER_KEYS\b|Starting briefs|aria-pressed/);
+    expect(createDialog).not.toContain("What should it handle first?");
   });
 
   it("launches a resumable Train, Test, Launch wizard after Fast Start", () => {

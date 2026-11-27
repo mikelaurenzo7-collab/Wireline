@@ -98,7 +98,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will Customers Know They Are Talking to a Bot?",
-        a: 'Yes, unless you choose otherwise. Your Bot introduces itself once, in your business name, for example "Hi, I\'m Sarah, an AI assistant with Premier HVAC." You can have it open with your own greeting instead, and it is told to say it is an AI whenever a caller asks. If you turn on recording, the Bot says that too. Disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
+        a: 'Yes, unless you choose otherwise. Your Bot introduces itself once, in your business name, for example "Hi, I\'m Bo, an AI assistant with Premier HVAC." You can have it open with your own greeting instead, and it is told to say it is an AI whenever a caller asks. If you turn on recording, the Bot says that too. Disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
       },
       {
         q: "What Happens If the Bot Does Not Know the Answer?",
@@ -335,11 +335,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What Can Its Computer Do?",
-        a: "Give it a task such as comparing services, finding opening hours, or summarizing a webpage. Your Bot can research online and return a useful result. Tasks use your plan's AI allowance, and actions that need approval wait for your review.",
+        a: "Give it a task such as comparing services, finding opening hours, or summarizing a webpage. Your Bot can research online and return a useful result. Computer time comes out of your plan's shared work allowance, and actions that need approval wait for your review.",
       },
       {
         q: "Can I Start with Calls and Add Email Later?",
-        a: "Yes. Start with Calls, then contact us for an email setup and plan review. Activate your Bot's managed mailbox after that review is complete.",
+        a: "Yes. Every plan includes an email address for your Bot, so you can start with calls and turn email on when you are ready.",
       },
       {
         q: "What Can't It Do?",

@@ -295,6 +295,7 @@ import {
   runOpenAISipCallSession,
   settleOpenAISipPreSessionFailure,
 } from "../src/lib/voice/openai-sip-session";
+import { composeInboundOpening } from "../src/lib/voice/inbound-opening";
 
 const call = {
   callId: "rtc_test",
@@ -355,6 +356,56 @@ describe("funded inbound runtime construction", () => {
     });
     expect(result.session.instructions).toContain("AFTER-HOURS MODE");
     expect(result.session.instructions).toContain("answer business questions");
+  });
+  it("tells an after-hours caller which business they reached, not the Bot's name", () => {
+    const afterHours = { mode: "take_message" as const, reason: "after_hours" as const };
+    const named = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+      ...call,
+      businessName: "Ridge Dental",
+      admission: afterHours,
+    });
+    expect(named.greeting).toBe(
+      "Hi, you've reached Ridge Dental. We're currently closed, but I can take a message for the team.",
+    );
+    // With no business name set, the Bot's name is all there is to say.
+    const unnamed = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+      ...call,
+      businessName: "  ",
+      admission: afterHours,
+    });
+    expect(unnamed.greeting).toBe(
+      "Hi, you've reached Bo. We're currently closed, but I can take a message for the team.",
+    );
+    // A business name with an abbreviation reaches the caller once, whole.
+    for (const businessName of ["Smith Bros. Plumbing", "Smith & Co. Roofing", "Elm Ave. Dental"]) {
+      const greeting = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+        ...call,
+        businessName,
+        admission: afterHours,
+      }).greeting;
+      for (const ownWords of [false, true]) {
+        expect(
+          composeInboundOpening({
+            greeting,
+            agentName: "Bo",
+            businessName,
+            recordingEnabled: false,
+            ownWords,
+          }),
+        ).toBe(
+          ownWords
+            ? `Hi, you've reached ${businessName}. We're currently closed, but I can take a message for the team.`
+            : `Hi, I'm Bo, an AI assistant with ${businessName}. We're currently closed, but I can take a message for the team.`,
+        );
+      }
+    }
+    // An owner's own after-hours message is said as they wrote it.
+    const own = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+      ...call,
+      businessName: "Ridge Dental",
+      admission: { ...afterHours, greeting: "We're closed for the holiday." },
+    });
+    expect(own.greeting).toBe("We're closed for the holiday.");
   });
   it("lets the after-hours message-taker say when the business opens", () => {
     const hours =

@@ -202,7 +202,7 @@ for (const [width, height, theme] of [
     page,
   }, info) => {
     await page.setViewportSize({ width, height });
-    await page.addInitScript((theme) => localStorage.setItem("wireline-theme", theme), theme);
+    await page.addInitScript((theme) => localStorage.setItem("botbound-theme", theme), theme);
     await mockSpeech(page);
     const api = await workspace(page);
     await page.goto("/studio?agent=field-bot&chat=computer");

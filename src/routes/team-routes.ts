@@ -166,13 +166,13 @@ router.post(
       const invitedBy = req.user.email || "A colleague";
       const subject = `${invitedBy} invited you to BotBound`;
       const html = `
-        <div style="margin:0;padding:32px;background:#0A0A0E;color:#F5F4F8;font-family:Inter,Arial,sans-serif;">
-          <div style="max-width:560px;margin:0 auto;padding:28px;border:1px solid #262430;border-radius:16px;background:#141319;">
-            <div style="font-size:15px;font-weight:700;letter-spacing:-.02em;margin-bottom:24px;">Bot<span style="color:#C4B5FD;">Bound</span></div>
+        <div style="margin:0;padding:32px;background:#F8F9FA;color:#171717;font-family:Inter,Arial,sans-serif;">
+          <div style="max-width:560px;margin:0 auto;padding:28px;border:1px solid #D9DDE3;border-radius:16px;background:#FFFFFF;">
+            <div style="font-size:15px;font-weight:700;letter-spacing:-.02em;margin-bottom:24px;">Bot<span style="color:#7040D7;">Bound</span></div>
             <h1 style="margin:0 0 12px;font-size:26px;line-height:1.12;letter-spacing:-.03em;">Join the workspace</h1>
-            <p style="margin:0 0 24px;color:#B6B1C6;line-height:1.6;">${escapeHtml(invitedBy)} invited you to a shared BotBound workspace.</p>
-            <p style="margin:0 0 24px;"><a href="${escapeAttribute(inviteUrl)}" style="display:inline-block;padding:12px 18px;background:#A78BFA;color:#0E0B16;text-decoration:none;border-radius:10px;font-weight:700;">Accept invitation</a></p>
-            <p style="margin:0;color:#8B87A0;font-size:13px;line-height:1.55;">This invitation expires in seven days and only works for ${escapeHtml(email)}.</p>
+            <p style="margin:0 0 24px;color:#50545C;line-height:1.6;">${escapeHtml(invitedBy)} invited you to a shared BotBound workspace.</p>
+            <p style="margin:0 0 24px;"><a href="${escapeAttribute(inviteUrl)}" style="display:inline-block;padding:12px 18px;background:#7040D7;color:#FFFFFF;text-decoration:none;border-radius:10px;font-weight:700;">Accept invitation</a></p>
+            <p style="margin:0;color:#50545C;font-size:13px;line-height:1.55;">This invitation expires in seven days and only works for ${escapeHtml(email)}.</p>
           </div>
         </div>
       `;

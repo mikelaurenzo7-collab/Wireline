@@ -13,7 +13,6 @@ import {
   Terminal,
 } from "lucide-react";
 
-import BotBoundMark from "../brand/BotBoundMark";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import { BOT_MARKETING_VOICE } from "../../lib/bot-product";
@@ -67,7 +66,7 @@ const WORKSPACE_STEPS = [
     step: "03",
     title: "Supervise every call, email, and browser task",
     detail:
-      "Review transcripts, sources, and browser steps in one calm workspace. Step in live with one click.",
+      "Review transcripts, sources, and browser steps in one calm workspace. Take control of a browser task with one click.",
     Icon: ShieldCheck,
   },
 ] as const;
@@ -210,16 +209,9 @@ export default function WireAgentLanding() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="landing-prestige__main" tabIndex={-1}>
+        {/* The headline opens the page on its own: the header already carries the
+            brand, and a badge above it said what the line below says. */}
         <section className="landing-prestige__hero" aria-label={BOT_MARKETING_VOICE.headline}>
-          <div className="landing-prestige__hero-badge">
-            <BotBoundMark className="landing-prestige__hero-mark" />
-            <span className="landing-prestige__hero-badge-copy">
-              {/* The full line wraps into a cramped two-line pill on phones. */}
-              <span className="sm:hidden">Voice, Inbox &amp; Computer</span>
-              <span className="hidden sm:inline">Autonomous Voice, Inbox &amp; Cloud Computer</span>
-            </span>
-          </div>
-
           <h1>
             <span className="landing-prestige__hero-lead">Your next hire</span>{" "}
             <span className="landing-prestige__hero-accent">is a bot.</span>

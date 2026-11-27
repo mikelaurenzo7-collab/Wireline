@@ -156,7 +156,14 @@ const QUESTION_WORDS: Readonly<Record<string, readonly string[]>> = {
  * ("a/c", "24/7"), and numbers of two or more digits. Any language.
  */
 function ownSearchWords(lower: string): string[] {
-  const tokens: string[] = lower.match(/[\p{L}\p{N}]+(?:\/[\p{L}\p{N}]+)*/gu) ?? [];
+  // A particle on a hyphenated noun ("walk-ins", "add-ons", "pick-ups") is
+  // not a word of its own: "ins" matched "insurance" and "inside". The word
+  // in front of it is what the caller asked about.
+  const withoutParticles = lower.replace(
+    /([\p{L}\p{N}])-(?:ins?|ons?|ups?|outs?|offs?)(?![\p{L}\p{N}])/gu,
+    "$1",
+  );
+  const tokens: string[] = withoutParticles.match(/[\p{L}\p{N}]+(?:\/[\p{L}\p{N}]+)*/gu) ?? [];
   const own: string[] = [];
   for (const token of tokens) {
     const parts = token.includes("/") ? [token, ...token.split("/")] : [token];

@@ -47,12 +47,13 @@ describe("authenticated mobile cleanup", () => {
     expect(knowledge).toContain('"Choose Files"');
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
-    // The template gallery is gone: one Bot means the create dialog offers a
-    // short row of starting briefs instead of a grid of roles. What still has
-    // to hold on a phone is that the row wraps rather than overflowing.
+    // The template gallery and the row of starter chips that replaced it are
+    // both gone: one Bot means nothing to pick. What has to hold on a phone is
+    // that the dialog stays one column that scrolls inside the screen.
     const create = read("src/components/CreateAgentDialog.tsx");
-    expect(create).toContain('className="mt-2 flex flex-wrap gap-2"');
-    expect(create).toContain('aria-label="Starting briefs"');
+    expect(create).not.toContain('aria-label="Starting briefs"');
+    expect(create).toContain('className="grid min-w-0 grid-cols-1 gap-5"');
+    expect(create).toContain("max-h-[calc(100dvh-2rem)]");
   });
 
   it("keeps first run on one brief-first Studio launchpad", () => {

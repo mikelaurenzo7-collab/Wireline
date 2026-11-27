@@ -11,8 +11,8 @@ for (const width of [390, 1440] as const) {
       await page.setViewportSize({ width, height: 900 });
       await page.addInitScript((theme) => {
         // Seed a fresh context without overwriting a choice on reload.
-        if (localStorage.getItem("wireline-theme") === null)
-          localStorage.setItem("wireline-theme", theme);
+        if (localStorage.getItem("botbound-theme") === null)
+          localStorage.setItem("botbound-theme", theme);
       }, preference);
       await page.goto("/");
       await expect
@@ -39,7 +39,7 @@ for (const width of [390, 1440] as const) {
         .click();
       const opposite = preference === "light" ? "dark" : "light";
       await expect
-        .poll(() => page.evaluate(() => localStorage.getItem("wireline-theme")))
+        .poll(() => page.evaluate(() => localStorage.getItem("botbound-theme")))
         .toBe(opposite);
       await expect
         .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme))
@@ -56,7 +56,7 @@ test("sign-in exposes an appearance switch without obstructing authentication", 
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
+  await page.addInitScript(() => localStorage.setItem("botbound-theme", "light"));
   await page.goto("/signin");
   await expect(page.getByRole("textbox", { name: "Email" })).toBeVisible();
   await page.getByRole("button", { name: "Switch to dark appearance" }).click();
@@ -69,7 +69,7 @@ test("sign-in exposes an appearance switch without obstructing authentication", 
 for (const width of [320, 375] as const) {
   test(`the ${width}px header and browser preview fit without hiding sign-in`, async ({ page }) => {
     await page.setViewportSize({ width, height: 700 });
-    await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
+    await page.addInitScript(() => localStorage.setItem("botbound-theme", "light"));
     await page.goto("/");
 
     const header = page.locator(".wl-public-header");
@@ -98,8 +98,8 @@ test("System follows OS changes, then an explicit choice persists across routes"
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.addInitScript(() => {
-    if (localStorage.getItem("wireline-theme") === null)
-      localStorage.setItem("wireline-theme", "system");
+    if (localStorage.getItem("botbound-theme") === null)
+      localStorage.setItem("botbound-theme", "system");
   });
   await page.goto("/");
 
@@ -130,7 +130,7 @@ test("System follows OS changes, then an explicit choice persists across routes"
   await page.getByRole("button", { name: "Toggle navigation menu" }).click();
   await page.getByRole("button", { name: "Switch to light appearance" }).click();
   await expect
-    .poll(() => page.evaluate(() => localStorage.getItem("wireline-theme")))
+    .poll(() => page.evaluate(() => localStorage.getItem("botbound-theme")))
     .toBe("light");
   await page.goto("/features");
   await expect

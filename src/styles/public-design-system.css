@@ -235,7 +235,7 @@
   }
 
   .marketing-surface .wl-public-header .bb-wordmark.wl-public-header__wordmark {
-    font-size: 1.375rem;
+    font-size: min(1.625rem, 11.5vw);
   }
 
   .marketing-surface .wl-public-header [aria-label="Account"] {
@@ -274,7 +274,7 @@
   }
 
   .marketing-surface .wl-public-header .bb-wordmark.wl-public-header__wordmark {
-    font-size: 1.125rem;
+    font-size: min(1.375rem, 11.5vw);
   }
 
   .marketing-surface .wl-public-header [aria-label="Account"] > a {

@@ -3,7 +3,13 @@ import { WIRELINE_DESIGN_VISION } from "../lib/wireline-design-vision";
 
 export type Theme = "light" | "dark" | "system";
 
-const STORAGE_KEY = "wireline-theme";
+/**
+ * Where an explicit choice is saved. It was `wireline-theme` while dark was the
+ * starting appearance, and choices saved then are not read: every browser
+ * starts on light once, and what its owner picks from here on is kept.
+ */
+const STORAGE_KEY = "botbound-theme";
+const RETIRED_STORAGE_KEY = "wireline-theme";
 const DEFAULT_THEME = WIRELINE_DESIGN_VISION.appearance.default;
 const THEME_COLORS = {
   dark: "#0A0A0E",
@@ -64,6 +70,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyResolvedTheme(resolvedTheme);
   }, [resolvedTheme]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem(RETIRED_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

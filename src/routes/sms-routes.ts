@@ -34,6 +34,8 @@ import {
 import { AgentTextReplyReviewRequiredError, generateAgentTextReply } from "../lib/agent-text-reply";
 import { isRuntimeAvailable } from "../lib/ai-client";
 import { customerSafeSmsFailureReason } from "../lib/sms-customer-errors";
+import { closeSmsReplyReview } from "../lib/sms-reply-review";
+import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -698,6 +700,22 @@ router.post(
         });
         return;
       }
+      // The owner answered the conversation, so a text the Bot handed them is done.
+      await closeSmsReplyReview(drizzle, {
+        userId: req.user.id,
+        threadId,
+        status: "completed",
+        note: "Answered from Texts by the Account Holder.",
+      })
+        .then((closed) => {
+          if (closed) touchNavCounts(req.user.id);
+        })
+        .catch((error: unknown) =>
+          log.warn("Could not close the text hand-off after a reply", {
+            userId: req.user.id,
+            error: getErrorMessage(error),
+          }),
+        );
       res.json({
         ok: true,
         reason: null,

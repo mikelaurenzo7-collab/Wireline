@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { captureException } from "../src/lib/sentry";
 import { errorReportRoute } from "../src/lib/error-report-route";
-import { errorReportContext } from "../src/lib/error-report-context";
+import { componentTrail, errorReportContext } from "../src/lib/error-report-context";
 
 describe("error report route boundary", () => {
   it.each([
@@ -103,6 +103,36 @@ describe("browser error reporting privacy", () => {
     expect(safe?.widget).toHaveLength(80);
     expect(JSON.stringify(safe)).not.toContain("fake_secret");
     expect(safe).not.toHaveProperty("customer");
+  });
+
+  // On 2026-11-27 a new account's Studio crashed inside a shared dialog
+  // primitive. The report kept three frames, Presence and Provider among
+  // them, which named no screen and so could not be traced.
+  it("keeps the whole chain of components a screen crashed under, as names only", () => {
+    const stack = [
+      "",
+      "    at Presence (https://botbound.app/assets/Textarea-Du9rX6ik.js:6:16652)",
+      "    at Provider (https://botbound.app/assets/Textarea-Du9rX6ik.js:6:3424)",
+      "    at https://botbound.app/assets/Textarea-Du9rX6ik.js:6:9001",
+      "    at MobileNavMoreSheet (https://botbound.app/assets/AppShell-BBG32q51.js:2:100)",
+      "    at div",
+      "    at WorkspaceShell (https://botbound.app/assets/AppShell-BBG32q51.js:2:900)",
+    ].join("\n");
+    expect(componentTrail(stack)).toBe(
+      "Presence < Provider < MobileNavMoreSheet < div < WorkspaceShell",
+    );
+    expect(componentTrail(stack)).not.toContain("botbound.app");
+    expect(componentTrail("")).toBeUndefined();
+    expect(componentTrail({ not: "text" })).toBeUndefined();
+    const deep = Array.from({ length: 200 }, (_, index) => `    at Layer${index} (x.js:1:1)`).join(
+      "\n",
+    );
+    expect(componentTrail(deep)!.split(" < ").length).toBeLessThanOrEqual(40);
+    expect(componentTrail(deep)!.length).toBeLessThanOrEqual(900);
+    // The stack that reaches the server is long enough to hold that chain.
+    expect(errorReportContext({ componentStack: "x".repeat(9_000) })?.componentStack).toHaveLength(
+      4_000,
+    );
   });
 
   it("does not amplify an application error when context is circular", () => {

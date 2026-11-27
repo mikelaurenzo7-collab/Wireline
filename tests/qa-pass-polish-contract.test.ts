@@ -40,9 +40,10 @@ describe("QA pass polish", () => {
     expect(card).not.toContain('Email Addresses"} Included');
   });
 
-  it("keeps the home hero badge on one line at phone widths", () => {
+  it("opens the home page with the headline, not a badge above it", () => {
     const home = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(home).toContain('<span className="sm:hidden">Voice, Inbox &amp; Computer</span>');
+    expect(home).not.toContain("Autonomous Voice, Inbox");
+    expect(home).not.toContain("Voice, Inbox &amp; Computer");
   });
 
   it("opens the estimator on an example month that fits inside Starter", () => {

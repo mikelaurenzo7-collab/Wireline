@@ -1,12 +1,12 @@
 /**
  * Appearance for a visual QA capture. BotBound opens in light by design and
- * stores an explicit choice under `wireline-theme` (src/contexts/ThemeContext.tsx);
+ * stores an explicit choice under `botbound-theme` (src/contexts/ThemeContext.tsx);
  * the system color-scheme preference does not switch it. A dark capture must
  * therefore set that stored choice before the app boots, or every "dark" run
  * silently photographs the light theme.
  */
 export const VISUAL_CAPTURE_THEMES = Object.freeze(["light", "dark"]);
-export const THEME_STORAGE_KEY = "wireline-theme";
+export const THEME_STORAGE_KEY = "botbound-theme";
 
 export function visualCaptureTheme(env = process.env) {
   const theme = String(env.WIRELINE_VISUAL_THEME || "light")

@@ -37,6 +37,8 @@ import {
   pronunciationTouchesRequiredWording,
 } from "../lib/voice/call-delivery";
 import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
+import { cleanBotName, startingBotName } from "../lib/bot-name";
+import { renameBot } from "../lib/bot-rename";
 import { inboundGreetingPreview } from "../lib/voice/inbound-opening";
 import { LIVE_CUSTOM_VOICE_KEY, currentBotVariables } from "../lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
@@ -594,9 +596,15 @@ router.post(
   authenticateUser,
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    const name = cleanText(req.body?.name, 100);
+    // A name the owner typed is kept as typed. When they left it empty the
+    // dialog sends `role_name`, and the Bot is named here from the Bots the
+    // workspace has at this moment: the dialog can only guess at that list,
+    // and cannot when it failed to load. It still sends its guess as `name`,
+    // which a server from before this release needs and this one ignores.
+    const roleName = cleanBotName(req.body?.role_name);
+    const typedName = roleName ? "" : cleanBotName(req.body?.name);
     const isBusinessAgent = req.body?.is_business_agent === true;
-    if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
+    if (!typedName && !roleName) throw AppError.fromHttpStatus(400, "Agent name is required");
     const requestedMarkKey = cleanText(req.body?.mark_key, 32);
     if (requestedMarkKey && !isBotMarkKey(requestedMarkKey)) {
       throw new AppError(400, "UNKNOWN_BOT_MARK", "Choose a valid Bot identity mark.");
@@ -615,29 +623,37 @@ router.post(
         throw new AppError(400, "UNKNOWN_TIMEZONE", "Choose a valid timezone.");
       }
     }
-    const firstMessage = resolveCreateFirstMessage(req.body?.firstMessage, name);
     // Always seed a real personality. Fast Start used to leave personal Bots
     // with a one-line tone from the client; Studio Set up then overwrote it.
-    const seededPersonality = resolveCreatePersonality({ isBusinessAgent, agentName: name });
+    const seededPersonality = resolveCreatePersonality({ isBusinessAgent });
 
     const id = `agent-${randomUUID()}`;
     const enabledTools = resolveCreateEnabledTools(isBusinessAgent);
     const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
 
-    const markKey = await withBotMarkPersistenceErrors(() =>
-      drizzle.transaction(async (tx): Promise<BotMarkKey> => {
-        // Serialize creates per workspace so concurrent requests do not race on pictures.
+    const created = await withBotMarkPersistenceErrors(() =>
+      drizzle.transaction(async (tx): Promise<{ markKey: BotMarkKey; name: string }> => {
+        // Serialize creates per workspace so concurrent requests do not race on
+        // pictures, or both take the name Bo.
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
         const existingAgents = await tx
           .select({
             id: schema.agents.id,
+            name: schema.agents.name,
             markKey: schema.agents.markKey,
             timezone: schema.agents.timezone,
           })
           .from(schema.agents)
           .where(eq(schema.agents.userId, req.user.id));
         const existing = existingAgents.length;
+        const name =
+          typedName ||
+          startingBotName(
+            existingAgents.map((agent) => agent.name),
+            roleName,
+          );
+        const firstMessage = resolveCreateFirstMessage(req.body?.firstMessage, name);
         // No zone from the creator: start where the owner's other Bots are, not
         // in the UTC column default.
         const startingTimeZone =
@@ -695,7 +711,7 @@ router.post(
           payload: { userId: req.user.id, agentId: id },
           runAt: new Date(Date.now() + 30_000),
         });
-        return availableMarkKey;
+        return { markKey: availableMarkKey, name };
       }),
     );
 
@@ -708,8 +724,8 @@ router.post(
 
     res.status(201).json({
       id,
-      name,
-      mark_key: markKey,
+      name: created.name,
+      mark_key: created.markKey,
       channel,
       enabledTools,
       is_business_agent: isBusinessAgent,
@@ -782,6 +798,24 @@ router.patch(
       .returning({ id: schema.agents.id });
     if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
     res.json({ id: saved.id, ...choice.receipt });
+  },
+);
+
+// A Bot's name is the owner's to change. Every Bot starts as Bo, so this is
+// how one becomes theirs. The greeting follows only while it is still the one
+// the Bot was created with.
+router.patch(
+  "/api/agents/:id/name",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const name = cleanBotName(req.body?.name);
+    if (!name) throw AppError.badRequest("Give your Bot a name.");
+    const saved = await drizzle.transaction((tx) =>
+      renameBot(tx, { agentId: req.params.id, userId: req.user.id, name }),
+    );
+    if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
+    res.json({ id: req.params.id, name: saved.name });
   },
 );
 

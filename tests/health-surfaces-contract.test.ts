@@ -71,6 +71,10 @@ describe("health surfaces contract", () => {
     expect(source).toContain('router.post("/report"');
     expect(source).toContain("clientReportRateLimiter");
     expect(source).toContain("reportError(new Error(message)");
+    // The report carries the chain of components the crash sat under, so a
+    // crash inside a shared primitive can be traced to its screen.
+    expect(source).toContain("componentTrail: trail,");
+    expect(source).toContain("component_trail: trail,");
     expect(source).toContain("body.stack.slice(0, 4_000)");
   });
 

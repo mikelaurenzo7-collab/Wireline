@@ -98,6 +98,25 @@ describe("knowledge search words", () => {
     ).toHaveLength(32);
   });
 
+  // "ins" from "walk-ins" matched "insurance" and "inside", and those entries
+  // were handed to a live call as the answer.
+  it("reads a hyphenated noun by its first word, not its particle", () => {
+    expect(knowledgeSearchWords("Do you take walk-ins?")).toEqual(["take", "walk"]);
+    expect(knowledgeSearchWords("Any add-ons or pick-ups?")).toEqual(["add", "pick"]);
+    expect(knowledgeSearchWords("drop-offs after 5")).toEqual(["drop"]);
+    const words = knowledgeSearchWords("Do you take walk-ins?");
+    expect(
+      knowledgeMatchScore("We accept most insurance plans.", words, "do you take walk-ins?"),
+    ).toBe(0);
+    expect(
+      knowledgeMatchScore("Walk-ins are welcome.", words, "do you take walk-ins?"),
+    ).toBeGreaterThan(0);
+    // Words that only look like particles are kept.
+    expect(knowledgeSearchWords("insurance and online booking")).toEqual(
+      expect.arrayContaining(["insurance", "online"]),
+    );
+  });
+
   it("scores word hits and rewards the whole question", () => {
     const words = knowledgeSearchWords("weekend hours");
     expect(knowledgeMatchScore("Weekend hours are 10 to 2.", words, "weekend hours")).toBe(10);

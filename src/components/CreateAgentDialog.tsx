@@ -14,7 +14,10 @@ import { Button, Input, Textarea } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
+import { startingBotName } from "../lib/bot-name";
 import { useAuth } from "../contexts/AuthContext";
+import { useBranding } from "../contexts/BrandingContext";
+import { useToast } from "../contexts/ToastContext";
 import {
   CREATE_BRIEF_MAX_CHARS,
   beginCreateBriefTraining,
@@ -41,19 +44,10 @@ import {
 type TemplateKey = (typeof BOT_ROLE_TEMPLATES)[number]["key"];
 
 /**
- * One Bot handles everything, so a starter no longer picks a role or a
- * personality. It only prefills the first brief and the suggested name; the
- * Bot that gets created is the same either way.
- */
-const STARTER_KEYS: TemplateKey[] = [
-  "front-desk",
-  "sales-rep",
-  "appointment-setter",
-  "customer-support",
-  "recruiter",
-];
-
-/**
+ * One Bot handles everything, so nothing here picks a role: there is no row of
+ * starters to choose from. A link can still carry a starter (a signup page
+ * does), which only prefills the first brief; the Bot created is the same.
+ *
  * Personal starters seed the privacy-first posture instead of the business
  * one. This is a posture, not a role: the toolbox and prompt are otherwise
  * identical.
@@ -67,17 +61,46 @@ function templateForKey(value: string | null | undefined) {
   );
 }
 
-function defaultName(templateKey: TemplateKey) {
+/** What a Bot is called for its role, when the workspace already has a Bo. */
+function roleName(templateKey: TemplateKey) {
   const template = templateForKey(templateKey);
   if (template.key === "custom") return "My Bot";
   if (template.key === "front-desk") return "Front Desk";
   return `${template.name} Bot`;
 }
 
+/** The name a Bot gets when its owner leaves the field empty. */
+function defaultName(templateKey: TemplateKey, existingNames: readonly string[]) {
+  return startingBotName(existingNames, roleName(templateKey));
+}
+
+/** A business name is short; the workspace profile holds at most this much. */
+const BUSINESS_NAME_MAX_CHARS = 120;
+
+/**
+ * The first Bot asks what the business is called, because callers hear it in
+ * the Bot's first sentence. It is saved through the workspace's own business
+ * profile, the one place that name lives.
+ */
+async function saveBusinessName(businessName: string, signal: AbortSignal): Promise<boolean> {
+  try {
+    const response = await authFetch("/api/company-identity", {
+      method: "POST",
+      signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ business_name: businessName }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function applyStartingBrief({
   userId,
   agentId,
   brief,
+  businessName,
   template,
   signal,
   reportTraining,
@@ -85,6 +108,7 @@ async function applyStartingBrief({
   userId: string;
   agentId: string;
   brief: string;
+  businessName: string;
   template: ReturnType<typeof templateForKey>;
   signal: AbortSignal;
   reportTraining: boolean;
@@ -99,6 +123,7 @@ async function applyStartingBrief({
       body: JSON.stringify({
         agentId,
         message: [
+          ...(businessName ? [`Business name: ${businessName}.`] : []),
           `Starter: ${template.name}.`,
           `Conversation direction: ${template.direction}.`,
           `Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")
@@ -185,12 +210,22 @@ export default function CreateAgentDialog({
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
   const { agents, rememberCreatedAgent } = useAgents();
+  const existingNames = useMemo(() => agents.map((agent) => agent.name), [agents]);
   const { user } = useAuth();
+  const { branding, updateBranding } = useBranding();
+  const { toast } = useToast();
   const activeUserIdRef = useRef(user?.id ?? null);
   const createAbortRef = useRef<AbortController | null>(null);
   const initialTemplate = useMemo(() => templateForKey(initialTemplateKey), [initialTemplateKey]);
   const [name, setName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [templateKey, setTemplateKey] = useState<TemplateKey>(initialTemplate.key);
+  // Asked of a workspace that has no business name yet, and never of a Bot
+  // started for personal use. A field the owner has begun filling in stays,
+  // whatever loads behind it.
+  const askBusinessName =
+    !PERSONAL_STARTER_KEYS.has(templateKey) &&
+    (!branding.business_name.trim() || Boolean(businessName));
   const [markKey, setMarkKey] = useState<BotMarkKey>(defaultBotMarkKey(initialTemplate.key));
   const unavailableMarkKeys = useMemo(
     () =>
@@ -204,7 +239,6 @@ export default function CreateAgentDialog({
   const unavailableMarkKeysRef = useRef(unavailableMarkKeys);
   unavailableMarkKeysRef.current = unavailableMarkKeys;
   const [brief, setBrief] = useState(initialBrief);
-  const briefIsTemplateTextRef = useRef(true);
   const markWasChosenRef = useRef(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
@@ -214,6 +248,11 @@ export default function CreateAgentDialog({
   const dialogRef = useRef<HTMLFormElement>(null);
   const conflictFocusRef = useRef<"mark" | "name" | null>(null);
   const language = customerAgentLanguage();
+  // A workspace's first Bot is Bo unless its owner types another name. The
+  // heading stays the same question either way, so the dialog keeps one name
+  // while the owner types.
+  const firstBot = agents.length === 0;
+  const botName = name.trim() || defaultName(templateKey, existingNames);
 
   useModalFocusTrap(dialogRef, { active: open, onEscape: close });
   useBodyScrollLock(open);
@@ -238,8 +277,8 @@ export default function CreateAgentDialog({
     );
     markWasChosenRef.current = false;
     setName("");
+    setBusinessName("");
     setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary));
-    briefIsTemplateTextRef.current = !initialBrief.trim();
     setError("");
     setCustomizing(false);
     conflictFocusRef.current = null;
@@ -312,15 +351,27 @@ export default function CreateAgentDialog({
       );
       return;
     }
-    const finalName = name.trim() || defaultName(templateKey);
+    const finalName = name.trim() || defaultName(templateKey, existingNames);
     // Business or personal posture. It never creates a second customer-facing
     // workspace and never changes which Bot gets created.
     const legacyCapabilityProfile = !PERSONAL_STARTER_KEYS.has(templateKey);
+
+    const typedBusinessName = askBusinessName
+      ? businessName.trim().slice(0, BUSINESS_NAME_MAX_CHARS)
+      : "";
 
     setCreating(true);
     setError("");
     const controller = new AbortController();
     createAbortRef.current = controller;
+    // Saved alongside the Bot rather than after it, so the first screen the
+    // owner lands on already knows the name. A slow save never holds them here.
+    const businessNameSaved = typedBusinessName
+      ? Promise.race([
+          saveBusinessName(typedBusinessName, controller.signal),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 6_000)),
+        ])
+      : null;
 
     try {
       const response = await authFetch("/api/agents", {
@@ -329,6 +380,9 @@ export default function CreateAgentDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: finalName,
+          // Left empty, the server names the Bot from the Bots the workspace
+          // really has. `name` is then only this dialog's best guess.
+          ...(name.trim() ? {} : { role_name: roleName(templateKey) }),
           mark_key: markKey,
           is_business_agent: legacyCapabilityProfile,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -370,17 +424,31 @@ export default function CreateAgentDialog({
         channel: body.channel ?? "voice",
         is_business_agent: body.is_business_agent ?? legacyCapabilityProfile,
       };
-      const stillOpen = isCurrentAccount();
       if (finalBrief) {
         void applyStartingBrief({
           userId: creationUserId,
           agentId: body.id,
           brief: finalBrief,
+          businessName: typedBusinessName,
           template: selectedTemplate,
           signal: controller.signal,
-          reportTraining: stillOpen,
+          reportTraining: isCurrentAccount(),
         });
       }
+      if (businessNameSaved) {
+        const saved = await businessNameSaved;
+        if (isCurrentAccount()) {
+          if (saved) updateBranding({ business_name: typedBusinessName });
+          else
+            toast({
+              type: "warning",
+              title: "Business Name Not Confirmed",
+              message: `${savedAgent.name} is ready. Check your business name in Settings so callers hear it.`,
+              duration: 10_000,
+            });
+        }
+      }
+      const stillOpen = isCurrentAccount();
       rememberCreatedAgent(savedAgent);
       if (!stillOpen) return;
       emitProductEvent({
@@ -455,6 +523,11 @@ export default function CreateAgentDialog({
                 >
                   {language.setupPrompt}
                 </h2>
+                {firstBot ? (
+                  <p className="wl-preserve-case mt-1 text-sm text-muted-foreground">
+                    Your Bot is called {botName}. You can rename it any time.
+                  </p>
+                ) : null}
               </div>
             </div>
             <Button
@@ -479,59 +552,46 @@ export default function CreateAgentDialog({
             </p>
           ) : null}
           <div className="grid min-w-0 grid-cols-1 gap-5">
-            <div>
-              <span className="text-sm font-semibold text-foreground">
-                What should it handle first?
-              </span>
-              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Starting briefs">
-                {STARTER_KEYS.map((key) => {
-                  const preset = templateForKey(key);
-                  const selected = templateKey === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={creating}
-                      aria-pressed={selected}
-                      onClick={() => {
-                        setTemplateKey(key);
-                        setMarkKey(
-                          firstAvailableBotMarkKey(key, unavailableMarkKeysRef.current) ??
-                            defaultBotMarkKey(key),
-                        );
-                        if (!brief.trim() || briefIsTemplateTextRef.current) {
-                          setBrief(preset.summary);
-                          briefIsTemplateTextRef.current = true;
-                        }
-                      }}
-                      className={`min-h-11 rounded-full border px-3.5 text-sm transition-colors wl-focus-ring-halo ${
-                        selected
-                          ? "border-primary bg-primary/10 font-semibold text-foreground"
-                          : "border-border text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {preset.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <label className="block">
               <span className="sr-only">Describe the Job</span>
               <Textarea
                 disabled={creating}
                 maxLength={CREATE_BRIEF_MAX_CHARS}
                 value={brief}
-                onChange={(event) => {
-                  briefIsTemplateTextRef.current = false;
-                  setBrief(event.target.value);
-                }}
-                placeholder="Answer calls and book appointments."
+                onChange={(event) => setBrief(event.target.value)}
+                placeholder="Answer calls, take messages and book appointments."
                 className="min-h-[136px] text-base"
                 resize="vertical"
               />
             </label>
+
+            {askBusinessName ? (
+              <div className="grid gap-2">
+                <label
+                  htmlFor="create-business-name"
+                  className="text-sm font-semibold text-foreground"
+                >
+                  Your Business Name{" "}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
+                </label>
+                <Input
+                  id="create-business-name"
+                  aria-describedby="create-business-name-hint"
+                  disabled={creating}
+                  value={businessName}
+                  onChange={(event) => setBusinessName(event.target.value)}
+                  maxLength={BUSINESS_NAME_MAX_CHARS}
+                  placeholder="Ridge Dental"
+                  autoComplete="organization"
+                />
+                <p
+                  id="create-business-name-hint"
+                  className="wl-preserve-case text-xs text-muted-foreground"
+                >
+                  Callers hear it when {botName} answers.
+                </p>
+              </div>
+            ) : null}
 
             <label className="grid gap-2">
               <span className="text-sm font-semibold text-foreground">
@@ -543,7 +603,7 @@ export default function CreateAgentDialog({
                 disabled={creating}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="e.g. Nora or Alex"
+                placeholder={defaultName(templateKey, existingNames)}
                 autoComplete="off"
               />
             </label>
@@ -559,7 +619,7 @@ export default function CreateAgentDialog({
               >
                 <span className="min-w-0 flex-1">
                   <span className="wl-preserve-case block truncate text-sm font-semibold text-foreground">
-                    {name.trim() || defaultName(templateKey)}
+                    {botName}
                   </span>
                   <span className="block text-xs text-muted-foreground">Appearance</span>
                 </span>
@@ -580,7 +640,7 @@ export default function CreateAgentDialog({
                     setMarkKey(nextMarkKey);
                   }}
                   seed={`new:${templateKey}`}
-                  name={name.trim() || defaultName(templateKey)}
+                  name={botName}
                   compact
                   disabled={creating}
                   unavailableKeys={unavailableMarkKeys}

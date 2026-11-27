@@ -82,16 +82,28 @@ async function searchKnowledgeForCaller(
   // alone, and the nearest entry is returned however far it is. The Bot is
   // told so instead of being handed it as verified, and the owner is told
   // what was asked.
-  const byMeaningOnly = matches.every((match) => match.score <= 0);
-  if (byMeaningOnly && words.length > 0) saveForOwner();
+  const verified = matches.filter((match) => match.score > 0);
+  const byMeaning = matches.filter((match) => match.score <= 0);
+  const excerpt = (match: (typeof matches)[number]) =>
+    `[${match.source}] ${excerptAroundMatch(match.content, words, MAX_KB_RESULT_CHARS)}`;
+  if (!verified.length) {
+    if (words.length > 0) saveForOwner();
+    return [
+      "POSSIBLE_MATCH: Nothing saved uses the caller's words. The entries below were found by meaning and may not answer the question. Use one only if it clearly answers what was asked; otherwise say you do not have that information and offer to take a message. Do not combine them with assumptions.",
+      ...byMeaning.map(excerpt),
+    ].join("\n\n");
+  }
+  // Entries found by meaning keep their label beside a keyword match: they
+  // are the nearest the index had, however far, and were listed as verified.
   return [
-    byMeaningOnly
-      ? "POSSIBLE_MATCH: Nothing saved uses the caller's words. The entries below were found by meaning and may not answer the question. Use one only if it clearly answers what was asked; otherwise say you do not have that information and offer to take a message. Do not combine them with assumptions."
-      : "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
-    ...matches.map(
-      (match) =>
-        `[${match.source}] ${excerptAroundMatch(match.content, words, MAX_KB_RESULT_CHARS)}`,
-    ),
+    "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
+    ...verified.map(excerpt),
+    ...(byMeaning.length
+      ? [
+          "POSSIBLE_MATCH: These were found by meaning, not by the caller's words, and may not answer the question. Use one only if it clearly does.",
+          ...byMeaning.map(excerpt),
+        ]
+      : []),
   ].join("\n\n");
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -113,6 +125,8 @@ async function recordCommsFollowUpTask(
     recipient: string | null | undefined;
     payload: Record<string, unknown>;
     deliveryStatus?: "not_sent" | "unconfirmed";
+    /** The call it came from, so the review can see it is already waiting. */
+    source?: { type: "phone_call"; id: string };
   },
 ): Promise<boolean> {
   try {
@@ -140,7 +154,8 @@ async function recordCommsFollowUpTask(
       status: "pending",
       priority: "high",
       targetChannel: manualReview ? "manual" : values.channel,
-      sourceType: "voice_tool",
+      sourceType: values.source?.type ?? "voice_tool",
+      ...(values.source ? { sourceId: values.source.id } : {}),
       payload: manualReview
         ? {
             ...values.payload,
@@ -180,7 +195,10 @@ async function waitingForOwnerOnThisCall(
           eq(schema.followUpTasks.userId, input.userId),
           eq(schema.followUpTasks.sourceType, "phone_call"),
           eq(schema.followUpTasks.sourceId, input.callId),
-          eq(schema.followUpTasks.taskType, input.taskType),
+          // A held WhatsApp message waits as a note, not a text the owner can send.
+          input.taskType === "send_text_message"
+            ? inArray(schema.followUpTasks.taskType, ["send_text_message", "follow_up"])
+            : eq(schema.followUpTasks.taskType, input.taskType),
           inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
         ),
       )
@@ -654,6 +672,7 @@ The email is written and the owner needs to confirm one thing before it goes. Te
               recipient: targetNumber,
               payload: heldPayload,
               deliveryStatus: "not_sent",
+              ...(textCallId ? { source: { type: "phone_call" as const, id: textCallId } } : {}),
             });
             return noted
               ? {
