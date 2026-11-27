@@ -4,7 +4,6 @@ import { BookOpen, Brain, CalendarClock, ChevronRight, Mail, Phone } from "lucid
 import { Link } from "react-router";
 
 import BotMark from "../BotMark";
-import { Button } from "../atoms";
 import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
 import { agentLineStatus } from "../../lib/agent-readiness";
 import { DEFAULT_BOT_ARCHETYPE } from "../../lib/agent-constants";
@@ -75,7 +74,7 @@ export default function StudioBotDetailsPanel({ agent, phoneLookupDegraded, onEm
               <Brain size={18} aria-hidden="true" />
               <span>
                 <strong>Memory</strong>
-                <small>Preferences and saved context</small>
+                <small>Notes for chat and computer tasks</small>
               </span>
               <ChevronRight size={16} aria-hidden="true" />
             </summary>
@@ -83,26 +82,17 @@ export default function StudioBotDetailsPanel({ agent, phoneLookupDegraded, onEm
               <StudioMemoryEditor key={agent.id} agentId={agent.id} agentName={agent.name} />
             ) : null}
           </details>
-          <details className="wl-bot-details-disclosure">
-            <summary className="wl-bot-details-row wl-focus-ring-halo">
-              <CalendarClock size={18} aria-hidden="true" />
-              <span>
-                <strong>Automations</strong>
-                <small>Scheduled work</small>
-              </span>
-              <ChevronRight size={16} aria-hidden="true" />
-            </summary>
-            <div className="wl-bot-details-explanation">
-              Daily or weekly reports and post-call outputs are managed for your whole account.
-              <Button asChild size="sm" variant="secondary">
-                <Link to="/phone?tab=settings">Manage scheduled reports</Link>
-              </Button>
-              <span>
-                Recurring computer tasks are not available yet. Start a task from the conversation
-                when you need it.
-              </span>
-            </div>
-          </details>
+          {/* A row for what exists. It was an "Automations" disclosure whose
+              only content was this link and a note that the feature it named
+              was not available. */}
+          <Link className="wl-bot-details-row wl-focus-ring-halo" to="/phone?tab=settings">
+            <CalendarClock size={18} aria-hidden="true" />
+            <span>
+              <strong>Reports</strong>
+              <small>Daily or weekly, for your whole account</small>
+            </span>
+            <ChevronRight size={16} aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </div>

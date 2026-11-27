@@ -31,10 +31,26 @@ const CREATE_PATH_DEVICE_ACTIONS = new Set<AgentToolName>([
   "play_music",
 ]);
 
+/**
+ * Actions a new Bot does not start with. Both stay in the catalogue for a Bot
+ * that already has them or an owner who turns them on.
+ *
+ * - `log_payment_promise` is a collections action. Every new business Bot was
+ *   given it, whatever the business.
+ * - `capture_customer_profile` saves a finished task holding raw fields that
+ *   nothing reads. A message for the owner is `create_followup_task`.
+ */
+const CREATE_PATH_OPT_IN_ACTIONS = new Set<AgentToolName>([
+  "log_payment_promise",
+  "capture_customer_profile",
+]);
+
 export function resolveCreateEnabledTools(isBusinessAgent: boolean): AgentToolName[] {
   return getDefaultAgentTools().filter(
     (tool) =>
-      !CREATE_PATH_DEVICE_ACTIONS.has(tool) && (isBusinessAgent || !BUSINESS_TOOL_NAMES.has(tool)),
+      !CREATE_PATH_DEVICE_ACTIONS.has(tool) &&
+      !CREATE_PATH_OPT_IN_ACTIONS.has(tool) &&
+      (isBusinessAgent || !BUSINESS_TOOL_NAMES.has(tool)),
   );
 }
 

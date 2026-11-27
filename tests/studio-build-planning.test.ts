@@ -98,7 +98,9 @@ describe("reviewable Studio Build plans", () => {
       normalizePlan({
         config_changes: [
           { field: "personality_vibe", value: "invented tone" },
-          { field: "email_auto_respond", value: "sometimes" },
+          { field: "auto_zoom_link", value: "sometimes" },
+          // A setting the chat could once change, and that changed nothing.
+          { field: "email_auto_respond", value: "true" },
           { field: "website_url", value: "javascript:alert(1)" },
         ],
         tool_toggles: [{ tool: "send_text_message", enable: "yes" }],
@@ -157,15 +159,14 @@ describe("reviewable Studio Build plans", () => {
   it("canonicalizes boolean proposals to match the confirmed save receipt", () => {
     expect(
       normalizePlan({
-        config_changes: [
-          { field: "email_auto_respond", value: " TRUE " },
-          { field: "auto_zoom_link", value: "False" },
-        ],
+        config_changes: [{ field: "auto_zoom_link", value: " TRUE " }],
       }).changes.map(({ field, value }) => ({ field, value })),
-    ).toEqual([
-      { field: "email_auto_respond", value: "true" },
-      { field: "auto_zoom_link", value: "false" },
-    ]);
+    ).toEqual([{ field: "auto_zoom_link", value: "true" }]);
+    expect(
+      normalizePlan({ config_changes: [{ field: "auto_zoom_link", value: "False" }] }).changes.map(
+        ({ field, value }) => ({ field, value }),
+      ),
+    ).toEqual([{ field: "auto_zoom_link", value: "false" }]);
   });
 
   it("does not claim an approval exists after malformed proposals are discarded", () => {

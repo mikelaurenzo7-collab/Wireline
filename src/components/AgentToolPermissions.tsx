@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { authFetch } from "../lib/api";
 import {
   AGENT_TOOL_CATALOG,
+  ALWAYS_ON_AGENT_TOOL_NAMES,
   isAgentToolConfigurable,
   normalizeEnabledTools,
   resolveAgentTools,
@@ -38,17 +39,24 @@ type AgentToolPermissionsProps = {
   className?: string;
 };
 
-/** Tools with no merchant integration (platform capabilities like grounded search). */
+/**
+ * What every Bot does whatever is ticked has no checkbox here. These three
+ * used to have one, and unticking it changed nothing.
+ */
+const ALWAYS_ON_TOOLS = new Set<AgentToolName>(ALWAYS_ON_AGENT_TOOL_NAMES);
 const VISIBLE_TOOLS = AGENT_TOOL_CATALOG.filter(
   (tool) =>
     isAgentToolConfigurable(tool.name) &&
+    !ALWAYS_ON_TOOLS.has(tool.name) &&
     (SMS_LAUNCH_UI_ENABLED || tool.name !== "send_text_message"),
 );
 const PLATFORM_TOOLS = VISIBLE_TOOLS.filter((tool) => !tool.integration);
 const VISIBLE_TOOL_NAMES = new Set<AgentToolName>(VISIBLE_TOOLS.map((tool) => tool.name));
 const isVisibleTool = (tool: AgentToolName) => VISIBLE_TOOL_NAMES.has(tool);
-/** Tasks with at least one action this workspace can configure. */
-const VISIBLE_TASKS = BOT_TASKS.filter((task) => botTaskTools(task, isVisibleTool).length > 0);
+/** Tasks every Bot does, and tasks with at least one action this workspace can configure. */
+const VISIBLE_TASKS = BOT_TASKS.filter(
+  (task) => task.alwaysOn || botTaskTools(task, isVisibleTool).length > 0,
+);
 
 export default function AgentToolPermissions({
   agentId,
@@ -103,7 +111,7 @@ export default function AgentToolPermissions({
     const load = async () => {
       try {
         const configResponse = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`);
-        if (!configResponse.ok) throw new Error("Agent actions could not be loaded.");
+        if (!configResponse.ok) throw new Error("Your Bot's actions could not be loaded.");
         const config = (await configResponse.json()) as { enabledTools?: unknown };
         if (cancelled) return;
         /*
@@ -159,7 +167,7 @@ export default function AgentToolPermissions({
       } catch (reason) {
         if (!cancelled) {
           setLoadError(
-            reason instanceof Error ? reason.message : "Agent actions could not be loaded.",
+            reason instanceof Error ? reason.message : "Your Bot's actions could not be loaded.",
           );
         }
       } finally {
@@ -355,14 +363,9 @@ export default function AgentToolPermissions({
                   Your Bot can do all of these. Turn on what it should handle, then save.
                 </p>
                 <ul className="mt-2 divide-y divide-border" aria-label="Bot tasks">
-                  {VISIBLE_TASKS.map((task) => (
-                    <li key={task.id}>
-                      <label className="flex cursor-pointer items-start gap-2.5 py-3 hover:bg-muted/40">
-                        <Checkbox
-                          checked={isBotTaskEnabled(task, enabledSet, isVisibleTool)}
-                          onChange={() => toggleTask(task)}
-                          className="mt-0.5"
-                        />
+                  {VISIBLE_TASKS.map((task) =>
+                    task.alwaysOn ? (
+                      <li key={task.id} className="flex items-start gap-2.5 py-3">
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-medium text-foreground">
                             {task.label}
@@ -371,9 +374,28 @@ export default function AgentToolPermissions({
                             {task.description}
                           </span>
                         </span>
-                      </label>
-                    </li>
-                  ))}
+                        <span className="shrink-0 text-xs text-muted-foreground">Always on</span>
+                      </li>
+                    ) : (
+                      <li key={task.id}>
+                        <label className="flex cursor-pointer items-start gap-2.5 py-3 hover:bg-muted/40">
+                          <Checkbox
+                            checked={isBotTaskEnabled(task, enabledSet, isVisibleTool)}
+                            onChange={() => toggleTask(task)}
+                            className="mt-0.5"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-medium text-foreground">
+                              {task.label}
+                            </span>
+                            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                              {task.description}
+                            </span>
+                          </span>
+                        </label>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
               <div className="divide-y divide-border">

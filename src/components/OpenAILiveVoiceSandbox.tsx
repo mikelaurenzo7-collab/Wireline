@@ -816,7 +816,7 @@ export default function OpenAILiveVoiceSandbox({
           throw new Error(
             typeof relaySession?.error === "string"
               ? relaySession.error
-              : "Live voice is unavailable for this agent.",
+              : "Live voice is unavailable for this Bot.",
           );
         }
         if (relaySession?.transport === "relay") {
@@ -888,7 +888,7 @@ export default function OpenAILiveVoiceSandbox({
         throw new Error(
           typeof sessionError === "string"
             ? sessionError
-            : "Live voice is unavailable for this agent.",
+            : "Live voice is unavailable for this Bot.",
         );
       }
       if (!acceptedCleanupToken) {
