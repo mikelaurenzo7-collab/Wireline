@@ -191,6 +191,18 @@ describe("the person chip on a call, text or email", () => {
   });
 });
 
+describe("the note under the reason for a text", () => {
+  it("names the selected reason only when that reason is selected", () => {
+    const picker = read("src/components/outbound/OutboundPurposePicker.tsx");
+    // The last reason used for this customer can be preselected instead.
+    expect(picker).toContain('purpose === "returning_contact"');
+    expect(picker).toContain(
+      '? "They contacted you in the last 90 days, so Returning their call is selected."',
+    );
+    expect(picker).toContain(': "They contacted you in the last 90 days."}');
+  });
+});
+
 describe("summaries written when a call never became a conversation", () => {
   it("say what happened without naming a vendor, a protocol or a call leg", async () => {
     const copy = await import("../src/lib/voice/call-summary-copy");

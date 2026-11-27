@@ -97,7 +97,9 @@ export default function OutboundPurposePicker({
           <p className="mt-2 text-xs leading-5 text-muted-foreground">
             {channel === "call"
               ? "They contacted you in the last 90 days. Choose the reason for this call."
-              : "They contacted you in the last 90 days, so Returning their call is selected."}
+              : purpose === "returning_contact"
+                ? "They contacted you in the last 90 days, so Returning their call is selected."
+                : "They contacted you in the last 90 days."}
           </p>
         ) : null}
       </div>
