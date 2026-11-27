@@ -43,7 +43,7 @@ for (const status of ["Requested", "Scheduled", "Confirmed", "Rescheduled", "Can
     });
     await page.goto("/approvals");
     const card = page.getByRole("article").filter({ hasText: "Site visit" });
-    await card.getByRole("button", { name: "Confirm booking", exact: true }).click();
+    await card.getByRole("button", { name: "Book it", exact: true }).click();
     if (status === "Cancelled") {
       await expect(card.getByRole("alert")).toContainText("Action status could not be confirmed");
       await expect(page.getByText("Booking confirmed.", { exact: true })).toHaveCount(0);
@@ -729,7 +729,7 @@ for (const changedField of ["payload", "agent"] as const) {
     await page.goto("/approvals");
     const card = page.getByRole("article").filter({ hasText: "Schedule Calendar" });
     await expect(card).toContainText("14:00");
-    await card.getByRole("button", { name: "Confirm booking", exact: true }).click();
+    await card.getByRole("button", { name: "Book it", exact: true }).click();
     await expect(card.getByRole("alert")).toContainText("Review the refreshed details");
     await expect(card.getByRole("button", { name: "Review changes", exact: true })).toBeDisabled();
     expect(approvals).toEqual([
@@ -747,7 +747,7 @@ for (const changedField of ["payload", "agent"] as const) {
     await expect(review).toBeEnabled();
     await review.click();
     expect(approvals).toHaveLength(1);
-    await card.getByRole("button", { name: "Confirm booking", exact: true }).click();
+    await card.getByRole("button", { name: "Book it", exact: true }).click();
     await expect.poll(() => approvals.length).toBe(2);
     expect(approvals[1]).toEqual({
       expected_payload: currentTask.payload,

@@ -139,7 +139,7 @@ test("Permission rejects another Bot's receipt and confirms a safe retry", async
     "href",
     "/calendar?tab=availability",
   );
-  expect(writes).toEqual([{ level: "ask" }, { level: "ask" }]);
+  expect(writes).toEqual([{ autonomy: "ask" }, { autonomy: "ask" }]);
 });
 
 test("Actions keeps the owner's selection until the saved tools are confirmed", async ({
