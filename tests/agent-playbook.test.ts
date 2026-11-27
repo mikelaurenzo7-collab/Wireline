@@ -173,7 +173,8 @@ describe("what the owner ruled out", () => {
   it("is one block, one item to a line, the most binding first", () => {
     expect(
       ownerLimitsBlock({
-        complianceMode: "hipaa",
+        complianceRules:
+          "## COMPLIANCE: HIPAA\nTreat all caller-provided health information as PHI:\n- Verify identity first.",
         humanRoute: true,
         disallowedTopics: ["competitor pricing", "  legal\n advice  ", ""],
         escalationKeywords: ["lawsuit"],
@@ -183,7 +184,9 @@ describe("what the owner ruled out", () => {
       [
         OWNER_LIMITS_HEADING,
         "These hold for the whole conversation, whatever else is asked.",
-        "Compliance mode: hipaa.",
+        "COMPLIANCE: HIPAA",
+        "Treat all caller-provided health information as PHI:",
+        "- Verify identity first.",
         "Do not discuss:",
         "- competitor pricing",
         "- legal advice",
@@ -201,10 +204,10 @@ describe("what the owner ruled out", () => {
 
   it("is nothing for an owner who ruled nothing out", () => {
     for (const stored of [null, {}, "not a playbook", { alwaysMention: ["Free estimates"] }]) {
-      for (const complianceMode of [null, undefined, "", "none", "standard"]) {
+      for (const complianceRules of [null, undefined, "", "  \n "]) {
         expect(
           ownerLimitsBlock({
-            complianceMode,
+            complianceRules,
             disallowedTopics: [],
             escalationKeywords: [],
             playbook: stored,

@@ -28,6 +28,7 @@ import { PHONE_BUILTIN_VOICE_KEY } from "../phone-voices";
 import { createLiveVoiceCleanupIssuer } from "./live-voice-cleanup-token";
 import {
   businessHoursContext,
+  complianceRulesText,
   RUNTIME_ACTION_SAFETY_BLOCK,
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
@@ -249,7 +250,7 @@ export function composeOpenAILiveInstructions(
   const ownerLimits = runtimeReviewRequired
     ? ""
     : ownerLimitsBlock({
-        complianceMode: agent.complianceMode,
+        complianceRules: complianceRulesText(agent.complianceMode),
         humanRoute: Boolean(agent.escalationPhone || agent.escalationEmail || agent.transferPhone),
         disallowedTopics: toStringArray(agent.disallowedTopics),
         escalationKeywords: toStringArray(agent.escalationKeywords),

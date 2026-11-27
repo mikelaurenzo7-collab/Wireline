@@ -95,7 +95,11 @@ describe("private text rehearsal saved guardrails", () => {
     await rehearse();
     expect(h.runStructuredStream).toHaveBeenCalledOnce();
     const prompt = h.runStructuredStream.mock.calls[0][0].system;
-    expect(prompt).toContain("Compliance mode: pci.");
+    // The rules for the mode, not only its name.
+    expect(prompt).toContain("COMPLIANCE: PCI DSS\nCardholder data handling:");
+    expect(prompt).toContain(
+      "- Do not record, repeat, or write down card numbers, expiry dates, or CVVs.",
+    );
     expect(prompt).toContain("Do not discuss: payment card details, legal advice.");
     expect(prompt).toContain(
       "Escalate or take a message when the caller raises: formal complaint, urgent assistance.",
@@ -119,6 +123,7 @@ describe("private text rehearsal saved guardrails", () => {
     await rehearse();
     const prompt = h.runStructuredStream.mock.calls[0][0].system;
     expect(prompt).not.toContain("Compliance mode:");
+    expect(prompt).not.toContain("COMPLIANCE:");
     expect(prompt).not.toContain("Do not discuss:");
     expect(prompt).not.toContain("Escalate or take a message when the caller raises:");
   });

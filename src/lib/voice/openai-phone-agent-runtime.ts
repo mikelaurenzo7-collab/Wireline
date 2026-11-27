@@ -15,6 +15,7 @@ import { spokenBusinessName } from "./spoken-business-name";
 import { AppError } from "../api-error";
 import {
   businessHoursContext,
+  complianceRulesText,
   RUNTIME_ACTION_SAFETY_BLOCK,
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
@@ -379,7 +380,7 @@ export function composeOpenAIRealtimeInstructions(input: {
   const ownerLimits = runtimeReviewRequired
     ? ""
     : ownerLimitsBlock({
-        complianceMode: input.agent.complianceMode,
+        complianceRules: complianceRulesText(input.agent.complianceMode),
         humanRoute: Boolean(
           input.agent.escalationPhone || input.agent.escalationEmail || input.agent.transferPhone,
         ),

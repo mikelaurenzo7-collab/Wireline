@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { DIRECTIVE_PROMPT_ORDER, loadPromptKnowledge } from "./agent-knowledge-search";
 import { playbookCheckFirstRules, playbookPromptBlock } from "./agent-playbook";
-import { businessHoursContext } from "./agent-runtime";
+import { businessHoursContext, complianceRulesText } from "./agent-runtime";
 import { personalityForPrompt } from "./compose-setup-personality";
 import { runStructured } from "./ai-structured";
 import { drizzle, serialQueryBatch } from "./server-context";
@@ -266,10 +266,8 @@ export async function generateAgentTextReply(input: {
 
   const policy = [
     "## COMPLIANCE AND HUMAN REVIEW",
-    // "standard" is the stored default and tells the Bot nothing.
-    agent.complianceMode && !["none", "standard"].includes(agent.complianceMode)
-      ? `Compliance mode: ${agent.complianceMode.trim().slice(0, 80)}.`
-      : "",
+    // The rules for the mode, as a call carries them.
+    complianceRulesText(agent.complianceMode),
     disallowedTopics.length
       ? `Do not discuss or answer these topics: ${disallowedTopics.join(", ")}. Briefly redirect and require human review.`
       : "",

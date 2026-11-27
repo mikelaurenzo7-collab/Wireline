@@ -328,17 +328,24 @@ function limitList(heading: string, values: readonly string[]): string[] {
  * check-first list, which the message review also enforces on its own.
  */
 export function ownerLimitsBlock(input: {
-  complianceMode?: string | null;
+  /**
+   * The conduct rules for the owner's compliance mode (`complianceRulesText`).
+   * A Bot used to be told the mode's name and nothing to do.
+   */
+  complianceRules?: string | null;
   disallowedTopics: readonly string[];
   escalationKeywords: readonly string[];
   playbook: unknown;
   /** A handoff number or address is saved, so a person can take over. */
   humanRoute?: boolean;
 }): string {
-  // "standard" is the stored default and tells the Bot nothing.
-  const mode = String(input.complianceMode ?? "").trim();
+  // The rules lead the block: when it has to give way, it is cut from its end.
+  const rules = String(input.complianceRules ?? "")
+    .split("\n")
+    .map((line) => line.replace(/^#+\s*/, "").trimEnd())
+    .filter(Boolean);
   const lines = [
-    mode && !["none", "standard"].includes(mode) ? `Compliance mode: ${mode.slice(0, 80)}.` : "",
+    ...rules,
     ...limitList("Do not discuss:", input.disallowedTopics),
     ...limitList("Escalate or take a message when the caller raises:", input.escalationKeywords),
     ...playbookLimitLines(readStoredAgentPlaybook(input.playbook)),

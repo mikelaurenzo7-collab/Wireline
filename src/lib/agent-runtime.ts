@@ -270,6 +270,98 @@ export function businessHoursContext(
 }
 
 /**
+ * Compliance presets: the conduct rules a Bot follows when its owner sets a
+ * compliance mode. The text is short and intentionally generic; account
+ * holders must consult counsel for the binding language in their jurisdiction.
+ *
+ * These reach a live call through `ownerLimitsBlock`. For a long time they did
+ * not: the builder that printed them was replaced, and a Bot set to HIPAA was
+ * told only "Compliance mode: hipaa." while this text sat unused.
+ *
+ * A system-prompt instruction alone does not GUARANTEE what the agent says
+ * first, so modes with an at-start-of-call disclosure requirement (currently
+ * `tcpa`) also get a spoken disclosure prepended to the opening line: see
+ * complianceFirstMessagePrefix().
+ *
+ * 'none' and the stored default 'standard' return an empty block.
+ */
+export function complianceDisclosure(mode: ComplianceMode | string | null | undefined): string {
+  switch (mode) {
+    case "hipaa":
+      return [
+        "## COMPLIANCE: HIPAA",
+        "Treat all caller-provided health information as PHI:",
+        "- Verify identity (full name + date of birth + one secondary identifier) before discussing any account or health detail.",
+        "- Never repeat or summarize PHI to anyone other than the verified caller or a documented authorized representative.",
+        "- If a caller asks for medical advice, decline and offer to schedule a clinician consult.",
+      ].join("\n");
+    case "pci":
+      return [
+        "## COMPLIANCE: PCI DSS",
+        "Cardholder data handling:",
+        "- Do not record, repeat, or write down card numbers, expiry dates, or CVVs.",
+        "- For payment, route the caller to the secure IVR or send a tokenized payment link.",
+        '- Acknowledge receipt without restating the value: "I have your card details, processing now."',
+      ].join("\n");
+    case "gdpr":
+      return [
+        "## COMPLIANCE: GDPR",
+        "Personal data handling:",
+        "- Disclose at the start of the call that the conversation is recorded for service quality, retained for the Account Holder-specified period, and that the caller has rights of access, rectification, and erasure.",
+        '- Honor opt-out, deletion, and "speak to a human" requests immediately.',
+      ].join("\n");
+    case "financial":
+      return [
+        "## COMPLIANCE: Financial services",
+        "Regulated-conduct guardrails:",
+        "- Do not provide tax, investment, or specific financial advice. Offer to schedule a licensed advisor.",
+        "- Quote products and rates only when explicitly stored in your knowledge base; never improvise figures.",
+        '- Disclose any required statements (e.g. "Calls may be recorded for quality and compliance.") at the start of the call.',
+      ].join("\n");
+    case "legal":
+      return [
+        "## COMPLIANCE: Legal services",
+        "Unauthorized-practice guardrails:",
+        "- Do not provide legal advice. You may share general public information only.",
+        "- Schedule consultations with the attorney rather than answering jurisdictional questions.",
+        '- State on the first interaction: "This conversation does not establish an attorney-client relationship."',
+      ].join("\n");
+    case "tcpa":
+      // AI-voice / automated-calling disclosure. Grounded in the FCC's Feb 8, 2024
+      // Declaratory Ruling (FCC 24-17), which classifies AI-generated voices as
+      // "artificial or prerecorded voice" under the TCPA — with no carve-out for
+      // tech that "purports to provide the equivalent of a live agent" — and
+      // requires identification of the entity responsible for the call.
+      // Explicit AI identification is BotBound policy; FCC 24-84 was a proposal.
+      // Generic by design;
+      // Account Holders must confirm the binding language for their jurisdiction.
+      return [
+        "## COMPLIANCE: TCPA (AI voice disclosure)",
+        "Automated / AI-voice calling rules:",
+        "- At the start of the call, clearly disclose that this is an automated AI assistant, and state the name of the business you are calling on behalf of.",
+        '- Honor any "do not call", "stop calling", "remove me", or opt-out request immediately: confirm the removal, do not re-solicit, and end the call.',
+        '- Honor "speak to a human" / "is this a real person" requests directly and without deflecting.',
+        "- Do not place or continue a marketing or telemarketing call without verified prior express written consent from this recipient for this business and purpose.",
+      ].join("\n");
+    case "none":
+    default:
+      return "";
+  }
+}
+
+/**
+ * A compliance mode as lines any prompt can carry: the mode's conduct rules,
+ * or its name when it has no preset. Empty for 'none' and for 'standard',
+ * the stored default, which tells a Bot nothing.
+ */
+export function complianceRulesText(mode: string | null | undefined): string {
+  const value = String(mode ?? "").trim();
+  if (!value || value === "none" || value === "standard") return "";
+  const preset = complianceDisclosure(value);
+  return preset ? preset.replace(/^#+\s*/gm, "") : `Compliance mode: ${value.slice(0, 80)}.`;
+}
+
+/**
  * Spoken opening disclosure. Outbound AI calls identify the automation and
  * responsible entity regardless of a tenant-selected preset. Any call that
  * Wireline records also receives a compact recording notice. The `tcpa`

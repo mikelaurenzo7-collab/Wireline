@@ -222,7 +222,9 @@ describe("what the owner ruled out", () => {
       },
     });
     expect(prompt.length).toBeLessThanOrEqual(18_000);
-    expect(prompt).toContain("Compliance mode: hipaa.");
+    expect(prompt).toContain(
+      "COMPLIANCE: HIPAA\nTreat all caller-provided health information as PHI:",
+    );
     expect(prompt).toContain("- never-say item 9");
     expect(prompt).toContain("- check-first item 4");
   });
@@ -248,7 +250,9 @@ describe("what the owner ruled out", () => {
     expect(opening).toContain("BUSINESS HOURS (America/Chicago):");
     expect(opening.length).toBeGreaterThanOrEqual(1_500);
     // The most binding limits are kept and the last list gives way, by whole lines.
-    expect(prompt).toContain("Compliance mode: hipaa.");
+    expect(prompt).toContain(
+      "COMPLIANCE: HIPAA\nTreat all caller-provided health information as PHI:",
+    );
     expect(prompt).toContain("- topic 23 ");
     expect(prompt).toContain("- trigger 0 ");
     expect(prompt).not.toContain("- check 9 ");
@@ -257,7 +261,7 @@ describe("what the owner ruled out", () => {
       prompt.indexOf("## ACTION AND RESULT SAFETY"),
     );
     for (const line of block.trimEnd().split("\n").slice(2)) {
-      expect(line, line).toMatch(/^(- .{20,}|[A-Z].*[.:])$/);
+      expect(line, line).toMatch(/^(- .{20,}|[A-Z].*[.:]|COMPLIANCE: [A-Z].*)$/);
     }
     expect(block.trimEnd().endsWith(":")).toBe(false);
     expect(prompt).toContain("## ACTION AND RESULT SAFETY");
@@ -269,7 +273,9 @@ describe("what the owner ruled out", () => {
     expect(bookedOpening).toContain("NATIVE CALENDAR TIME CONTEXT:");
     expect(bookedOpening).toContain("use only the returned slots");
     expect(bookedOpening).toContain("requested time was sent to the business to confirm");
-    expect(booked).toContain("Compliance mode: hipaa.");
+    expect(booked).toContain(
+      "COMPLIANCE: HIPAA\nTreat all caller-provided health information as PHI:",
+    );
   });
 });
 
@@ -322,7 +328,7 @@ describe("fixed rules that used to contradict the owner", () => {
     );
     // The stored default says nothing a Bot can act on.
     expect(compose({ complianceMode: "standard" })).not.toContain("Compliance mode");
-    expect(compose({ complianceMode: "hipaa" })).toContain("Compliance mode: hipaa.");
+    expect(compose({ complianceMode: "standard" })).not.toContain("COMPLIANCE:");
   });
 });
 
@@ -365,6 +371,53 @@ describe("the facts a call opens with", () => {
     }
     expect(block).not.toContain("- Fifth ");
     expect(block).toContain("- Parking is free behind the building.");
+  });
+});
+
+/**
+ * A Bot whose owner set a compliance mode was told the mode's name and
+ * nothing else: "Compliance mode: hipaa." The conduct rules for each mode
+ * existed, with tests, in a prompt builder no call used.
+ */
+describe("a compliance mode", () => {
+  it("gives the Bot the rules for that mode, kept with the fixed safety text", () => {
+    const prompt = compose({ complianceMode: "hipaa" });
+    const block = prompt.slice(
+      prompt.indexOf("## LIMITS SET BY THE ACCOUNT HOLDER"),
+      prompt.indexOf("## ACTION AND RESULT SAFETY"),
+    );
+    expect(block).toContain(
+      [
+        "COMPLIANCE: HIPAA",
+        "Treat all caller-provided health information as PHI:",
+        "- Verify identity (full name + date of birth + one secondary identifier) before discussing any account or health detail.",
+        "- Never repeat or summarize PHI to anyone other than the verified caller or a documented authorized representative.",
+        "- If a caller asks for medical advice, decline and offer to schedule a clinician consult.",
+      ].join("\n"),
+    );
+    expect(prompt).not.toContain("Compliance mode: hipaa.");
+    // The rules are lines of the kept block, not a heading of their own that
+    // the cut could take for the start of what it keeps.
+    expect(prompt).not.toContain("\n## COMPLIANCE");
+  });
+
+  it.each([
+    ["pci", "Do not record, repeat, or write down card numbers, expiry dates, or CVVs."],
+    ["gdpr", 'Honor opt-out, deletion, and "speak to a human" requests immediately.'],
+    ["financial", "Do not provide tax, investment, or specific financial advice."],
+    ["legal", "Do not provide legal advice. You may share general public information only."],
+    ["tcpa", "clearly disclose that this is an automated AI assistant"],
+  ])("carries the %s rules", (complianceMode, rule) => {
+    expect(compose({ complianceMode })).toContain(rule);
+  });
+
+  it("says nothing for the stored default, and names a mode it has no rules for", () => {
+    for (const complianceMode of ["standard", "none", "", null]) {
+      const prompt = compose({ complianceMode });
+      expect(prompt).not.toContain("COMPLIANCE:");
+      expect(prompt).not.toContain("Compliance mode");
+    }
+    expect(compose({ complianceMode: "sox" })).toContain("Compliance mode: sox.");
   });
 });
 
