@@ -10,11 +10,13 @@ export type RuntimeBalanceEntry = {
   createdAt: string | null;
 };
 
-// Refunds recorded before 2026-11-27 named the carrier vendor. The ledger is
+// Entries recorded before 2026-11-27 named the carrier vendor. The ledger is
 // append-only, so those rows are reworded where they are shown.
 const LEGACY_REFUND_REASONS: Record<string, string> = {
   "Twilio provider attempt did not start": "Text was not sent",
   "Twilio rejected the outbound message": "Carrier did not accept the text",
+  "Twilio segment estimate adjustment": "Text cost adjustment",
+  "Twilio segment count adjustment": "Text cost adjustment",
 };
 
 const ENTRY_LABELS: Record<string, string> = {

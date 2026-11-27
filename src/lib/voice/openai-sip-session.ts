@@ -68,7 +68,11 @@ import {
 } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
-import { CALL_STOPPED_BEFORE_CONNECT_SUMMARY } from "./call-summary-copy";
+import {
+  CALL_IN_PROGRESS_SUMMARY,
+  CALL_OUTCOME_NOT_RECORDED_SUMMARY,
+  CALL_STOPPED_BEFORE_CONNECT_SUMMARY,
+} from "./call-summary-copy";
 import { adoptOutboundPlacementSipFunding } from "./outbound-placement-funding";
 import { normalizeOpenAIPhoneNumber, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
 import {
@@ -129,9 +133,6 @@ const RUNNING_CLAIM_HEARTBEAT_MS = 30_000;
 const RUNNING_CLAIM_LOCAL_FENCE_MS = RUNNING_CLAIM_LEASE_MS - 15_000;
 /** How often an owner phone test's transcript-so-far may be written. */
 const LIVE_TRANSCRIPT_INTERVAL_MS = 1_500;
-const IN_PROGRESS_SUMMARY = "OpenAI Realtime voice call in progress.";
-const RECOVERED_SUMMARY =
-  "OpenAI Realtime voice call ended before its terminal state could be persisted.";
 const ACTIVE_OUTBOUND_STATUSES: readonly string[] = [
   LEAD_STATUS.PENDING,
   LEAD_STATUS.QUEUED,
@@ -928,7 +929,7 @@ async function claimCall(input: OpenAISipIncomingCall) {
         agentId: input.agentId,
         direction: callDirection(input),
         customerNumber: input.callerNumber,
-        summary: IN_PROGRESS_SUMMARY,
+        summary: CALL_IN_PROGRESS_SUMMARY,
         endedReason: null,
         pipelineError: null,
       })
@@ -1766,7 +1767,7 @@ export async function recoverStaleOpenAISipCall(input: {
     .update(schema.callLogs)
     .set({
       durationSeconds: recoveredDuration,
-      summary: RECOVERED_SUMMARY,
+      summary: CALL_OUTCOME_NOT_RECORDED_SUMMARY,
       endedReason: "finalization-recovery",
       pipelineError: "finalization_recovery",
       openaiSipPhase: "terminal",

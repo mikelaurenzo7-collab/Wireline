@@ -69,7 +69,7 @@ describe("inbound/outbound runtime parity contract", () => {
       'const effectiveAmdAction = amdAction === "voicemail" ? "drop" : amdAction',
     );
     expect(bridge).toContain("amd_action: effectiveAmdAction");
-    expect(bridge).toContain("no approved OpenAI-generated fallback audio is deployed");
+    expect(bridge).toContain("? ANSWERING_MACHINE_NO_VOICEMAIL_SUMMARY");
     expect(bridge).not.toContain("voicemailTwiml");
     expect(bridge).not.toContain("openai-static-prompts");
     expect(bridge).toContain("AnsweredBy");

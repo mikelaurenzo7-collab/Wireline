@@ -569,6 +569,82 @@ describe("a registration read that is slow or never comes back", () => {
     expect(calls.services).toBe(2);
   });
 
+  it("keeps refusing a line last seen unregistered while a slow re-check is out", async () => {
+    const { client, calls } = fakeClient();
+    await resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client, nowMs: 0 });
+    const numbers = client.incomingPhoneNumbers.list;
+    const slow: SmsRegistrationClient = {
+      ...client,
+      incomingPhoneNumbers: {
+        list: (options) =>
+          new Promise((resolve) => setTimeout(resolve, 8_000)).then(() => numbers(options)),
+      },
+    };
+
+    // A minute on, the refusal is re-checked. The new read is slow.
+    const first = resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: slow, nowMs: 61_000 });
+    await vi.advanceTimersByTimeAsync(5_000);
+    await expect(first).resolves.toMatchObject({
+      status: "unregistered",
+      code: "SMS_SENDER_UNREGISTERED",
+    });
+    // The next sends are still judged on the last good read, not sent unchecked.
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: slow, nowMs: 67_000 }),
+    ).resolves.toMatchObject({ status: "unregistered" });
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: slow, nowMs: 67_000 }),
+    ).resolves.toMatchObject({ status: "registered" });
+    expect(calls.services).toBe(2);
+
+    // Once the slow read lands it replaces the old snapshot; no third read is needed.
+    await vi.advanceTimersByTimeAsync(3_000);
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: slow, nowMs: 70_000 }),
+    ).resolves.toMatchObject({ status: "unregistered" });
+    expect(calls.services).toBe(2);
+  });
+
+  it("keeps the refusal when the re-check fails, then accepts a line the next read shows approved", async () => {
+    const { client } = fakeClient();
+    await resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client, nowMs: 0 });
+
+    const failing = fakeClient({ failServices: true });
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: failing.client, nowMs: 61_000 }),
+    ).resolves.toMatchObject({ status: "unregistered" });
+
+    // The line joined an approved service in the meantime.
+    const approved: SmsRegistrationClient = {
+      ...client,
+      messaging: {
+        v1: {
+          ...client.messaging.v1,
+          services: Object.assign(
+            (sid: string) => {
+              const context = client.messaging.v1.services(sid);
+              return sid === "MGapproved"
+                ? {
+                    ...context,
+                    phoneNumbers: {
+                      list: async () => [
+                        { phoneNumber: LOCAL_REGISTERED },
+                        { phoneNumber: LOCAL_UNPOOLED },
+                      ],
+                    },
+                  }
+                : context;
+            },
+            { list: client.messaging.v1.services.list },
+          ),
+        },
+      },
+    };
+    await expect(
+      resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: approved, nowMs: 62_000 }),
+    ).resolves.toMatchObject({ status: "registered", messagingServiceSid: "MGapproved" });
+  });
+
   it("keeps the result of a read that lands after its caller stopped waiting", async () => {
     const { client, calls } = fakeClient();
     const numbers = client.incomingPhoneNumbers.list;

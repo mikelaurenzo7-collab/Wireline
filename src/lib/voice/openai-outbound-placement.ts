@@ -585,7 +585,7 @@ export async function claimNativeOutboundPlacement(input: {
       return {
         ok: false as const,
         status: 409,
-        error: "This lead already has a native voice call in progress.",
+        error: "A call to this contact is already in progress.",
       };
     }
     const priorStatus = (LEAD_PROCESSABLE_STATUSES as readonly string[]).includes(lead.status || "")

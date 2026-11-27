@@ -374,8 +374,12 @@ function settledWithin<T>(read: Promise<T>, waitMs: number): Promise<T> {
 async function currentSnapshot(
   client: SmsRegistrationClient,
   nowMs: number,
+  /** Read the account again even though the cached snapshot is inside its lifetime. */
+  readAgain = false,
 ): Promise<SmsRegistrationSnapshot | null> {
-  if (cachedSnapshot && nowMs - cachedSnapshot.readAtMs < SNAPSHOT_TTL_MS) return cachedSnapshot;
+  if (!readAgain && cachedSnapshot && nowMs - cachedSnapshot.readAtMs < SNAPSHOT_TTL_MS) {
+    return cachedSnapshot;
+  }
   if (inflight && Date.now() - inflight.startedAtMs >= SNAPSHOT_ABANDON_MS) inflight = null;
   if (!inflight) inflight = startSnapshotRead(client, nowMs);
   const current = inflight;
@@ -426,9 +430,11 @@ export async function resolveSmsSenderRegistration(
   // Refusing is the only verdict that stops a send, so a refusal from an aging
   // cached read is re-checked: a line attached to a verified service after the
   // snapshot was taken would otherwise be blocked until the cache expires.
+  // The aging snapshot stays cached while the account is read again. If that
+  // read is slow or fails, this send and the ones behind it keep the refusal
+  // instead of reaching the carrier unchecked from a line last seen unregistered.
   if (verdict.status === "unregistered" && nowMs - snapshot.readAtMs >= REFUSAL_RECHECK_MS) {
-    cachedSnapshot = null;
-    const fresh = await currentSnapshot(client, nowMs);
+    const fresh = await currentSnapshot(client, nowMs, true);
     if (fresh) return classifySmsSender(e164, fresh);
   }
   return verdict;

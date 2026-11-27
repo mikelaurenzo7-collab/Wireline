@@ -40,7 +40,11 @@ import {
 import { trackVoiceMinutes } from "../lib/voice-usage";
 import { liveRecordingDialAttributes } from "../lib/voice/live-call-recording";
 import { carrierMediaTwiml, clonedCallTwiml } from "../lib/voice/cloned-call-routing";
-import { CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY } from "../lib/voice/call-summary-copy";
+import {
+  ANSWERING_MACHINE_NO_VOICEMAIL_SUMMARY,
+  CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY,
+  MACHINE_ANSWERED_SUMMARY,
+} from "../lib/voice/call-summary-copy";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "../lib/voice-call-identity";
 import {
   handleFundedOutboundCarrierEvent,
@@ -402,10 +406,10 @@ async function resolveBridgeContext(
           lastCalledAt: now,
           lastContactSummary:
             amdAction === "voicemail"
-              ? "Answering machine detected; no voicemail was left because no approved OpenAI-generated fallback audio is deployed."
+              ? ANSWERING_MACHINE_NO_VOICEMAIL_SUMMARY
               : telemarketing
                 ? "Answering machine detected; no marketing voicemail was left (47 CFR 64.1200(b)(3))."
-                : "Fax or machine detected; the native voice bridge was not started.",
+                : MACHINE_ANSWERED_SUMMARY,
           metadata: { ...metadata, native_voice: amdNativeVoice },
         })
         .where(

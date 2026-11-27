@@ -113,6 +113,36 @@ describe("the carrier vendor's name in messages a customer can see", () => {
       "Carrier did not accept the text",
     ]);
   });
+
+  it("records a text cost adjustment in plain words and rewords the ones already recorded", () => {
+    const reconciliation = read("src/lib/twilio-message-reconciliation.ts");
+    expect(reconciliation).not.toMatch(/reason: "[^"]*Twilio/);
+    expect(reconciliation.match(/reason: "Text cost adjustment"/g)).toHaveLength(2);
+    const entries = readRuntimeBalanceEntries([
+      {
+        id: "c",
+        deltaUsd: 0.01,
+        balanceAfterUsd: 4,
+        createdAt: null,
+        entryKind: "refund",
+        reason: "runtime_usage_refund",
+        customerReason: "Twilio segment estimate adjustment",
+      },
+      {
+        id: "d",
+        deltaUsd: -0.01,
+        balanceAfterUsd: 4,
+        createdAt: null,
+        entryKind: "burn",
+        reason: "runtime_usage",
+        customerReason: "Twilio segment count adjustment",
+      },
+    ]);
+    expect(entries?.map((entry) => entry.description)).toEqual([
+      "Text cost adjustment",
+      "Text cost adjustment",
+    ]);
+  });
 });
 
 describe("when a record needs more than a list row shows", () => {
@@ -164,12 +194,20 @@ describe("the person chip on a call, text or email", () => {
 describe("summaries written when a call never became a conversation", () => {
   it("say what happened without naming a vendor, a protocol or a call leg", async () => {
     const copy = await import("../src/lib/voice/call-summary-copy");
-    for (const text of [
-      copy.CALL_STOPPED_BEFORE_CONNECT_SUMMARY,
-      copy.CALL_ENDED_BEFORE_BOT_SPOKE_SUMMARY,
-    ]) {
-      expect(text).not.toMatch(/openai|xai|grok|twilio|sip|native voice|customer leg/i);
+    const summaries = Object.values(copy);
+    expect(summaries.length).toBeGreaterThanOrEqual(6);
+    for (const text of summaries) {
+      expect(text).not.toMatch(
+        /openai|xai|grok|twilio|realtime|sip|native voice|bridge|customer leg|persisted/i,
+      );
     }
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    expect(session).not.toContain("OpenAI Realtime voice call");
+    expect(session).toContain("summary: CALL_IN_PROGRESS_SUMMARY");
+    expect(session).toContain("summary: CALL_OUTCOME_NOT_RECORDED_SUMMARY");
+    const outbound = read("src/routes/openai-outbound-routes.ts");
+    expect(outbound).not.toContain("OpenAI-generated fallback audio");
+    expect(outbound).not.toContain("native voice bridge was not started");
     expect(read("src/lib/voice/openai-sip-session.ts")).not.toContain(
       "before an OpenAI SIP session started",
     );

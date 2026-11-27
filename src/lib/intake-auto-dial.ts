@@ -331,7 +331,7 @@ export async function processIntakeAutoDialJob(
       leadId,
       userId: payload.userId,
       status: doNotRetry ? "Error" : "AutoDialFailed",
-      error: result.error || "Native voice placement did not return a call id.",
+      error: result.error || "The call could not be placed.",
       providerStatus: result.status,
       doNotRetry,
     });

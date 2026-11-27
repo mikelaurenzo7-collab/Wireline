@@ -147,7 +147,7 @@ describe("(b)(3) applies to answering machines", () => {
     expect(amd).toContain('return telemarketing ? "drop" : "bridge"');
     expect(bridge).toContain("nativeCallPurposeFromMetadata(nativeVoice.call_purpose)");
     expect(bridge).toContain("resolveNativeAmdBridgeAction({ answeredBy, callPurpose })");
-    expect(bridge).toContain("no approved OpenAI-generated fallback audio is deployed");
+    expect(bridge).toContain("? ANSWERING_MACHINE_NO_VOICEMAIL_SUMMARY");
     expect(bridge).not.toContain("openai-outbound-voicemail.mp3");
     expect(bridge).toContain("AnsweredBy");
     expect(bridge).toContain("emptyTwiml()");
