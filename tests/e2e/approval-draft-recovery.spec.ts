@@ -921,8 +921,13 @@ for (const refreshFails of [false, true]) {
 test("approvals let the owner call back, open the source, and fill a knowledge gap", async ({
   page,
 }) => {
+  const gapReviews: unknown[] = [];
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/agents/lessons/review") {
+      gapReviews.push(route.request().postDataJSON());
+      return route.fulfill({ json: { ok: gapReviews.length > 1 } });
+    }
     const json =
       path === "/api/auth/session"
         ? { user: { id: "approvals-owner", email: "owner@example.test" } }
@@ -985,10 +990,23 @@ test("approvals let the owner call back, open the source, and fill a knowledge g
 
   await page.getByRole("button", { name: /Gaps/ }).click();
   const gap = page.getByRole("article").filter({ hasText: "tankless" });
-  await expect(gap).toContainText("Your Bot could not answer: Do you service tankless heaters?");
+  await expect(gap).toContainText("A caller asked: Do you service tankless heaters?");
+  await expect(gap).toContainText("Nothing your Bot was taught uses these words.");
   await expect(gap).not.toContainText("[KNOWLEDGE GAP]");
   await expect(gap.getByRole("link", { name: "Add to Knowledge" })).toHaveAttribute(
     "href",
     "/knowledge?agent=bot-1",
   );
+
+  // A dismissal the server did not confirm leaves the question in place.
+  await gap.getByRole("button", { name: "Dismiss", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("That could not be dismissed. Try again.");
+  await expect(gap).toHaveCount(1);
+  // A confirmed one removes it.
+  await gap.getByRole("button", { name: "Dismiss", exact: true }).click();
+  await expect(gap).toHaveCount(0);
+  expect(gapReviews).toEqual([
+    { lesson_id: "7", action: "reject" },
+    { lesson_id: "7", action: "reject" },
+  ]);
 });

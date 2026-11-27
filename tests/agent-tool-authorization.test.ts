@@ -13,7 +13,14 @@ import {
   filterToolsByTenantConnections,
   UNSCOPED_PLATFORM_LIVE_TOOL_NAMES,
 } from "../src/lib/tenant-integration-connections";
-import { AGENT_TOOL_CATALOG, AGENT_TOOL_NAME_VALUES } from "../src/lib/agent-capabilities";
+import {
+  AGENT_TOOL_CATALOG,
+  AGENT_TOOL_NAME_VALUES,
+  getDefaultAgentTools,
+  readStoredAgentTools,
+  resolveAgentTools,
+} from "../src/lib/agent-capabilities";
+import { buildAgentToolDefs } from "../src/lib/agent-runtime-helpers";
 import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
 import {
   CALLER_LINKED_LIVE_WRITE_TOOL_NAMES,
@@ -240,13 +247,69 @@ describe("agent tool execution authorization", () => {
     const runtime = source.slice(
       source.indexOf("export async function isAgentToolExecutionAuthorized"),
     );
-    const systemException = runtime.indexOf("if (isSystemRuntimeTool(name))");
+    const systemException = runtime.indexOf(
+      "if (isSystemRuntimeTool(name) || isAlwaysAvailableTool(name))",
+    );
     const identityLookup = runtime.indexOf("hasVerifiedAgentIdentity");
     const fullSnapshot = runtime.indexOf("loadAuthorizationSnapshot");
     expect(systemException).toBeGreaterThan(-1);
     expect(identityLookup).toBeGreaterThan(systemException);
     expect(fullSnapshot).toBeGreaterThan(identityLookup);
     expect(source).toContain("return NO_TENANT_INTEGRATIONS");
+  });
+
+  it("gives every Bot the three actions it cannot do without, whatever its saved selection", async () => {
+    // A call opens with a handful of facts, and a Bot whose selection left the
+    // search out could never use the rest: thirty Bots were found that way.
+    // Taking a message and honouring a do-not-call request were already
+    // allowed to run for every Bot; all three are now offered to every Bot too.
+    const { isAlwaysAvailableTool } = await import("../src/lib/agent-tool-authorization");
+    expect(isAlwaysAvailableTool("search_knowledge_base")).toBe(true);
+    expect(isSystemRuntimeTool("create_followup_task")).toBe(true);
+    expect(isSystemRuntimeTool("add_to_dnc")).toBe(true);
+    for (const other of ["send_email", "send_text_message", "book_appointment"]) {
+      expect(isAlwaysAvailableTool(other) || isSystemRuntimeTool(other), other).toBe(false);
+    }
+    const always = ["search_knowledge_base", "create_followup_task", "add_to_dnc"];
+    // Offered on a narrow selection, and on one that saved nothing at all.
+    const names = (selection: unknown) =>
+      buildAgentToolDefs(selection).map((tool) => (tool as { name: string }).name);
+    expect(names(["book_appointment"])).toEqual(["book_appointment", ...always]);
+    expect(names([])).toEqual(always);
+    // Not listed twice when it was selected.
+    expect(names(["search_knowledge_base", "book_appointment"])).toEqual([
+      "search_knowledge_base",
+      "book_appointment",
+      "create_followup_task",
+      "add_to_dnc",
+    ]);
+    const tenantList = readFileSync(
+      resolve(process.cwd(), "src/lib/agent-runtime-helpers.ts"),
+      "utf8",
+    );
+    expect(tenantList).toContain(
+      "withAlwaysOnTools(allowed, (name) => isAgentToolChannelAllowed(name, entitlements.channels));",
+    );
+  });
+
+  it("reads a saved selection the same way when offering tools and when running them", () => {
+    // A name this code no longer knows used to switch the whole catalogue on
+    // in the list offered to the model, while the run check refused the rest.
+    expect(resolveAgentTools(["book_appointment", "retired_tool"])).toEqual(["book_appointment"]);
+    expect(resolveAgentTools("book_appointment")).toEqual([]);
+    expect(resolveAgentTools({})).toEqual([]);
+    expect(resolveAgentTools(["book_appointment", "book_appointment"])).toEqual([
+      "book_appointment",
+    ]);
+    // Never selected is still the full catalogue.
+    expect(resolveAgentTools(null)).toEqual(getDefaultAgentTools());
+    expect(resolveAgentTools(undefined)).toEqual(getDefaultAgentTools());
+    for (const value of [["book_appointment", "retired_tool"], "x", {}, null, []]) {
+      const sanitized = sanitizePersistedAgentToolSelection(value);
+      expect(resolveAgentTools(value), JSON.stringify(value)).toEqual(
+        sanitized === null ? getDefaultAgentTools() : [...sanitized],
+      );
+    }
   });
 
   it("shares one in-flight authorization snapshot across a concurrent tool batch", () => {
@@ -326,8 +389,60 @@ describe("knowledge search reads the whole entry", () => {
   it("applies the excerpt window on output, around the match", () => {
     expect(search).toContain("export function excerptAroundMatch(");
     expect(source).toContain("excerptAroundMatch(match.content, words, MAX_KB_RESULT_CHARS)");
-    // The window must be anchored on the caller's word, not the entry start.
-    expect(search).toContain("const index = lower.indexOf(word);");
+    // The window is anchored on the caller's words, not the entry start, and
+    // of every place they occur it is the one that holds the most of them.
+    expect(search).toContain("let index = lower.indexOf(word);");
     expect(search).toContain("Math.max(0, hit - Math.floor(maxChars / 3))");
+    expect(search).toContain("if (held > best) {");
+  });
+});
+
+/**
+ * In production 93 of 94 Bots hold at least one retired tool name (the old
+ * Shopify, Square and CRM actions). The screens that show a Bot's actions read
+ * such a list as "nobody chose", ticked every action, and saved that back when
+ * the owner pressed Save or switched one action in chat.
+ */
+describe("a saved selection that holds a retired name", () => {
+  const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+  const saved = [
+    "send_email",
+    "shopify_lookup_order",
+    "book_appointment",
+    "send_email",
+    "crm_log_call",
+  ];
+
+  it("is read as what the Bot has, never as no selection", () => {
+    expect(readStoredAgentTools(saved)).toEqual(["send_email", "book_appointment"]);
+    expect(resolveAgentTools(saved)).toEqual(["send_email", "book_appointment"]);
+    expect(readStoredAgentTools(["shopify_lookup_order"])).toEqual([]);
+    expect(readStoredAgentTools([])).toEqual([]);
+    expect(readStoredAgentTools("send_email")).toEqual([]);
+    expect(readStoredAgentTools({})).toEqual([]);
+    // Only a Bot nobody chose for keeps the full catalogue.
+    expect(readStoredAgentTools(null)).toBeNull();
+    expect(readStoredAgentTools(undefined)).toBeNull();
+    // The check that runs before a tool is used reads it the same way.
+    expect(sanitizePersistedAgentToolSelection(saved)).toEqual(readStoredAgentTools(saved));
+    expect(sanitizePersistedAgentToolSelection(null)).toBeNull();
+  });
+
+  it("is shown that way by the screens that save it back", () => {
+    for (const path of ["src/routes/agent-routes-v2.ts", "src/routes/mobile-routes.ts"]) {
+      const source = read(path);
+      expect(source, path).toContain("enabledTools: readStoredAgentTools(record?.enabledTools),");
+      expect(source, path).not.toContain(
+        "enabledTools: normalizeEnabledTools(record?.enabledTools)",
+      );
+    }
+    // Set Up ticks what the server sent, and chat's one-action switch starts
+    // from the same reading.
+    expect(read("src/components/AgentToolPermissions.tsx")).toContain(
+      "setEnabled(resolveAgentTools(config.enabledTools));",
+    );
+    expect(read("src/routes/agent-workspace-routes.ts")).toContain(
+      "const current = resolveAgentTools(agent.enabledTools);",
+    );
   });
 });

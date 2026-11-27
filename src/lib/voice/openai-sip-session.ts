@@ -136,7 +136,7 @@ const QUIET_LINE_CHECK_IN = "Are you still there?";
 // Said last so it is the freshest rule in a long prompt. On the test call that led
 // to it the Bot announced a send, narrated a web lookup and reported its own search.
 const LIVE_CALL_DELIVERY_RULE =
-  'LIVE CALL DELIVERY: Keep each turn to one or two short sentences. Never describe what you are doing behind the scenes: no checking, searching, looking up, sending now or finding something. While a tool runs, say at most "One sec." When it finishes, give only the result, once.';
+  'LIVE CALL DELIVERY: Keep each turn to one or two short sentences. Never describe what you are doing behind the scenes: no checking, searching, looking up, sending now or finding something. While a tool runs, say at most "One sec.", or the Playbook\'s line for asking the caller to wait when there is one. When it finishes, give only the result, once.';
 const MAX_TRANSCRIPT_CHARS = 120_000;
 const MAX_TOOL_OUTPUT_CHARS = 8_000;
 const FINALIZATION_RECOVERY_GRACE_MS = 120_000;
@@ -463,17 +463,25 @@ export function applyInboundAdmission(
     (afterHours
       ? `Hi, you've reached ${runtime.agentName}. We're currently closed, but I can take a message for the team.`
       : `Hi, you've reached ${runtime.agentName}. I can take a message for the team.`);
+  // The one thing every after-hours caller asks is when the business opens.
+  // The message-taker replaces everything else the Bot knows, so without this
+  // it could only say "we're closed" and take a message.
+  const hours = afterHours && runtime.businessHours ? `${runtime.businessHours}\n` : "";
   const afterHoursBlock = afterHours
-    ? "## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Do NOT commit to appointments, prices, or actions that require the business to be open.\n"
+    ? `## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Do NOT commit to appointments, prices, or actions that require the business to be open.\n${hours}`
     : "";
+  const mayTellHours = hours
+    ? "You may say the opening hours above and when the business next opens. "
+    : "";
+  const businessQuestions = hours ? "other business questions" : "business questions";
   return {
     ...runtime,
     greeting,
     session: {
       ...runtime.session,
       instructions: followup.length
-        ? `${afterHoursBlock}You are a courteous, concise message-taking assistant. Collect the caller's name, callback number, reason for calling, and urgency. Read the details back once. Then use create_followup_task. Say the message was recorded and promise follow-up only if the tool explicitly confirms creation. If the tool fails, times out, or remains uncertain, say the message was not confirmed and offer another contact channel. Do not answer business questions, quote prices, book appointments, or transfer.`
-        : `${afterHoursBlock}You are a courteous, concise message-taking assistant, but message persistence is unavailable. Explain that you cannot safely record or promise delivery of a message right now, suggest the caller use the business's other contact channel, and end politely. Do not collect sensitive details, answer business questions, quote prices, book appointments, or promise follow-up.`,
+        ? `${afterHoursBlock}You are a courteous, concise message-taking assistant. Collect the caller's name, callback number, reason for calling, and urgency. Read the details back once. Then use create_followup_task. Say the message was recorded and promise follow-up only if the tool explicitly confirms creation. If the tool fails, times out, or remains uncertain, say the message was not confirmed and offer another contact channel. ${mayTellHours}Do not answer ${businessQuestions}, quote prices, book appointments, or transfer.`
+        : `${afterHoursBlock}You are a courteous, concise message-taking assistant, but message persistence is unavailable. Explain that you cannot safely record or promise delivery of a message right now, suggest the caller use the business's other contact channel, and end politely. ${mayTellHours}Do not collect sensitive details, answer ${businessQuestions}, quote prices, book appointments, or promise follow-up.`,
       tools: followup,
       tool_choice: followup.length ? "auto" : "none",
     },

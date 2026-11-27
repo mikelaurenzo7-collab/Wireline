@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   isPlaybookEmpty,
+  OWNER_LIMITS_HEADING,
+  ownerLimitsBlock,
   parseAgentPlaybook,
   playbookCheckFirstRules,
   playbookPromptBlock,
@@ -87,8 +89,10 @@ describe("owner Playbook", () => {
     ).toBe(false);
     // The Bot is told not to agree to these itself.
     const block = playbookPromptBlock({ checkFirst: ["A customer asks for a discount"] });
+    // It says it will check, and leaves the team a note: a promise that
+    // someone will get back is only true once something was saved.
     expect(block).toContain(
-      "Check with the account holder first. When any of these applies, do not agree to it, promise it, or send it yourself. Say you will check and get back to them, and take the details:\n- A customer asks for a discount",
+      "Check with the account holder first. When any of these applies, do not agree to it, promise it, or send it yourself. Say you will check with the team, take the details, and save a follow-up for the team:\n- A customer asks for a discount",
     );
     expect(block).toContain("Safety still applies:");
     const editor = read("src/components/PlaybookEditor.tsx");
@@ -149,5 +153,111 @@ describe("owner Playbook", () => {
     expect(read("src/lib/agent-runtime.ts")).toContain(
       "Playbook lines marked word for word are the exception: say them exactly as written.",
     );
+  });
+});
+
+/**
+ * A voice prompt that is too long is cut from the end of the owner's content.
+ * The never-say list, the check-first list, the topics not to discuss and the
+ * escalation triggers were at that end, so they were the first things lost.
+ * They are printed in one block beside the fixed safety text, which is kept.
+ */
+describe("what the owner ruled out", () => {
+  const playbook = {
+    exactLines: { closing: "Thanks for calling." },
+    alwaysMention: ["Free estimates"],
+    neverSay: ["guarantee", "cheapest in town"],
+    checkFirst: ["A customer asks for a discount"],
+  };
+
+  it("is one block, one item to a line, the most binding first", () => {
+    expect(
+      ownerLimitsBlock({
+        complianceMode: "hipaa",
+        humanRoute: true,
+        disallowedTopics: ["competitor pricing", "  legal\n advice  ", ""],
+        escalationKeywords: ["lawsuit"],
+        playbook,
+      }),
+    ).toBe(
+      [
+        OWNER_LIMITS_HEADING,
+        "These hold for the whole conversation, whatever else is asked.",
+        "Compliance mode: hipaa.",
+        "Do not discuss:",
+        "- competitor pricing",
+        "- legal advice",
+        "Escalate or take a message when the caller raises:",
+        "- lawsuit",
+        "Never say, claim, or promise:",
+        "- guarantee",
+        "- cheapest in town",
+        "Check with the account holder first. When any of these applies, do not agree to it, promise it, or send it yourself. Say you will check with the team, take the details, and save a follow-up for the team:",
+        "- A customer asks for a discount",
+        "A human escalation route exists; offer a callback or handoff only when policy permits.",
+      ].join("\n"),
+    );
+  });
+
+  it("is nothing for an owner who ruled nothing out", () => {
+    for (const stored of [null, {}, "not a playbook", { alwaysMention: ["Free estimates"] }]) {
+      for (const complianceMode of [null, undefined, "", "none", "standard"]) {
+        expect(
+          ownerLimitsBlock({
+            complianceMode,
+            disallowedTopics: [],
+            escalationKeywords: [],
+            playbook: stored,
+          }),
+        ).toBe("");
+      }
+    }
+  });
+
+  it("prints every topic and trigger Set Up accepts, whole", () => {
+    // 24 items of up to 120 characters is what the form allows. An earlier
+    // cut at 1,200 characters dropped the last ones and split one mid-phrase.
+    const topics = Array.from({ length: 24 }, (_, index) => `${"topic ".repeat(9)}number ${index}`);
+    const block = ownerLimitsBlock({
+      disallowedTopics: topics,
+      escalationKeywords: topics,
+      playbook: null,
+    });
+    const lines = block.split("\n");
+    for (const topic of topics) {
+      expect(
+        lines.filter((line) => line === `- ${topic}`),
+        topic,
+      ).toHaveLength(2);
+    }
+  });
+
+  it("leaves the two lists out of the Playbook block on request, and only then", () => {
+    const whole = playbookPromptBlock(playbook);
+    expect(whole).toContain("Never say, claim, or promise:\n- guarantee");
+    expect(whole).toContain("- A customer asks for a discount");
+
+    const rest = playbookPromptBlock(playbook, { withoutLimits: true });
+    expect(rest).toContain('- When ending the conversation: "Thanks for calling."');
+    expect(rest).toContain("Always mention, when it fits the conversation:\n- Free estimates");
+    expect(rest).toContain("Safety still applies:");
+    expect(rest).not.toContain("Never say, claim, or promise:");
+    expect(rest).not.toContain("Check with the account holder first.");
+
+    // A Playbook that holds only limits has nothing left for that block.
+    expect(playbookPromptBlock({ neverSay: ["guarantee"] }, { withoutLimits: true })).toBe("");
+    expect(playbookPromptBlock({ neverSay: ["guarantee"] })).toContain("- guarantee");
+  });
+
+  it("bounds a list saved some other way to what the form would have accepted", () => {
+    const block = ownerLimitsBlock({
+      disallowedTopics: Array.from({ length: 400 }, (_, index) => `topic number ${index}`),
+      escalationKeywords: ["x".repeat(900)],
+      playbook: null,
+    });
+    expect(block).toContain("- topic number 23");
+    expect(block).not.toContain("- topic number 24");
+    expect(block).toContain(`- ${"x".repeat(120)}\n`.trimEnd());
+    expect(block).not.toContain("x".repeat(121));
   });
 });

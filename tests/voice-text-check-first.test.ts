@@ -183,6 +183,42 @@ describe("live text and the owner's choice to check first", () => {
     expect(result?.result).not.toContain("DRAFT_SAVED");
   });
 
+  it("knows the caller's own number however it was said", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "auto" }]);
+    // The carrier reports +17735550100. A caller says it, or the Bot writes it,
+    // in other forms.
+    for (const spoken of ["(773) 555-0100", "773-555-0100", "17735550100", "7735550100"]) {
+      h.gate.mockClear();
+      h.sendMessage.mockClear();
+      await handleCoreToolCall("send_text_message", { ...args, to_number: spoken }, context);
+      // The person on the call, not a cold message to a stranger.
+      expect(h.gate, spoken).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          phone: CALLER,
+          isMarketingCall: false,
+          isLiveSessionFollowUp: true,
+          hasExpressWrittenConsent: true,
+        }),
+      );
+      // Sent in the form the carrier reported.
+      expect(h.sendMessage.mock.calls[0][1].to, spoken).toBe(CALLER);
+    }
+
+    // Another number is still another person, with the full rules.
+    for (const other of ["+17735550199", "+447735550100", "555-0100"]) {
+      h.gate.mockClear();
+      await handleCoreToolCall("send_text_message", { ...args, to_number: other }, context);
+      expect(h.gate, other).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          phone: other,
+          isMarketingCall: true,
+          isLiveSessionFollowUp: false,
+          hasExpressWrittenConsent: false,
+        }),
+      );
+    }
+  });
+
   it("sends nothing when the Bot's permission cannot be read", async () => {
     h.permission.mockResolvedValue([]);
     const result = await handleCoreToolCall("send_text_message", args, context);

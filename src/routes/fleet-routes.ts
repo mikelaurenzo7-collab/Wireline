@@ -874,6 +874,8 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
                 eq(schema.agentLessons.userId, req.user.id),
                 sql`${schema.agentLessons.source} IS DISTINCT FROM ${OWNER_MEMORY_SOURCE}`,
                 like(schema.agentLessons.lesson, "[KNOWLEDGE GAP]%"),
+                // A question the owner dismissed stays out of the list.
+                sql`${schema.agentLessons.lessonStatus} IS DISTINCT FROM 'rejected'`,
               ),
             )
             .orderBy(desc(schema.agentLessons.createdAt))

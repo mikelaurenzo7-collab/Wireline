@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import {
+  ALWAYS_ON_AGENT_TOOL_NAMES,
   AGENT_TOOL_NAME_VALUES,
   applyPlanToolUnlocks,
   getDefaultAgentTools,
@@ -31,6 +32,21 @@ import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
  * money movement.
  */
 const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>(["add_to_dnc", "create_followup_task"]);
+/**
+ * Reading the Bot's own saved knowledge reaches no customer system and costs
+ * nothing an owner would withhold. A call opens with only a handful of the
+ * Bot's facts, so a Bot without this search can never use the rest: thirty
+ * Bots were found holding knowledge they could not look up. It is therefore
+ * offered and callable whatever the saved selection, once the Bot's identity
+ * is verified.
+ */
+const ALWAYS_AVAILABLE_TOOL_NAMES = new Set<AgentToolName>(
+  ALWAYS_ON_AGENT_TOOL_NAMES.filter((name) => !SYSTEM_RUNTIME_TOOL_NAMES.has(name)),
+);
+export function isAlwaysAvailableTool(name: string): name is AgentToolName {
+  return isAgentToolName(name) && ALWAYS_AVAILABLE_TOOL_NAMES.has(name);
+}
+
 const CLOUD_COMPUTER_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
   "start_computer_task",
   "check_computer_task",
@@ -238,7 +254,7 @@ export async function isAgentToolExecutionAuthorized(
   // Compliance and durable fallback bypass the Account Holder's active-set
   // choice and all unrelated integration reads, but never the verified
   // agent/tenant binding.
-  if (isSystemRuntimeTool(name)) {
+  if (isSystemRuntimeTool(name) || isAlwaysAvailableTool(name)) {
     if (!agentId || !userId) return false;
     return hasVerifiedAgentIdentity(context, agentId, userId);
   }

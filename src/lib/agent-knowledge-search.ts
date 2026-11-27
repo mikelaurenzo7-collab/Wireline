@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or, sql, type AnyColumn } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql, type AnyColumn, type SQL } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { OPENING_GREETING_PREFIX } from "./agent-greeting";
@@ -17,34 +17,68 @@ type KnowledgeDb = Pick<typeof serverDrizzle, "select">;
 
 export type KnowledgeSnippet = { source: "rule" | "knowledge"; content: string; score: number };
 
-/** Words too common to tell one fact from another. */
+/**
+ * Words too common to tell one fact from another: a question's "any", "all"
+ * or "was" matches half of what a business ever wrote down.
+ */
 const STOP_WORDS = new Set([
   "about",
   "after",
   "again",
+  "all",
   "also",
   "and",
+  "any",
   "are",
+  "been",
+  "but",
   "can",
   "could",
+  "did",
   "does",
   "for",
   "from",
+  "get",
+  "got",
+  "had",
+  "has",
   "have",
+  "hello",
+  "her",
+  "here",
+  "him",
+  "his",
   "how",
   "into",
+  "its",
+  "just",
+  "not",
   "our",
   "please",
+  "some",
+  "than",
+  "thank",
+  "thanks",
   "that",
   "the",
   "their",
+  "them",
+  "then",
+  "there",
+  "they",
   "this",
+  "was",
+  "were",
   "what",
   "when",
   "where",
   "which",
+  "who",
+  "why",
   "with",
   "would",
+  "yeah",
+  "yes",
   "you",
   "your",
 ]);
@@ -53,24 +87,116 @@ const MAX_QUERY_WORDS = 32;
 /** Rows Postgres returns per table before the exact-phrase bonus reorders them. */
 const CANDIDATES_PER_TABLE = 40;
 const EXACT_PHRASE_BONUS = 8;
+/**
+ * A match on one of the question's own words outranks any number of matches
+ * on the words added for it. Asked "how much is repiping?", ten facts that
+ * hold "cost" and "$" must not push out the one fact about repiping.
+ */
+const OWN_WORD_WEIGHT = 100;
 /** Meaning-based matches kept per search, beside keyword matches. */
 const SEMANTIC_RESERVE = 3;
+/**
+ * How long a search that already has keyword matches waits for the meaning
+ * index. A caller is on the line: a slow index is not worth the silence when
+ * there is already something to answer from.
+ */
+const MEANING_WAIT_BESIDE_KEYWORD_MS = 600;
 
-/** Distinct words of three or more letters or digits, in any language, without stop words. */
+/**
+ * A word is matched where a word starts, so the shorter form finds both:
+ * asked about "Sundays", a fact that says "Closed Sunday" has to match, and
+ * asked about "prices", one that says "Price list".
+ *
+ * A stem shorter than four letters is left alone. "cats" as "cat" matched
+ * "catering" and "category", and a Bot was handed those as a verified answer.
+ */
+function singular(word: string): string {
+  if (/^\p{N}/u.test(word)) return word;
+  const stem =
+    word.length > 5 && word.endsWith("ies")
+      ? word.slice(0, -3)
+      : /(?:x|z|ch|sh|ss)es$/.test(word)
+        ? word.slice(0, -2)
+        : word.endsWith("s") && !word.endsWith("ss")
+          ? word.slice(0, -1)
+          : word;
+  return stem.length >= 4 ? stem : word;
+}
+
+/**
+ * What callers ask and how owners write it down are different words. The
+ * commonest questions (where, when, how much) are answered by facts that
+ * never use the question's own word, so each brings the words a fact would.
+ */
+const QUESTION_WORDS: Readonly<Record<string, readonly string[]>> = {
+  where: ["address", "located", "location"],
+  located: ["address", "location"],
+  location: ["address", "located"],
+  address: ["located", "location"],
+  direction: ["address", "located", "location"],
+  open: ["hour", "close"],
+  close: ["hour", "open"],
+  closed: ["hour", "open"],
+  hour: ["open", "close"],
+  much: ["price", "cost", "$"],
+  price: ["cost", "$"],
+  cost: ["price", "$"],
+  charge: ["price", "cost", "$"],
+  fees: ["price", "cost", "$"],
+  pay: ["payment", "accept"],
+  payment: ["pay", "accept"],
+  book: ["appointment", "schedule"],
+  appointment: ["book", "schedule"],
+  schedule: ["appointment", "book"],
+};
+
+/**
+ * The question's own words, without stop words: words of three or more
+ * letters or digits in their singular form, short forms written with a slash
+ * ("a/c", "24/7"), and numbers of two or more digits. Any language.
+ */
+function ownSearchWords(lower: string): string[] {
+  const tokens: string[] = lower.match(/[\p{L}\p{N}]+(?:\/[\p{L}\p{N}]+)*/gu) ?? [];
+  const own: string[] = [];
+  for (const token of tokens) {
+    const parts = token.includes("/") ? [token, ...token.split("/")] : [token];
+    for (const part of parts) {
+      const keep = part.length > 2 || /^\p{N}{2,}$/u.test(part);
+      if (keep && !STOP_WORDS.has(part)) own.push(singular(part));
+    }
+  }
+  return [...new Set(own)].slice(0, MAX_QUERY_WORDS);
+}
+
+/**
+ * Distinct search words for a question: its own words first, then the words
+ * a fact would use for the commonest questions. Capped, keeping its own.
+ */
 export function knowledgeSearchWords(text: string): string[] {
-  const words: string[] =
-    text
-      .normalize("NFKC")
-      .toLowerCase()
-      .match(/[\p{L}\p{N}]+/gu) ?? [];
-  return [...new Set(words.filter((word) => word.length > 2 && !STOP_WORDS.has(word)))].slice(
-    0,
-    MAX_QUERY_WORDS,
-  );
+  const lower = text.normalize("NFKC").toLowerCase();
+  const own = ownSearchWords(lower);
+  // "Where are you?" has no word of its own left once the common ones go.
+  const asked = /\bwhere\b/.test(lower) ? [...own, "where"] : own;
+  const related = asked.flatMap((word) => QUESTION_WORDS[word] ?? []);
+  return [...new Set([...own, ...related])].slice(0, MAX_QUERY_WORDS);
 }
 
 function normalizedPhrase(text: string): string {
   return text.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Whether `lower` holds `word` where a word starts. "book" is in "booking"
+ * and not in "Facebook"; "85" is not in "185". A "$" is matched anywhere.
+ */
+function holdsWord(lower: string, word: string): boolean {
+  if (!/[\p{L}\p{N}]/u.test(word)) return lower.includes(word);
+  let from = lower.indexOf(word);
+  while (from >= 0) {
+    if (from === 0 || !/[\p{L}\p{N}]/u.test(lower[from - 1])) return true;
+    from = lower.indexOf(word, from + 1);
+  }
+  return false;
 }
 
 /** Query words an entry contains, plus a bonus when it holds the whole question. */
@@ -80,13 +206,15 @@ export function knowledgeMatchScore(
   phrase = "",
 ): number {
   const lower = content.normalize("NFKC").toLowerCase();
-  const hits = words.reduce((score, word) => score + (lower.includes(word) ? 1 : 0), 0);
+  const hits = words.reduce((score, word) => score + (holdsWord(lower, word) ? 1 : 0), 0);
   return hits + (phrase && lower.includes(phrase) ? EXACT_PHRASE_BONUS : 0);
 }
 
 /**
- * The window of an entry around its first match, so an answer in the second
- * half of a long entry is shown rather than the entry's opening lines.
+ * The window of an entry that holds the most of the question's words, so an
+ * answer near the end of a long entry is shown rather than the entry's
+ * opening lines. The first match used to anchor the window, and a common word
+ * early in a pasted overview then hid the price further down.
  */
 export function excerptAroundMatch(
   content: string,
@@ -95,14 +223,31 @@ export function excerptAroundMatch(
 ): string {
   if (content.length <= maxChars) return content;
   const lower = content.toLowerCase();
-  let hit = -1;
+  const hits: number[] = [];
   for (const word of words) {
-    const index = lower.indexOf(word);
-    if (index >= 0 && (hit < 0 || index < hit)) hit = index;
+    let index = lower.indexOf(word);
+    while (index >= 0 && hits.length < 400) {
+      hits.push(index);
+      index = lower.indexOf(word, index + 1);
+    }
   }
-  if (hit < 0) return `${content.slice(0, maxChars)}…`;
+  // Where a word only sits inside another, the window is still a fair guess.
+  if (!hits.length) return `${content.slice(0, maxChars)}…`;
+  hits.sort((a, b) => a - b);
   // Leave a third of the window as lead-in so the match keeps its context.
-  const start = Math.max(0, hit - Math.floor(maxChars / 3));
+  const windowStart = (hit: number) => Math.max(0, hit - Math.floor(maxChars / 3));
+  let start = windowStart(hits[0]);
+  let best = -1;
+  for (const hit of hits) {
+    const from = windowStart(hit);
+    const window = lower.slice(from, from + maxChars);
+    const held = words.reduce((count, word) => count + (holdsWord(window, word) ? 1 : 0), 0);
+    // The earliest window wins a tie.
+    if (held > best) {
+      best = held;
+      start = from;
+    }
+  }
   const end = start + maxChars;
   return `${start > 0 ? "…" : ""}${content.slice(start, end)}${end < content.length ? "…" : ""}`;
 }
@@ -111,16 +256,39 @@ function likePattern(word: string): string {
   return `%${word.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
 }
 
+/**
+ * The same test as `holdsWord`, in Postgres: the word where a word starts
+ * (`\m`), case-insensitive. Search words are letters, digits and "/", so the
+ * escape only guards the pattern; the value is always a bound parameter.
+ */
+function mentionsWord(column: AnyColumn, word: string): SQL {
+  if (!/[\p{L}\p{N}]/u.test(word)) return ilike(column, likePattern(word));
+  return sql`${column} ~* ${`\\m${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`}`;
+}
+
 function mentionsAny(column: AnyColumn, words: readonly string[]) {
-  return or(...words.map((word) => ilike(column, likePattern(word))));
+  return or(...words.map((word) => mentionsWord(column, word)));
 }
 
 /** How many query words a row holds, so Postgres returns the best rows of any age. */
 function matchedWordCount(column: AnyColumn, words: readonly string[]) {
   return sql<number>`(${sql.join(
-    words.map((word) => sql`(case when ${column} ilike ${likePattern(word)} then 1 else 0 end)`),
+    words.map((word) => sql`(case when ${mentionsWord(column, word)} then 1 else 0 end)`),
     sql` + `,
   )})`;
+}
+
+/**
+ * Best rows first: those holding the question's own words, then those holding
+ * the most words of any kind. Postgres returns a limited number of rows, and
+ * counted together, rows that only share the added words crowded out the row
+ * the question was about.
+ */
+function bestMatchFirst(column: AnyColumn, words: readonly string[], own: readonly string[]) {
+  return [
+    ...(own.length ? [desc(matchedWordCount(column, own))] : []),
+    desc(matchedWordCount(column, words)),
+  ];
 }
 
 /**
@@ -134,9 +302,79 @@ export const DIRECTIVE_PROMPT_ORDER = [
   desc(schema.directives.id),
 ] as const;
 
+/**
+ * Word starts that mark the facts callers ask for most: where the business
+ * is, when it is open, what things cost, and how to book or pay. Matched
+ * where a word starts, as a search is: "fee" inside "coffee", "book" inside
+ * "Facebook" and "rate" inside "separate" each used to count.
+ */
+export const CORE_FACT_PATTERN =
+  "\\m(address|located|location|parking|open|close|hour|price|cost|fee|rate|charge|free|estimate|quote|service|appointment|book|schedul|cancel|payment|insurance|warranty|emergency|deliver)|\\$";
+
+/**
+ * The order of a prompt's opening facts. Facts on a core subject come first,
+ * the shortest of them leading because a one-line price or address answers
+ * more per character than a pasted overview; the rest follow newest first.
+ * The id settles ties: an import saves many rows in one statement, with one
+ * timestamp, and without it the facts a Bot opened with changed between calls.
+ */
+const onCoreSubject = sql<number>`(case when ${schema.knowledge.content} ~* ${CORE_FACT_PATTERN} then 1 else 0 end)`;
+export const OPENING_FACTS_ORDER = [
+  desc(onCoreSubject),
+  sql`(case when ${schema.knowledge.content} ~* ${CORE_FACT_PATTERN} then length(${schema.knowledge.content}) else 2147483647 end) asc`,
+  desc(schema.knowledge.createdAt),
+  desc(schema.knowledge.id),
+] as const;
+
+/** The facts an owner added last, newest first. */
+export const NEWEST_FACTS_ORDER = [
+  desc(schema.knowledge.createdAt),
+  desc(schema.knowledge.id),
+] as const;
+/** How many of the newest facts a prompt opens with, and how much room they may take. */
+export const OPENING_NEWEST_FACTS = 6;
+const OPENING_NEWEST_FACTS_CHARS = 1_000;
+
+/**
+ * A prompt's opening facts: the few an owner added last, then the rest in
+ * `OPENING_FACTS_ORDER`, without repeats. What was added last is the owner's
+ * freshest word ("closed December 24 to January 2"), and ordered by subject
+ * and length alone it could be left out of a call that the hours block said
+ * the business was open for. The newest are bounded so that long ones cannot
+ * take the room the short core facts need.
+ */
+export function openingFacts<T extends { content: string | null }>(
+  newest: readonly T[],
+  ordered: readonly T[],
+  maxItems: number,
+): T[] {
+  const seen = new Set<string>();
+  const facts: T[] = [];
+  let used = 0;
+  for (const fact of newest.slice(0, OPENING_NEWEST_FACTS)) {
+    const text = (fact.content ?? "").trim();
+    if (!text || seen.has(text) || used + text.length > OPENING_NEWEST_FACTS_CHARS) continue;
+    seen.add(text);
+    used += text.length;
+    facts.push(fact);
+  }
+  for (const fact of ordered) {
+    const text = (fact.content ?? "").trim();
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    facts.push(fact);
+  }
+  return facts.slice(0, maxItems);
+}
+
 type SearchScope = { userId: string; agentId: string };
 
-function matchingRules(db: KnowledgeDb, scope: SearchScope, words: readonly string[]) {
+function matchingRules(
+  db: KnowledgeDb,
+  scope: SearchScope,
+  words: readonly string[],
+  own: readonly string[],
+) {
   return db
     .select({ content: schema.directives.content })
     .from(schema.directives)
@@ -148,14 +386,19 @@ function matchingRules(db: KnowledgeDb, scope: SearchScope, words: readonly stri
       ),
     )
     .orderBy(
-      desc(matchedWordCount(schema.directives.content, words)),
+      ...bestMatchFirst(schema.directives.content, words, own),
       desc(schema.directives.priority),
       desc(schema.directives.id),
     )
     .limit(CANDIDATES_PER_TABLE);
 }
 
-function matchingFacts(db: KnowledgeDb, scope: SearchScope, words: readonly string[]) {
+function matchingFacts(
+  db: KnowledgeDb,
+  scope: SearchScope,
+  words: readonly string[],
+  own: readonly string[],
+) {
   return db
     .select({ content: schema.knowledge.content })
     .from(schema.knowledge)
@@ -167,8 +410,9 @@ function matchingFacts(db: KnowledgeDb, scope: SearchScope, words: readonly stri
       ),
     )
     .orderBy(
-      desc(matchedWordCount(schema.knowledge.content, words)),
+      ...bestMatchFirst(schema.knowledge.content, words, own),
       desc(schema.knowledge.createdAt),
+      desc(schema.knowledge.id),
     )
     .limit(CANDIDATES_PER_TABLE);
 }
@@ -179,28 +423,54 @@ function ranked(
   query: string,
 ): KnowledgeSnippet[] {
   const phrase = normalizedPhrase(query);
+  // The question's own words decide the order. The words added for it only
+  // widen the net, and an entry that happens to hold several of them must
+  // not outrank the one that names what the caller asked about.
+  const own = ownSearchWords(phrase);
   return rows
     .map((row) => ({ ...row, content: row.content.trim() }))
     .filter((row) => row.content)
-    .map((row) => ({ ...row, score: knowledgeMatchScore(row.content, words, phrase) }))
+    .map((row) => ({
+      ...row,
+      score:
+        knowledgeMatchScore(row.content, words, phrase) +
+        OWN_WORD_WEIGHT * knowledgeMatchScore(row.content, own),
+    }))
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score);
 }
 
+/** `work`, or nothing once `ms` has passed. `work` must not reject. */
+function within<T>(work: Promise<T[]>, ms: number): Promise<T[]> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    work,
+    new Promise<T[]>((resolve) => {
+      timer = setTimeout(() => resolve([]), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
 /**
  * The rules and facts that best answer `query`, best first, searched across
- * everything the Bot was taught. Empty when the query has no searchable words.
+ * everything the Bot was taught. A question made only of common words ("what
+ * do you do?") has nothing to match by keyword and is answered by meaning
+ * alone, where the Bot has an index.
  */
 export async function searchAgentKnowledge(
   db: KnowledgeDb,
   input: SearchScope & { query: string; limit: number },
 ): Promise<KnowledgeSnippet[]> {
   const words = knowledgeSearchWords(input.query);
-  if (!input.userId || !input.agentId || !words.length) return [];
-  const [rules, facts, meaning] = await Promise.all([
-    matchingRules(db, input, words),
-    matchingFacts(db, input, words),
-    semanticKnowledgeMatches(db, { ...input, limit: SEMANTIC_RESERVE }),
+  if (!input.userId || !input.agentId) return [];
+  const asksSomething = input.query.trim().split(/\s+/).length > 1;
+  if (!words.length && !asksSomething) return [];
+  const byMeaning = semanticKnowledgeMatches(db, { ...input, limit: SEMANTIC_RESERVE });
+  if (!words.length) return mergeMeaningMatches([], await byMeaning, input.limit);
+  const own = ownSearchWords(normalizedPhrase(input.query));
+  const [rules, facts] = await Promise.all([
+    matchingRules(db, input, words, own),
+    matchingFacts(db, input, words, own),
   ]);
   const keyword = ranked(
     [
@@ -210,6 +480,9 @@ export async function searchAgentKnowledge(
     words,
     input.query,
   );
+  const meaning = await (keyword.length
+    ? within(byMeaning, MEANING_WAIT_BESIDE_KEYWORD_MS)
+    : byMeaning);
   return mergeMeaningMatches(keyword, meaning, input.limit);
 }
 
@@ -247,8 +520,9 @@ export async function loadPromptKnowledge(
   input: SearchScope & { text: string; relevant: number; total: number },
 ): Promise<string[]> {
   const words = knowledgeSearchWords(input.text);
+  const own = ownSearchWords(normalizedPhrase(input.text));
   const [matches, newest] = await Promise.all([
-    words.length ? matchingFacts(db, input, words) : Promise.resolve([]),
+    words.length ? matchingFacts(db, input, words, own) : Promise.resolve([]),
     db
       .select({ content: schema.knowledge.content })
       .from(schema.knowledge)

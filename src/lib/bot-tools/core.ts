@@ -30,6 +30,8 @@ import {
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
 import { phoneSuffixForLog } from "../twilio-webhook-privacy";
 import { spokenSmsFailureReason } from "../sms-customer-errors";
+import { recordKnowledgeGap } from "../knowledge-gaps";
+import { callerPhoneKey } from "../caller-phone-match";
 import {
   externalEntityActionPolicyForUser,
   liveExternalActionPolicyForUser,
@@ -50,16 +52,17 @@ async function searchKnowledgeForCaller(
   userId: string,
   agentId: string,
   query: string,
+  callId?: string | null,
 ): Promise<string> {
   if (!userId || !agentId) {
     return "NO_VERIFIED_MATCH: The agent identity could not be verified. Do not answer the factual question. Offer to take a message or escalate to a human.";
   }
 
   const words = knowledgeSearchWords(query);
-  if (words.length === 0) {
-    return "NO_VERIFIED_MATCH: The question is too broad to verify safely. Ask the caller for the specific product, service, policy, date, or detail they need.";
-  }
-
+  // The owner is shown what was asked, with a link to add the answer. Not
+  // waited for: the caller is on the line, and it never throws.
+  const saveForOwner = () =>
+    void recordKnowledgeGap(drizzle, { userId, agentId, question: query, callId }).catch(() => {});
   const matches = await searchAgentKnowledge(drizzle, {
     userId,
     agentId,
@@ -67,11 +70,24 @@ async function searchKnowledgeForCaller(
     limit: MAX_KB_RESULTS,
   });
   if (matches.length === 0) {
+    // A question of common words only ("is it ok?") has nothing to look up.
+    if (words.length === 0) {
+      return "NO_VERIFIED_MATCH: The question is too broad to verify safely. Ask the caller for the specific product, service, policy, date, or detail they need.";
+    }
+    saveForOwner();
     return "NO_VERIFIED_MATCH: No approved knowledge matched the caller's question. Do not answer from memory, inference, or an unrelated entry. For current public facts, use the approved live-research tool only when enabled; otherwise take a message or escalate.";
   }
 
+  // Nothing saved uses the caller's words: what follows was found by meaning
+  // alone, and the nearest entry is returned however far it is. The Bot is
+  // told so instead of being handed it as verified, and the owner is told
+  // what was asked.
+  const byMeaningOnly = matches.every((match) => match.score <= 0);
+  if (byMeaningOnly && words.length > 0) saveForOwner();
   return [
-    "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
+    byMeaningOnly
+      ? "POSSIBLE_MATCH: Nothing saved uses the caller's words. The entries below were found by meaning and may not answer the question. Use one only if it clearly answers what was asked; otherwise say you do not have that information and offer to take a message. Do not combine them with assumptions."
+      : "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
     ...matches.map(
       (match) =>
         `[${match.source}] ${excerptAroundMatch(match.content, words, MAX_KB_RESULT_CHARS)}`,
@@ -236,11 +252,13 @@ export async function handleCoreToolCall(
             "NO_VERIFIED_MATCH: No specific question was provided. Ask the caller what exact fact they need before answering.",
         };
       }
+      const searchCallId = message.call?.id || (payload.call as { id?: string } | undefined)?.id;
       const results = await searchKnowledgeForCaller(
         drizzle,
         agent?.user_id || "",
         webhookAgentId,
         query,
+        typeof searchCallId === "string" ? searchCallId : null,
       );
       return { toolCallId, result: results };
     } catch (e: any) {
@@ -517,7 +535,18 @@ The email is written and the owner needs to confirm one thing before it goes. Te
         (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
         (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
       const liveCallerNumber = sanitizePhone(fallbackNumber);
-      const targetNumber = sanitizePhone(to_number || fallbackNumber);
+      const requestedNumber = sanitizePhone(to_number || fallbackNumber);
+      // A caller's own number is rarely said the way the carrier reports it:
+      // "512-555-0100" on a call from +15125550100. Compared as text, the
+      // person on the line was treated as a stranger, and the text they asked
+      // for was held to the rules for a cold message. It is the same phone, and
+      // the carrier's form is the one that sends.
+      const requestedKey = callerPhoneKey(requestedNumber);
+      const isLiveCounterpart =
+        Boolean(liveCallerNumber) &&
+        (requestedNumber === liveCallerNumber ||
+          (requestedKey !== null && requestedKey === callerPhoneKey(liveCallerNumber)));
+      const targetNumber = isLiveCounterpart ? liveCallerNumber : requestedNumber;
 
       if (!targetNumber) {
         return notConfirmed("No destination number was available for that message.");
@@ -543,7 +572,6 @@ The email is written and the owner needs to confirm one thing before it goes. Te
       // cold outbound text and gets the full gate: quiet hours, duplicate
       // window, tenant DNC, and consent evaluation with no synthesized
       // express-written-consent.
-      const isLiveCounterpart = Boolean(liveCallerNumber) && targetNumber === liveCallerNumber;
       const { evaluateOutboundDialGate } = await import("../outbound-dial-gate");
       const gate = await evaluateOutboundDialGate({
         userId: agent.user_id,

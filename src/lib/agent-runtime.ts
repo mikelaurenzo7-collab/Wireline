@@ -160,6 +160,116 @@ export function isWithinBusinessHours(
   return minutes >= open || minutes < close;
 }
 
+const WEEK_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const DAY_NAMES: Record<DayOfWeek, string> = {
+  mon: "Monday",
+  tue: "Tuesday",
+  wed: "Wednesday",
+  thu: "Thursday",
+  fri: "Friday",
+  sat: "Saturday",
+  sun: "Sunday",
+};
+
+function clockInWords(minutes: number): string {
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  const half = hour < 12 ? "AM" : "PM";
+  return minute === 0
+    ? `${hour12} ${half}`
+    : `${hour12}:${String(minute).padStart(2, "0")} ${half}`;
+}
+
+/**
+ * The saved weekly hours in plain words, for a Bot to answer "when are you
+ * open?": "Monday to Friday 8 AM to 5 PM. Saturday 9 AM to 1 PM. Sunday
+ * closed." Empty when no hours are saved, so a Bot is never told hours nobody
+ * set.
+ *
+ * Every day is named once any is saved, read the way `isWithinBusinessHours`
+ * reads it: Set Up saves a day that is open all day as a day with no rule, so
+ * a missing day is "open all day", and so is one whose times cannot be read.
+ * Leaving those days out told a Bot the business keeps Friday hours only while
+ * the same Bot was told it was open on a Tuesday.
+ */
+export function businessHoursInWords(hours: unknown): string {
+  if (!hours || typeof hours !== "object" || Array.isArray(hours)) return "";
+  const rules = hours as Partial<
+    Record<DayOfWeek, { open?: string; close?: string; closed?: boolean } | null>
+  >;
+  const saved = (day: DayOfWeek) => {
+    const rule = rules[day];
+    return rule && typeof rule === "object" ? rule : null;
+  };
+  if (!WEEK_ORDER.some((day) => saved(day))) return "";
+  const groups: Array<{ from: DayOfWeek; to: DayOfWeek; text: string }> = [];
+  WEEK_ORDER.forEach((day, index) => {
+    const rule = saved(day);
+    const open = parseHHMM(rule?.open);
+    const close = parseHHMM(rule?.close);
+    const text = !rule
+      ? "open all day"
+      : rule.closed
+        ? "closed"
+        : open == null || close == null
+          ? "open all day"
+          : open === close
+            ? "closed"
+            : `${clockInWords(open)} to ${clockInWords(close)}`;
+    const last = groups.at(-1);
+    if (last && last.text === text && WEEK_ORDER.indexOf(last.to) === index - 1) last.to = day;
+    else groups.push({ from: day, to: day, text });
+  });
+  if (!groups.length) return "";
+  return `${groups
+    .map(
+      (group) =>
+        `${group.from === group.to ? DAY_NAMES[group.from] : `${DAY_NAMES[group.from]} to ${DAY_NAMES[group.to]}`} ${group.text}`,
+    )
+    .join(". ")}.`;
+}
+
+/**
+ * The owner's saved weekly hours, and whether the business is open right now.
+ * Empty when no hours are saved. Until this existed a Bot on a call was never
+ * given the hours at all: an owner who entered them heard the Bot offer to
+ * take a message when a caller asked what time the business closes. Text
+ * replies were given them as raw JSON.
+ */
+export function businessHoursContext(
+  agent: { businessHours?: unknown; timezone?: string | null },
+  now = new Date(),
+): string {
+  const hours = businessHoursInWords(agent.businessHours);
+  if (!hours) return "";
+  const profile = {
+    business_hours: agent.businessHours as never,
+    timezone: agent.timezone ?? null,
+  };
+  // The day and time are given in the zone the hours are kept in, beside
+  // them. A Bot with no zone of its own is told the date in UTC, and the
+  // after-hours message-taker is told no date at all, so "when do you next
+  // open?" had no answer from the hours alone.
+  const zone = businessHoursTimeZone(profile);
+  const state = isWithinBusinessHours(profile, now) ? "open" : "closed";
+  let clock = "";
+  try {
+    clock = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      weekday: "long",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(now);
+  } catch {
+    // A zone that cannot be read leaves the clock out; the hours still stand.
+  }
+  return [
+    `BUSINESS HOURS (${zone}): ${hours}`,
+    `${clock ? `It is ${clock} there, and the` : "The"} business is ${state} right now. Say these hours when someone asks when the business is open. They are opening hours, not appointment availability.`,
+  ].join("\n");
+}
+
 /**
  * Compliance presets — opt-in guardrails woven into the agent's SYSTEM prompt.
  * The text is short and intentionally generic; account holders must consult
@@ -440,8 +550,8 @@ export const RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK = `## VOICE AND DELIVERY C
 - Keep the configured identity and personality recognizable throughout the call. Consistent does not mean monotone.
 - Use the saved opening greeting once. When the phone connection supplies the opening, continue with the caller’s first request. If asked whether you are AI, answer plainly and truthfully. Never claim to be human.
 - Talk like a capable person at this business: contractions, short sentences, one question at a time. After a correction, move to the next useful step.
-- Never narrate your work (searching, checking, looking up, tools) or mention records, a knowledge base, or verification. If you need a moment, say "One sec." and then answer.
-- If you do not know, say so plainly and offer the next step: "I'm not sure. I can take a message and have someone get back to you."
+- Never narrate your work (searching, checking, looking up, tools) or mention records, a knowledge base, or verification. If you need a moment, say "One sec." and then answer; when the Playbook gives a line for asking the caller to wait, say that line instead.
+- If you do not know, say so plainly and offer the next step: "I'm not sure. I can take a message for the team."
 - To book, ask for the day and time first, then name and contact. Do not ask about departments the caller did not raise.
 - Confirm a detail once. Do not spell names letter by letter unless asked. After a yes, do not repeat it; ask for the next thing.
 - Vary or skip acknowledgments. Do not open consecutive replies with the same word. If the caller is mid-thought, wait.

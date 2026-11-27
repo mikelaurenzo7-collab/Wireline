@@ -1,5 +1,6 @@
 import { resolveAgentGreeting } from "./agent-greeting";
 import { playbookPromptBlock } from "./agent-playbook";
+import { businessHoursContext } from "./agent-runtime";
 import { nativeCalendarRehearsalContext } from "./native-calendar-rehearsal";
 import { and, eq } from "drizzle-orm";
 
@@ -53,12 +54,16 @@ export function privateTestConversationText(
   customerMessage: string,
   history: PrivateAgentTestHistoryItem[] = [],
 ): string {
+  // The newest message first. The search keeps a limited number of words, and
+  // read oldest first, a long conversation used them up before it reached the
+  // question being answered.
   return [
+    customerMessage,
     ...history
       .slice(-12)
       .filter((message) => message.role === "customer")
-      .map((message) => message.content),
-    customerMessage,
+      .map((message) => message.content)
+      .reverse(),
   ].join("\n");
 }
 
@@ -100,7 +105,6 @@ export async function loadPrivateAgentTestContext(
           firstMessage: schema.agents.firstMessage,
           businessHours: schema.agents.businessHours,
           timezone: schema.agents.timezone,
-          businessVariables: schema.agents.businessVariables,
           outOfHoursMessage: schema.agents.outOfHoursMessage,
           escalationPhone: schema.agents.escalationPhone,
           escalationEmail: schema.agents.escalationEmail,
@@ -151,9 +155,6 @@ export async function loadPrivateAgentTestContext(
     }),
     PROMPT_KNOWLEDGE_ITEMS,
   );
-  const businessProfile = agent.businessVariables
-    ? JSON.stringify(agent.businessVariables).slice(0, 6000)
-    : "";
   const calendarContext = await nativeCalendarRehearsalContext(userId, agent.enabledTools);
 
   const system = [
@@ -168,12 +169,13 @@ export async function loadPrivateAgentTestContext(
     playbookPromptBlock(agent.playbook),
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
-    businessProfile ? `Workspace profile: ${businessProfile}` : "",
-    agent.businessHours ? `Operating hours: ${JSON.stringify(agent.businessHours)}` : "",
+    businessHoursContext(agent),
     agent.timezone ? `Timezone: ${agent.timezone}` : "",
     agent.outOfHoursMessage ? `After-hours response: ${agent.outOfHoursMessage}` : "",
+    // The Bot knows a person can take over. It is not given the number or
+    // address to read out.
     agent.escalationPhone || agent.escalationEmail
-      ? `Human handoff contact: ${[agent.escalationPhone, agent.escalationEmail].filter(Boolean).join(" · ")}`
+      ? "A person can take over when needed. Offer a follow-up from the team, and never give out internal contact details."
       : "",
   ]
     .filter(Boolean)

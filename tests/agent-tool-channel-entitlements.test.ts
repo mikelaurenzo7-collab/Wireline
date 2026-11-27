@@ -78,6 +78,9 @@ beforeEach(() => {
   h.connections.mockResolvedValue(NO_TENANT_INTEGRATIONS);
 });
 
+/** What every Bot is offered, whatever was selected: see ALWAYS_ON_AGENT_TOOL_NAMES. */
+const ALWAYS_ON = ["search_knowledge_base", "create_followup_task", "add_to_dnc"];
+
 describe("live tool channel entitlements", () => {
   it("gives the exact legacy founder specialist a manual follow-up tool before seed repair", async () => {
     const local = names(buildAgentToolDefs(legacyFounderCsTools));
@@ -103,10 +106,10 @@ describe("live tool channel entitlements", () => {
 
   it("omits unverified private reads, writes, and quick pay from a newly built model schema", async () => {
     const persisted = [...unverifiedLiveTools, "search_knowledge_base"];
-    expect(names(buildAgentToolDefs(persisted))).toEqual(["search_knowledge_base"]);
+    expect(names(buildAgentToolDefs(persisted))).toEqual(ALWAYS_ON);
     expect(
       names(await buildAgentToolDefsForTenant(persisted, "user-pilot", "standard", flags)),
-    ).toEqual(["search_knowledge_base"]);
+    ).toEqual(ALWAYS_ON);
   });
 
   it("strips stale cached unverified tools even when selected before the safety change", async () => {
@@ -114,7 +117,7 @@ describe("live tool channel entitlements", () => {
     h.cached.mockResolvedValue(persisted.map((name) => ({ name })));
     expect(
       names(await buildAgentToolDefsForTenant(persisted, "user-pilot", "standard", flags)),
-    ).toEqual(["search_knowledge_base"]);
+    ).toEqual(ALWAYS_ON);
     expect(h.connections).not.toHaveBeenCalled();
     expect(h.cacheWrite).not.toHaveBeenCalled();
   });
@@ -137,7 +140,7 @@ describe("live tool channel entitlements", () => {
   it("omits customer email and text from a Calls-only Bot's new schema", async () => {
     expect(
       names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
-    ).toEqual(["search_knowledge_base"]);
+    ).toEqual(ALWAYS_ON);
     expect(h.entitlements).toHaveBeenCalledWith("user-pilot");
   });
 
@@ -145,7 +148,7 @@ describe("live tool channel entitlements", () => {
     h.cached.mockResolvedValue(selected.map((name) => ({ name })));
     expect(
       names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
-    ).toEqual(["search_knowledge_base"]);
+    ).toEqual(ALWAYS_ON);
     expect(h.connections).not.toHaveBeenCalled();
     expect(h.cacheWrite).not.toHaveBeenCalled();
   });
@@ -154,17 +157,17 @@ describe("live tool channel entitlements", () => {
     h.entitlements.mockResolvedValue({ channels: ["email"] });
     expect(
       names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
-    ).toEqual(["send_email", "search_knowledge_base"]);
+    ).toEqual(["send_email", ...ALWAYS_ON]);
   });
 
   it("applies paid SMS entitlement in addition to the existing messaging switch", async () => {
     h.entitlements.mockResolvedValue({ channels: ["sms"] });
     expect(
       names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
-    ).toEqual(["send_text_message", "search_knowledge_base"]);
+    ).toEqual(["send_text_message", ...ALWAYS_ON]);
     expect(
       names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", {})),
-    ).toEqual(["search_knowledge_base"]);
+    ).toEqual(ALWAYS_ON);
   });
 
   it("preserves other cached tools but denies customer sends when the entitlement read fails", async () => {
@@ -172,7 +175,7 @@ describe("live tool channel entitlements", () => {
     h.entitlements.mockRejectedValue(new Error("Channel verification unavailable"));
     expect(
       names(await buildAgentToolDefsForTenant(selected, "user-pilot", "standard", flags)),
-    ).toEqual(["search_knowledge_base"]);
+    ).toEqual(ALWAYS_ON);
     expect(h.cacheWrite).not.toHaveBeenCalled();
   });
 

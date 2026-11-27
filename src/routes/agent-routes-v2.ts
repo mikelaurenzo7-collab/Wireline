@@ -73,6 +73,7 @@ import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/live
 import {
   isAgentToolName,
   normalizeEnabledTools,
+  readStoredAgentTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import {
@@ -931,7 +932,9 @@ router.get(
       archetype: record?.archetype || DEFAULT_BOT_ARCHETYPE,
       flowConfig: record?.flowConfig || null,
       playbook: readStoredAgentPlaybook(record?.playbook),
-      enabledTools: normalizeEnabledTools(record?.enabledTools),
+      // What the Bot really has, not "everything" because one saved name was
+      // retired: the owner saves this list back.
+      enabledTools: readStoredAgentTools(record?.enabledTools),
       runtime: {
         provider: record?.llmProvider || null,
         model: record?.llmModel || null,

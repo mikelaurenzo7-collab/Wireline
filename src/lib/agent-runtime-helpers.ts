@@ -1,4 +1,8 @@
-import { applyPlanToolUnlocks, resolveAgentTools } from "./agent-capabilities";
+import {
+  ALWAYS_ON_AGENT_TOOL_NAMES,
+  applyPlanToolUnlocks,
+  resolveAgentTools,
+} from "./agent-capabilities";
 import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,
@@ -7,13 +11,11 @@ import { getTenantChannelEntitlements } from "./channel-entitlements";
 import { isAgentToolChannelAllowed } from "./agent-tool-channel-policy";
 import { log } from "./server-context";
 import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
-import { isLegacyFounderShowcaseToolSelection } from "./showcase-assistant";
 
 export function sanitizePhone(phone: string | undefined | null): string {
   return (phone || "").replace(/[^0-9+]/g, "").slice(0, 20);
 }
 
-export const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
 export const MAX_RUNTIME_LESSONS = 5;
 export const MAX_RUNTIME_DIRECTIVES = 24;
 export const MAX_RUNTIME_KNOWLEDGE = 18;
@@ -51,12 +53,31 @@ const RUNTIME_GUARDRAIL_MARKERS = [
   "\n\n## COMPLIANCE",
   "\n\n## DO-NOT-DISCUSS TOPICS",
   "\n\n## IMMEDIATE-ESCALATION TRIGGERS",
+  // OWNER_LIMITS_HEADING in agent-playbook.ts: what the owner ruled out.
+  "\n\n## LIMITS SET BY THE ACCOUNT HOLDER",
   "\n\n## ACTION AND RESULT SAFETY",
   "\n\n## VOICE AND DELIVERY CONSISTENCY",
 ] as const;
 
+/** OWNER_LIMITS_HEADING in agent-playbook.ts, as it appears between blocks. */
+const OWNER_LIMITS_MARKER = "\n\n## LIMITS SET BY THE ACCOUNT HOLDER";
+/**
+ * What the opening of a call prompt needs before the owner's own content:
+ * identity and the fixed call rules, the time, the hours and the calendar
+ * rules come to about 4,000 characters.
+ */
+const MIN_HEAD_BESIDE_OWNER_LIMITS = 6_000;
+const MIN_OWNER_LIMITS_WORTH_KEEPING = 300;
+
 const RUNTIME_TRIM_NOTICE =
   "\n\n[Context trimmed for voice latency, use tools for account-specific detail.]";
+/** How far back a cut looks for the end of a line: a little over one rule or fact. */
+const RUNTIME_TRIM_LINE_REACH = 800;
+
+/** Whether an assembled prompt was cut to fit, so the runtime can say so in its log. */
+export function wasRuntimePromptTrimmed(prompt: string): boolean {
+  return prompt.includes(RUNTIME_TRIM_NOTICE);
+}
 
 /**
  * Clamp an assembled runtime prompt without dropping the compliance /
@@ -86,11 +107,47 @@ export function clampRuntimePromptPreservingTail(
     .filter((idx) => idx > 0)
     .sort((a, b) => a - b);
 
-  for (const idx of indices) {
-    const tail = text.slice(idx);
-    const headBudget = max - tail.length - RUNTIME_TRIM_NOTICE.length;
+  for (const [position, idx] of indices.entries()) {
+    let tail = text.slice(idx);
+    // The owner's limits are kept with the fixed text after them, but not at
+    // the cost of the fixed text before them. The opening of a call prompt
+    // (who the Bot is, the call rules, the time, the hours, the calendar
+    // rules) is platform text too, and an owner with long lists could squeeze
+    // it out. Past what the opening needs, the owner's block gives way
+    // instead, from its own end, by whole lines.
+    const afterOwnerLimits = indices[position + 1];
+    if (text.startsWith(OWNER_LIMITS_MARKER, idx) && afterOwnerLimits !== undefined) {
+      const fixedTail = text.slice(afterOwnerLimits);
+      const ownerLimits = text.slice(idx, afterOwnerLimits);
+      const room =
+        max -
+        RUNTIME_TRIM_NOTICE.length -
+        fixedTail.length -
+        // Never more than a third of the whole: a smaller limit scales it down.
+        Math.min(idx, MIN_HEAD_BESIDE_OWNER_LIMITS, Math.floor(max / 3));
+      if (ownerLimits.length > room) {
+        if (room < MIN_OWNER_LIMITS_WORTH_KEEPING) continue;
+        const fits = ownerLimits.slice(0, room);
+        const lastLine = fits.lastIndexOf("\n");
+        let shortened = lastLine > 0 ? fits.slice(0, lastLine) : fits;
+        // A list heading with none of its items left says nothing.
+        const headingStart = shortened.lastIndexOf("\n");
+        if (shortened.endsWith(":") && headingStart > 0) {
+          shortened = shortened.slice(0, headingStart);
+        }
+        tail = `${shortened}${fixedTail}`;
+      }
+    }
+    const headBudget = Math.min(idx, max - tail.length - RUNTIME_TRIM_NOTICE.length);
     if (headBudget < 500) continue;
-    return `${text.slice(0, headBudget)}${RUNTIME_TRIM_NOTICE}${tail}`;
+    // Whole lines where a line ends close by. Rules and facts are one line
+    // each, at most 700 characters, so the cut drops complete items from the
+    // end instead of leaving half a sentence for the Bot to guess at. A longer
+    // unbroken passage is still cut where the budget ends, not thrown away.
+    const head = text.slice(0, headBudget);
+    const lineEnd = head.lastIndexOf("\n");
+    const kept = lineEnd >= headBudget - RUNTIME_TRIM_LINE_REACH ? head.slice(0, lineEnd) : head;
+    return `${kept}${RUNTIME_TRIM_NOTICE}${tail}`;
   }
 
   return clampRuntimePrompt(text, max);
@@ -907,8 +964,21 @@ export function buildAgentToolDefs(enabledTools?: unknown): object[] {
     .filter((name) => !UNVERIFIED_LIVE_TOOL_NAMES.has(name))
     .map((name) => AGENT_TOOL_DEFS[name])
     .filter(Boolean);
-  if (isLegacyFounderShowcaseToolSelection(enabledTools)) {
-    tools.push(AGENT_TOOL_DEFS.create_followup_task);
+  return withAlwaysOnTools(tools, () => true);
+}
+
+/**
+ * Adds what every Bot can do, whatever was ticked: look up what it was taught,
+ * leave the owner a message, and honour a do-not-call request. The execution
+ * check allows the same three. A saved selection that left one out used to be
+ * masked: one retired name in the list switched the whole catalogue on here.
+ */
+function withAlwaysOnTools(tools: object[], channelAllows: (name: string) => boolean) {
+  const offered = new Set(tools.map((tool) => String((tool as { name?: unknown }).name || "")));
+  for (const name of ALWAYS_ON_AGENT_TOOL_NAMES) {
+    if (offered.has(name) || UNVERIFIED_LIVE_TOOL_NAMES.has(name) || !channelAllows(name)) continue;
+    const definition = AGENT_TOOL_DEFS[name];
+    if (definition) tools.push(definition);
   }
   return tools;
 }
@@ -933,7 +1003,6 @@ export async function buildAgentToolDefsForTenant(
       return { channels: [] };
     }),
   ]);
-  const legacyFounderSpecialist = isLegacyFounderShowcaseToolSelection(enabledTools);
   const allowedTools = (tools: object[]) => {
     const computerTools = [
       AGENT_TOOL_DEFS.start_computer_task,
@@ -957,16 +1026,8 @@ export async function buildAgentToolDefsForTenant(
         (!computerNames.has(name) || selectedComputerNames.has(name))
       );
     });
-    // Existing founder CS rows can still hold the old seeded selection until
-    // the next founder bootstrap. Add only the safe manual tool on either a
-    // fresh or cached schema; never expand a customized selection.
-    if (
-      legacyFounderSpecialist &&
-      !allowed.some((tool) => (tool as { name?: unknown }).name === "create_followup_task") &&
-      isAgentToolChannelAllowed("create_followup_task", entitlements.channels)
-    ) {
-      allowed.push(AGENT_TOOL_DEFS.create_followup_task);
-    }
+    // On a fresh or a cached schema alike.
+    withAlwaysOnTools(allowed, (name) => isAgentToolChannelAllowed(name, entitlements.channels));
     // Reconcile stale schemas without expanding an explicit action selection.
     for (const computerTool of selectedComputerTools) {
       if (

@@ -354,6 +354,46 @@ describe("funded inbound runtime construction", () => {
       admission: { mode: "take_message", reason: "after_hours" },
     });
     expect(result.session.instructions).toContain("AFTER-HOURS MODE");
+    expect(result.session.instructions).toContain("answer business questions");
+  });
+  it("lets the after-hours message-taker say when the business opens", () => {
+    const hours =
+      "BUSINESS HOURS (America/Chicago): Monday to Friday 8 AM to 5 PM.\nIt is Friday 6:02 PM there, and the business is closed right now.";
+    const canTakeMessages = {
+      ...runtime,
+      businessHours: hours,
+      session: { ...runtime.session, tools: [{ name: "create_followup_task" }] },
+    };
+    const result = applyInboundAdmission(canTakeMessages as any, {
+      ...call,
+      admission: { mode: "take_message", reason: "after_hours" },
+    });
+    expect(result.session.instructions).toContain(hours);
+    expect(result.session.instructions).toContain(
+      "You may say the opening hours above and when the business next opens. Do not answer other business questions, quote prices, book appointments, or transfer.",
+    );
+    // A line that cannot save a message can still say when to call back.
+    const cannotSave = applyInboundAdmission({ ...runtime, businessHours: hours } as any, {
+      ...call,
+      admission: { mode: "take_message", reason: "after_hours" },
+    });
+    expect(cannotSave.session.instructions).toContain(
+      "You may say the opening hours above and when the business next opens. Do not collect sensitive details, answer other business questions,",
+    );
+    // A line taking messages for another reason is not told the hours.
+    const covered = applyInboundAdmission(canTakeMessages as any, {
+      ...call,
+      admission: { mode: "take_message", reason: "coverage" },
+    });
+    expect(covered.session.instructions).not.toContain("BUSINESS HOURS");
+    expect(covered.session.instructions).toContain("Do not answer business questions");
+    // Nor is a Bot whose owner saved no hours.
+    const noHours = applyInboundAdmission({ ...canTakeMessages, businessHours: "" } as any, {
+      ...call,
+      admission: { mode: "take_message", reason: "after_hours" },
+    });
+    expect(noHours.session.instructions).toContain("Do not answer business questions");
+    expect(noHours.session.instructions).not.toContain("You may say the opening hours");
   });
   it("limits legacy funded recovery to a tool-free 20-second notice", async () => {
     const recovering = {

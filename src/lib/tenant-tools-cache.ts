@@ -10,7 +10,9 @@ import { log } from "./server-context";
 
 const CACHE_TTL_SECONDS = 120;
 // v2 requires explicit recipient confirmation in the customer-email tool schema.
-const CACHE_KEY_PREFIX = "wireline:tenant-tools:v2:";
+// v3: a saved selection that holds a retired tool name no longer resolves to
+// the whole catalogue, so lists cached before that must not be served.
+const CACHE_KEY_PREFIX = "wireline:tenant-tools:v3:";
 
 const memoryCache = new Map<string, { data: object[]; expiresAt: number }>();
 
