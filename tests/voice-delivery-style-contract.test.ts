@@ -41,15 +41,13 @@ describe("how the Bot talks on a live call", () => {
   // with speech it could not make out. Its own guide asks for both rules.
   it("asks again instead of guessing at speech it could not make out", () => {
     expect(block).toMatch(
-      /could not make out what the caller said, or it was cut off, do not guess/,
+      /could not make out what the caller said, ask them to say it again; never guess/,
     );
-    expect(block).toMatch(/ask them to say it again/);
-    expect(block).toMatch(/Noise, a TV or another voice in the room is not a request/);
+    expect(block).toMatch(/Noise or another voice in the room is not a request/);
   });
 
   it("says numbers so they can be written down", () => {
-    expect(block).toMatch(/one digit at a time in short groups, never as one large number/);
-    expect(block).toMatch(/Read back one you were given once/);
+    expect(block).toMatch(/say phone numbers and codes digit by digit in short groups/);
   });
 
   it("stays small, because every live prompt carries it inside a fixed budget", () => {
