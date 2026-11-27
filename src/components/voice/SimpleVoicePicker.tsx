@@ -80,7 +80,9 @@ type AgentVoiceResponse = {
     phoneCall?: PhoneCallVoice;
     phoneCallReady?: boolean | null;
     catalogVoice?: CatalogPhoneVoice | null;
-    /** The built-in phone voice in effect; absent when calls cannot speak the phone catalog. */
+    /** Whether calls can speak the phone catalog at all. */
+    phoneVoiceCatalog?: boolean;
+    /** The catalog voice in effect; absent when the saved voice has no certain match. */
     phoneVoice?: string | null;
     delivery?: CallDeliveryView | null;
     /** Rehearsal speaks the same stock phone voice callers hear. */
@@ -195,7 +197,7 @@ export default function SimpleVoicePicker({
         const phoneVoice = PHONE_CATALOG_VOICES.find(
           (voice) => voice.id === agentData.voice?.phoneVoice?.trim().toLowerCase(),
         );
-        setPhoneCatalog(Boolean(phoneVoice));
+        setPhoneCatalog(agentData.voice?.phoneVoiceCatalog === true);
         setDelivery(agentData.voice?.delivery ?? null);
         setSelectedVoiceId(phoneVoice?.id ?? managedVoice?.id ?? storedVoiceId);
         setPhoneCall(agentData.voice?.phoneCall ?? null);
@@ -635,7 +637,7 @@ export default function SimpleVoicePicker({
             stopSample();
             setDelivery(saved);
           }}
-          libraryVoiceAnswers={Boolean(catalogVoice)}
+          otherVoiceAnswers={Boolean(catalogVoice || clonedVoiceName)}
           sample={
             selectedVoice && phoneCall && !clonedVoiceName && !catalogVoice
               ? {

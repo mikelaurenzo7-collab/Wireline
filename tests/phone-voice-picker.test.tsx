@@ -96,6 +96,7 @@ const deliveryPanel = (nodes: Element[]) =>
         initial: CallDeliveryView;
         onSaved: (delivery: CallDeliveryView) => void;
         sample: { playing: boolean; loading: boolean; toggle: () => void } | null;
+        otherVoiceAnswers: boolean;
       }>
     | undefined;
 const requests = () =>
@@ -114,6 +115,7 @@ const saved = (voice: Record<string, unknown> = {}) => ({
       provider: "openai",
       phoneCall: { provider: "phone-engine", voice: "castor" },
       phoneCallReady: true,
+      phoneVoiceCatalog: true,
       phoneVoice: "castor",
       delivery: noDelivery,
       rehearsalHearsPhoneVoice: true,
@@ -238,6 +240,7 @@ describe("built-in phone voices in the picker", () => {
     const nodes = await loaded(28);
     const panel = deliveryPanel(nodes)!;
     expect(panel.props.initial).toEqual(noDelivery);
+    expect(panel.props.otherVoiceAnswers).toBe(false);
     expect(panel.props.sample).toMatchObject({ playing: false, loading: false });
     h.fetch.mockReturnValue(new Promise(() => {}));
     panel.props.sample!.toggle();
@@ -261,7 +264,29 @@ describe("built-in phone voices in the picker", () => {
     // The built-in voice behind it is listed but is not what callers hear.
     expect(voiceButton(nodes, "Castor")!.props["aria-pressed"]).toBe(false);
     expect(deliveryPanel(nodes)!.props.sample).toBeNull();
+    // Names are recognized only when a built-in voice answers, and the panel is told so.
+    expect(deliveryPanel(nodes)!.props.otherVoiceAnswers).toBe(true);
     expect(text(nodes[0])).toContain("Callers Hear Skylar.");
+  });
+
+  it("selects nothing and asks for a choice when the saved voice has no certain match", async () => {
+    h.fetch.mockResolvedValue(
+      saved({ voiceId: "presenter-voice-7", provider: "openai", phoneVoice: null }),
+    );
+    const nodes = await loaded(28);
+    for (const voice of PHONE_VOICES) {
+      expect(voiceButton(nodes, voice.name)!.props["aria-pressed"], voice.name).toBe(false);
+    }
+    expect(text(nodes[0])).toContain("Unavailable Voice");
+    expect(
+      nodes.some(
+        (node) => node.type === "notice" && text(node) === "Choose a voice before the next call.",
+      ),
+    ).toBe(true);
+    // Any catalog voice can still be picked from here.
+    h.fetch.mockResolvedValueOnce(saved({ voiceId: "marin", phoneVoice: "luna" }));
+    voiceButton(nodes, "Luna")!.props.onClick!();
+    await vi.waitFor(() => expect(voiceButton(render(), "Luna")!.props["aria-pressed"]).toBe(true));
   });
 });
 

@@ -66,10 +66,18 @@ const nothing: CallDeliveryView = { speakingRate: 1.1, pronunciations: [], recog
 const onSaved = vi.fn();
 let initial = nothing;
 let sample: { playing: boolean; loading: boolean; toggle: () => void } | null = null;
+let otherVoiceAnswers = false;
 function render() {
   h.cursor = 0;
   const nodes = elements(
-    CallDeliverySettings({ agentId: "bot a", agentName: "Front Desk", initial, onSaved, sample }),
+    CallDeliverySettings({
+      agentId: "bot a",
+      agentName: "Front Desk",
+      initial,
+      onSaved,
+      sample,
+      otherVoiceAnswers,
+    }),
   );
   h.effects.splice(0).forEach((effect) => effect());
   return nodes;
@@ -98,6 +106,7 @@ const lastSave = () => {
   const [url, init] = h.fetch.mock.calls.at(-1)!;
   return { url, method: init.method, body: JSON.parse(init.body) };
 };
+const settled = () => vi.waitFor(() => expect(notices(render())).toHaveLength(1));
 
 beforeEach(() => {
   h.slots = [];
@@ -107,6 +116,7 @@ beforeEach(() => {
   onSaved.mockReset();
   initial = nothing;
   sample = null;
+  otherVoiceAnswers = false;
   vi.stubGlobal("requestAnimationFrame", (callback: () => void) => callback());
 });
 
@@ -140,18 +150,24 @@ describe("speaking pace", () => {
     expect(text(nodes[0])).toContain("Brisk Pace");
   });
 
-  it("moves with the arrow keys and saves nothing for the pace already in effect", async () => {
-    const nodes = render();
-    radios(nodes)[2].props.onClick();
+  it("moves with the arrow keys, taking keyboard focus along", async () => {
+    const focused: number[] = [];
+    const group = {
+      querySelectorAll: () =>
+        [0, 1, 2, 3, 4].map((index) => ({ focus: () => focused.push(index) })),
+    };
     const key = (name: string, index: number) =>
       radios(render())[index].props.onKeyDown({
         key: name,
         preventDefault: vi.fn(),
-        currentTarget: { parentElement: null },
+        currentTarget: { parentElement: group },
       });
+    // The pace already in effect, and keys that are not arrows, save and move nothing.
+    radios(render())[2].props.onClick();
     key("Home", 0);
     key("Tab", 2);
     expect(h.fetch).not.toHaveBeenCalled();
+    expect(focused).toEqual([]);
 
     answers({ speakingRate: 1 });
     key("ArrowLeft", 2);
@@ -161,6 +177,7 @@ describe("speaking pace", () => {
     key("End", 1);
     await vi.waitFor(() => expect(checkedPace(render())).toBe("Fast"));
     expect(lastSave().body).toEqual({ speakingRate: 1.3 });
+    expect(focused).toEqual([1, 4]);
   });
 
   it("keeps the old pace and says why when a save is refused", async () => {
@@ -206,58 +223,87 @@ describe("speaking pace", () => {
 });
 
 describe("pronunciations", () => {
-  it("adds one, shows it, clears the form, and removes it again", async () => {
+  it("sends only the new entry, shows the list the server returns, and clears the form", async () => {
+    // Another screen added Siobhan after this one loaded; this one still shows nothing.
     let nodes = render();
-    expect(button(nodes, "Add").props.disabled).toBe(true);
+    expect(button(nodes, "Add Pronunciation").props.disabled).toBe(true);
     type(nodes, 0, "  Nguyen ");
     type(render(), 1, "Win");
     nodes = render();
-    expect(button(nodes, "Add").props.disabled).toBe(false);
+    expect(button(nodes, "Add Pronunciation").props.disabled).toBe(false);
 
-    answers({ pronunciations: [{ word: "Nguyen", say: "Win" }] });
+    answers({
+      pronunciations: [
+        { word: "Siobhan", say: "Shi-vawn" },
+        { word: "Nguyen", say: "Win" },
+      ],
+    });
     submit(nodes, 0);
-    await vi.waitFor(() => expect(notices(render())).toHaveLength(1));
-    expect(lastSave().body).toEqual({ pronunciations: [{ word: "Nguyen", say: "Win" }] });
+    await settled();
+    // One entry, never the list: a stale screen cannot erase what it has not seen.
+    expect(lastSave().body).toEqual({ addPronunciation: { word: "Nguyen", say: "Win" } });
     nodes = render();
     expect(inputs(nodes).map((node) => node.props.value)).toEqual(["", "", ""]);
     expect(notices(nodes)).toEqual(["Saved. Rehearse to hear it."]);
-    expect(text(nodes[0])).toContain("Natural Pace · 1 Pronunciation");
-    expect(text(nodes.find((node) => node.type === "li")!)).toBe("Nguyen→ is said as Win");
+    expect(text(nodes[0])).toContain("Natural Pace · 2 Pronunciations");
+    expect(nodes.filter((node) => node.type === "li").map((node) => text(node))).toEqual([
+      "Siobhan→ is said as Shi-vawn",
+      "Nguyen→ is said as Win",
+    ]);
+  });
+
+  it("removes one by its word and puts keyboard focus back in the form", async () => {
+    initial = { ...nothing, pronunciations: [{ word: "Nguyen", say: "Win" }] };
+    const nodes = render();
+    const focus = vi.fn();
+    inputs(nodes)[0].props.ref.current = { focus };
 
     answers({ pronunciations: [] });
     button(nodes, "Remove Pronunciation For Nguyen").props.onClick();
     await vi.waitFor(() => expect(render().some((node) => node.type === "li")).toBe(false));
-    expect(lastSave().body).toEqual({ pronunciations: [] });
+    expect(lastSave().body).toEqual({ removePronunciation: "Nguyen" });
     expect(notices(render())).toEqual(["Removed. Front Desk says Nguyen as written again."]);
+    // The button that had focus is gone; focus does not fall back to the page.
+    await vi.waitFor(() => expect(focus).toHaveBeenCalledOnce());
   });
 
-  it("explains a spelling that would change nothing, or a word listed twice, without a request", async () => {
-    initial = { ...nothing, pronunciations: [{ word: "Nguyen", say: "Win" }] };
-    let nodes = render();
-    type(nodes, 0, "Acme");
+  it("explains a spelling that would change nothing, without a request", () => {
+    type(render(), 0, "Acme");
     type(render(), 1, "ACME");
     submit(render(), 0);
-    expect(notices(render())).toEqual(["Spell it the way it sounds, not the way it is written."]);
-
-    type(render(), 0, "nguyen");
-    type(render(), 1, "Wen");
-    submit(render(), 0);
-    nodes = render();
-    expect(notices(nodes)).toEqual(["nguyen already has a pronunciation. Remove it to change it."]);
+    const nodes = render();
+    expect(notices(nodes)).toEqual(["Spell it the way it sounds, not the way it is written."]);
     expect(h.fetch).not.toHaveBeenCalled();
     // What was typed stays, so it can be corrected rather than retyped.
-    expect(inputs(nodes).map((node) => node.props.value)).toEqual(["nguyen", "Wen", ""]);
+    expect(inputs(nodes).map((node) => node.props.value)).toEqual(["Acme", "ACME", ""]);
   });
 
-  it("keeps what was typed when the save fails", async () => {
-    type(render(), 0, "Nguyen");
-    type(render(), 1, "Win");
-    h.fetch.mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+  it("saves a new spelling for a word that is already listed", async () => {
+    initial = { ...nothing, pronunciations: [{ word: "Nguyen", say: "Win" }] };
+    type(render(), 0, "nguyen");
+    type(render(), 1, "Wen");
+    answers({ pronunciations: [{ word: "nguyen", say: "Wen" }] });
     submit(render(), 0);
-    await vi.waitFor(() => expect(notices(render())).toHaveLength(1));
+    await settled();
+    expect(lastSave().body).toEqual({ addPronunciation: { word: "nguyen", say: "Wen" } });
+    expect(text(render().find((node) => node.type === "li")!)).toBe("nguyen→ is said as Wen");
+  });
+
+  it("shows the server's reason and keeps what was typed when a save is refused", async () => {
+    type(render(), 0, "AI assistant");
+    type(render(), 1, "team member");
+    const reason =
+      "That includes a word from the required call opening, which is always spoken as written. Add only the word that is said wrong.";
+    h.fetch.mockResolvedValueOnce({ ok: false, json: async () => ({ error: reason }) });
+    submit(render(), 0);
+    await settled();
     const nodes = render();
-    expect(notices(nodes)).toEqual(["That change could not be saved. Try again."]);
-    expect(inputs(nodes).map((node) => node.props.value)).toEqual(["Nguyen", "Win", ""]);
+    expect(notices(nodes)).toEqual([reason]);
+    expect(inputs(nodes).map((node) => node.props.value)).toEqual([
+      "AI assistant",
+      "team member",
+      "",
+    ]);
   });
 
   it("stops offering the form at the most one Bot can keep", () => {
@@ -275,13 +321,14 @@ describe("pronunciations", () => {
 });
 
 describe("names to recognize", () => {
-  it("adds a name, refuses a repeat without a request, and removes one with a tap", async () => {
+  it("adds one name, refuses a repeat without a request, and removes one with a tap", async () => {
     let nodes = render();
+    expect(button(nodes, "Add Name").props.disabled).toBe(true);
     type(nodes, 2, " Siobhan ");
     answers({ recognizedNames: ["Siobhan"] });
     submit(render(), 1);
-    await vi.waitFor(() => expect(notices(render())).toHaveLength(1));
-    expect(lastSave().body).toEqual({ recognizedNames: ["Siobhan"] });
+    await settled();
+    expect(lastSave().body).toEqual({ addRecognizedName: "Siobhan" });
     nodes = render();
     expect(notices(nodes)).toEqual(["Saved. Front Desk listens for Siobhan from the next call."]);
     expect(inputs(nodes)[2].props.value).toBe("");
@@ -292,9 +339,25 @@ describe("names to recognize", () => {
     expect(notices(render())).toEqual(["SIOBHAN is already on the list."]);
     expect(h.fetch).toHaveBeenCalledTimes(1);
 
+    const focus = vi.fn();
+    inputs(render())[2].props.ref.current = { focus };
     answers({ recognizedNames: [] });
     button(render(), "Remove Siobhan").props.onClick();
     await vi.waitFor(() => expect(notices(render())).toEqual(["Removed Siobhan."]));
-    expect(lastSave().body).toEqual({ recognizedNames: [] });
+    expect(lastSave().body).toEqual({ removeRecognizedName: "Siobhan" });
+    await vi.waitFor(() => expect(focus).toHaveBeenCalledOnce());
+  });
+
+  it("does not promise name recognition on calls another voice answers", async () => {
+    otherVoiceAnswers = true;
+    const nodes = render();
+    expect(text(nodes[0])).toContain("Used when a built-in voice answers calls.");
+    type(nodes, 2, "Siobhan");
+    answers({ recognizedNames: ["Siobhan"] });
+    submit(render(), 1);
+    await settled();
+    expect(notices(render())).toEqual([
+      "Saved. Front Desk listens for Siobhan when a built-in voice answers.",
+    ]);
   });
 });

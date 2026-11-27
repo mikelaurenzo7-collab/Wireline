@@ -13,20 +13,31 @@ import { retainFirstUnique } from "../lib/knowledge-dedup";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { isCreateScaffoldLine } from "../lib/create-scaffold-line";
-import { phoneCallVoiceFor, resolvePhoneSpeakingRate } from "../lib/voice/xai-voice-config";
+import {
+  catalogVoiceInEffect,
+  phoneCallVoiceFor,
+  resolvePhoneSpeakingRate,
+} from "../lib/voice/xai-voice-config";
 import {
   CALL_DELIVERY_KEY,
   PHONE_BUILTIN_VOICE_KEY,
   PHONE_VOICE_PROVIDER,
   SPEAKING_PACES,
+  applyCallDeliveryChange,
   callDeliverySelection,
-  parseCallDeliveryPatch,
+  parseCallDeliveryChange,
   phoneVoiceById,
   phoneVoiceSelection,
+  storedCallDelivery,
   type CallDelivery,
 } from "../lib/phone-voices";
+import {
+  REQUIRED_WORDING_REFUSAL,
+  callDeliveryFor,
+  pronunciationTouchesRequiredWording,
+} from "../lib/voice/call-delivery";
 import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
-import { LIVE_CUSTOM_VOICE_KEY } from "../lib/voice/live-voice-service";
+import { LIVE_CUSTOM_VOICE_KEY, currentBotVariables } from "../lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
 import { phoneCatalogService, CARTESIA_SPEECH_MODEL } from "../lib/voice/phone-catalog-service";
 import { catalogCallsConfigured } from "../lib/voice/cloned-media-config";
@@ -828,10 +839,11 @@ router.get(
     const catalogVoice = await phoneCatalogService.resolve(record?.businessVariables);
     // The built-in voice in effect: the one picked by name, else the closest
     // match to the saved voice. Null when calls do not run on the phone engine.
-    const builtInPhoneVoice = phoneCallVoiceFor(
-      phoneVoiceSelection(record?.businessVariables)?.id ??
-        (record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId),
-    );
+    const pickedByName = phoneVoiceSelection(record?.businessVariables);
+    const savedVoiceId =
+      record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId;
+    const builtInPhoneVoice = phoneCallVoiceFor(pickedByName?.id ?? savedVoiceId);
+    const catalog = catalogVoiceInEffect(pickedByName?.id, savedVoiceId);
     const phoneCall = catalogVoice
       ? { provider: catalogVoice.provider, voice: catalogVoice.name }
       : builtInPhoneVoice;
@@ -892,8 +904,11 @@ router.get(
         phoneCall,
         phoneCallReady,
         catalogVoice,
-        phoneVoice: builtInPhoneVoice?.voice ?? null,
-        delivery: callDeliveryView(callDeliverySelection(record?.businessVariables)),
+        // Whether calls can speak the catalog at all, and the voice to show as
+        // selected in it.
+        phoneVoiceCatalog: catalog.available,
+        phoneVoice: catalog.voice,
+        delivery: callDeliveryView(callDeliveryFor(record?.businessVariables)),
         // Studio rehearsal speaks this same stock phone voice (see xai-rehearsal-relay.ts).
         rehearsalHearsPhoneVoice:
           !catalogVoice && Boolean(phoneCall) && rehearsalVoiceProvider().provider === "xai",
@@ -1209,7 +1224,7 @@ router.get(
     }
     // A sample sounds like the call: this Bot's pace and pronunciations. A
     // pace step named in the request is heard before it is saved.
-    const delivery = callDeliverySelection(agent.businessVariables);
+    const delivery = callDeliveryFor(agent.businessVariables);
     const requestedPace = Number(req.query.pace);
     const speakingRate =
       SPEAKING_PACES.find((pace) => pace.rate === requestedPace)?.rate ??
@@ -1354,7 +1369,7 @@ router.patch(
     // One atomic JSON update keeps a concurrent change to unrelated Bot setup,
     // such as a pace saved from another tab. The cloned and library voices go
     // either way; the voice picked by name is set, or cleared with them.
-    const withoutOtherVoices = sql`COALESCE(${schema.agents.businessVariables}, '{}'::jsonb) - ${LIVE_CUSTOM_VOICE_KEY} - ${PHONE_CATALOG_VOICE_KEY}`;
+    const withoutOtherVoices = sql`(${currentBotVariables()}) - ${LIVE_CUSTOM_VOICE_KEY} - ${PHONE_CATALOG_VOICE_KEY}`;
     const patch = {
       voiceId,
       voiceProvider: "openai" as const,
@@ -1395,29 +1410,54 @@ router.patch(
   },
 );
 
-// Pace, pronunciations and names to recognize on calls. Each save carries only
-// the part that changed and merges it in one statement, so a save from another
-// tab, or a voice picked at the same moment, is never overwritten.
+// Pace, pronunciations and names to recognize on calls. Each save is one
+// change, applied to what is stored at that moment while the Bot's row is
+// locked. So two screens open on one Bot, each showing its own older copy of a
+// list, both keep what the other added. Only this key is written, so a voice
+// picked at the same moment is kept too.
 router.patch(
   "/api/agent-config/:id/voice/delivery",
   authenticateUser,
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    const agent = await owned(req.params.id, req.user.id);
-    if (!agent) throw AppError.notFound("Bot not found.");
-    const parsed = parseCallDeliveryPatch(req.body);
+    const parsed = parseCallDeliveryChange(req.body);
     if (!parsed.ok) throw AppError.badRequest(parsed.error);
-    const current = sql`CASE WHEN jsonb_typeof(${schema.agents.businessVariables}->${CALL_DELIVERY_KEY}) = 'object' THEN ${schema.agents.businessVariables}->${CALL_DELIVERY_KEY} ELSE '{}'::jsonb END`;
-    const [saved] = await drizzle
-      .update(schema.agents)
-      .set({
-        businessVariables: sql`jsonb_set(COALESCE(${schema.agents.businessVariables}, '{}'::jsonb), ARRAY[${CALL_DELIVERY_KEY}], (${current}) || ${JSON.stringify(parsed.patch)}::jsonb)`,
-      })
-      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-      .returning({ businessVariables: schema.agents.businessVariables });
+    const { change } = parsed;
+    if (
+      change.kind === "addPronunciation" &&
+      pronunciationTouchesRequiredWording(change.entry.word)
+    )
+      throw AppError.badRequest(REQUIRED_WORDING_REFUSAL);
+    const ownedBot = and(
+      eq(schema.agents.id, req.params.id),
+      eq(schema.agents.userId, req.user.id),
+    );
+    const outcome = await drizzle.transaction(async (tx) => {
+      const [bot] = await tx
+        .select({ businessVariables: schema.agents.businessVariables })
+        .from(schema.agents)
+        .where(ownedBot)
+        .limit(1)
+        .for("update");
+      if (!bot) return null;
+      const next = applyCallDeliveryChange(callDeliverySelection(bot.businessVariables), change);
+      if (!next.ok) return next;
+      const stored = JSON.stringify(storedCallDelivery(next.delivery));
+      await tx
+        .update(schema.agents)
+        .set({
+          businessVariables: sql`jsonb_set(${currentBotVariables()}, ARRAY[${CALL_DELIVERY_KEY}], ${stored}::jsonb)`,
+        })
+        .where(ownedBot);
+      return next;
+    });
+    if (!outcome) throw AppError.notFound("Bot not found.");
+    if (!outcome.ok) throw AppError.badRequest(outcome.error);
     res.json({
       success: true,
-      delivery: callDeliveryView(callDeliverySelection(saved?.businessVariables)),
+      delivery: callDeliveryView(
+        callDeliveryFor({ [CALL_DELIVERY_KEY]: storedCallDelivery(outcome.delivery) }),
+      ),
     });
   },
 );

@@ -293,7 +293,7 @@ export type CreateLiveVoiceInput = {
 const SWEEP_BATCH = 25;
 
 /** Preserve the legacy object-only behavior without replacing a stale snapshot. */
-function currentBotVariables() {
+export function currentBotVariables() {
   return sql`CASE WHEN jsonb_typeof(${schema.agents.businessVariables}) = 'object' THEN ${schema.agents.businessVariables} ELSE '{}'::jsonb END`;
 }
 

@@ -110,6 +110,27 @@ export function phoneCallVoiceFor(
 }
 
 /**
+ * What the picker shows for the built-in catalog: whether calls can speak it,
+ * and the voice in effect. A voice picked by name is itself. A saved voice
+ * that is one of the ten is its closest match. Any other saved voice has no
+ * certain match, because calls then fall back to the Bot's profile, so none
+ * is shown as selected and the picker asks for a choice.
+ */
+export function catalogVoiceInEffect(
+  pickedByName: string | null | undefined,
+  savedVoice: unknown,
+  env: NodeJS.ProcessEnv = process.env,
+): { available: boolean; voice: XAIGrokVoice | null } {
+  if (configuredPhoneVoiceProvider(env) !== "xai") return { available: false, voice: null };
+  const known = (value: unknown): XAIGrokVoice | null => {
+    const id = typeof value === "string" ? value.trim().toLowerCase() : "";
+    if ((XAI_GROK_VOICES as readonly string[]).includes(id)) return id as XAIGrokVoice;
+    return OPENAI_TO_XAI_VOICE[id as OpenAIRealtimeVoiceId] ?? null;
+  };
+  return { available: true, voice: known(pickedByName) ?? known(savedVoice) };
+}
+
+/**
  * Cloned voices are spoken natively by the realtime model, so they add no
  * extra hop. If one ever fails mid-call (provider error or replies breaching
  * the latency budget), the call switches to this stock voice and continues.

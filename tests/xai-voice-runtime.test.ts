@@ -12,6 +12,7 @@ import {
 import { OPENAI_REALTIME_VOICE_IDS } from "../src/lib/voice-catalog";
 import {
   LIVE_VOICE_BY_GENDER,
+  catalogVoiceInEffect,
   phoneCallVoiceFor,
   resolvePhoneSpeakingRate,
   resolveXAIGrokVoiceModel,
@@ -183,6 +184,25 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(
       toXAIRealtimeSession(saved, { stockVoice: "luna", customVoiceId: "clone123" }).voice,
     ).toBe("clone123");
+  });
+
+  it("shows as selected only a voice that is certainly the one callers hear", () => {
+    // Picked by name: the voice itself, whatever the saved voice behind it.
+    expect(catalogVoiceInEffect("luna", "marin", {})).toEqual({ available: true, voice: "luna" });
+    // One of the ten saved voices: its closest match, as calls resolve it.
+    expect(catalogVoiceInEffect(null, "Cedar", {})).toEqual({ available: true, voice: "castor" });
+    // Anything else is resolved from the Bot's profile on a call, so nothing is claimed here.
+    for (const saved of ["presenter-voice-7", "", null, undefined, 12]) {
+      expect(catalogVoiceInEffect(null, saved, {}), String(saved)).toEqual({
+        available: true,
+        voice: null,
+      });
+    }
+    expect(catalogVoiceInEffect("not-a-voice", "cedar", {}).voice).toBe("castor");
+    // Calls on the backup engine cannot speak the catalog at all.
+    expect(
+      catalogVoiceInEffect("luna", "cedar", { WIRELINE_PHONE_VOICE_PROVIDER: "openai" }),
+    ).toEqual({ available: false, voice: null });
   });
 
   it("allows a slower Bot more time to finish its opening, and a faster one no less", () => {

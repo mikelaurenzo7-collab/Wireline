@@ -30,9 +30,17 @@ type CallDeliverySettingsProps = {
   onSaved: (delivery: CallDeliveryView) => void;
   /** Plays the Bot's built-in voice as saved. Absent when callers hear another voice. */
   sample?: { playing: boolean; loading: boolean; toggle: () => void } | null;
-  /** A library voice answers calls: pace and pronunciations follow it, name recognition does not. */
-  libraryVoiceAnswers?: boolean;
+  /** A library or cloned voice answers calls. Pace and pronunciations follow it; name recognition may not. */
+  otherVoiceAnswers?: boolean;
 };
+
+/** One change, as the save route reads it. Lists change one entry at a time. */
+type Change =
+  | { speakingRate: number }
+  | { addPronunciation: Pronunciation }
+  | { removePronunciation: string }
+  | { addRecognizedName: string }
+  | { removeRecognizedName: string };
 
 type Part = "pace" | "pronunciations" | "names";
 
@@ -56,7 +64,7 @@ export default function CallDeliverySettings({
   initial,
   onSaved,
   sample = null,
-  libraryVoiceAnswers = false,
+  otherVoiceAnswers = false,
 }: CallDeliverySettingsProps) {
   const [delivery, setDelivery] = useState(initial);
   const [saving, setSaving] = useState<Part | null>(null);
@@ -69,6 +77,9 @@ export default function CallDeliverySettings({
   const pronunciationHelpId = useId();
   const nameHelpId = useId();
   const alive = useRef(true);
+  // Removing an entry removes the button that had focus; these give it somewhere to go.
+  const wordInput = useRef<HTMLInputElement | null>(null);
+  const nameInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     alive.current = true;
@@ -80,11 +91,7 @@ export default function CallDeliverySettings({
   const pace = speakingPaceForRate(delivery.speakingRate);
   const busy = saving !== null;
 
-  async function save(
-    part: Part,
-    change: Partial<CallDeliveryView>,
-    savedNotice: string,
-  ): Promise<boolean> {
+  async function save(part: Part, change: Change, savedNotice: string): Promise<boolean> {
     if (busy) return false;
     setSaving(part);
     setNotice(null);
@@ -161,22 +168,23 @@ export default function CallDeliverySettings({
       setError("Spell it the way it sounds, not the way it is written.");
       return;
     }
-    if (
-      delivery.pronunciations.some((saved) => saved.word.toLowerCase() === entry.word.toLowerCase())
-    ) {
-      setNotice(null);
-      setError(`${entry.word} already has a pronunciation. Remove it to change it.`);
-      return;
-    }
+    // A word that is already listed is saved with its new spelling.
     const saved = await save(
       "pronunciations",
-      { pronunciations: [...delivery.pronunciations, entry] },
+      { addPronunciation: entry },
       "Saved. Rehearse to hear it.",
     );
     if (saved && alive.current) {
       setWord("");
       setSay("");
     }
+  }
+
+  async function remove(part: Part, change: Change, removedNotice: string) {
+    const removed = await save(part, change, removedNotice);
+    if (!removed || !alive.current) return;
+    const next = part === "names" ? nameInput : wordInput;
+    requestAnimationFrame(() => next.current?.focus());
   }
 
   async function addName(event: FormEvent<HTMLFormElement>) {
@@ -190,8 +198,10 @@ export default function CallDeliverySettings({
     }
     const saved = await save(
       "names",
-      { recognizedNames: [...delivery.recognizedNames, entry] },
-      `Saved. ${agentName} listens for ${entry} from the next call.`,
+      { addRecognizedName: entry },
+      otherVoiceAnswers
+        ? `Saved. ${agentName} listens for ${entry} when a built-in voice answers.`
+        : `Saved. ${agentName} listens for ${entry} from the next call.`,
     );
     if (saved && alive.current) setName("");
   }
@@ -314,13 +324,9 @@ export default function CallDeliverySettings({
                     type="button"
                     disabled={busy}
                     onClick={() =>
-                      void save(
+                      void remove(
                         "pronunciations",
-                        {
-                          pronunciations: delivery.pronunciations.filter(
-                            (saved) => saved.word !== entry.word,
-                          ),
-                        },
+                        { removePronunciation: entry.word },
                         `Removed. ${agentName} says ${entry.word} as written again.`,
                       )
                     }
@@ -347,6 +353,7 @@ export default function CallDeliverySettings({
                   Word As Written
                 </span>
                 <input
+                  ref={wordInput}
                   value={word}
                   onChange={(event) => setWord(event.target.value)}
                   maxLength={PRONUNCIATION_WORD_MAX}
@@ -370,6 +377,7 @@ export default function CallDeliverySettings({
               <button
                 type="submit"
                 disabled={busy || !oneLine(word) || !oneLine(say)}
+                aria-label="Add Pronunciation"
                 className={addButtonClass}
               >
                 {saving === "pronunciations" ? (
@@ -387,7 +395,7 @@ export default function CallDeliverySettings({
           <p className="text-sm font-semibold text-foreground">Names To Recognize</p>
           <p id={nameHelpId} className="text-xs leading-5 text-muted-foreground">
             Names, products and places callers say, so {agentName} hears them right.
-            {libraryVoiceAnswers ? " Used when a built-in voice answers calls." : ""}
+            {otherVoiceAnswers ? " Used when a built-in voice answers calls." : ""}
           </p>
           {delivery.recognizedNames.length ? (
             <ul className="flex flex-wrap gap-1.5">
@@ -397,15 +405,7 @@ export default function CallDeliverySettings({
                     type="button"
                     disabled={busy}
                     onClick={() =>
-                      void save(
-                        "names",
-                        {
-                          recognizedNames: delivery.recognizedNames.filter(
-                            (saved) => saved !== entry,
-                          ),
-                        },
-                        `Removed ${entry}.`,
-                      )
+                      void remove("names", { removeRecognizedName: entry }, `Removed ${entry}.`)
                     }
                     aria-label={`Remove ${entry}`}
                     className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3.5 text-sm text-foreground transition-colors hover:bg-muted wl-focus-ring-halo disabled:cursor-wait disabled:opacity-50"
@@ -424,6 +424,7 @@ export default function CallDeliverySettings({
           ) : (
             <form onSubmit={(event) => void addName(event)} className="flex items-end gap-2">
               <input
+                ref={nameInput}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={RECOGNIZED_NAME_MAX}
@@ -433,7 +434,12 @@ export default function CallDeliverySettings({
                 aria-describedby={nameHelpId}
                 className={fieldClass}
               />
-              <button type="submit" disabled={busy || !oneLine(name)} className={addButtonClass}>
+              <button
+                type="submit"
+                disabled={busy || !oneLine(name)}
+                aria-label="Add Name"
+                className={addButtonClass}
+              >
                 {saving === "names" ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (

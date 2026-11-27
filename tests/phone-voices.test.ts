@@ -10,13 +10,16 @@ import {
   RECOGNIZED_NAME_LIMIT,
   RECOGNIZED_NAME_MAX,
   SPEAKING_PACES,
+  applyCallDeliveryChange,
   callDeliverySelection,
   normalizeSpeakingRate,
-  parseCallDeliveryPatch,
+  parseCallDeliveryChange,
   phoneVoiceById,
   phoneVoiceDescription,
   phoneVoiceSelection,
   speakingPaceForRate,
+  storedCallDelivery,
+  type CallDelivery,
 } from "../src/lib/phone-voices";
 import { OPENAI_REALTIME_VOICES, OPENAI_REALTIME_VOICE_IDS } from "../src/lib/voice-catalog";
 import {
@@ -70,7 +73,7 @@ describe("built-in phone voices", () => {
 });
 
 describe("a voice picked by name", () => {
-  it("is cleared by the other route that saves a voice, so the two never disagree", () => {
+  it("is cleared in the source of the other route that saves a voice", () => {
     const service = readFileSync("src/lib/voice/openai-live-agent-service.ts", "utf8");
     const setter = service.slice(
       service.indexOf("export async function setOpenAILiveVoiceProfile"),
@@ -160,68 +163,166 @@ describe("call delivery", () => {
   });
 });
 
-describe("saving call delivery", () => {
-  it("accepts one part at a time, cleaned", () => {
-    expect(parseCallDeliveryPatch({ speakingRate: 1.2 })).toEqual({
+describe("reading a save request", () => {
+  it("accepts exactly one change, cleaned", () => {
+    expect(parseCallDeliveryChange({ speakingRate: 1.2 })).toEqual({
       ok: true,
-      patch: { speakingRate: 1.2 },
+      change: { kind: "pace", speakingRate: 1.2 },
     });
     expect(
-      parseCallDeliveryPatch({ pronunciations: [{ word: " Nguyen  ", say: "Win", extra: true }] }),
-    ).toEqual({ ok: true, patch: { pronunciations: [{ word: "Nguyen", say: "Win" }] } });
-    expect(parseCallDeliveryPatch({ recognizedNames: ["Acme   Plumbing"] })).toEqual({
+      parseCallDeliveryChange({ addPronunciation: { word: " Nguyen  ", say: "Win", extra: true } }),
+    ).toEqual({
       ok: true,
-      patch: { recognizedNames: ["Acme Plumbing"] },
+      change: { kind: "addPronunciation", entry: { word: "Nguyen", say: "Win" } },
     });
-    // Clearing a list is a save like any other.
-    expect(parseCallDeliveryPatch({ pronunciations: [], recognizedNames: [] })).toEqual({
+    expect(parseCallDeliveryChange({ removePronunciation: " Nguyen " })).toEqual({
       ok: true,
-      patch: { pronunciations: [], recognizedNames: [] },
+      change: { kind: "removePronunciation", word: "Nguyen" },
+    });
+    expect(parseCallDeliveryChange({ addRecognizedName: "Acme   Plumbing" })).toEqual({
+      ok: true,
+      change: { kind: "addName", name: "Acme Plumbing" },
+    });
+    expect(parseCallDeliveryChange({ removeRecognizedName: "Acme" })).toEqual({
+      ok: true,
+      change: { kind: "removeName", name: "Acme" },
     });
   });
 
   it("refuses a pace that is not one of the named steps", () => {
     for (const speakingRate of [1.15, 0.7, 1.5, "1.2", null]) {
-      expect(parseCallDeliveryPatch({ speakingRate })).toEqual({
+      expect(parseCallDeliveryChange({ speakingRate })).toEqual({
         ok: false,
         error: "Choose a speaking pace from the list.",
       });
     }
   });
 
-  it("refuses a list outright when any entry in it would be dropped", () => {
-    const refused = (body: unknown) => {
-      const result = parseCallDeliveryPatch(body);
-      expect(result.ok, JSON.stringify(body)).toBe(false);
-    };
-    refused({
-      pronunciations: [
-        { word: "Nguyen", say: "Win" },
-        { word: "nguyen", say: "Wen" },
-      ],
-    });
-    refused({ pronunciations: [{ word: "Same", say: "SAME" }] });
-    refused({ pronunciations: [{ word: "Nguyen" }] });
-    refused({ pronunciations: "Nguyen=Win" });
-    refused({
-      pronunciations: Array.from({ length: PRONUNCIATION_LIMIT + 1 }, (_, index) => ({
-        word: `Word${index}`,
-        say: `Say${index}`,
-      })),
-    });
-    refused({ recognizedNames: ["Siobhan", "SIOBHAN"] });
-    refused({ recognizedNames: ["!!!"] });
-    refused({ recognizedNames: ["x".repeat(RECOGNIZED_NAME_MAX + 1)] });
-    refused({
-      recognizedNames: Array.from({ length: RECOGNIZED_NAME_LIMIT + 1 }, (_, i) => `N${i}`),
-    });
-    // One bad part refuses the whole save, so nothing is half-kept.
-    refused({ speakingRate: 1.2, recognizedNames: ["!!!"] });
+  it("refuses an entry that could not be kept as sent", () => {
+    for (const body of [
+      { addPronunciation: { word: "Same", say: "SAME" } },
+      { addPronunciation: { word: "Nguyen" } },
+      { addPronunciation: "Nguyen=Win" },
+      { addPronunciation: { word: "x".repeat(61), say: "Long" } },
+      { addRecognizedName: "!!!" },
+      { addRecognizedName: "x".repeat(RECOGNIZED_NAME_MAX + 1) },
+      { addRecognizedName: ["Acme"] },
+      { removePronunciation: "  " },
+      { removeRecognizedName: 7 },
+    ]) {
+      expect(parseCallDeliveryChange(body).ok, JSON.stringify(body)).toBe(false);
+    }
   });
 
-  it("refuses a save with nothing in it", () => {
+  it("refuses nothing, several changes at once, and a whole list", () => {
     for (const body of [{}, null, [], "pace", { voice: "luna" }]) {
-      expect(parseCallDeliveryPatch(body)).toEqual({ ok: false, error: "Nothing to save." });
+      expect(parseCallDeliveryChange(body)).toEqual({ ok: false, error: "Nothing to save." });
     }
+    expect(parseCallDeliveryChange({ speakingRate: 1.2, addRecognizedName: "Acme" })).toEqual({
+      ok: false,
+      error: "Save one change at a time.",
+    });
+    // A list is never taken whole: that is how one screen erased another's entry.
+    expect(parseCallDeliveryChange({ pronunciations: [{ word: "Nguyen", say: "Win" }] })).toEqual({
+      ok: false,
+      error: "Nothing to save.",
+    });
+  });
+
+  it("counts a name the way the phone engine does, so one that saves is always sent", () => {
+    // Thirty-one characters to read, fifty-seven as the engine counts them.
+    const emoji = "\u{1F600}".repeat(26);
+    expect(Array.from(emoji)).toHaveLength(26);
+    expect(parseCallDeliveryChange({ addRecognizedName: `Acme ${emoji}` }).ok).toBe(false);
+    expect(parseCallDeliveryChange({ addRecognizedName: "x".repeat(50) }).ok).toBe(true);
+  });
+});
+
+describe("applying one change to what is stored", () => {
+  const nothing: CallDelivery = { speakingRate: null, pronunciations: [], recognizedNames: [] };
+  const apply = (current: CallDelivery, body: unknown) => {
+    const parsed = parseCallDeliveryChange(body);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return applyCallDeliveryChange(current, parsed.change);
+  };
+  const kept = (current: CallDelivery, body: unknown) => {
+    const result = apply(current, body);
+    if (!result.ok) throw new Error(result.error);
+    return result.delivery;
+  };
+
+  it("adds to the list as it stands, whoever added the rest", () => {
+    const first = kept(nothing, { addPronunciation: { word: "Nguyen", say: "Win" } });
+    const second = kept(first, { addPronunciation: { word: "Siobhan", say: "Shi-vawn" } });
+    expect(second.pronunciations).toEqual([
+      { word: "Nguyen", say: "Win" },
+      { word: "Siobhan", say: "Shi-vawn" },
+    ]);
+    expect(kept(second, { addRecognizedName: "Acme" })).toEqual({
+      ...second,
+      recognizedNames: ["Acme"],
+    });
+  });
+
+  it("respells a listed word in place and leaves a listed name alone", () => {
+    const current = {
+      ...nothing,
+      pronunciations: [
+        { word: "Nguyen", say: "Win" },
+        { word: "Siobhan", say: "Shi-vawn" },
+      ],
+      recognizedNames: ["Acme"],
+    };
+    expect(
+      kept(current, { addPronunciation: { word: "nguyen", say: "Wen" } }).pronunciations,
+    ).toEqual([
+      { word: "nguyen", say: "Wen" },
+      { word: "Siobhan", say: "Shi-vawn" },
+    ]);
+    expect(kept(current, { addRecognizedName: "ACME" })).toBe(current);
+  });
+
+  it("removes by word or name whatever the capitals, and removing twice changes nothing", () => {
+    const current = {
+      ...nothing,
+      pronunciations: [{ word: "Nguyen", say: "Win" }],
+      recognizedNames: ["Acme", "Ridge"],
+    };
+    const removed = kept(current, { removePronunciation: "NGUYEN" });
+    expect(removed.pronunciations).toEqual([]);
+    expect(kept(removed, { removePronunciation: "NGUYEN" }).pronunciations).toEqual([]);
+    expect(kept(current, { removeRecognizedName: "acme" }).recognizedNames).toEqual(["Ridge"]);
+  });
+
+  it("refuses a new entry past the most one Bot can keep", () => {
+    const full = {
+      ...nothing,
+      pronunciations: Array.from({ length: PRONUNCIATION_LIMIT }, (_, i) => ({
+        word: `Word${i}`,
+        say: `Say${i}`,
+      })),
+      recognizedNames: Array.from({ length: RECOGNIZED_NAME_LIMIT }, (_, i) => `Name${i}`),
+    };
+    expect(apply(full, { addPronunciation: { word: "Extra", say: "Ex-tra" } })).toEqual({
+      ok: false,
+      error: "40 is the most one Bot can keep. Remove one to add another.",
+    });
+    expect(apply(full, { addRecognizedName: "Extra" }).ok).toBe(false);
+    // Respelling a listed word adds nothing, so it is still allowed.
+    expect(apply(full, { addPronunciation: { word: "Word0", say: "First" } }).ok).toBe(true);
+  });
+
+  it("stores a pace only once one was chosen", () => {
+    expect(storedCallDelivery(nothing)).toEqual({ pronunciations: [], recognizedNames: [] });
+    expect(storedCallDelivery(kept(nothing, { speakingRate: 0.9 }))).toEqual({
+      speakingRate: 0.9,
+      pronunciations: [],
+      recognizedNames: [],
+    });
+    // What is stored reads back as what was applied.
+    const changed = kept(nothing, { addRecognizedName: "Acme" });
+    expect(callDeliverySelection({ [CALL_DELIVERY_KEY]: storedCallDelivery(changed) })).toEqual(
+      changed,
+    );
   });
 });

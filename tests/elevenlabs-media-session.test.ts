@@ -556,7 +556,7 @@ describe("speech provider transport", () => {
       use_speaker_boost: false,
     });
   });
-  it("says a Bot's pronunciations while spend and continuity keep the written words", async () => {
+  it("says a Bot's pronunciations, in the line and its lead-in, while spend counts the written words", async () => {
     const reserved: string[] = [];
     let body: Record<string, any> = {};
     const stream = clonedSpeechStreams({

@@ -325,7 +325,8 @@ export function normalizeRecognizedNames(value: unknown): string[] {
   for (const entry of value) {
     const name = cleanLine(entry);
     const key = name.toLowerCase();
-    if (!hasLetterOrDigit(name) || lengthOf(name) > RECOGNIZED_NAME_MAX || seen.has(key)) continue;
+    // Counted as the phone engine counts it, so a name that saves is always sent.
+    if (!hasLetterOrDigit(name) || name.length > RECOGNIZED_NAME_MAX || seen.has(key)) continue;
     seen.add(key);
     result.push(name);
     if (result.length === RECOGNIZED_NAME_LIMIT) break;
@@ -343,52 +344,147 @@ export function callDeliverySelection(variables: unknown): CallDelivery {
   };
 }
 
-export type CallDeliveryPatch = Partial<{
-  speakingRate: number;
-  pronunciations: Pronunciation[];
-  recognizedNames: string[];
-}>;
+/** What is stored for a Bot: a pace only once one was chosen. */
+export function storedCallDelivery(delivery: CallDelivery): Record<string, unknown> {
+  return {
+    ...(delivery.speakingRate === null ? {} : { speakingRate: delivery.speakingRate }),
+    pronunciations: delivery.pronunciations,
+    recognizedNames: delivery.recognizedNames,
+  };
+}
+
+/** One change an owner makes. A list changes one entry at a time, never as a whole. */
+export type CallDeliveryChange =
+  | { kind: "pace"; speakingRate: number }
+  | { kind: "addPronunciation"; entry: Pronunciation }
+  | { kind: "removePronunciation"; word: string }
+  | { kind: "addName"; name: string }
+  | { kind: "removeName"; name: string };
+
+type Refusal = { ok: false; error: string };
+const refuse = (error: string): Refusal => ({ ok: false, error });
+
+const CHANGE_KEYS = [
+  "speakingRate",
+  "addPronunciation",
+  "removePronunciation",
+  "addRecognizedName",
+  "removeRecognizedName",
+] as const;
 
 /**
- * Reads a save request. Unlike stored values, a request is refused outright
- * when any part of it would be dropped, so an owner never sees "Saved" for
- * something that was not kept.
+ * Reads a save request: exactly one change. A list is never sent whole, so a
+ * screen still showing an older copy of it cannot erase what another added.
  */
-export function parseCallDeliveryPatch(
+export function parseCallDeliveryChange(
   body: unknown,
-): { ok: true; patch: CallDeliveryPatch } | { ok: false; error: string } {
+): { ok: true; change: CallDeliveryChange } | Refusal {
   const input = asRecord(body);
-  const patch: CallDeliveryPatch = {};
-  if ("speakingRate" in input) {
-    const pace = SPEAKING_PACES.find((candidate) => candidate.rate === input.speakingRate);
-    if (!pace) return { ok: false, error: "Choose a speaking pace from the list." };
-    patch.speakingRate = pace.rate;
+  const named = CHANGE_KEYS.filter((key) => key in input);
+  if (!named.length) return refuse("Nothing to save.");
+  if (named.length > 1) return refuse("Save one change at a time.");
+  switch (named[0]) {
+    case "speakingRate": {
+      const pace = SPEAKING_PACES.find((candidate) => candidate.rate === input.speakingRate);
+      return pace
+        ? { ok: true, change: { kind: "pace", speakingRate: pace.rate } }
+        : refuse("Choose a speaking pace from the list.");
+    }
+    case "addPronunciation": {
+      const [entry] = normalizePronunciations([input.addPronunciation]);
+      return entry
+        ? { ok: true, change: { kind: "addPronunciation", entry } }
+        : refuse(
+            `Enter a word of up to ${PRONUNCIATION_WORD_MAX} characters and a different way to say it, up to ${PRONUNCIATION_SAY_MAX}.`,
+          );
+    }
+    case "removePronunciation": {
+      const word = cleanLine(input.removePronunciation);
+      return word
+        ? { ok: true, change: { kind: "removePronunciation", word } }
+        : refuse("Choose a pronunciation to remove.");
+    }
+    case "addRecognizedName": {
+      const [name] = normalizeRecognizedNames([input.addRecognizedName]);
+      return name
+        ? { ok: true, change: { kind: "addName", name } }
+        : refuse(
+            `Enter a name with letters or numbers, ${RECOGNIZED_NAME_MAX} characters or fewer.`,
+          );
+    }
+    default: {
+      const name = cleanLine(input.removeRecognizedName);
+      return name
+        ? { ok: true, change: { kind: "removeName", name } }
+        : refuse("Choose a name to remove.");
+    }
   }
-  if ("pronunciations" in input) {
-    const entries = input.pronunciations;
-    if (!Array.isArray(entries) || entries.length > PRONUNCIATION_LIMIT)
-      return { ok: false, error: `Keep pronunciations to ${PRONUNCIATION_LIMIT} or fewer.` };
-    const kept = normalizePronunciations(entries);
-    if (kept.length !== entries.length)
+}
+
+const sameWord = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+
+/**
+ * Applies one change to what is stored now. Adding a word that is already
+ * listed changes how it is said. Adding a name that is already listed, or
+ * removing something already gone, changes nothing, so a repeated save is
+ * harmless.
+ */
+export function applyCallDeliveryChange(
+  current: CallDelivery,
+  change: CallDeliveryChange,
+): { ok: true; delivery: CallDelivery } | Refusal {
+  switch (change.kind) {
+    case "pace":
+      return { ok: true, delivery: { ...current, speakingRate: change.speakingRate } };
+    case "addPronunciation": {
+      const listed = current.pronunciations.some((entry) =>
+        sameWord(entry.word, change.entry.word),
+      );
+      if (!listed && current.pronunciations.length >= PRONUNCIATION_LIMIT)
+        return refuse(
+          `${PRONUNCIATION_LIMIT} is the most one Bot can keep. Remove one to add another.`,
+        );
       return {
-        ok: false,
-        error:
-          "Each pronunciation needs a word and a different way to say it, and each word can appear once.",
+        ok: true,
+        delivery: {
+          ...current,
+          pronunciations: listed
+            ? current.pronunciations.map((entry) =>
+                sameWord(entry.word, change.entry.word) ? change.entry : entry,
+              )
+            : [...current.pronunciations, change.entry],
+        },
       };
-    patch.pronunciations = kept;
-  }
-  if ("recognizedNames" in input) {
-    const entries = input.recognizedNames;
-    if (!Array.isArray(entries) || entries.length > RECOGNIZED_NAME_LIMIT)
-      return { ok: false, error: `Keep names to ${RECOGNIZED_NAME_LIMIT} or fewer.` };
-    const kept = normalizeRecognizedNames(entries);
-    if (kept.length !== entries.length)
+    }
+    case "removePronunciation":
       return {
-        ok: false,
-        error: `Each name needs letters or numbers, ${RECOGNIZED_NAME_MAX} characters or fewer, and can appear once.`,
+        ok: true,
+        delivery: {
+          ...current,
+          pronunciations: current.pronunciations.filter(
+            (entry) => !sameWord(entry.word, change.word),
+          ),
+        },
       };
-    patch.recognizedNames = kept;
+    case "addName": {
+      if (current.recognizedNames.some((name) => sameWord(name, change.name)))
+        return { ok: true, delivery: current };
+      if (current.recognizedNames.length >= RECOGNIZED_NAME_LIMIT)
+        return refuse(
+          `${RECOGNIZED_NAME_LIMIT} is the most one Bot can keep. Remove one to add another.`,
+        );
+      return {
+        ok: true,
+        delivery: { ...current, recognizedNames: [...current.recognizedNames, change.name] },
+      };
+    }
+    case "removeName":
+      return {
+        ok: true,
+        delivery: {
+          ...current,
+          recognizedNames: current.recognizedNames.filter((name) => !sameWord(name, change.name)),
+        },
+      };
   }
-  if (!Object.keys(patch).length) return { ok: false, error: "Nothing to save." };
-  return { ok: true, patch };
 }

@@ -46,7 +46,8 @@ import {
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
 import { customVoiceSelection, resolveRuntimeCustomVoice } from "./live-voice-service";
 import { phoneCatalogService } from "./phone-catalog-service";
-import { callDeliverySelection, phoneVoiceSelection } from "../phone-voices";
+import { phoneVoiceSelection } from "../phone-voices";
+import { callDeliveryFor } from "./call-delivery";
 
 const MAX_PROMPT_LINE_LENGTH = 700;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
@@ -617,7 +618,7 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
      */
     stockPhoneVoice: phoneVoiceSelection(runtime.agent.businessVariables)?.id ?? voice,
     /** Pace, pronunciations and names to recognize that the owner set for calls. */
-    delivery: callDeliverySelection(runtime.agent.businessVariables),
+    delivery: callDeliveryFor(runtime.agent.businessVariables),
     /** A consented cloned voice, spoken natively on xAI; null means stock. */
     customVoice,
     catalogVoice: customVoice ? null : catalogVoice,

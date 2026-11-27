@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (req: unknown, res: unknown) => Promise<unknown>;
-type Write = { patch: Record<string, unknown>; json: { sql: string; params: unknown[] } | null };
+type Write = { patch: Record<string, unknown>; sql: string | null; params: unknown[] };
 const h = vi.hoisted(() => ({
   routes: new Map<string, Handler>(),
-  /** The Bot's stored variables before a request, and what the write returns after it. */
+  /** The Bot's stored variables. Each write below is applied to them, as the database would. */
   variables: null as Record<string, unknown> | null,
-  afterWrite: null as Record<string, unknown> | null,
   writes: [] as Write[],
+  locks: [] as string[],
+  transactions: 0,
   synth: vi.fn(),
 }));
 vi.mock("express", () => ({
@@ -40,61 +41,112 @@ vi.mock("../src/lib/voice/voice-sample", () => ({
   synthesizeVoiceSample: (...args: unknown[]) => h.synth(...args),
   voiceSampleLine: (name: string) => name,
 }));
-vi.mock("../src/lib/server-context", async () => {
-  const { PgDialect } = await import("drizzle-orm/pg-core");
-  const { SQL } = await import("drizzle-orm");
-  const dialect = new PgDialect();
-  const owns = (where: Parameters<typeof dialect.sqlToQuery>[0]) => {
-    const { params } = dialect.sqlToQuery(where);
-    return params[0] === "bot-a" && params[1] === "tenant-a";
-  };
-  return {
-    log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
-    drizzle: {
-      select: () => ({
-        from: () => ({
-          where: (where: Parameters<typeof dialect.sqlToQuery>[0]) => ({
-            limit: async () =>
-              owns(where)
-                ? [{ id: "bot-a", name: "Front Desk", businessVariables: h.variables }]
-                : [],
-          }),
-        }),
-      }),
-      update: () => ({
-        set: (patch: Record<string, unknown>) => ({
-          where: (where: Parameters<typeof dialect.sqlToQuery>[0]) => ({
-            returning: async () => {
-              if (!owns(where)) return [];
-              const value = patch.businessVariables;
-              const query = value instanceof SQL ? dialect.sqlToQuery(value) : null;
-              h.writes.push({
-                patch,
-                json: query && { sql: query.sql, params: query.params },
-              });
-              return [
-                {
-                  voiceId: patch.voiceId,
-                  provider: patch.voiceProvider,
-                  phoneVoiceId: patch.phoneVoiceId,
-                  phoneVoiceProvider: patch.phoneVoiceProvider,
-                  businessVariables: h.afterWrite,
-                },
-              ];
-            },
-          }),
-        }),
-      }),
-    },
-  };
-});
-import "../src/routes/agent-routes-v2";
 
 const CLONE_KEY = "wirelineLiveCustomVoice";
 const LIBRARY_KEY = "botboundPhoneCatalogVoice";
 const VOICE_KEY = "botboundPhoneVoice";
 const DELIVERY_KEY = "botboundCallDelivery";
 const COLUMN = '"wireline_agents"."business_variables"';
+/** A stored value that is not an object is read as an empty one, never as an error. */
+const STORED = `CASE WHEN jsonb_typeof(${COLUMN}) = 'object' THEN ${COLUMN} ELSE '{}'::jsonb END`;
+const SQL_PICK = `jsonb_set((${STORED}) - $1 - $2, ARRAY[$3], $4::jsonb)`;
+const SQL_UNPICK = `((${STORED}) - $1 - $2) - $3`;
+const SQL_DELIVERY = `jsonb_set(${STORED}, ARRAY[$1], $2::jsonb)`;
+
+vi.mock("../src/lib/server-context", async () => {
+  const { PgDialect } = await import("drizzle-orm/pg-core");
+  const { SQL } = await import("drizzle-orm");
+  const dialect = new PgDialect();
+  type Where = Parameters<typeof dialect.sqlToQuery>[0];
+  const owns = (where: Where) => {
+    const { params } = dialect.sqlToQuery(where);
+    return params[0] === "bot-a" && params[1] === "tenant-a";
+  };
+  const object = () =>
+    h.variables && typeof h.variables === "object" && !Array.isArray(h.variables)
+      ? { ...h.variables }
+      : {};
+  // The three statements the routes send, applied the way PostgreSQL applies them.
+  const apply = (sql: string, params: unknown[]) => {
+    const next = object();
+    if (sql === SQL_DELIVERY) {
+      next[String(params[0])] = JSON.parse(String(params[1]));
+    } else if (sql === SQL_PICK) {
+      delete next[String(params[0])];
+      delete next[String(params[1])];
+      next[String(params[2])] = JSON.parse(String(params[3]));
+    } else if (sql === SQL_UNPICK) {
+      for (const key of params) delete next[String(key)];
+    } else {
+      throw new Error(`Unexpected statement: ${sql}`);
+    }
+    h.variables = next;
+  };
+  const select = () => ({
+    from: () => ({
+      where: (where: Where) => {
+        const rows = async () =>
+          owns(where)
+            ? [
+                {
+                  id: "bot-a",
+                  name: "Front Desk",
+                  businessVariables: structuredClone(h.variables),
+                },
+              ]
+            : [];
+        const query = {
+          limit: () => query,
+          for: (mode: string) => {
+            h.locks.push(mode);
+            return query;
+          },
+          then: (resolve: (rows: unknown[]) => unknown, reject: (error: unknown) => unknown) =>
+            rows().then(resolve, reject),
+        };
+        return query;
+      },
+    }),
+  });
+  const update = () => ({
+    set: (patch: Record<string, unknown>) => ({
+      where: (where: Where) => {
+        const write = async () => {
+          if (!owns(where)) return [];
+          const value = patch.businessVariables;
+          const query = value instanceof SQL ? dialect.sqlToQuery(value) : null;
+          h.writes.push({ patch, sql: query?.sql ?? null, params: query?.params ?? [] });
+          if (query) apply(query.sql, query.params);
+          return [
+            {
+              voiceId: patch.voiceId,
+              provider: patch.voiceProvider,
+              phoneVoiceId: patch.phoneVoiceId,
+              phoneVoiceProvider: patch.phoneVoiceProvider,
+            },
+          ];
+        };
+        return {
+          returning: () => write(),
+          then: (resolve: (rows: unknown[]) => unknown, reject: (error: unknown) => unknown) =>
+            write().then(resolve, reject),
+        };
+      },
+    }),
+  });
+  return {
+    log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+    drizzle: {
+      select,
+      update,
+      transaction: async (work: (tx: unknown) => Promise<unknown>) => {
+        h.transactions += 1;
+        return work({ select, update });
+      },
+    },
+  };
+});
+import "../src/routes/agent-routes-v2";
 
 function call(route: string, input: { body?: unknown; query?: unknown; userId?: string } = {}) {
   const json = vi.fn();
@@ -115,11 +167,13 @@ const saveVoice = (body: unknown, userId?: string) =>
 const saveDelivery = (body: unknown, userId?: string) =>
   call("patch /api/agent-config/:id/voice/delivery", { body, userId });
 const sample = (query: unknown) => call("get /api/agent-config/:id/voice/sample", { query });
+const stored = () => (h.variables?.[DELIVERY_KEY] ?? null) as Record<string, any> | null;
 
 beforeEach(() => {
   h.variables = null;
-  h.afterWrite = null;
   h.writes = [];
+  h.locks = [];
+  h.transactions = 0;
   h.synth.mockReset().mockResolvedValue(Buffer.from([1, 2, 3]));
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -137,11 +191,10 @@ describe("picking a built-in phone voice by name", () => {
       phoneVoiceId: null,
       phoneVoiceProvider: null,
     });
-    // The cloned and library voices go, the pick is set, and nothing else is touched.
-    expect(h.writes[0].json).toEqual({
-      sql: `jsonb_set(COALESCE(${COLUMN}, '{}'::jsonb) - $1 - $2, ARRAY[$3], $4::jsonb)`,
-      params: [CLONE_KEY, LIBRARY_KEY, VOICE_KEY, '"luna"'],
-    });
+    expect(h.writes[0].sql).toBe(SQL_PICK);
+    expect(h.writes[0].params).toEqual([CLONE_KEY, LIBRARY_KEY, VOICE_KEY, '"luna"']);
+    // The cloned voice goes, the pick is set, and nothing else is touched.
+    expect(h.variables).toEqual({ unrelated: true, [VOICE_KEY]: "luna" });
     expect(json).toHaveBeenCalledWith({
       success: true,
       voice: {
@@ -188,16 +241,13 @@ describe("picking a built-in phone voice by name", () => {
 });
 
 describe("picking one of the ten saved voices", () => {
-  it("clears a voice picked by name, so the saved voice decides again", async () => {
+  it("clears a voice picked by name and leaves pace and pronunciations alone", async () => {
     h.variables = { [VOICE_KEY]: "luna", [DELIVERY_KEY]: { speakingRate: 1.2 } };
     const { result, json } = saveVoice({ voiceId: "cedar", provider: "openai" });
     await result;
     expect(h.writes[0].patch).toMatchObject({ voiceId: "cedar", voiceProvider: "openai" });
-    // The pace and pronunciations are not voices and are left alone.
-    expect(h.writes[0].json).toEqual({
-      sql: `(COALESCE(${COLUMN}, '{}'::jsonb) - $1 - $2) - $3`,
-      params: [CLONE_KEY, LIBRARY_KEY, VOICE_KEY],
-    });
+    expect(h.writes[0].sql).toBe(SQL_UNPICK);
+    expect(h.variables).toEqual({ [DELIVERY_KEY]: { speakingRate: 1.2 } });
     expect(json).toHaveBeenCalledWith(
       expect.objectContaining({
         customVoiceCleared: false,
@@ -215,62 +265,137 @@ describe("picking one of the ten saved voices", () => {
     const { result, json } = saveVoice({ voiceId: "cedar", provider: "openai" });
     await result;
     expect(json).toHaveBeenCalledWith(expect.objectContaining({ customVoiceCleared: true }));
+    expect(h.variables).toEqual({});
   });
 
   it("leaves a Bot with no stored choices without any", async () => {
     const { result } = saveVoice({ voiceId: "cedar", provider: "openai" });
     await result;
     expect(h.writes[0].patch).not.toHaveProperty("businessVariables");
+    expect(h.variables).toBeNull();
   });
 });
 
 describe("saving call delivery", () => {
-  it("merges only the part that changed into what is stored", async () => {
-    h.afterWrite = {
+  it("keeps what another screen added, because each save is one change to what is stored now", async () => {
+    // The setup guide adds a word. The workspace behind it still shows an empty list.
+    await saveDelivery({ addPronunciation: { word: " Nguyen ", say: "Win" } }).result;
+    const second = saveDelivery({ addPronunciation: { word: "Siobhan", say: "Shi-vawn" } });
+    await second.result;
+    expect(stored()!.pronunciations).toEqual([
+      { word: "Nguyen", say: "Win" },
+      { word: "Siobhan", say: "Shi-vawn" },
+    ]);
+    // The reply carries the whole list, so the older screen catches up.
+    expect(second.json).toHaveBeenCalledWith({
+      success: true,
+      delivery: {
+        speakingRate: 1.1,
+        pronunciations: [
+          { word: "Nguyen", say: "Win" },
+          { word: "Siobhan", say: "Shi-vawn" },
+        ],
+        recognizedNames: [],
+      },
+    });
+    // Read and written under one row lock, and only this key is written.
+    expect(h.transactions).toBe(2);
+    expect(h.locks).toEqual(["update", "update"]);
+    expect(h.writes.map((write) => write.sql)).toEqual([SQL_DELIVERY, SQL_DELIVERY]);
+    expect(h.writes.every((write) => Object.keys(write.patch).join() === "businessVariables")).toBe(
+      true,
+    );
+  });
+
+  it("changes one part and keeps the rest, and a voice picked meanwhile", async () => {
+    h.variables = {
       [VOICE_KEY]: "luna",
-      [DELIVERY_KEY]: { speakingRate: 1.2, recognizedNames: ["Siobhan"] },
+      [DELIVERY_KEY]: { recognizedNames: ["Siobhan"], pronunciations: [] },
     };
     const { result, json } = saveDelivery({ speakingRate: 1.2 });
     await result;
-    expect(h.writes).toHaveLength(1);
-    expect(Object.keys(h.writes[0].patch)).toEqual(["businessVariables"]);
-    const { sql, params } = h.writes[0].json!;
-    // An existing object is merged into; anything else there is replaced by a fresh one.
-    expect(sql).toBe(
-      `jsonb_set(COALESCE(${COLUMN}, '{}'::jsonb), ARRAY[$1], (CASE WHEN jsonb_typeof(${COLUMN}->$2) = 'object' THEN ${COLUMN}->$3 ELSE '{}'::jsonb END) || $4::jsonb)`,
-    );
-    expect(params).toEqual([DELIVERY_KEY, DELIVERY_KEY, DELIVERY_KEY, '{"speakingRate":1.2}']);
+    expect(h.variables).toEqual({
+      [VOICE_KEY]: "luna",
+      [DELIVERY_KEY]: { speakingRate: 1.2, pronunciations: [], recognizedNames: ["Siobhan"] },
+    });
     expect(json).toHaveBeenCalledWith({
       success: true,
       delivery: { speakingRate: 1.2, pronunciations: [], recognizedNames: ["Siobhan"] },
     });
   });
 
-  it("stores pronunciations and names cleaned, and shows the platform pace when none is chosen", async () => {
-    h.afterWrite = {
-      [DELIVERY_KEY]: { pronunciations: [{ word: "Nguyen", say: "Win" }] },
-    };
-    const { result, json } = saveDelivery({ pronunciations: [{ word: " Nguyen ", say: "Win" }] });
-    await result;
-    expect(h.writes[0].json!.params.at(-1)).toBe(
-      '{"pronunciations":[{"word":"Nguyen","say":"Win"}]}',
-    );
-    expect(json).toHaveBeenCalledWith({
-      success: true,
-      delivery: {
-        speakingRate: 1.1,
-        pronunciations: [{ word: "Nguyen", say: "Win" }],
-        recognizedNames: [],
+  it("changes how a listed word is said instead of listing it twice", async () => {
+    h.variables = { [DELIVERY_KEY]: { pronunciations: [{ word: "Nguyen", say: "Win" }] } };
+    await saveDelivery({ addPronunciation: { word: "NGUYEN", say: "Wen" } }).result;
+    expect(stored()!.pronunciations).toEqual([{ word: "NGUYEN", say: "Wen" }]);
+  });
+
+  it("removes one entry, and treats a repeated add or remove as already done", async () => {
+    h.variables = {
+      [DELIVERY_KEY]: {
+        pronunciations: [
+          { word: "Nguyen", say: "Win" },
+          { word: "Siobhan", say: "Shi-vawn" },
+        ],
+        recognizedNames: ["Acme", "Ridge"],
       },
+    };
+    await saveDelivery({ removePronunciation: "nguyen" }).result;
+    await saveDelivery({ removePronunciation: "nguyen" }).result;
+    await saveDelivery({ removeRecognizedName: "ACME" }).result;
+    await saveDelivery({ addRecognizedName: "ridge" }).result;
+    expect(stored()).toEqual({
+      pronunciations: [{ word: "Siobhan", say: "Shi-vawn" }],
+      recognizedNames: ["Ridge"],
     });
+  });
+
+  it("stops at the most one Bot can keep, without writing", async () => {
+    h.variables = {
+      [DELIVERY_KEY]: {
+        pronunciations: Array.from({ length: 40 }, (_, i) => ({
+          word: `Word${i}`,
+          say: `Say${i}`,
+        })),
+        recognizedNames: Array.from({ length: 40 }, (_, i) => `Name${i}`),
+      },
+    };
+    await expect(
+      saveDelivery({ addPronunciation: { word: "Extra", say: "Ex-tra" } }).result,
+    ).rejects.toMatchObject({ status: 400, message: expect.stringContaining("40 is the most") });
+    await expect(saveDelivery({ addRecognizedName: "Extra" }).result).rejects.toMatchObject({
+      status: 400,
+    });
+    // A word already listed can still be respelled at the limit.
+    await saveDelivery({ addPronunciation: { word: "Word3", say: "Third" } }).result;
+    expect(h.writes).toHaveLength(1);
+    expect(stored()!.pronunciations[3]).toEqual({ word: "Word3", say: "Third" });
+  });
+
+  it("refuses a pronunciation that could change the required call opening", async () => {
+    for (const word of ["AI assistant", "recorded", "Assistant calling for Ridge", "seven"]) {
+      await expect(
+        saveDelivery({ addPronunciation: { word, say: "something else" } }).result,
+        word,
+      ).rejects.toMatchObject({
+        status: 400,
+        message: expect.stringContaining("required call opening"),
+      });
+    }
+    expect(h.writes).toHaveLength(0);
+    expect(h.transactions).toBe(0);
   });
 
   it("refuses a bad save before touching the Bot", async () => {
     for (const body of [
       {},
       { speakingRate: 1.15 },
-      { pronunciations: [{ word: "Same", say: "same" }] },
-      { recognizedNames: ["Siobhan", "siobhan"] },
+      { speakingRate: 1.2, addRecognizedName: "Acme" },
+      { addPronunciation: { word: "Same", say: "same" } },
+      { addPronunciation: { word: "Nguyen" } },
+      { addRecognizedName: "!!!" },
+      { removePronunciation: "" },
+      { pronunciations: [{ word: "Nguyen", say: "Win" }] },
     ]) {
       await expect(saveDelivery(body).result, JSON.stringify(body)).rejects.toMatchObject({
         status: 400,
@@ -280,6 +405,14 @@ describe("saving call delivery", () => {
       status: 404,
     });
     expect(h.writes).toHaveLength(0);
+  });
+
+  it("saves into a stored value that was never an object", async () => {
+    h.variables = ["not", "an", "object"] as never;
+    await saveDelivery({ addRecognizedName: "Acme" }).result;
+    expect(h.variables).toEqual({
+      [DELIVERY_KEY]: { pronunciations: [], recognizedNames: ["Acme"] },
+    });
   });
 });
 
@@ -295,6 +428,22 @@ describe("hearing a built-in voice", () => {
       pronunciations: [{ word: "Desk", say: "Desque" }],
     });
     expect(send).toHaveBeenCalledWith(Buffer.from([1, 2, 3]));
+  });
+
+  it("leaves out a stored pronunciation that could change the required opening", async () => {
+    h.variables = {
+      [DELIVERY_KEY]: {
+        pronunciations: [
+          { word: "AI", say: "a real" },
+          { word: "Desk", say: "Desque" },
+        ],
+      },
+    };
+    await sample({ voice: "luna", provider: "phone" }).result;
+    expect(h.synth).toHaveBeenLastCalledWith("luna", "Front Desk", {
+      speakingRate: 1.1,
+      pronunciations: [{ word: "Desk", say: "Desque" }],
+    });
   });
 
   it("lets a named pace be heard before it is saved, and ignores any other number", async () => {
