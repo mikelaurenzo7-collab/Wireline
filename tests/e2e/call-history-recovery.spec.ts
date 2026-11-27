@@ -113,8 +113,9 @@ test("changing the recipient clears saved and manually confirmed permission", as
   const dialog = page.getByRole("dialog", { name: "New Call", exact: true });
   const number = dialog.getByRole("textbox", { name: "Phone number" });
   const place = dialog.getByRole("button", { name: "Place call", exact: true });
-  const permission = dialog.getByRole("checkbox", { name: /I have this person's permission/ });
-  const nonsales = dialog.getByRole("checkbox", { name: /This isn't selling anything/ });
+  const confirmation = dialog.getByRole("checkbox", {
+    name: /I have this person's permission for this non-sales call/,
+  });
   await number.fill(recipient);
   await expect(place).toBeEnabled();
   await number.fill("(312) 555-0160");
@@ -123,19 +124,16 @@ test("changing the recipient clears saved and manually confirmed permission", as
   try {
     await number.fill("+13125550161");
     await expect(place).toBeDisabled({ timeout: 1500 });
-    await expect(permission).not.toBeChecked();
-    await expect(nonsales).not.toBeChecked();
+    await expect(confirmation).not.toBeChecked();
     await expect(dialog.getByLabel("Approximate last purchase or service")).toHaveCount(0);
   } finally {
     respondToSecondRecipient();
   }
-  await permission.check();
-  await nonsales.check();
+  await confirmation.check();
   await expect(place).toBeEnabled();
   await number.fill("+13125550162");
   await expect(place).toBeDisabled();
-  await expect(permission).not.toBeChecked();
-  await expect(nonsales).not.toBeChecked();
+  await expect(confirmation).not.toBeChecked();
   expect(callRequests).toEqual([]);
 });
 
