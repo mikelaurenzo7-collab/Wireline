@@ -337,6 +337,9 @@ export default function CreateAgentDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: finalName,
+          // Left empty, the server names the Bot from the Bots the workspace
+          // really has. `name` is then only this dialog's best guess.
+          ...(name.trim() ? {} : { role_name: roleName(templateKey) }),
           mark_key: markKey,
           is_business_agent: legacyCapabilityProfile,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

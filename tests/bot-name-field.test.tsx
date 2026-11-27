@@ -71,8 +71,13 @@ function render() {
 }
 const field = (nodes: Element[]) => nodes.find((node) => node.type === "input")!;
 const saveButton = (nodes: Element[]) => nodes.find((node) => node.type === "button")!;
-const notices = (nodes: Element[]) =>
-  nodes.filter((node) => node.type === "notice").map((node) => text(node));
+const noticeNodes = (nodes: Element[]) => nodes.filter((node) => node.type === "notice");
+const notices = (nodes: Element[]) => noticeNodes(nodes).map((node) => text(node));
+// The component holds the field through a ref; a browser would fill it in.
+const focus = vi.fn();
+function attachField() {
+  (field(render()).props as { ref: { current: unknown } }).ref.current = { focus };
+}
 const type = (value: string) => field(render()).props.onChange({ target: { value } });
 const submit = () =>
   render()
@@ -88,6 +93,7 @@ beforeEach(() => {
   h.cursor = 0;
   h.effects = [];
   h.fetch.mockReset();
+  focus.mockReset();
   bot = { agentId: "bot a", agentName: "Michael" };
   dispatched.length = 0;
   vi.stubGlobal("window", {
@@ -110,6 +116,13 @@ describe("the name field in Set Up", () => {
     expect(text(nodes[0])).toContain("Every Bot starts as Bo.");
     expect(saveButton(nodes).props.disabled).toBe(true);
     expect(text(saveButton(nodes))).toBe("Save Name");
+    // Named by its label, described by its help, and not marked wrong.
+    const label = nodes.find((node) => node.type === "label")!;
+    expect(label.props.htmlFor).toBe(field(nodes).props.id);
+    const help = nodes.find((node) => node.props.id === "setup-bot-name-help")!;
+    expect(text(help)).toContain("What your Bot calls itself with callers.");
+    expect(field(nodes).props["aria-describedby"]).toBe("setup-bot-name-help");
+    expect(field(nodes).props["aria-invalid"]).toBeUndefined();
   });
 
   it("saves a new name once, tells the rest of the app, and says when callers hear it", async () => {
@@ -128,6 +141,9 @@ describe("the name field in Set Up", () => {
     });
     expect(dispatched).toEqual(["agents-changed"]);
     expect(notices(render())).toEqual(["Saved. Your Bot is Bo from the next call."]);
+    expect(noticeNodes(render())[0].props.tone).toBe("success");
+    // Nothing is left to save, before the Bot list has even answered.
+    expect(saveButton(render()).props.disabled).toBe(true);
 
     // The saved name arrives from the Bot list, and the notice stays.
     bot = { ...bot, agentName: "Bo" };
@@ -158,12 +174,61 @@ describe("the name field in Set Up", () => {
     expect(field(nodes).props.value).toBe("Bo");
     expect(notices(nodes)).toEqual(["Give your Bot a name."]);
     expect(dispatched).toEqual([]);
+    // Said as an error, and tied to the field it is about.
+    const problem = noticeNodes(nodes)[0];
+    expect(problem.props.tone).toBe("destructive");
+    expect(field(nodes).props["aria-invalid"]).toBe(true);
+    expect(field(nodes).props["aria-describedby"]).toBe(`setup-bot-name-help ${problem.props.id}`);
 
     h.fetch.mockRejectedValueOnce(new Error("offline"));
     await submit();
     nodes = render();
     expect(notices(nodes)).toEqual(["offline"]);
     expect(saveButton(nodes).props.disabled).toBe(false);
+  });
+
+  it("keeps keyboard focus through a save", async () => {
+    attachField();
+    type("Bo");
+    let finish!: (value: unknown) => void;
+    h.fetch.mockReturnValueOnce(new Promise((resolvePromise) => (finish = resolvePromise)));
+    const saving = submit();
+    // While it saves, neither control is disabled: a disabled control drops focus.
+    let nodes = render();
+    expect(field(nodes).props.disabled).toBeUndefined();
+    expect(field(nodes).props.readOnly).toBe(true);
+    expect(saveButton(nodes).props.disabled).toBe(false);
+    expect(text(saveButton(nodes))).toBe("Saving…");
+    finish({ ok: true, json: async () => ({ name: "Bo" }) });
+    await saving;
+    // Save Name is now disabled, so focus is put back in the field.
+    nodes = render();
+    expect(saveButton(nodes).props.disabled).toBe(true);
+    expect(field(nodes).props.readOnly).toBe(false);
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not take back what the owner is typing when the Bot list catches up", async () => {
+    type("Nora");
+    h.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ name: "Nora" }) });
+    await submit();
+    // They correct it before the list has reloaded.
+    type("Norah");
+    bot = { ...bot, agentName: "Nora" };
+    render();
+    const nodes = render();
+    expect(field(nodes).props.value).toBe("Norah");
+    expect(saveButton(nodes).props.disabled).toBe(false);
+  });
+
+  it("shows a name saved somewhere else when the owner has typed nothing", () => {
+    render();
+    // Renamed through chat beside this field.
+    bot = { ...bot, agentName: "Riley" };
+    render();
+    const nodes = render();
+    expect(field(nodes).props.value).toBe("Riley");
+    expect(saveButton(nodes).props.disabled).toBe(true);
   });
 
   it("starts clean on another Bot, and a save still in flight does not report there", async () => {

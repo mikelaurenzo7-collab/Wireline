@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { authFetch } from "../../lib/api";
-import { BOT_NAME_MAX_CHARS, DEFAULT_BOT_NAME } from "../../lib/bot-name";
+import { BOT_NAME_MAX_CHARS, DEFAULT_BOT_NAME, cleanBotName } from "../../lib/bot-name";
 import { AGENTS_CHANGED_EVENT } from "../../contexts/AgentsContext";
 import { StatusNotice } from "../molecules";
 
 const fieldClass =
-  "min-h-11 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground wl-focus-ring-halo";
+  "min-h-11 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground wl-focus-ring-halo read-only:opacity-70";
 const saveButtonClass =
   "inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -23,10 +23,13 @@ export default function BotNameField({
   agentName: string;
 }) {
   const [draft, setDraft] = useState(agentName);
+  // The name this field knows to be saved: the Bot list's, or its own last save.
+  const [savedName, setSavedName] = useState(agentName);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scope = useRef(0);
+  const input = useRef<HTMLInputElement | null>(null);
 
   // Another Bot starts clean; a save in flight belongs to the Bot it began on.
   useEffect(() => {
@@ -34,12 +37,24 @@ export default function BotNameField({
     setSaving(false);
     setNotice(null);
     setError(null);
+    setDraft(agentName);
+    setSavedName(agentName);
+    // The name's own changes are the next effect's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
-  // The saved name, when it changes here or anywhere else, is what the field shows.
-  useEffect(() => setDraft(agentName), [agentId, agentName]);
+  // A name saved elsewhere (or this field's own save, arriving back from the
+  // Bot list) is shown, unless the owner is part way through typing another.
+  useEffect(() => {
+    setDraft((typed: string) =>
+      cleanBotName(typed) === cleanBotName(savedName) ? agentName : typed,
+    );
+    setSavedName(agentName);
+    // Runs when the list's name changes, not when this field's own state does.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentName]);
 
-  const name = draft.replace(/\s+/g, " ").trim();
-  const unchanged = name === agentName.trim();
+  const name = cleanBotName(draft);
+  const unchanged = name === cleanBotName(savedName);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,8 +78,12 @@ export default function BotNameField({
       if (!response.ok) throw new Error(body?.error || "The name could not be saved. Try again.");
       const saved = body?.name || name;
       setDraft(saved);
+      setSavedName(saved);
       setNotice(`Saved. Your Bot is ${saved} from the next call.`);
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+      // Save Name has nothing left to save and is disabled, which would drop
+      // keyboard focus to the top of the page. Keep it in the field.
+      input.current?.focus();
     } catch (reason) {
       if (!current()) return;
       setError(
@@ -76,25 +95,34 @@ export default function BotNameField({
   }
 
   return (
-    <form onSubmit={save} className="grid gap-2" aria-label="Bot Name">
+    <form onSubmit={save} className="grid gap-2" aria-label="Bot Name" aria-busy={saving}>
       <label className="text-sm font-semibold text-foreground" htmlFor="setup-bot-name">
         Name
       </label>
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1 basis-48">
           <input
+            ref={input}
             id="setup-bot-name"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             maxLength={BOT_NAME_MAX_CHARS}
             placeholder={DEFAULT_BOT_NAME}
             autoComplete="off"
-            disabled={saving}
-            aria-describedby="setup-bot-name-help"
+            // Read-only, not disabled, while it saves: a disabled field loses focus.
+            readOnly={saving}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={
+              error ? "setup-bot-name-help setup-bot-name-error" : "setup-bot-name-help"
+            }
             className={fieldClass}
           />
         </div>
-        <button type="submit" disabled={saving || !name || unchanged} className={saveButtonClass}>
+        <button
+          type="submit"
+          disabled={!saving && (!name || unchanged)}
+          className={saveButtonClass}
+        >
           {saving ? "Saving…" : "Save Name"}
         </button>
       </div>
@@ -106,7 +134,7 @@ export default function BotNameField({
         {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       </div>
       {error ? (
-        <StatusNotice tone="destructive" title="Not Saved">
+        <StatusNotice id="setup-bot-name-error" tone="destructive" title="Not Saved">
           {error}
         </StatusNotice>
       ) : null}

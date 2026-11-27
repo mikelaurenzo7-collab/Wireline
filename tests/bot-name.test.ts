@@ -4,11 +4,14 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { resolveCreateFirstMessage } from "../src/lib/agent-create-defaults";
-import { createBotConfiguration } from "../src/lib/bot-configuration";
+import { resolveAgentGreeting } from "../src/lib/agent-greeting";
 import {
+  BOT_NAME_MAX_CHARS,
   DEFAULT_BOT_NAME,
+  cleanBotName,
   generatedBotGreeting,
-  renamedBotFields,
+  isGeneratedBotGreeting,
+  planBotRename,
   startingBotName,
 } from "../src/lib/bot-name";
 import { composeInboundOpening } from "../src/lib/voice/inbound-opening";
@@ -22,8 +25,6 @@ describe("the name every Bot starts with", () => {
     expect(startingBotName([], "Front Desk")).toBe("Bo");
     expect(startingBotName(["Nora", "Riley"], "Sales Rep Bot")).toBe("Bo");
     expect(startingBotName([null, undefined, ""], "My Bot")).toBe("Bo");
-    expect(createBotConfiguration("custom").name).toBe("Bo");
-    expect(createBotConfiguration().name).toBe("Bo");
   });
 
   it("names the next Bot for its role once the workspace has a Bo", () => {
@@ -31,14 +32,24 @@ describe("the name every Bot starts with", () => {
     expect(startingBotName(["Nora", " bo "], "Sales Rep Bot")).toBe("Sales Rep Bot");
     // A longer name that only begins with it is another name.
     expect(startingBotName(["Bob", "Boone"], "Front Desk")).toBe("Bo");
+    expect(startingBotName(["Bo"], "")).toBe("My Bot");
   });
 
-  it("is what the create dialog falls back to and shows in the empty field", () => {
-    const dialog = read("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain("startingBotName(existingNames, roleName(templateKey))");
-    expect(dialog).toContain("name.trim() || defaultName(templateKey, existingNames)");
-    expect(dialog).toContain("placeholder={defaultName(templateKey, existingNames)}");
-    expect(dialog).not.toContain("e.g. Nora or Alex");
+  it("numbers a role the workspace already has, so no two Bots share a name", () => {
+    expect(startingBotName(["Bo", "Front Desk"], "Front Desk")).toBe("Front Desk 2");
+    expect(startingBotName(["Bo", "front  desk", "Front Desk 2"], "Front Desk")).toBe(
+      "Front Desk 3",
+    );
+    const long = "R".repeat(BOT_NAME_MAX_CHARS);
+    const numbered = startingBotName(["Bo", long], long);
+    expect(numbered).toHaveLength(BOT_NAME_MAX_CHARS);
+    expect(numbered.endsWith(" 2")).toBe(true);
+  });
+
+  it("is stored as one clean line", () => {
+    expect(cleanBotName("  Nora \n  Jane ")).toBe("Nora Jane");
+    expect(cleanBotName("x".repeat(300))).toHaveLength(BOT_NAME_MAX_CHARS);
+    for (const value of [undefined, null, 7, {}, "   "]) expect(cleanBotName(value)).toBe("");
   });
 
   it("gives a caller a name, not a job title", () => {
@@ -51,26 +62,99 @@ describe("the name every Bot starts with", () => {
       }),
     ).toBe("Hi, I'm Bo, an AI assistant with Ridge Dental. How can I help?");
   });
+
+  it("is what the create dialog shows, and what it leaves the server to decide", () => {
+    const dialog = read("src/components/CreateAgentDialog.tsx");
+    expect(dialog).toContain("startingBotName(existingNames, roleName(templateKey))");
+    expect(dialog).toContain("placeholder={defaultName(templateKey, existingNames)}");
+    // An empty field sends the role, and the server names the Bot from its own list.
+    expect(dialog).toContain("...(name.trim() ? {} : { role_name: roleName(templateKey) })");
+    expect(dialog).toContain("name: body.name || finalName");
+    expect(dialog).not.toContain("e.g. Nora or Alex");
+  });
+});
+
+describe("the greeting a Bot is created with", () => {
+  it("is one sentence shape, written in one place", () => {
+    expect(generatedBotGreeting("Bo")).toBe("Hi, this is Bo. How can I help?");
+    expect(generatedBotGreeting("  Front   Desk ")).toBe("Hi, this is Front Desk. How can I help?");
+    expect(generatedBotGreeting("")).toBe("Hi, this is your Bot. How can I help?");
+    expect(resolveCreateFirstMessage(undefined, "Bo")).toBe(generatedBotGreeting("Bo"));
+    expect(resolveAgentGreeting({ name: "Bo", firstMessage: null })).toBe(
+      generatedBotGreeting("Bo"),
+    );
+    expect(resolveAgentGreeting({ name: " ", firstMessage: " " })).toBe(generatedBotGreeting(""));
+    // Every path that creates or renames a Bot uses it, never its own copy.
+    for (const path of [
+      "src/lib/agent-draft-service.ts",
+      "src/routes/mobile-routes.ts",
+      "src/lib/agent-greeting.ts",
+      "src/lib/voice/inbound-opening.ts",
+    ]) {
+      expect(read(path), path).not.toMatch(/Hi, this is \$\{/i);
+    }
+  });
+
+  it("is recognised whatever its capitals or spacing, and only for the Bot's own name", () => {
+    expect(isGeneratedBotGreeting("hi, this is bo.  How can I help?", "Bo")).toBe(true);
+    expect(isGeneratedBotGreeting("Hi, this is your Bot. How can I help?", "")).toBe(true);
+    expect(isGeneratedBotGreeting("Hi, this is Bo. How can I help?", "Nora")).toBe(false);
+    expect(isGeneratedBotGreeting("Hi, this is Bo. How can I help you?", "Bo")).toBe(false);
+    expect(isGeneratedBotGreeting(null, "Bo")).toBe(false);
+  });
+
+  it("is never what a caller hears when the owner asked for their own words", () => {
+    const opening = (greeting: string) =>
+      composeInboundOpening({
+        greeting,
+        agentName: "Bo",
+        businessName: "Ridge Dental",
+        recordingEnabled: false,
+        ownWords: true,
+      });
+    expect(opening(generatedBotGreeting("Bo"))).toBe(
+      "Hey, I'm Bo with Ridge Dental. How can I help you?",
+    );
+    expect(opening("Ridge Dental, this is the front desk.")).toBe(
+      "Ridge Dental, this is the front desk.",
+    );
+  });
 });
 
 describe("renaming a Bot", () => {
   it("takes the greeting with it while that is still the one the Bot was created with", () => {
-    expect(generatedBotGreeting("Bo")).toBe("Hi, this is Bo. How can I help?");
-    expect(resolveCreateFirstMessage(undefined, "Bo")).toBe(generatedBotGreeting("Bo"));
+    const followed = { name: "Bo", greeting: "Hi, this is Bo. How can I help?" };
     expect(
-      renamedBotFields(
-        { name: "Front Desk", firstMessage: generatedBotGreeting("Front Desk") },
+      planBotRename({ name: "Front Desk", firstMessage: generatedBotGreeting("Front Desk") }, "Bo"),
+    ).toEqual(followed);
+    expect(planBotRename({ name: "Front Desk", firstMessage: null }, "Bo")).toEqual(followed);
+    expect(planBotRename({ name: "Front Desk", firstMessage: "  " }, "Bo")).toEqual(followed);
+  });
+
+  it("goes by the greeting a call would speak: the saved rule before the Bot's own field", () => {
+    // Set Up saved the generated greeting as a rule. A call reads the rule
+    // first, so it has to follow the name too.
+    expect(
+      planBotRename(
+        {
+          name: "Front Desk",
+          firstMessage: generatedBotGreeting("Front Desk"),
+          greetingRule: generatedBotGreeting("Front Desk"),
+        },
         "Bo",
       ),
-    ).toEqual({ name: "Bo", firstMessage: "Hi, this is Bo. How can I help?" });
-    expect(renamedBotFields({ name: "Front Desk", firstMessage: null }, "Bo")).toEqual({
-      name: "Bo",
-      firstMessage: "Hi, this is Bo. How can I help?",
-    });
-    expect(renamedBotFields({ name: "Front Desk", firstMessage: "  " }, "Bo")).toEqual({
-      name: "Bo",
-      firstMessage: "Hi, this is Bo. How can I help?",
-    });
+    ).toEqual({ name: "Bo", greeting: generatedBotGreeting("Bo") });
+    // The owner wrote the rule. What the Bot's own field still holds is not spoken.
+    expect(
+      planBotRename(
+        {
+          name: "Front Desk",
+          firstMessage: generatedBotGreeting("Front Desk"),
+          greetingRule: "Thanks for calling Ridge Dental.",
+        },
+        "Bo",
+      ),
+    ).toEqual({ name: "Bo" });
   });
 
   it("leaves a greeting the owner wrote exactly as it is", () => {
@@ -78,23 +162,10 @@ describe("renaming a Bot", () => {
       "Thanks for calling BotBound. Are you looking into a Bot for your business?",
       // Even one that names the old Bot: it is the owner's sentence.
       "Hi, this is Michael at the front desk. How can I help?",
-      "Hi, this is Someone Else. How can I help?",
+      // The created shape with another name in it is also one somebody wrote.
+      "Hi, this is Ridge Dental. How can I help?",
     ]) {
-      expect(renamedBotFields({ name: "Michael", firstMessage }, "Bo")).toEqual({ name: "Bo" });
+      expect(planBotRename({ name: "Michael", firstMessage }, "Bo")).toEqual({ name: "Bo" });
     }
-  });
-
-  it("is a route of its own that locks the Bot, saves the name and never touches rules", () => {
-    const routes = read("src/routes/agent-routes-v2.ts");
-    const route = routes.slice(routes.indexOf('"/api/agents/:id/name"'));
-    const handler = route.slice(0, route.indexOf("router."));
-    expect(handler).toContain("authenticateUser");
-    expect(handler).toContain("agentMutationRateLimit");
-    expect(handler).toContain("cleanText(req.body?.name, BOT_NAME_MAX_CHARS)");
-    expect(handler).toContain('AppError.badRequest("Give your Bot a name.")');
-    expect(handler).toContain('.for("update")');
-    expect(handler).toContain("eq(schema.agents.userId, req.user.id)");
-    expect(handler).toContain("renamedBotFields(current, name)");
-    expect(handler).not.toContain("schema.directives");
   });
 });

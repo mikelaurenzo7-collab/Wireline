@@ -1,3 +1,4 @@
+import { isGeneratedBotGreeting } from "../bot-name";
 import { detectAiDisclosure } from "../tcpa-consent";
 import {
   OUTBOUND_RECORDING_NOTICE,
@@ -98,14 +99,6 @@ export function defaultOwnGreeting(input: {
   return `${introduction} How can I help you?`;
 }
 
-/** The greeting every Bot is created with, which no owner chose. */
-function isGeneratedGreeting(greeting: string, agentName: string): boolean {
-  return (
-    greeting.toLowerCase() ===
-    `hi, this is ${(agentName || "your Bot").toLowerCase()}. how can i help?`
-  );
-}
-
 export function composeInboundOpening(input: {
   greeting: string;
   agentName: string;
@@ -129,7 +122,8 @@ export function composeInboundOpening(input: {
   const written = input.greeting.replace(/\s+/g, " ").trim();
   if (input.ownWords) {
     const own =
-      written && !isGeneratedGreeting(written, clean(input.agentName))
+      // The greeting every Bot is created with is one no owner chose.
+      written && !isGeneratedBotGreeting(written, clean(input.agentName))
         ? written
         : defaultOwnGreeting(input);
     return `${recorded}${own}`;

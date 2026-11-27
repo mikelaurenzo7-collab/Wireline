@@ -18,6 +18,7 @@ import {
   resolveAgentEntitlement,
 } from "./agent-entitlements";
 import { isOwnerEmail } from "./auth-service";
+import { generatedBotGreeting, startingBotName } from "./bot-name";
 import { drizzle, tenantStore } from "./server-context";
 import { emitServerProductEventOnce } from "./product-event-server";
 import { mostUsedTimeZone } from "./owner-time-zone";
@@ -177,7 +178,8 @@ export async function createAgentDraft(
   input: AgentCustomizationInput,
   source: AgentCustomizationProfile["source"] = "chatgpt_mcp",
 ): Promise<AgentDraftView> {
-  const profile = normalizeAgentCustomization(input, source);
+  let profile = normalizeAgentCustomization(input, source);
+  const named = typeof input.agent_name === "string" && Boolean(input.agent_name.trim());
   return tenantStore.run(principal.userId, async () => {
     const id = `agent-${randomBytes(16).toString("hex")}`;
     let existingCount = 0;
@@ -190,12 +192,26 @@ export async function createAgentDraft(
       const existingAgents = await tx
         .select({
           id: schema.agents.id,
+          name: schema.agents.name,
           markKey: schema.agents.markKey,
           timezone: schema.agents.timezone,
         })
         .from(schema.agents)
         .where(eq(schema.agents.userId, principal.userId));
       existingCount = existingAgents.length;
+      // A Bot nobody named starts as Bo here too, as it does in the app.
+      if (!named) {
+        profile = normalizeAgentCustomization(
+          {
+            ...input,
+            agent_name: startingBotName(
+              existingAgents.map((agent) => agent.name),
+              profile.identity.name,
+            ),
+          },
+          source,
+        );
+      }
       // A connected app sends no zone: start where the owner's other Bots are.
       const startingTimeZone = mostUsedTimeZone(existingAgents.map((agent) => agent.timezone));
       await assertAgentCapacity(tx, principal, existingCount);
@@ -227,7 +243,7 @@ export async function createAgentDraft(
         // never receives external tools until the user configures and enables
         // them explicitly in BotBound.
         enabledTools: [],
-        firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
+        firstMessage: generatedBotGreeting(profile.identity.name),
         personalityVibe: profile.identity.tone,
         isBusinessAgent:
           profile.identity.role !== "personal_assistant" &&
@@ -330,7 +346,7 @@ export async function updateAgentDraft(
           merged.identity.role !== "personal_assistant" &&
           merged.identity.businessName !== "Your work",
         archetype: ROLE_ARCHETYPES[merged.identity.role],
-        firstMessage: `Hi, this is ${merged.identity.name}. How can I help?`,
+        firstMessage: generatedBotGreeting(merged.identity.name),
         personalityVibe: merged.identity.tone,
         businessVariables: persistedBusinessVariables(merged),
         systemPromptOverride: compileAgentRuntimeInstructions(merged),
