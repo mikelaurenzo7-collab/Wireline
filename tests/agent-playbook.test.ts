@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  isPlaybookEmpty,
   parseAgentPlaybook,
+  playbookCheckFirstRules,
   playbookPromptBlock,
   readStoredAgentPlaybook,
 } from "../src/lib/agent-playbook";
@@ -25,6 +27,7 @@ describe("owner Playbook", () => {
       ],
       alwaysMention: ["First visit is 10% off", "First visit is 10% off", " "],
       neverSay: ["Never quote repair prices"],
+      checkFirst: ["  A customer asks for a refund ", "A customer asks for a refund", ""],
     });
     expect(parsed).toEqual({
       ok: true,
@@ -42,6 +45,7 @@ describe("owner Playbook", () => {
         ],
         alwaysMention: ["First visit is 10% off"],
         neverSay: ["Never quote repair prices"],
+        checkFirst: ["A customer asks for a refund"],
       },
     });
     expect(parseAgentPlaybook({ situations: [{ when: "they ask about hours", say: "" }] })).toEqual(
@@ -52,6 +56,45 @@ describe("owner Playbook", () => {
     );
     expect(parseAgentPlaybook({ exactLines: { greeting: "Hi" } }).ok).toBe(false);
     expect(readStoredAgentPlaybook("not a playbook").situations).toEqual([]);
+  });
+
+  it("keeps the owner's check-first rules, and reads a Playbook saved before they existed", () => {
+    // A Playbook saved before this list existed has none, and is still read.
+    const older = {
+      version: 1,
+      exactLines: {},
+      situations: [],
+      alwaysMention: [],
+      neverSay: ["x"],
+    };
+    expect(readStoredAgentPlaybook(older).checkFirst).toEqual([]);
+    expect(readStoredAgentPlaybook(older).neverSay).toEqual(["x"]);
+    expect(playbookCheckFirstRules(older)).toEqual([]);
+    expect(playbookCheckFirstRules(null)).toEqual([]);
+    expect(playbookCheckFirstRules({ checkFirst: ["A job is outside our area"] })).toEqual([
+      "A job is outside our area",
+    ]);
+    // A Playbook that holds only these rules is not empty: it is saved.
+    const only = parseAgentPlaybook({ checkFirst: ["Any refund"] });
+    expect(only.ok && isPlaybookEmpty(only.value)).toBe(false);
+    expect(parseAgentPlaybook({ checkFirst: "Any refund" })).toEqual({
+      ok: false,
+      error: '"Check with me first" holds up to 10 items of up to 200 characters each.',
+    });
+    expect(
+      parseAgentPlaybook({ checkFirst: Array.from({ length: 11 }, (_, index) => `Rule ${index}`) })
+        .ok,
+    ).toBe(false);
+    // The Bot is told not to agree to these itself.
+    const block = playbookPromptBlock({ checkFirst: ["A customer asks for a discount"] });
+    expect(block).toContain(
+      "Check with the account holder first. When any of these applies, do not agree to it, promise it, or send it yourself. Say you will check and get back to them, and take the details:\n- A customer asks for a discount",
+    );
+    expect(block).toContain("Safety still applies:");
+    const editor = read("src/components/PlaybookEditor.tsx");
+    expect(editor).toContain("Check With Me First When");
+    expect(editor).toContain("checkFirst: textToList(checkFirstText),");
+    expect(editor).toContain("!Array.isArray(receipt.checkFirst) ||");
   });
 
   it("tells the Bot which lines are word for word and keeps safety on top", () => {

@@ -17,6 +17,7 @@ const h = vi.hoisted(() => ({
   environment: vi.fn(),
   rows: [] as unknown[][],
   other: vi.fn(),
+  playbook: null as unknown,
 }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
@@ -93,6 +94,7 @@ const botRow = (autonomyLevel: string, tenantAutonomyLevel: string | null, tools
   timeZone: "America/Chicago",
   autonomyLevel,
   tenantAutonomyLevel,
+  playbook: h.playbook,
   aiTier: "pro",
   twilioMessagingEnabled: true,
   twilioLookupEnabled: false,
@@ -133,6 +135,77 @@ beforeEach(() => {
   h.supervise.mockResolvedValue({ body: "We're at 12 Main St. See you soon." });
   h.send.mockResolvedValue({ ok: true });
   h.other.mockResolvedValue(false);
+  h.playbook = null;
+});
+
+/**
+ * Auto is where a Bot starts: it sends on its own, and the review also
+ * decides whether the owner would want a say.
+ */
+describe("a text after a call, on Auto", () => {
+  const refund: ActionItem = {
+    ...action,
+    reasoning: "Caller asked for a refund confirmation by text.",
+    payload: { to: CALLER, body: "We will refund the full $240 today." },
+  };
+  const decision = "This promises a $240 refund. Confirm you want to give it.";
+
+  it("asks the review to decide, with the owner's own rules", async () => {
+    h.playbook = { checkFirst: ["A customer asks for a refund"] };
+    botWorking("inherit", "auto");
+    expect(await executeAction("tenant", action, context)).toEqual({ success: true });
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+    });
+    expect(h.send).toHaveBeenCalledOnce();
+  });
+
+  it("sends nothing when the Bot decides its owner should see it, and says what to decide", async () => {
+    botWorking("auto");
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.payload.body,
+      ownerDecision: decision,
+    });
+    const result = await executeAction("tenant", refund, context);
+    expect(result).toEqual({
+      success: false,
+      retryable: true,
+      errorCode: "OWNER_DECISION_NEEDED",
+      error: decision,
+    });
+    expect(h.send).not.toHaveBeenCalled();
+    // The same text waits for the owner, with the Bot's question as the reason.
+    expect(postCallFollowUpHandBack(refund, result, "auto")).toEqual({
+      kind: "draft",
+      action: { ...refund, payload: { ...refund.payload, reasoning: decision } },
+    });
+  });
+
+  it("is never asked for that decision on a Bot set to work on its own, always", async () => {
+    h.playbook = { checkFirst: ["A customer asks for a refund"] };
+    botWorking("full");
+    expect(await executeAction("tenant", refund, context)).toEqual({ success: true });
+    expect(h.supervise).toHaveBeenCalledOnce();
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
+    expect(h.send).toHaveBeenCalledOnce();
+
+    // A workspace on Full covers a Bot that follows it.
+    h.supervise.mockClear();
+    botWorking("inherit", "full");
+    await executeAction("tenant", refund, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
+  });
+
+  it("does not second-guess an owner who already decided", async () => {
+    // The owner's own send goes as they approved it, with no review at all.
+    botWorking("auto");
+    expect(
+      await executeAction("tenant", refund, { ...context, approvalTaskId: "task-1" }, "auto"),
+    ).toEqual({ success: true });
+    expect(h.supervise).not.toHaveBeenCalled();
+    expect(h.send).toHaveBeenCalledOnce();
+  });
 });
 
 describe("a text the Bot sends on its own after a call", () => {

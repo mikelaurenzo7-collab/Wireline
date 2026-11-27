@@ -21,6 +21,13 @@ export const ActionItemSchema = z.object({
 
 export type ActionItem = z.infer<typeof ActionItemSchema>;
 
+/**
+ * `errorCode` when a Bot on Auto decided its owner would want a say before a
+ * message went. Nothing was sent, and `error` is what the owner has to
+ * decide, written for the owner.
+ */
+export const OWNER_DECISION_NEEDED = "OWNER_DECISION_NEEDED";
+
 export interface ActionResult {
   success: boolean;
   /** True when a durable follow-up draft or calendar request awaits approval

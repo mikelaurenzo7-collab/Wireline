@@ -1167,6 +1167,7 @@ router.patch(
       situations: parsed.value.situations.length,
       alwaysMention: parsed.value.alwaysMention.length,
       neverSay: parsed.value.neverSay.length,
+      checkFirst: parsed.value.checkFirst.length,
     });
     res.json({ success: true, playbook: parsed.value });
   },

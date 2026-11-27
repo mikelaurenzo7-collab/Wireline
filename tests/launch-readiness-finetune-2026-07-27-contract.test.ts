@@ -25,7 +25,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(ledger).toContain('setFatalError("Could not load outcome ledger.")');
     expect(ledger).toContain('setEnrichmentWarning("Follow-up status is temporarily incomplete.")');
     expect(ledger).not.toContain("callsRes.ok ? await callsRes.json() : { calls: [] }");
-    expect(inbox).toContain("Could not load approval inbox.");
+    expect(inbox).toContain("Could not load Needs You.");
     expect(inbox).toContain("setTasksUnavailable(!tasksReady)");
     expect(inbox).toContain(
       'title={tasksUnavailable ? "Actions Unavailable" : "Triage Unavailable"}',

@@ -7,6 +7,7 @@ const emptyPlaybook = {
   situations: [],
   alwaysMention: [],
   neverSay: [],
+  checkFirst: [],
 };
 
 async function mockStudio(page: Page, config: Record<string, unknown> = {}) {
@@ -304,6 +305,7 @@ test("Playbook accepts normalized wording, reordered lines and a confirmed clear
                 ...emptyPlaybook,
                 exactLines: { hold: "One moment.", closing: "Thank you for calling." },
                 alwaysMention: ["Estimates are free."],
+                checkFirst: ["A customer asks for a refund"],
               }
             : emptyPlaybook,
       },
@@ -317,8 +319,15 @@ test("Playbook accepts normalized wording, reordered lines and a confirmed clear
   await playbook.getByRole("button", { name: "Checking something", exact: true }).click();
   await playbook.getByLabel("Checking something", { exact: true }).fill(" One moment. ");
   await playbook.getByLabel(/Always Mention/).fill("Estimates are free.\nEstimates are free.");
+  // The owner's own rules for when the Bot should check first.
+  await playbook
+    .getByLabel(/Check With Me First When/)
+    .fill(" A customer asks for a refund \nA customer asks for a refund");
   await playbook.getByRole("button", { name: "Save Playbook", exact: true }).click();
   await expect(playbook.getByText(/Playbook saved\./)).toBeVisible();
+  await expect(playbook.getByLabel(/Check With Me First When/)).toHaveValue(
+    "A customer asks for a refund",
+  );
   await expect(playbook.getByLabel("Ending the call", { exact: true })).toHaveValue(
     "Thank you for calling.",
   );
@@ -330,6 +339,7 @@ test("Playbook accepts normalized wording, reordered lines and a confirmed clear
     .getByRole("button", { name: "Remove the checking something line", exact: true })
     .click();
   await playbook.getByLabel(/Always Mention/).fill("");
+  await playbook.getByLabel(/Check With Me First When/).fill("");
   await playbook.getByRole("button", { name: "Save Playbook", exact: true }).click();
   await expect(playbook.getByText(/Playbook saved\./)).toBeVisible();
   await expect(playbook.getByLabel("Ending the call", { exact: true })).toHaveCount(0);

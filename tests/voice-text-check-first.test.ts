@@ -177,3 +177,107 @@ describe("live text and the owner's choice to check first", () => {
     expect(result?.result).toContain("do-not-contact list");
   });
 });
+
+/**
+ * Auto is where a Bot starts. It sends on its own, and the review that reads
+ * every message also decides whether the owner would want a say.
+ */
+describe("live text on Auto: the Bot decides when its owner would want a say", () => {
+  const refund = { ...args, message_body: "No problem, we will refund the full $240 today." };
+  const decision = "This promises a $240 refund. Confirm you want to give it.";
+  const playbook = { checkFirst: ["A customer asks for a refund"] };
+
+  it("asks the review to decide, with the owner's own rules", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    await handleCoreToolCall("send_text_message", args, context);
+    expect(h.supervise).toHaveBeenCalledOnce();
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+    });
+    // A routine text still just goes.
+    expect(h.sendMessage).toHaveBeenCalledOnce();
+    expect(h.queue).not.toHaveBeenCalled();
+
+    // A Bot nobody gave rules to still decides, from the review's own criteria.
+    h.supervise.mockClear();
+    h.permission.mockResolvedValue([{ agentLevel: null, tenantLevel: null, playbook: null }]);
+    await handleCoreToolCall("send_text_message", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({ rules: [] });
+  });
+
+  it("never asks for that decision on a Bot set to work on its own, always", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "full", tenantLevel: "auto", playbook }]);
+    await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.supervise).toHaveBeenCalledOnce();
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
+    expect(h.sendMessage).toHaveBeenCalledOnce();
+    expect(h.queue).not.toHaveBeenCalled();
+  });
+
+  it("holds the text as the Bot wrote it, with what the owner has to decide", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.message_body,
+      ownerDecision: decision,
+    });
+    const result = await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(h.queue).toHaveBeenCalledExactlyOnceWith(
+      "tenant-owned",
+      {
+        type: "send_text_message",
+        agentId: "agent-owned",
+        priority: "medium",
+        payload: { to: CALLER, body: refund.message_body, reasoning: decision },
+      },
+      { sourceType: "phone_call", sourceId: "call-owned" },
+      "draft",
+    );
+    // The Bot tells the caller it is checking, and promises nothing.
+    expect(result?.result).toContain(`DRAFT_SAVED: ${CALLER}`);
+    expect(result?.result).toContain("checking one thing with the team before it goes out");
+    expect(result?.result).toContain("do not promise what the answer will be");
+    expect(result?.result).not.toMatch(/approv/i);
+    // The after-call pass reads that receipt as a text already waiting.
+    expect(liveTextOutcome(CALLER, [{ status: "completed", result: result!.result }])).toBe("held");
+  });
+
+  it("keeps a WhatsApp message the Bot held on WhatsApp, with the reason", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "auto", playbook }]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.message_body,
+      ownerDecision: decision,
+    });
+    h.note.mockResolvedValue(undefined);
+    const result = await handleCoreToolCall(
+      "send_text_message",
+      { ...refund, channel: "whatsapp" },
+      context,
+    );
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(h.queue).not.toHaveBeenCalled();
+    expect(h.note).toHaveBeenCalledOnce();
+    expect(h.note.mock.calls[0][0]).toMatchObject({
+      taskType: "follow_up",
+      status: "pending",
+      payload: { to: CALLER, body: refund.message_body, reasoning: decision, channel: "whatsapp" },
+    });
+    expect(result?.result).toContain("The WhatsApp message is written and the owner needs to");
+  });
+
+  it("sends nothing and says so when a held text could not be saved", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "auto", playbook }]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.message_body,
+      ownerDecision: decision,
+    });
+    h.queue.mockResolvedValue({ success: false, error: "Database unavailable." });
+    const result = await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(result?.result).toContain("The message was not confirmed.");
+    expect(result?.result).not.toContain("DRAFT_SAVED");
+  });
+});

@@ -6,6 +6,7 @@ import {
   BOT_PERMISSION_LABELS,
   BOT_PERMISSION_LEVELS,
   BOT_PERMISSION_SUMMARIES,
+  botDecidesWhenToAsk,
   DEFAULT_NEW_BOT_AUTONOMY,
   DEFAULT_WORKSPACE_AUTONOMY,
   effectiveAutonomy,
@@ -17,15 +18,41 @@ import { pickWritableSettings } from "../src/routes/settings-routes";
 
 describe("per-bot permission", () => {
   it("maps Set Up choices onto the stored autonomy values", () => {
-    expect(autonomyFromPermissionLevel("full")).toBe("auto");
-    expect(autonomyFromPermissionLevel("auto")).toBe("supervised");
+    expect(autonomyFromPermissionLevel("auto")).toBe("auto");
+    expect(autonomyFromPermissionLevel("full")).toBe("full");
+    expect(autonomyFromPermissionLevel("messages")).toBe("supervised");
     expect(autonomyFromPermissionLevel("ask")).toBe("draft");
-    expect(permissionLevelFromAutonomy("auto")).toBe("full");
-    expect(permissionLevelFromAutonomy("supervised")).toBe("auto");
+    expect(permissionLevelFromAutonomy("auto")).toBe("auto");
+    expect(permissionLevelFromAutonomy("full")).toBe("full");
+    expect(permissionLevelFromAutonomy("supervised")).toBe("messages");
     expect(permissionLevelFromAutonomy("draft")).toBe("ask");
-    // A Bot that follows a workspace nobody has changed works on its own.
-    expect(permissionLevelFromAutonomy("inherit")).toBe("full");
-    expect(permissionLevelFromAutonomy(null)).toBe("full");
+    // A Bot that follows a workspace nobody has changed runs on Auto.
+    expect(permissionLevelFromAutonomy("inherit")).toBe("auto");
+    expect(permissionLevelFromAutonomy(null)).toBe("auto");
+  });
+
+  it("lets the Bot decide when to ask only on Auto", () => {
+    // Auto is where a Bot starts: it acts, and decides when its owner would
+    // want a say.
+    expect(botDecidesWhenToAsk(null, null)).toBe(true);
+    expect(botDecidesWhenToAsk("inherit", "auto")).toBe(true);
+    expect(botDecidesWhenToAsk("auto", "draft")).toBe(true);
+    // Full never asks. It still acts, books and sends as Auto does.
+    expect(botDecidesWhenToAsk("full", "auto")).toBe(false);
+    expect(botDecidesWhenToAsk("inherit", "full")).toBe(false);
+    expect(effectiveAutonomy("full", "draft")).toBe("full");
+    expect(effectiveAutonomy("inherit", "full")).toBe("full");
+    for (const actionType of ["send_email", "send_text_message", "create_internal_task"]) {
+      expect(actionExecutionMode({ agentLevel: "full", actionType }), actionType).toBe("auto");
+    }
+    expect(nativeAppointmentStatus({ bookingMode: "inherit", agentLevel: "full" })).toBe(
+      "Scheduled",
+    );
+    // A level that always asks leaves the Bot nothing to decide, and a value
+    // nobody can read is never taken for a licence to decide.
+    for (const level of ["supervised", "draft", "high", ""]) {
+      expect(botDecidesWhenToAsk(level, level), level).toBe(level === "");
+    }
   });
 
   it("acts on its own when nobody asked it to check first", () => {
@@ -67,7 +94,7 @@ describe("per-bot permission", () => {
   it("never reads a stored value it does not recognise as permission", () => {
     // "high" and "suggest" were found on live Bots. Neither is a value this
     // code writes, so neither may be read as "go ahead".
-    for (const unreadable of ["high", "suggest", "full", "yes", "AUTO "]) {
+    for (const unreadable of ["high", "suggest", "Full", "yes", "AUTO "]) {
       expect(effectiveAutonomy(unreadable, "auto"), unreadable).toBe("draft");
       expect(effectiveAutonomy("inherit", unreadable), unreadable).toBe("draft");
       expect(permissionLevelFromAutonomy(unreadable), unreadable).toBe("ask");
@@ -75,13 +102,13 @@ describe("per-bot permission", () => {
   });
 
   it("refuses to store an autonomy value the runtime cannot read", () => {
-    expect([...STORED_AUTONOMY_VALUES]).toEqual(["auto", "supervised", "draft"]);
+    expect([...STORED_AUTONOMY_VALUES]).toEqual(["auto", "full", "supervised", "draft"]);
     for (const value of STORED_AUTONOMY_VALUES) {
       expect(pickWritableSettings({ autonomyLevel: value }, false)).toEqual({
         autonomyLevel: value,
       });
     }
-    for (const value of ["high", "full", "inherit", "", 3, null, undefined]) {
+    for (const value of ["high", "Full", "inherit", "", 3, null, undefined]) {
       expect(pickWritableSettings({ autonomyLevel: value }, false)).toEqual({});
     }
     const planner = readFileSync("src/lib/workspace-planner.ts", "utf8");
@@ -96,11 +123,19 @@ describe("per-bot permission", () => {
     );
   });
 
-  it("names the levels in the owner's words, with working on its own first", () => {
-    expect([...BOT_PERMISSION_LEVELS]).toEqual(["full", "auto", "ask"]);
-    expect(BOT_PERMISSION_LABELS.full).toBe("On its own");
-    expect(BOT_PERMISSION_LABELS.auto).toBe("Check with me before it emails or texts a customer");
+  it("names the levels in the owner's words, with Auto first", () => {
+    expect([...BOT_PERMISSION_LEVELS]).toEqual(["auto", "full", "messages", "ask"]);
+    expect(BOT_PERMISSION_LABELS.auto).toBe("Auto: it decides when to check with me");
+    expect(BOT_PERMISSION_LABELS.full).toBe("On its own, always");
+    expect(BOT_PERMISSION_LABELS.messages).toBe(
+      "Check with me before it emails or texts a customer",
+    );
     expect(BOT_PERMISSION_LABELS.ask).toBe("Check with me before it does anything");
+    // Auto says what the Bot decides about, and Full says it never waits.
+    expect(BOT_PERMISSION_SUMMARIES.auto).toContain(
+      "checks with you only when it decides you would want a say",
+    );
+    expect(BOT_PERMISSION_SUMMARIES.full).toContain("never asks before it sends");
     const copy = [
       ...Object.values(BOT_PERMISSION_LABELS),
       ...Object.values(BOT_PERMISSION_SUMMARIES),
@@ -111,12 +146,12 @@ describe("per-bot permission", () => {
     expect(panel).toContain("{BOT_PERMISSION_LABELS[level]}");
     expect(panel).toContain("{BOT_PERMISSION_SUMMARIES[permission]}");
     expect(panel).toContain(
-      'permission: isBotPermissionLevel(data.permission) ? data.permission : "full",',
+      'permission: isBotPermissionLevel(data.permission) ? data.permission : "auto",',
     );
     for (const retired of ["Full access", "Ask for approval", ">Auto<"]) {
       expect(panel, retired).not.toContain(retired);
     }
-    expect(readFileSync("src/lib/studio-setup-drafts.ts", "utf8")).toContain('permission: "full",');
+    expect(readFileSync("src/lib/studio-setup-drafts.ts", "utf8")).toContain('permission: "auto",');
   });
 
   it("changes what the action engine executes", () => {
@@ -200,8 +235,11 @@ describe("per-bot permission", () => {
       }),
     ).toBe("Scheduled");
     expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "draft"))).toBe("ask");
-    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "supervised"))).toBe("auto");
-    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "auto"))).toBe("full");
+    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "supervised"))).toBe(
+      "messages",
+    );
+    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "auto"))).toBe("auto");
+    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "full"))).toBe("full");
   });
 
   it("shows the workspace permission when a Bot is stored as inherit", () => {

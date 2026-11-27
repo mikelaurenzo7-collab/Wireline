@@ -233,6 +233,66 @@ describe("live email delivery and manual handoff", () => {
     },
   );
 
+  it("on Auto, asks the review to decide and holds the email the owner would want a say in", async () => {
+    const playbook = { checkFirst: ["A quote over $500"] };
+    const decision = "This quotes $1,200 for the job. Confirm the price.";
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    h.sendEmail.mockResolvedValue(true);
+
+    // A routine email goes, and the review was asked with the owner's rules.
+    await handleCoreToolCall("send_email", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({ rules: ["A quote over $500"] });
+    expect(h.sendEmail).toHaveBeenCalledOnce();
+    expect(h.approve).not.toHaveBeenCalled();
+
+    // One the Bot decides its owner should see waits as the Bot wrote it.
+    h.sendEmail.mockClear();
+    h.supervise.mockResolvedValue({
+      approved: false,
+      subject: args.subject,
+      body: args.body,
+      ownerDecision: decision,
+    });
+    h.approve.mockResolvedValue({ success: true, queued: true });
+    const held = await handleCoreToolCall("send_email", args, context);
+    expect(h.sendEmail).not.toHaveBeenCalled();
+    expect(h.saveTask).not.toHaveBeenCalled();
+    expect(h.approve).toHaveBeenCalledExactlyOnceWith(
+      "tenant-owned",
+      {
+        type: "send_email",
+        agentId: "agent-owned",
+        priority: "medium",
+        payload: { to: args.to_email, subject: args.subject, body: args.body, reasoning: decision },
+      },
+      { sourceType: "phone_call", sourceId: "call-owned" },
+      "draft",
+    );
+    expect(held?.result).toContain("DRAFT_SAVED: confirmed@example.test");
+    expect(held?.result).toContain("checking one thing with the team before it goes out");
+    expect(held?.result).toContain("do not promise what the answer will be");
+    expect(enforceAgentToolResultTruth("send_email", held!)).toEqual(held);
+
+    // If it cannot be saved, nothing is claimed.
+    h.approve.mockResolvedValue({ success: false });
+    const unsaved = await handleCoreToolCall("send_email", args, context);
+    expect(unsaved?.result).toBe(
+      "The email request could not be saved for the team. No email was sent.",
+    );
+    expect(h.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("on a Bot set to work on its own always, never asks the review for that decision", async () => {
+    h.permission.mockResolvedValue([
+      { agentLevel: "full", tenantLevel: "auto", playbook: { checkFirst: ["Any quote"] } },
+    ]);
+    h.sendEmail.mockResolvedValue(true);
+    await handleCoreToolCall("send_email", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
+    expect(h.sendEmail).toHaveBeenCalledOnce();
+    expect(h.approve).not.toHaveBeenCalled();
+  });
+
   it("requires recipient readback and separates saved requests, submission and delivery in the shared prompt", () => {
     expect(RUNTIME_ACTION_SAFETY_BLOCK).toContain(
       "read back the exact email address and wait for the caller to confirm it",

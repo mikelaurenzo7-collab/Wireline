@@ -13,10 +13,11 @@ import {
   sanitizePersistedAgentToolSelection,
 } from "./agent-tool-authorization";
 import { type AgentToolName } from "./agent-capabilities";
-import { type ActionItem, type ActionResult } from "./action-types";
+import { OWNER_DECISION_NEEDED, type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { IntegrationService } from "./integrations";
-import { actionExecutionMode } from "./bot-permission";
+import { actionExecutionMode, botDecidesWhenToAsk } from "./bot-permission";
+import { playbookCheckFirstRules } from "./agent-playbook";
 import { queueNeedsYouNotice } from "./needs-you-notice";
 import { bookNativeAppointment, getNativeCalendarConfiguration } from "./native-calendar";
 import { touchNavCounts } from "./nav-counts-invalidate";
@@ -31,7 +32,11 @@ import {
 import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
 import { postAgentNotification, getDefaultChannel } from "./slack-service";
-import { ClientCommunicationBlockedError, superviseClientCommunication } from "./ai-supervisor";
+import {
+  ClientCommunicationBlockedError,
+  superviseClientCommunication,
+  type OwnerDecisionRequest,
+} from "./ai-supervisor";
 import { resolveClientSenderIdentity } from "./client-sender-identity";
 import { dispatchWebhook } from "./webhook-helpers";
 import { runInBackground } from "./background-work";
@@ -91,6 +96,11 @@ type ResolvedActionPolicy = {
   action: ActionItem;
   autonomy: "auto" | "draft";
   agentTimeZone: string | null;
+  /**
+   * Set for a Bot on Auto acting at its own permission: the message review
+   * then also decides whether the owner would want a say.
+   */
+  ownerDecision?: OwnerDecisionRequest;
 };
 
 export type { TextSendConfirmations } from "./approved-text-confirmations";
@@ -144,6 +154,7 @@ async function resolveActionPolicy(
         timeZone: schema.agents.timezone,
         autonomyLevel: schema.agents.autonomyLevel,
         tenantAutonomyLevel: schema.settings.autonomyLevel,
+        playbook: schema.agents.playbook,
         aiTier: schema.settings.aiTier,
         twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
         twilioLookupEnabled: schema.settings.twilioLookupEnabled,
@@ -225,6 +236,13 @@ async function resolveActionPolicy(
       action: scopedAction,
       autonomy,
       agentTimeZone: agentRow.timeZone || "UTC",
+      // An owner who approved the item, or a caller of this function who
+      // chose how it runs, has already decided. Otherwise a Bot on Auto
+      // decides for itself whether its owner would want a say.
+      ...(!autonomyOverride &&
+      botDecidesWhenToAsk(agentRow.autonomyLevel, agentRow.tenantAutonomyLevel)
+        ? { ownerDecision: { rules: playbookCheckFirstRules(agentRow.playbook) } }
+        : {}),
     };
   }
 
@@ -233,7 +251,9 @@ async function resolveActionPolicy(
     .from(schema.settings)
     .where(eq(schema.settings.userId, userId))
     .limit(1);
-  let autonomy = autonomyOverride || (settings?.autonomyLevel === "auto" ? "auto" : "draft");
+  let autonomy =
+    autonomyOverride ||
+    (settings?.autonomyLevel === "auto" || settings?.autonomyLevel === "full" ? "auto" : "draft");
 
   // Background extraction must never perform tenant-wide side effects when the
   // originating agent cannot be resolved. Explicit Account Holder approval may
@@ -290,6 +310,7 @@ export async function executeAction(
               // Nobody chose this send: no owner approved the item and no
               // caller of this function asked for it to run now.
               !autonomyOverride && !context.approvalTaskId,
+              context.approvalTaskId ? undefined : policy.ownerDecision,
             )
           : queueDraftAction(userId, policy.action, context),
     });
@@ -309,6 +330,7 @@ async function executeAutonomousAction(
   context: ActionExecutionContext,
   agentTimeZone: string | null,
   unattended = false,
+  ownerDecision?: OwnerDecisionRequest,
 ): Promise<ActionResult> {
   if (AUTONOMOUS_LIVE_EXTERNAL_ACTIONS.has(action.type)) {
     const environmentPolicy = await liveExternalActionPolicyForUser(userId);
@@ -383,7 +405,7 @@ async function executeAutonomousAction(
       return { success: emailOk };
     }
     case "send_text_message":
-      return handleSendTextMessage(userId, action, context, unattended);
+      return handleSendTextMessage(userId, action, context, unattended, ownerDecision);
     case "schedule_calendar": {
       const nativeCalendar = await getNativeCalendarConfiguration(userId);
       if (nativeCalendar.configured) {
@@ -626,6 +648,7 @@ async function handleSendTextMessage(
   action: ActionItem,
   context: ActionExecutionContext,
   unattended = false,
+  ownerDecision?: OwnerDecisionRequest,
 ): Promise<ActionResult> {
   const phone = cleanOutboundSmsPhone(action.payload.to);
   if (!phone) {
@@ -747,7 +770,18 @@ async function handleSendTextMessage(
         recipient: phone,
         body: typeof action.payload.body === "string" ? action.payload.body : "",
         context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
+        ownerDecision,
       });
+      // The Bot decided its owner would want a say. Nothing is sent, and the
+      // same text waits for the owner with what they have to decide.
+      if (reviewed.ownerDecision) {
+        return {
+          success: false,
+          retryable: true,
+          errorCode: OWNER_DECISION_NEEDED,
+          error: reviewed.ownerDecision,
+        };
+      }
       body = reviewed.body;
     } catch (err) {
       const blocked = err instanceof ClientCommunicationBlockedError;

@@ -229,7 +229,7 @@ export default function StudioAgentWorkspacePanel({
             tone: inferPersonality(personality),
             greeting: existingGreeting(data),
             knowledge: "",
-            permission: isBotPermissionLevel(data.permission) ? data.permission : "full",
+            permission: isBotPermissionLevel(data.permission) ? data.permission : "auto",
           },
           startedRevision,
         );
