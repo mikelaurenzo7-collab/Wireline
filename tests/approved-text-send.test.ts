@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   SALES_ATTESTATION_REQUIRED_MESSAGE,
@@ -74,9 +74,15 @@ async function loadApprovedText(
 }
 
 // Each test loads the action engine afresh behind its own mocks, and the first
-// load compiles that whole module graph: over a second alone, and past the
-// five-second default when the full suite is running beside it.
+// load compiles that whole module graph: over a second alone, and far past a
+// test's time limit when the full suite is running beside it. So the first
+// load happens here, outside any one test.
 describe("approved text confirmations", { timeout: 20_000 }, () => {
+  beforeAll(async () => {
+    await loadApprovedText([]);
+    vi.resetModules();
+  }, 180_000);
+
   beforeEach(() => {
     vi.stubEnv("FEDERAL_DNC_API_URL", "");
     vi.stubEnv("FEDERAL_DNC_API_KEY", "");
