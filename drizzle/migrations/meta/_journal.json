@@ -694,6 +694,13 @@
       "when": 1795786401000,
       "tag": "0200_person_events_no_update",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1795786402000,
+      "tag": "0201_autonomous_by_default",
+      "breakpoints": true
     }
   ]
 }

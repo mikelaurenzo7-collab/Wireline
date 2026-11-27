@@ -44,7 +44,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     standard: {
       maxWidth: "980px",
       header: "WorkspacePageIntro start-aligned",
-      surfaces: ["Knowledge", "Connections", "Approvals", "Apps", "Inbox"],
+      surfaces: ["Knowledge", "Connections", "Needs You", "Apps", "Inbox"],
     },
     narrow: {
       maxWidth: "700px",

@@ -578,7 +578,7 @@ export default function EmailInbox({
       );
       if (!handoffTask) throw new Error("Could not confirm the handoff task.");
       if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
-        setNotice("A human follow-up is now in Approvals.");
+        setNotice("A human follow-up is now in Needs You.");
       }
     } catch (cause) {
       if (selectedIdRef.current === threadId) {

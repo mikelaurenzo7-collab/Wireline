@@ -23,7 +23,13 @@ import {
   type TrainingExtractionBody,
 } from "../lib/training-extraction-result";
 import { createStudioSetupDrafts, type StudioSetupDrafts } from "../lib/studio-setup-drafts";
-import { isBotPermissionLevel, type BotPermissionLevel } from "../lib/bot-permission";
+import {
+  BOT_PERMISSION_LABELS,
+  BOT_PERMISSION_LEVELS,
+  BOT_PERMISSION_SUMMARIES,
+  isBotPermissionLevel,
+  type BotPermissionLevel,
+} from "../lib/bot-permission";
 import { Button, NativeSelect } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
@@ -223,7 +229,7 @@ export default function StudioAgentWorkspacePanel({
             tone: inferPersonality(personality),
             greeting: existingGreeting(data),
             knowledge: "",
-            permission: isBotPermissionLevel(data.permission) ? data.permission : "auto",
+            permission: isBotPermissionLevel(data.permission) ? data.permission : "full",
           },
           startedRevision,
         );
@@ -594,7 +600,7 @@ export default function StudioAgentWorkspacePanel({
 
               <div className="space-y-1.5">
                 <label htmlFor="bot-permission" className="text-sm font-medium">
-                  Permission
+                  How Your Bot Works
                 </label>
                 <NativeSelect
                   id="bot-permission"
@@ -605,17 +611,14 @@ export default function StudioAgentWorkspacePanel({
                     if (isBotPermissionLevel(level)) void savePermission(level);
                   }}
                 >
-                  <option value="full">Full access</option>
-                  <option value="auto">Auto</option>
-                  <option value="ask">Ask for approval</option>
+                  {BOT_PERMISSION_LEVELS.map((level) => (
+                    <option key={level} value={level}>
+                      {BOT_PERMISSION_LABELS[level]}
+                    </option>
+                  ))}
                 </NativeSelect>
                 <p className="text-xs text-muted-foreground">
-                  {permission === "full"
-                    ? "This Bot completes allowed actions without waiting."
-                    : permission === "ask"
-                      ? "This Bot waits for your approval before it acts."
-                      : "This Bot handles ordinary work and asks before it emails, texts, or updates a customer record."}{" "}
-                  Calendar confirmations follow{" "}
+                  {BOT_PERMISSION_SUMMARIES[permission]} Bookings follow{" "}
                   <Link to="/calendar?tab=availability" className="font-medium underline">
                     Calendar settings
                   </Link>

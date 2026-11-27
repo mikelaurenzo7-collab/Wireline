@@ -60,6 +60,7 @@ import { listAgentsForUser } from "../lib/agents-store";
 import { deleteBot, previewBotDeletion } from "../lib/bot-deletion";
 import {
   autonomyFromPermissionLevel,
+  DEFAULT_NEW_BOT_AUTONOMY,
   effectiveAutonomy,
   isBotPermissionLevel,
   permissionLevelFromAutonomy,
@@ -660,7 +661,7 @@ router.post(
           archetype: DEFAULT_BOT_ARCHETYPE,
           voiceId,
           voiceProvider: "openai",
-          autonomyLevel: "supervised",
+          autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,
           ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
           enabledTools,
           firstMessage,
@@ -752,7 +753,9 @@ router.patch(
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!isBotPermissionLevel(req.body?.level)) {
-      throw AppError.badRequest("Choose Full access, Auto, or Ask for approval.");
+      throw AppError.badRequest(
+        "Choose whether this Bot works on its own or checks with you first.",
+      );
     }
     const autonomyLevel = autonomyFromPermissionLevel(req.body.level);
     const [saved] = await drizzle

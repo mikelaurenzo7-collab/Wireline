@@ -300,7 +300,9 @@ async function executeAutonomousAction(
         accountEnvironment: environmentPolicy.environment ?? "missing",
         code: environmentPolicy.code,
       });
-      return { success: false, error: environmentPolicy.message };
+      // Refused before any provider was called, so the same action may run
+      // again and a follow-up can wait for the owner instead of being lost.
+      return { success: false, error: environmentPolicy.message, retryable: true };
     }
   }
 
@@ -623,9 +625,47 @@ async function handleSendTextMessage(
     };
   }
 
+  // A text the owner approved has been read by the owner. A text the Bot sends
+  // on its own has been read by nobody, so it gets the same review a live text
+  // and an email get. A refusal, or a review that could not run, sends nothing
+  // and says so, which lets the follow-up wait for the owner.
+  let body = action.payload.body;
+  if (!context.approvalTaskId) {
+    try {
+      const sender = await resolveClientSenderIdentity(userId, action.agentId);
+      const reviewed = await superviseClientCommunication({
+        channel: "sms",
+        agentName: sender.botName,
+        businessName: sender.businessName,
+        source: "action_engine",
+        purpose: action.reasoning || "follow-up the caller asked for",
+        recipient: phone,
+        body: typeof action.payload.body === "string" ? action.payload.body : "",
+        context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
+      });
+      body = reviewed.body;
+    } catch (err) {
+      const blocked = err instanceof ClientCommunicationBlockedError;
+      if (!blocked) {
+        log.warn("action-engine text review unavailable, nothing sent", {
+          userId,
+          error: getErrorMessage(err),
+        });
+      }
+      return {
+        success: false,
+        retryable: true,
+        errorCode: blocked ? "COMMUNICATION_BLOCKED" : "COMMUNICATION_REVIEW_UNAVAILABLE",
+        error: blocked
+          ? `The message review held this text: ${getErrorMessage(err)}`
+          : "The message review was unavailable, so this text was not sent.",
+      };
+    }
+  }
+
   const sent = await sendTenantMessage(userId, {
     to: phone,
-    body: action.payload.body,
+    body,
     agentId: action.agentId,
   });
   return smsActionResult(sent);

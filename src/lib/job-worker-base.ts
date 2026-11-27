@@ -8,8 +8,12 @@ import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job
 import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import {
+  addressedToCaller,
   postCallFollowUpAction,
+  postCallFollowUpFinisher,
+  postCallFollowUpHandBack,
   liveEmailAlreadyHandled,
+  liveTextAlreadyHandled,
   toolAuditResultText,
 } from "./post-call-follow-up";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
@@ -74,7 +78,11 @@ async function enqueueActionExtractionOnce(
 }
 
 /** Completed live send_email results for this provider call, if the audit recorded them. */
-async function completedSendEmailResults(userId: string, callId: string): Promise<string[]> {
+async function completedLiveToolResults(
+  userId: string,
+  callId: string,
+  tool: "send_email" | "send_text_message",
+): Promise<string[]> {
   if (!userId || !callId) return [];
   const rows = await drizzle
     .select({ metadata: schema.auditLog.metadata })
@@ -82,7 +90,7 @@ async function completedSendEmailResults(userId: string, callId: string): Promis
     .where(
       and(
         eq(schema.auditLog.userId, userId),
-        eq(schema.auditLog.action, "agent_tool.send_email"),
+        eq(schema.auditLog.action, `agent_tool.${tool}`),
         eq(schema.auditLog.eventType, "voice.tool_call"),
         sql`${schema.auditLog.metadata}->>'callId' = ${callId}`,
         sql`${schema.auditLog.metadata}->>'status' = 'completed'`,
@@ -90,6 +98,11 @@ async function completedSendEmailResults(userId: string, callId: string): Promis
     );
   return rows.map((row) => toolAuditResultText(row.metadata)).filter(Boolean);
 }
+
+const completedSendEmailResults = (userId: string, callId: string) =>
+  completedLiveToolResults(userId, callId, "send_email");
+const completedSendTextResults = (userId: string, callId: string) =>
+  completedLiveToolResults(userId, callId, "send_text_message");
 
 /**
  * Global job handler.
@@ -175,10 +188,17 @@ export async function handleJob(job: JobRow): Promise<void> {
     });
 
     const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
+    const completedTextSends = await completedSendTextResults(p.userId, p.callId);
     let skippedDuplicateEmails = 0;
-    for (const action of actions.map(postCallFollowUpAction)) {
+    let skippedDuplicateTexts = 0;
+    for (const extracted of actions.map(postCallFollowUpAction)) {
+      const action = addressedToCaller(extracted, p.customerNumber);
       if (liveEmailAlreadyHandled(action, completedEmailSends)) {
         skippedDuplicateEmails += 1;
+        continue;
+      }
+      if (liveTextAlreadyHandled(action, completedTextSends)) {
+        skippedDuplicateTexts += 1;
         continue;
       }
       await enqueue(drizzle, {
@@ -188,8 +208,12 @@ export async function handleJob(job: JobRow): Promise<void> {
           userId: p.userId,
           action: p.agentId ? { ...action, agentId: p.agentId } : action,
           context: { sourceId: p.callId, sourceType: "phone_call" },
-          // Read from a transcript after the call: the owner approves every one.
-          autonomy: "draft",
+          // The Bot finishes what is not a guess, at its own permission. An
+          // email address nobody read back, or a text to another number,
+          // waits for the owner whatever the permission says.
+          ...(postCallFollowUpFinisher(action, p.customerNumber) === "owner"
+            ? { autonomy: "draft" as const }
+            : {}),
         },
       });
     }
@@ -198,6 +222,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       callId: p.callId,
       actionsCount: actions.length,
       skippedDuplicateEmails,
+      skippedDuplicateTexts,
     });
   }
 
@@ -215,12 +240,27 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    await executeAction(
+    const result = await executeAction(
       p.userId,
       parsed.data,
       p.context,
       p.autonomy === "draft" ? "draft" : undefined,
     );
+    // A follow-up the Bot could not finish on its own goes to the owner. It
+    // is never dropped.
+    const handBack = p.autonomy === "draft" ? null : postCallFollowUpHandBack(parsed.data, result);
+    if (handBack) {
+      const handedBack = await executeAction(
+        p.userId,
+        handBack.action,
+        p.context,
+        handBack.autonomy,
+      );
+      if (!handedBack.success)
+        throw new Error(
+          `A follow-up the Bot could not finish was not saved for the owner: ${handedBack.error || "unknown error"}`,
+        );
+    }
   }
 
   if (job.type === "adaptive_optimization") {

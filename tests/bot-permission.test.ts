@@ -3,10 +3,17 @@ import { readFileSync } from "node:fs";
 import {
   actionExecutionMode,
   autonomyFromPermissionLevel,
+  BOT_PERMISSION_LABELS,
+  BOT_PERMISSION_LEVELS,
+  BOT_PERMISSION_SUMMARIES,
+  DEFAULT_NEW_BOT_AUTONOMY,
+  DEFAULT_WORKSPACE_AUTONOMY,
   effectiveAutonomy,
   nativeAppointmentStatus,
   permissionLevelFromAutonomy,
+  STORED_AUTONOMY_VALUES,
 } from "../src/lib/bot-permission";
+import { pickWritableSettings } from "../src/routes/settings-routes";
 
 describe("per-bot permission", () => {
   it("maps Set Up choices onto the stored autonomy values", () => {
@@ -16,7 +23,96 @@ describe("per-bot permission", () => {
     expect(permissionLevelFromAutonomy("auto")).toBe("full");
     expect(permissionLevelFromAutonomy("supervised")).toBe("auto");
     expect(permissionLevelFromAutonomy("draft")).toBe("ask");
-    expect(permissionLevelFromAutonomy("inherit")).toBe("auto");
+    // A Bot that follows a workspace nobody has changed works on its own.
+    expect(permissionLevelFromAutonomy("inherit")).toBe("full");
+    expect(permissionLevelFromAutonomy(null)).toBe("full");
+  });
+
+  it("acts on its own when nobody asked it to check first", () => {
+    expect(DEFAULT_NEW_BOT_AUTONOMY).toBe("auto");
+    expect(DEFAULT_WORKSPACE_AUTONOMY).toBe("auto");
+    expect(effectiveAutonomy(null, null)).toBe("auto");
+    expect(effectiveAutonomy("inherit", null)).toBe("auto");
+    expect(effectiveAutonomy("inherit", undefined)).toBe("auto");
+    expect(effectiveAutonomy("inherit", "auto")).toBe("auto");
+    expect(effectiveAutonomy(undefined, "")).toBe("auto");
+    expect(actionExecutionMode({ agentLevel: "inherit", actionType: "send_email" })).toBe("auto");
+    expect(actionExecutionMode({ agentLevel: "inherit", actionType: "send_text_message" })).toBe(
+      "auto",
+    );
+    expect(nativeAppointmentStatus({ bookingMode: "inherit", agentLevel: "inherit" })).toBe(
+      "Scheduled",
+    );
+  });
+
+  it("keeps an owner's choice to check first, on the Bot or on the workspace", () => {
+    expect(effectiveAutonomy("draft", "auto")).toBe("draft");
+    expect(effectiveAutonomy("supervised", "auto")).toBe("supervised");
+    expect(effectiveAutonomy("inherit", "draft")).toBe("draft");
+    expect(effectiveAutonomy("inherit", "supervised")).toBe("supervised");
+    // The Bot's own choice wins over the workspace in both directions.
+    expect(effectiveAutonomy("auto", "draft")).toBe("auto");
+    expect(actionExecutionMode({ agentLevel: "supervised", actionType: "send_text_message" })).toBe(
+      "draft",
+    );
+    expect(actionExecutionMode({ agentLevel: "draft", actionType: "send_text_message" })).toBe(
+      "draft",
+    );
+  });
+
+  it("never reads a stored value it does not recognise as permission", () => {
+    // "high" and "suggest" were found on live Bots. Neither is a value this
+    // code writes, so neither may be read as "go ahead".
+    for (const unreadable of ["high", "suggest", "full", "yes", "AUTO "]) {
+      expect(effectiveAutonomy(unreadable, "auto"), unreadable).toBe("draft");
+      expect(effectiveAutonomy("inherit", unreadable), unreadable).toBe("draft");
+      expect(permissionLevelFromAutonomy(unreadable), unreadable).toBe("ask");
+    }
+  });
+
+  it("refuses to store an autonomy value the runtime cannot read", () => {
+    expect([...STORED_AUTONOMY_VALUES]).toEqual(["auto", "supervised", "draft"]);
+    for (const value of STORED_AUTONOMY_VALUES) {
+      expect(pickWritableSettings({ autonomyLevel: value }, false)).toEqual({
+        autonomyLevel: value,
+      });
+    }
+    for (const value of ["high", "full", "inherit", "", 3, null, undefined]) {
+      expect(pickWritableSettings({ autonomyLevel: value }, false)).toEqual({});
+    }
+    const planner = readFileSync("src/lib/workspace-planner.ts", "utf8");
+    expect(planner).toContain("export const WORKSPACE_AUTONOMY_OPTIONS = STORED_AUTONOMY_VALUES;");
+    expect(planner).toContain('if (field === "autonomy_level") {');
+    expect(planner).toContain(
+      "For autonomy_level, value MUST be one of: ${WORKSPACE_AUTONOMY_GUIDE}.",
+    );
+    const applyChange = readFileSync("src/routes/agent-workspace-routes.ts", "utf8");
+    expect(applyChange).toContain(
+      "if (!(WORKSPACE_AUTONOMY_OPTIONS as readonly string[]).includes(value)) {",
+    );
+  });
+
+  it("names the levels in the owner's words, with working on its own first", () => {
+    expect([...BOT_PERMISSION_LEVELS]).toEqual(["full", "auto", "ask"]);
+    expect(BOT_PERMISSION_LABELS.full).toBe("On its own");
+    expect(BOT_PERMISSION_LABELS.auto).toBe("Check with me before it emails or texts a customer");
+    expect(BOT_PERMISSION_LABELS.ask).toBe("Check with me before it does anything");
+    const copy = [
+      ...Object.values(BOT_PERMISSION_LABELS),
+      ...Object.values(BOT_PERMISSION_SUMMARIES),
+    ].join(" ");
+    expect(copy).not.toMatch(/approv/i);
+    const panel = readFileSync("src/components/StudioAgentWorkspacePanel.tsx", "utf8");
+    expect(panel).toContain("{BOT_PERMISSION_LEVELS.map((level) => (");
+    expect(panel).toContain("{BOT_PERMISSION_LABELS[level]}");
+    expect(panel).toContain("{BOT_PERMISSION_SUMMARIES[permission]}");
+    expect(panel).toContain(
+      'permission: isBotPermissionLevel(data.permission) ? data.permission : "full",',
+    );
+    for (const retired of ["Full access", "Ask for approval", ">Auto<"]) {
+      expect(panel, retired).not.toContain(retired);
+    }
+    expect(readFileSync("src/lib/studio-setup-drafts.ts", "utf8")).toContain('permission: "full",');
   });
 
   it("changes what the action engine executes", () => {
@@ -112,13 +208,52 @@ describe("per-bot permission", () => {
     expect(route).not.toContain("permission: permissionLevelFromAutonomy(record?.autonomyLevel)");
   });
 
-  it("starts a new Bot on Auto", () => {
+  it("starts a new Bot working on its own, from one shared default", () => {
     for (const file of [
       "src/routes/agent-routes-v2.ts",
       "src/lib/agent-draft-service.ts",
       "src/routes/mobile-routes.ts",
     ]) {
-      expect(readFileSync(file, "utf8"), file).toContain('autonomyLevel: "supervised"');
+      const source = readFileSync(file, "utf8");
+      expect(source, file).toContain("autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,");
+      expect(source, file).not.toMatch(/autonomyLevel: "(?:supervised|draft)"/);
     }
+  });
+
+  it("starts a new workspace working on its own, and moves existing ones once", () => {
+    for (const file of ["src/db/schema-base.ts", "src/db/schema.ts"]) {
+      expect(readFileSync(file, "utf8"), file).toContain(
+        'autonomyLevel: text("autonomy_level").default("auto"),',
+      );
+    }
+    const migration = readFileSync("drizzle/migrations/0201_autonomous_by_default.sql", "utf8");
+    expect(migration).toContain(
+      `ALTER TABLE public."wireline_settings" ALTER COLUMN "autonomy_level" SET DEFAULT 'auto';`,
+    );
+    // The reset of existing rows may run once. The column default is the
+    // marker, and the guard returns before either UPDATE on a replay, so an
+    // owner who later chooses to check first is never switched back.
+    const guard = migration.indexOf(
+      "IF current_default IS NOT NULL AND position('''auto''' IN current_default) > 0 THEN",
+    );
+    expect(guard).toBeGreaterThan(-1);
+    expect(migration.slice(guard)).toMatch(/^IF[^\n]*\n\s*RETURN;\n\s*END IF;/);
+    for (const statement of [
+      'UPDATE public."wireline_settings"',
+      'UPDATE public."wireline_agents"',
+      "SET DEFAULT 'auto'",
+    ]) {
+      expect(migration.indexOf(statement), statement).toBeGreaterThan(guard);
+    }
+    // Bots follow the workspace; a Bot already working on its own is left alone.
+    expect(migration).toContain(`SET "autonomy_level" = 'inherit'`);
+    expect(migration).toContain(`AND "autonomy_level" IS DISTINCT FROM 'auto';`);
+    const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8")) as {
+      entries: Array<{ idx: number; tag: string }>;
+    };
+    expect(journal.entries.at(-1)).toMatchObject({
+      idx: 99,
+      tag: "0201_autonomous_by_default",
+    });
   });
 });

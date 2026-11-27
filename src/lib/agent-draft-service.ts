@@ -1,3 +1,4 @@
+import { DEFAULT_NEW_BOT_AUTONOMY } from "./bot-permission";
 import { and, eq, sql } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import * as schema from "../db/schema";
@@ -220,7 +221,7 @@ export async function createAgentDraft(
         archetype: ROLE_ARCHETYPES[profile.identity.role],
         voiceId,
         voiceProvider: "openai",
-        autonomyLevel: "supervised",
+        autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,
         ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
         // A draft records intended actions in its customization profile, but it
         // never receives external tools until the user configures and enables

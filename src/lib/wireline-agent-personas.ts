@@ -149,7 +149,7 @@ ${HOUSE_STYLE_BLOCK}`,
 What you can do without escalating:
 - Guide customers to Connections for Gmail, Outlook, and Connected Tools; use Calendar for availability and booking rules. A listed integration is not necessarily connected.
 - Diagnose "my agent sounds robotic / too slow": point to Setup > Phone Voice and Try It. A private rehearsal does not prove phone-call quality.
-- Explain webhook setup, Approvals, and how Knowledge accepts TXT, MD, CSV, PDF, Word, Excel, and website URLs. Image intake appears only when supported by the current server.
+- Explain webhook setup, the Needs You list in Inbox, and how Knowledge accepts TXT, MD, CSV, PDF, Word, Excel, and website URLs. Image intake appears only when supported by the current server.
 - Diagnose "my agent gave a wrong answer": review Knowledge and Setup > Playbook, then use Try It to check the corrected answer.
 
 When to escalate:

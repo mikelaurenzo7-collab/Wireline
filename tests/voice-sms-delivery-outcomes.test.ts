@@ -45,7 +45,17 @@ const context = {
   message: { call: { id: "call-owned", customer: { number: "+13125550101" } } },
   agent: { id: "agent-owned", user_id: "tenant-owned" },
   webhookAgentId: "agent-owned",
-  drizzle: { insert: () => ({ values: h.save }) },
+  drizzle: {
+    insert: () => ({ values: h.save }),
+    // The Bot works on its own, so the text is sent during the call.
+    select: () => ({
+      from: () => ({
+        leftJoin: () => ({
+          where: () => ({ limit: async () => [{ agentLevel: "auto", tenantLevel: "auto" }] }),
+        }),
+      }),
+    }),
+  },
   log: { warn: vi.fn(), error: vi.fn() },
 };
 

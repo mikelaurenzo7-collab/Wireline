@@ -491,6 +491,46 @@ The email is written and waiting for the team to send it. Tell the caller in pla
         );
       }
 
+      // A Bot acts on its own unless its owner asked to see customer messages
+      // first. Email already honoured that choice; a text did not, so an owner
+      // who chose to check first still had texts leave during the call.
+      const textCallId =
+        (message.call as { id?: string } | undefined)?.id ||
+        (payload.call as { id?: string } | undefined)?.id;
+      if (typeof textCallId === "string" && textCallId && agent?.id) {
+        const [permissions] = await drizzle
+          .select({
+            agentLevel: schema.agents.autonomyLevel,
+            tenantLevel: schema.settings.autonomyLevel,
+          })
+          .from(schema.agents)
+          .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
+          .where(and(eq(schema.agents.id, agent.id), eq(schema.agents.userId, agent.user_id)))
+          .limit(1);
+        if (!permissions) return notConfirmed("Text permission could not be verified.");
+        if (actionExecutionMode({ ...permissions, actionType: "send_text_message" }) === "draft") {
+          const { executeAction } = await import("../action-engine");
+          const waiting = await executeAction(
+            agent.user_id,
+            {
+              type: "send_text_message",
+              agentId: agent.id,
+              priority: "medium",
+              payload: { to: targetNumber, body: message_body },
+            },
+            { sourceType: "phone_call", sourceId: textCallId },
+            "draft",
+          );
+          return waiting.success && waiting.queued
+            ? {
+                toolCallId,
+                result: `DRAFT_SAVED: ${targetNumber}
+The text is written and waiting for the team to send it. Tell the caller in plain words, for example: "I've written that up and passed it to the team to send." Do not say it was sent.`,
+              }
+            : notConfirmed("The text request could not be saved for the team. No text was sent.");
+        }
+      }
+
       // Throws ClientCommunicationBlockedError on a block (no approved:false
       // return), so a blocked text falls to the catch below, which records a
       // real task rather than claiming it was queued.

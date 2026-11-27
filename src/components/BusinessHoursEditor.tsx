@@ -383,7 +383,7 @@ export default function BusinessHoursEditor({
             </div>
             <p className="text-sm leading-6 text-muted-foreground">
               {useHours
-                ? "Outside these hours, your Bot greets callers with your after-hours greeting and takes a message for you in Approvals."
+                ? "Outside these hours, your Bot greets callers with your after-hours greeting and takes a message for you in Needs You."
                 : "Your Bot answers every call, any time."}
             </p>
 

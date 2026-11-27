@@ -23,6 +23,8 @@ import {
   buildWorkspaceStreamContext,
   normalizePlan,
   WORKSPACE_FIELDS,
+  WORKSPACE_AUTONOMY_GUIDE,
+  WORKSPACE_AUTONOMY_OPTIONS,
   WORKSPACE_VIBE_OPTIONS,
   type ProposedAction,
   type ProposedChange,
@@ -784,6 +786,16 @@ router.post(
           throw AppError.fromHttpStatus(400, "Value must be true or false");
         }
         value = value.toLowerCase() === "true";
+      }
+      if (field === "autonomy_level") {
+        // An unreadable value makes the Bot wait for everything. Refuse it here.
+        value = String(value).toLowerCase();
+        if (!(WORKSPACE_AUTONOMY_OPTIONS as readonly string[]).includes(value)) {
+          return res.status(400).json({
+            code: "BAD_REQUEST",
+            error: `Autonomy must be one of: ${WORKSPACE_AUTONOMY_GUIDE}.`,
+          });
+        }
       }
       if (spec.kind === "vibe") {
         value = String(value).toLowerCase();

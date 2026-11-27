@@ -148,7 +148,7 @@ export const BOT_ROLE_TEMPLATES = [
     moves: [
       "Trigger + goal + success condition",
       "Channels + actions + connected tools",
-      "Approvals + handoffs + outcome log",
+      "Rules + handoffs + outcome log",
     ],
   },
 ] as const;

@@ -18,6 +18,7 @@
  * toggle-tool / run-action) which reuse the existing, already-gated
  * action engine + outbound dial paths.
  */
+import { STORED_AUTONOMY_GUIDE, STORED_AUTONOMY_VALUES } from "./bot-permission";
 import {
   runStructuredWithThinking,
   type StructuredToolSchema as ToolSchema,
@@ -37,6 +38,9 @@ import { claimsStudioReview } from "./studio-proposal-state";
 
 /** Personality vibes the chat may set — mirrors the Vapi factory. */
 export const WORKSPACE_VIBE_OPTIONS = ["warm", "playful", "authoritative"] as const;
+/** `autonomy_level` takes the stored values only; see `bot-permission.ts`. */
+export const WORKSPACE_AUTONOMY_OPTIONS = STORED_AUTONOMY_VALUES;
+export const WORKSPACE_AUTONOMY_GUIDE = STORED_AUTONOMY_GUIDE;
 export type WorkspaceVibe = (typeof WORKSPACE_VIBE_OPTIONS)[number];
 
 /** Allowlisted agent fields the chat can configure conversationally. */
@@ -305,7 +309,7 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
             value: {
               type: "string",
               description:
-                "The exact new value. For personality_vibe use one of: warm, playful, authoritative. For booleans, use 'true' or 'false'.",
+                "The exact new value. For personality_vibe use one of: warm, playful, authoritative. For autonomy_level use one of: auto, supervised, draft. For booleans, use 'true' or 'false'.",
             },
             summary: {
               type: "string",
@@ -454,6 +458,7 @@ Creative collaborator mode (chat-only, no extra tools required):
 Rules:
 - Never invent fields, tools, or recipients. Use only the allowlisted fields and listed capabilities.
 - For personality_vibe, value MUST be one of: warm, playful, authoritative.
+- For autonomy_level, value MUST be one of: ${WORKSPACE_AUTONOMY_GUIDE}. The Bot works on its own unless the Account Holder asks it to check first; propose supervised or draft only when they ask for that.
 - For explicit new operating rules, include one operating_rule proposal per distinct instruction. This appends rules without replacing existing rules. Describe only the changes included in the proposal cards. If the Account Holder asks to replace or edit an existing rule, explain that this chat cannot do that; direct them to Knowledge → Rules to edit the current rule. Do not propose an additive operating_rule as a replacement.
 - Approving transfer_phone turns on live transfer: callers who ask for a person are transferred to that number. Say so in that change's summary.
 - Never claim a proposal has been saved or an external action has happened. Saving and dispatch require separate approval.
@@ -528,6 +533,10 @@ function validateFieldValue(field: WorkspaceFieldKey, raw: unknown): string | nu
   if (spec.kind === "boolean") {
     const normalized = value.toLowerCase();
     return ["true", "false"].includes(normalized) ? normalized : null;
+  }
+  if (field === "autonomy_level") {
+    const lower = value.toLowerCase();
+    return (WORKSPACE_AUTONOMY_OPTIONS as readonly string[]).includes(lower) ? lower : null;
   }
   if (spec.kind === "url" && !/^https?:\/\//.test(value)) return null;
   if (spec.kind === "email") {

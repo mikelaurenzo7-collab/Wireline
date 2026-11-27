@@ -38,7 +38,7 @@ describe("SMS trust surface", () => {
     expect(sms).toContain("/api/sms/threads/${threadId}/reply");
     expect(outcome).toContain("/api/sms/threads/${threadId}/outcome");
     expect(outcome).toContain('onClick={() => void setOutcome("escalated", true)}');
-    expect(outcome).toContain("A human follow-up is now in Approvals.");
+    expect(outcome).toContain("A human follow-up is now in Needs You.");
     const operations = source("src/lib/conversation-outcome-operations.ts");
     expect(outcome).toContain("smsOutcomeOperations.save(threadId, nextStatus, createHandoff)");
     expect(operations).toContain('createOutcomeOperations("sms")');
