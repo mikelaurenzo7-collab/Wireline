@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -9,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 const h = vi.hoisted(() => ({
   selects: [] as unknown[][],
+  wheres: [] as unknown[],
   enqueue: vi.fn(),
   send: vi.fn(),
   owner: vi.fn(),
@@ -19,7 +21,14 @@ vi.mock("../src/lib/server-context", () => {
   const tail = { limit: rows, orderBy: () => ({ limit: rows }) };
   return {
     drizzle: {
-      select: () => ({ from: () => ({ where: () => tail }) }),
+      select: () => ({
+        from: () => ({
+          where: (condition: unknown) => {
+            h.wheres.push(condition);
+            return tail;
+          },
+        }),
+      }),
       update: () => ({
         set: (value: unknown) => ({
           where: async () => {
@@ -80,9 +89,14 @@ const message = {
 };
 const job = { id: "job-1", userId: "owner-1", payload: { userId: "owner-1" } };
 
+/** The SQL a captured condition compiles to, with its values. */
+const compiled = (condition: unknown) =>
+  new PgDialect().sqlToQuery(condition as Parameters<PgDialect["sqlToQuery"]>[0]);
+
 beforeEach(() => {
   vi.clearAllMocks();
   h.selects = [];
+  h.wheres = [];
   h.enqueue.mockResolvedValue({ ok: true, jobId: "queued" });
   h.owner.mockResolvedValue("owner@example.com");
   h.send.mockResolvedValue({ ok: true });
@@ -112,9 +126,36 @@ describe("what the owner is told", () => {
     ).toBe("Your Bot left you a follow-up");
   });
 
+  it("writes the Bot's own description as it is, with one full stop", () => {
+    const followUp = {
+      id: "task-sms",
+      taskType: "follow_up",
+      description:
+        "SMS follow-up to +17735550100. Delivery is unconfirmed; check carrier history before sending to avoid duplicates.",
+      payload: {},
+    };
+    const built = buildNeedsYouEmail([followUp]);
+    // Not recased ("sMS follow-up…") and not double-stopped ("duplicates..").
+    expect(built.subject).toBe(
+      "Needs you: SMS follow-up to +17735550100. Delivery is unconfirmed; check carrier history before sending to avoid duplicates",
+    );
+    expect(built.text).toContain("to avoid duplicates.\n");
+    expect(built.text).not.toContain("duplicates..");
+    expect(built.html).toContain("to avoid duplicates.</strong>");
+    // A recipient that is not a number is cut short, not passed through whole.
+    const odd = needsYouLine({
+      id: "x",
+      taskType: "send_text_message",
+      description: null,
+      payload: { to: `${"9".repeat(80)}\nBcc: someone`, body: "Hi" },
+    });
+    expect(odd.what.length).toBeLessThan(100);
+    expect(odd.what).not.toContain("\n");
+  });
+
   it("names the one thing in the subject, or counts several", () => {
     const one = buildNeedsYouEmail([person]);
-    expect(one.subject).toBe("Needs you: a caller asked for a person");
+    expect(one.subject).toBe("Needs you: A caller asked for a person");
     expect(one.text).toContain("Your Bot handled the rest. This one needs you:");
     expect(one.text).toContain("Open Needs You: https://botbound.app/inbox?tab=approvals");
 
@@ -169,9 +210,6 @@ describe("asking for a notice", () => {
     h.selects = [[]];
     h.enqueue.mockRejectedValue(new Error("queue down"));
     await expect(queueNeedsYouNotice("owner-1")).resolves.toBeUndefined();
-    h.enqueue.mockResolvedValue({ ok: false, error: "insert refused" });
-    h.selects = [[]];
-    await expect(queueNeedsYouNotice("owner-1")).resolves.toBeUndefined();
   });
 });
 
@@ -200,11 +238,51 @@ describe("sending the notice", () => {
     ];
     await handleNeedsYouNoticeJob(job);
     expect(h.send.mock.calls[0][0].subject).toBe(
-      "Needs you: a text to +1 (773) 555-0100 is written and waiting for you to send",
+      "Needs you: A text to +1 (773) 555-0100 is written and waiting for you to send",
     );
     expect(h.update).toHaveBeenCalledExactlyOnceWith({
       result: { notifiedTaskIds: ["task-text"], delivered: true },
     });
+  });
+
+  it("remembers what it told the owner on a busy line, and reads only this owner's rows", async () => {
+    h.selects = [[], [person]];
+    await handleNeedsYouNoticeJob(job);
+    const [earlier, waiting] = h.wheres.map(compiled);
+    // A notice is queued after every call and most find nothing new. Only the
+    // ones that named something are read back; otherwise a few hundred empty
+    // ones would push a real one out of the list and its items would be named
+    // to the owner a second time.
+    expect(earlier.sql).toContain('"wireline_jobs"."result" is not null');
+    expect(earlier.sql).toContain('"wireline_jobs"."status" = ');
+    expect(earlier.params).toEqual(
+      expect.arrayContaining(["owner-1", NEEDS_YOU_NOTICE_JOB, "done"]),
+    );
+    // What is waiting is read for this owner, in the states the page shows.
+    expect(waiting.sql).toContain('"wireline_follow_up_tasks"."user_id" = ');
+    expect(waiting.params).toEqual(
+      expect.arrayContaining([
+        "owner-1",
+        "pending",
+        "open",
+        "in_progress",
+        ...NEEDS_YOU_TASK_TYPES,
+      ]),
+    );
+  });
+
+  it("names an older item nobody was told about before newer ones that were", async () => {
+    const told = Array.from({ length: 60 }, (_, index) => ({ ...person, id: `told-${index}` }));
+    const untold = Array.from({ length: 55 }, (_, index) => ({ ...email, id: `new-${index}` }));
+    h.selects = [
+      [{ result: { notifiedTaskIds: told.map((item) => item.id) }, finishedAt: new Date(0) }],
+      [...told, ...untold],
+    ];
+    await handleNeedsYouNoticeJob(job);
+    const named = h.update.mock.calls[0][0].result.notifiedTaskIds as string[];
+    // One notice names fifty; the other five reach the next one.
+    expect(named).toHaveLength(50);
+    expect(named.every((id) => id.startsWith("new-"))).toBe(true);
   });
 
   it("sends nothing when nothing new is waiting", async () => {

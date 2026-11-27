@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { and, desc, eq, gte, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { resolveCanonicalAppUrl } from "./app-url";
@@ -35,6 +35,8 @@ const NOTICE_LOOKBACK_MS = 24 * 60 * 60_000;
 const NOTICES_PER_HOUR = 6;
 const NOTICE_RETRY_AFTER_CAP_MS = 15 * 60_000;
 const ITEMS_LISTED = 6;
+/** One notice names at most this many items; the rest reach the next one. */
+const ITEMS_PER_NOTICE = 50;
 
 /**
  * What a Bot hands to its owner. An item the owner created themselves (a
@@ -104,7 +106,7 @@ export function needsYouLine(item: NeedsYouItem): { what: string; detail: string
       };
     }
     case "send_text_message": {
-      const to = formatPhone(payload.to, "") || "a customer";
+      const to = formatPhone(text(payload.to, 40), "") || "a customer";
       return {
         what: `A text to ${to} is written and waiting for you to send`,
         detail: [text(payload.body), reason].filter(Boolean).join(" "),
@@ -127,6 +129,11 @@ export function needsYouLine(item: NeedsYouItem): { what: string; detail: string
   }
 }
 
+/** A line ends in one full stop, whether or not its text already had one. */
+function sentence(value: string): string {
+  return `${value.replace(/[\s.!?…]+$/u, "")}.`;
+}
+
 /** The owner's email: what is waiting, most recent first, and one link. */
 export function buildNeedsYouEmail(items: readonly NeedsYouItem[]): {
   subject: string;
@@ -137,9 +144,11 @@ export function buildNeedsYouEmail(items: readonly NeedsYouItem[]): {
   const more = items.length - lines.length;
   const url = appUrl("/inbox?tab=approvals");
   const first = lines[0]?.what ?? "Your Bot left you a follow-up";
+  // The item is named as written. Much of it is the Bot's own description
+  // ("SMS follow-up to…", "Dana Smith asked…"), which is not ours to recase.
   const subject =
     items.length === 1
-      ? `Needs you: ${first.charAt(0).toLowerCase()}${first.slice(1)}`
+      ? `Needs you: ${first.replace(/[\s.!?…]+$/u, "")}`
       : `${items.length} things need you`;
   const intro =
     items.length === 1
@@ -150,7 +159,7 @@ export function buildNeedsYouEmail(items: readonly NeedsYouItem[]): {
     text: [
       intro,
       "",
-      ...lines.map((line) => `- ${line.what}.${line.detail ? ` ${line.detail}` : ""}`),
+      ...lines.map((line) => `- ${sentence(line.what)}${line.detail ? ` ${line.detail}` : ""}`),
       more > 0 ? `- and ${more} more.` : null,
       "",
       `Open Needs You: ${url}`,
@@ -162,7 +171,7 @@ export function buildNeedsYouEmail(items: readonly NeedsYouItem[]): {
       "<ul>",
       ...lines.map(
         (line) =>
-          `<li><strong>${escapeHtml(line.what)}.</strong>${line.detail ? ` ${escapeHtml(line.detail)}` : ""}</li>`,
+          `<li><strong>${escapeHtml(sentence(line.what))}</strong>${line.detail ? ` ${escapeHtml(line.detail)}` : ""}</li>`,
       ),
       more > 0 ? `<li>and ${more} more.</li>` : "",
       "</ul>",
@@ -192,13 +201,14 @@ export async function queueNeedsYouNotice(userId: string | null | undefined): Pr
       )
       .limit(1);
     if (waiting) return;
-    const queued = await enqueue(drizzle, {
+    // `enqueue` throws when it cannot queue; the catch below keeps that from
+    // reaching the Bot's work.
+    await enqueue(drizzle, {
       userId,
       type: NEEDS_YOU_NOTICE_JOB,
       payload: { userId },
       runAt: new Date(Date.now() + NOTICE_DELAY_MS),
     });
-    if (!queued.ok) log.warn("Needs You notice was not queued", { error: queued.error });
   } catch (error) {
     log.warn("Needs You notice was not queued", { error: getErrorMessage(error) });
   }
@@ -244,6 +254,11 @@ export async function handleNeedsYouNoticeJob(job: {
           eq(schema.jobs.type, NEEDS_YOU_NOTICE_JOB),
           eq(schema.jobs.status, "done"),
           gte(schema.jobs.finishedAt, since),
+          // Only notices that named something. Most notice jobs find nothing
+          // new (one is queued after every call), and counting those would
+          // push a real one out of this list on a busy line, so its items
+          // would be named to the owner a second time.
+          isNotNull(schema.jobs.result),
         ),
       )
       .orderBy(desc(schema.jobs.finishedAt))
@@ -267,8 +282,10 @@ export async function handleNeedsYouNoticeJob(job: {
         ),
       )
       .orderBy(desc(schema.followUpTasks.createdAt))
-      .limit(50);
-    const items = waiting.filter((item) => !told.has(item.id));
+      .limit(200);
+    // What was already named is left out before the cut, so an older item
+    // nobody was told about is not crowded out by newer ones that were.
+    const items = waiting.filter((item) => !told.has(item.id)).slice(0, ITEMS_PER_NOTICE);
     if (items.length === 0) return;
 
     const sentThisHour = earlier.filter(
@@ -279,13 +296,13 @@ export async function handleNeedsYouNoticeJob(job: {
     ).length;
     if (sentThisHour >= NOTICES_PER_HOUR) {
       // The items are not lost: a later notice reads them again.
-      const later = await enqueue(drizzle, {
+      // `enqueue` throws when it cannot queue, which fails this job for retry.
+      await enqueue(drizzle, {
         userId,
         type: NEEDS_YOU_NOTICE_JOB,
         payload: { userId },
         runAt: new Date(now + NOTICE_RETRY_AFTER_CAP_MS),
       });
-      if (!later.ok) throw new Error(`Needs You notice could not be deferred: ${later.error}`);
       return;
     }
 
