@@ -17,6 +17,7 @@ import { type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { IntegrationService } from "./integrations";
 import { actionExecutionMode } from "./bot-permission";
+import { queueNeedsYouNotice } from "./needs-you-notice";
 import { bookNativeAppointment, getNativeCalendarConfiguration } from "./native-calendar";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
@@ -52,6 +53,8 @@ async function insertFollowUpTask(values: typeof schema.followUpTasks.$inferInse
     .insert(schema.followUpTasks)
     .values(values)
     .returning({ id: schema.followUpTasks.id });
+  // Anything left waiting is the owner's to do, and the owner is told.
+  if (values.status === "pending") await queueNeedsYouNotice(values.userId);
   runInBackground("task.created webhook dispatch", () =>
     dispatchWebhook(values.userId, "task.created", {
       task_id: created?.id != null ? Number(created.id) : undefined,

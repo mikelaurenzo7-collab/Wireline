@@ -1776,6 +1776,11 @@ export async function handlePostCallFinalizationRecoveryJob(job: JobRow): Promis
 
 /** Durable worker entrypoint; every unexpected failure reaches queue retry/dead-letter. */
 export async function handlePostCallDigestJob(job: JobRow): Promise<void> {
+  // What the Bot left for the owner during the call (a message to return, a
+  // caller who asked for a person) reaches the owner once the call is over.
+  // Queueing never throws and a notice already on its way covers this call.
+  const { queueNeedsYouNotice } = await import("./needs-you-notice");
+  await queueNeedsYouNotice(jobOwnerId(job));
   try {
     await handleActivePostCallDigestJob(job);
   } catch (error) {

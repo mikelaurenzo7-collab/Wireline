@@ -187,6 +187,12 @@ export async function handleJob(job: JobRow): Promise<void> {
     return;
   }
 
+  if (job.type === "needs_you_notice") {
+    const { handleNeedsYouNoticeJob } = await import("./needs-you-notice");
+    await handleNeedsYouNoticeJob(job);
+    return;
+  }
+
   if (job.type === "post_call_enrichment") {
     const p = job.payload as {
       agentId: string;
