@@ -13,7 +13,18 @@ import { retainFirstUnique } from "../lib/knowledge-dedup";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { isCreateScaffoldLine } from "../lib/create-scaffold-line";
-import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
+import { phoneCallVoiceFor, resolvePhoneSpeakingRate } from "../lib/voice/xai-voice-config";
+import {
+  CALL_DELIVERY_KEY,
+  PHONE_BUILTIN_VOICE_KEY,
+  PHONE_VOICE_PROVIDER,
+  SPEAKING_PACES,
+  callDeliverySelection,
+  parseCallDeliveryPatch,
+  phoneVoiceById,
+  phoneVoiceSelection,
+  type CallDelivery,
+} from "../lib/phone-voices";
 import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
 import { LIVE_CUSTOM_VOICE_KEY } from "../lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
@@ -202,6 +213,15 @@ async function withBotMarkPersistenceErrors<T>(operation: () => Promise<T>): Pro
 
 function cleanText(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+/** Call delivery as the picker shows it: the pace in effect, never an unset one. */
+function callDeliveryView(delivery: CallDelivery) {
+  return {
+    speakingRate: delivery.speakingRate ?? resolvePhoneSpeakingRate(),
+    pronunciations: delivery.pronunciations,
+    recognizedNames: delivery.recognizedNames,
+  };
 }
 
 function extractionReply(parsed: SavedExtraction) {
@@ -806,11 +826,15 @@ router.get(
       });
     const record = agentRows[0];
     const catalogVoice = await phoneCatalogService.resolve(record?.businessVariables);
+    // The built-in voice in effect: the one picked by name, else the closest
+    // match to the saved voice. Null when calls do not run on the phone engine.
+    const builtInPhoneVoice = phoneCallVoiceFor(
+      phoneVoiceSelection(record?.businessVariables)?.id ??
+        (record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId),
+    );
     const phoneCall = catalogVoice
       ? { provider: catalogVoice.provider, voice: catalogVoice.name }
-      : phoneCallVoiceFor(
-          record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId,
-        );
+      : builtInPhoneVoice;
     let phoneCallReady: boolean | null = null;
     if (phoneCall) {
       const [line] = await drizzle
@@ -868,6 +892,8 @@ router.get(
         phoneCall,
         phoneCallReady,
         catalogVoice,
+        phoneVoice: builtInPhoneVoice?.voice ?? null,
+        delivery: callDeliveryView(callDeliverySelection(record?.businessVariables)),
         // Studio rehearsal speaks this same stock phone voice (see xai-rehearsal-relay.ts).
         rehearsalHearsPhoneVoice:
           !catalogVoice && Boolean(phoneCall) && rehearsalVoiceProvider().provider === "xai",
@@ -1118,7 +1144,11 @@ router.get(
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const [agent] = await drizzle
-      .select({ id: schema.agents.id, name: schema.agents.name })
+      .select({
+        id: schema.agents.id,
+        name: schema.agents.name,
+        businessVariables: schema.agents.businessVariables,
+      })
       .from(schema.agents)
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
       .limit(1);
@@ -1162,18 +1192,34 @@ router.get(
       }
       return;
     }
-    if (sampleProvider !== "openai") throw AppError.badRequest("Invalid voice provider.");
-    const voiceId = normalizeManagedOpenAIVoiceId(
-      cleanText(typeof req.query.voice === "string" ? req.query.voice : "", 40),
+    if (sampleProvider !== "openai" && sampleProvider !== PHONE_VOICE_PROVIDER)
+      throw AppError.badRequest("Invalid voice provider.");
+    const requestedVoice = cleanText(
+      typeof req.query.voice === "string" ? req.query.voice : "",
+      40,
     );
+    const voiceId =
+      sampleProvider === PHONE_VOICE_PROVIDER
+        ? (phoneVoiceById(requestedVoice)?.id ?? null)
+        : normalizeManagedOpenAIVoiceId(requestedVoice);
     if (!voiceId) throw AppError.fromHttpStatus(400, "Choose one of the built-in voices.");
     const phoneCall = phoneCallVoiceFor(voiceId);
     if (!phoneCall || !isVoiceSampleAvailable()) {
       throw AppError.fromHttpStatus(409, "Voice samples are not available right now.");
     }
+    // A sample sounds like the call: this Bot's pace and pronunciations. A
+    // pace step named in the request is heard before it is saved.
+    const delivery = callDeliverySelection(agent.businessVariables);
+    const requestedPace = Number(req.query.pace);
+    const speakingRate =
+      SPEAKING_PACES.find((pace) => pace.rate === requestedPace)?.rate ??
+      callDeliveryView(delivery).speakingRate;
     let audio: Buffer;
     try {
-      audio = await synthesizeVoiceSample(phoneCall.voice, agent.name);
+      audio = await synthesizeVoiceSample(phoneCall.voice, agent.name, {
+        speakingRate,
+        pronunciations: delivery.pronunciations,
+      });
     } catch (error) {
       log.warn("Voice sample failed", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(503, "That sample could not play. Try again in a moment.");
@@ -1251,10 +1297,21 @@ router.patch(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
     const requestedVoiceId = cleanText(req.body?.voiceId, 160);
     const requestedProvider = cleanText(req.body?.provider, 32).toLowerCase();
-    if (requestedProvider !== "openai") {
+    // A voice picked by name from the phone catalog. It is kept beside the
+    // saved voice, which becomes the closest of the ten for the backup engine.
+    const phoneVoice =
+      requestedProvider === PHONE_VOICE_PROVIDER ? phoneVoiceById(requestedVoiceId) : null;
+    if (requestedProvider === PHONE_VOICE_PROVIDER) {
+      if (!phoneVoice) throw AppError.fromHttpStatus(400, "Choose one of the built-in voices.");
+      if (!phoneCallVoiceFor(phoneVoice.id))
+        throw AppError.fromHttpStatus(
+          409,
+          "That voice is not available for calls right now. Choose another voice.",
+        );
+    } else if (requestedProvider !== "openai") {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
-    const voiceId = normalizeManagedOpenAIVoiceId(requestedVoiceId);
+    const voiceId = phoneVoice?.fallbackVoiceId ?? normalizeManagedOpenAIVoiceId(requestedVoiceId);
     if (!voiceId) {
       throw AppError.fromHttpStatus(400, "Choose one of the built-in voices.");
     }
@@ -1289,27 +1346,27 @@ router.patch(
       .limit(1);
     const variables =
       current?.businessVariables && typeof current.businessVariables === "object"
-        ? { ...(current.businessVariables as Record<string, unknown>) }
+        ? (current.businessVariables as Record<string, unknown>)
         : null;
     const customVoiceCleared = Boolean(
       variables && (LIVE_CUSTOM_VOICE_KEY in variables || PHONE_CATALOG_VOICE_KEY in variables),
     );
-    if (variables) {
-      delete variables[LIVE_CUSTOM_VOICE_KEY];
-      delete variables[PHONE_CATALOG_VOICE_KEY];
-    }
-    const patch: {
-      voiceId: string;
-      voiceProvider: "openai";
-      phoneVoiceId: null;
-      phoneVoiceProvider: null;
-      businessVariables?: Record<string, unknown>;
-    } = {
+    // One atomic JSON update keeps a concurrent change to unrelated Bot setup,
+    // such as a pace saved from another tab. The cloned and library voices go
+    // either way; the voice picked by name is set, or cleared with them.
+    const withoutOtherVoices = sql`COALESCE(${schema.agents.businessVariables}, '{}'::jsonb) - ${LIVE_CUSTOM_VOICE_KEY} - ${PHONE_CATALOG_VOICE_KEY}`;
+    const patch = {
       voiceId,
-      voiceProvider: "openai",
+      voiceProvider: "openai" as const,
       phoneVoiceId: null,
       phoneVoiceProvider: null,
-      ...(customVoiceCleared && variables ? { businessVariables: variables } : {}),
+      ...(phoneVoice
+        ? {
+            businessVariables: sql`jsonb_set(${withoutOtherVoices}, ARRAY[${PHONE_BUILTIN_VOICE_KEY}], ${JSON.stringify(phoneVoice.id)}::jsonb)`,
+          }
+        : variables
+          ? { businessVariables: sql`(${withoutOtherVoices}) - ${PHONE_BUILTIN_VOICE_KEY}` }
+          : {}),
     };
     const [savedVoice] = await drizzle
       .update(schema.agents)
@@ -1321,6 +1378,7 @@ router.patch(
         phoneVoiceId: schema.agents.phoneVoiceId,
         phoneVoiceProvider: schema.agents.phoneVoiceProvider,
       });
+    const phoneCall = phoneCallVoiceFor(phoneVoice?.id ?? savedVoice?.voiceId ?? voiceId);
     res.json({
       success: true,
       voice: {
@@ -1328,12 +1386,38 @@ router.patch(
         provider: savedVoice?.provider ?? "openai",
         phoneVoiceId: savedVoice?.phoneVoiceId ?? null,
         phoneVoiceProvider: savedVoice?.phoneVoiceProvider ?? null,
-        phoneCall: phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId),
-        rehearsalHearsPhoneVoice:
-          Boolean(phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId)) &&
-          rehearsalVoiceProvider().provider === "xai",
+        phoneCall,
+        phoneVoice: phoneCall?.voice ?? null,
+        rehearsalHearsPhoneVoice: Boolean(phoneCall) && rehearsalVoiceProvider().provider === "xai",
       },
       customVoiceCleared,
+    });
+  },
+);
+
+// Pace, pronunciations and names to recognize on calls. Each save carries only
+// the part that changed and merges it in one statement, so a save from another
+// tab, or a voice picked at the same moment, is never overwritten.
+router.patch(
+  "/api/agent-config/:id/voice/delivery",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const agent = await owned(req.params.id, req.user.id);
+    if (!agent) throw AppError.notFound("Bot not found.");
+    const parsed = parseCallDeliveryPatch(req.body);
+    if (!parsed.ok) throw AppError.badRequest(parsed.error);
+    const current = sql`CASE WHEN jsonb_typeof(${schema.agents.businessVariables}->${CALL_DELIVERY_KEY}) = 'object' THEN ${schema.agents.businessVariables}->${CALL_DELIVERY_KEY} ELSE '{}'::jsonb END`;
+    const [saved] = await drizzle
+      .update(schema.agents)
+      .set({
+        businessVariables: sql`jsonb_set(COALESCE(${schema.agents.businessVariables}, '{}'::jsonb), ARRAY[${CALL_DELIVERY_KEY}], (${current}) || ${JSON.stringify(parsed.patch)}::jsonb)`,
+      })
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .returning({ businessVariables: schema.agents.businessVariables });
+    res.json({
+      success: true,
+      delivery: callDeliveryView(callDeliverySelection(saved?.businessVariables)),
     });
   },
 );

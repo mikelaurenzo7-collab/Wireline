@@ -91,6 +91,7 @@ import {
   xaiForcedMessagePlaybackMs,
   xaiForceMessage,
 } from "./xai-voice-config";
+import type { Pronunciation } from "../phone-voices";
 import {
   AI_DISCLOSURE_EVENTS,
   classifyAiDisclosureEvidence,
@@ -2083,7 +2084,7 @@ async function runRealtimeSession(
   // switch mid-sentence. Logged so ops can see how often this happens.
   const standInStockVoice =
     provider === "xai" && runtime.customVoice && runtime.customVoice.engine !== "xai"
-      ? stockFallbackVoiceFor(runtime.voice, runtime.customVoice.gender)
+      ? stockFallbackVoiceFor(runtime.stockPhoneVoice, runtime.customVoice.gender)
       : null;
   if (standInStockVoice)
     log.info("Cloned voice answered by closest stock voice on this call", {
@@ -2110,6 +2111,9 @@ async function runRealtimeSession(
     instructions: string;
     keyterms: string[];
     carrierAudio: boolean;
+    stockVoice: string;
+    speakingRate: number | null;
+    pronunciations: Pronunciation[];
   } | null = null;
   // Set when an xAI failure on an inbound call should move the caller to
   // OpenAI Realtime on the same call instead of ending it.
@@ -2146,7 +2150,7 @@ async function runRealtimeSession(
     if (voiceKind !== "custom" || ws.readyState !== WebSocket.OPEN) return false;
     voiceKind = "stock";
     customVoiceFallback = reason;
-    const stockVoice = stockFallbackVoiceFor(runtime.voice, runtime.customVoice?.gender);
+    const stockVoice = stockFallbackVoiceFor(runtime.stockPhoneVoice, runtime.customVoice?.gender);
     // Never change voice mid-sentence: a latency swap waits for the reply in
     // flight to finish. A provider error swaps now (the clone is not speaking).
     const deferred = reason === "latency" && activeResponseIds.size > 0;
@@ -2187,6 +2191,8 @@ async function runRealtimeSession(
         userId: input.userId,
         voice: runtime.customVoice ?? null,
         catalogVoice: runtime.catalogVoice ?? null,
+        speakingRate: runtime.delivery.speakingRate,
+        pronunciations: runtime.delivery.pronunciations,
       })
     : null;
   const ws =
@@ -2995,10 +3001,13 @@ async function runRealtimeSession(
       // Direct carrier sessions must confirm the actual Twilio playback mark.
       if (!isXaiCarrier) {
         if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
-        xaiOpeningPlaybackTimer = setTimeout(() => {
-          xaiOpeningPlaybackTimer = null;
-          finishExactOpeningIfNeeded(true);
-        }, xaiForcedMessagePlaybackMs(xaiForcedOpening));
+        xaiOpeningPlaybackTimer = setTimeout(
+          () => {
+            xaiOpeningPlaybackTimer = null;
+            finishExactOpeningIfNeeded(true);
+          },
+          xaiForcedMessagePlaybackMs(xaiForcedOpening, runtime.delivery.speakingRate),
+        );
       }
     } else if (!xaiForcedOpening && activeResponseIds.size === 0) {
       sendJson(ws, { type: "response.create" });
@@ -3047,7 +3056,14 @@ async function runRealtimeSession(
           xaiSessionOptions = {
             instructions,
             carrierAudio: isXaiCarrier,
-            keyterms: [runtime.agentName, input.businessName ?? ""],
+            keyterms: [
+              runtime.agentName,
+              input.businessName ?? "",
+              ...runtime.delivery.recognizedNames,
+            ],
+            stockVoice: runtime.stockPhoneVoice,
+            speakingRate: runtime.delivery.speakingRate,
+            pronunciations: runtime.delivery.pronunciations,
           };
           sendJson(ws, {
             type: "session.update",
@@ -3086,10 +3102,13 @@ async function runRealtimeSession(
             // A silent caller produces no later turn; confirm on the slow
             // playback estimate instead (a suspended line hangs up then).
             if (!isXaiCarrier)
-              xaiOpeningPlaybackTimer = setTimeout(() => {
-                xaiOpeningPlaybackTimer = null;
-                finishExactOpeningIfNeeded(true);
-              }, xaiForcedMessagePlaybackMs(opening));
+              xaiOpeningPlaybackTimer = setTimeout(
+                () => {
+                  xaiOpeningPlaybackTimer = null;
+                  finishExactOpeningIfNeeded(true);
+                },
+                xaiForcedMessagePlaybackMs(opening, runtime.delivery.speakingRate),
+              );
           } else {
             sendJson(ws, { type: "response.create" });
           }

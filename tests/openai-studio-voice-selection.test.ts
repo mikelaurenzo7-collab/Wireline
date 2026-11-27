@@ -172,26 +172,31 @@ describe("OpenAI Studio voice selection", () => {
     expect(chatgpt).toContain("voice: draft.voiceId");
   });
 
-  it("makes every voice write OpenAI-only while retaining legacy presenter reads", () => {
+  it("stores one of the ten saved voices on every voice write while retaining legacy presenter reads", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
     const review = read("src/components/StudioAgentReviewPanel.tsx");
 
     expect(routes).toContain('if (requestedProvider !== "openai")');
-    expect(routes).toContain("const voiceId = normalizeManagedOpenAIVoiceId(requestedVoiceId)");
+    // A phone catalog pick stores its closest saved voice; anything else must be one of the ten.
+    expect(routes).toContain(
+      "const voiceId = phoneVoice?.fallbackVoiceId ?? normalizeManagedOpenAIVoiceId(requestedVoiceId)",
+    );
     expect(routes).toContain('voiceProvider: "openai"');
     expect(routes).toContain("phoneVoiceId: null");
     expect(routes).toContain("phoneVoiceProvider: null");
     expect(routes).not.toContain('new Set(["openai", "presenter"])');
     expect(routes).not.toContain('if (provider !== "presenter")');
-    expect(picker).toContain("includedVoices.map(renderVoice)");
+    expect(picker).toContain("visibleVoices.map(renderVoice)");
     expect(picker).toContain("Rehearse");
     expect(picker).toContain("<OpenAILiveVoiceSandbox");
     expect(picker).toContain("key={`${selectedProvider}:${selectedVoiceId}`}");
     expect(picker).toContain(
       'const usesSeparatePhoneVoice = storedPrimaryProvider === "presenter"',
     );
-    expect(picker).toContain('body: JSON.stringify({ voiceId: voice.id, provider: "openai" })');
+    expect(picker).toContain(
+      "body: JSON.stringify({ voiceId: voice.id, provider: voice.provider })",
+    );
     expect(picker).not.toContain('provider: "presenter"');
     expect(picker).not.toContain("primaryVoiceProvider");
     expect(review).toContain('config?.voice?.provider?.trim().toLowerCase() === "presenter"');

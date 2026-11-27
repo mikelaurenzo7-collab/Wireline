@@ -1,4 +1,5 @@
 import type { OpenAIRealtimeVoiceId } from "../voice-catalog";
+import type { Pronunciation } from "../phone-voices";
 import { configuredPhoneVoiceProvider } from "./realtime-provider";
 
 /**
@@ -206,6 +207,12 @@ export function toXAIRealtimeSession(
     keyterms?: string[];
     customVoiceId?: string | null;
     carrierAudio?: boolean;
+    /** The built-in voice chosen for this Bot's calls; without one the saved voice decides. */
+    stockVoice?: string | null;
+    /** The Bot's own speaking pace; without one the platform default applies. */
+    speakingRate?: number | null;
+    /** Words spoken differently from how they are written. The transcript keeps the written form. */
+    pronunciations?: readonly Pronunciation[];
   } = {},
 ): Record<string, unknown> {
   const audio = asRecord(openAISession.audio);
@@ -216,10 +223,14 @@ export function toXAIRealtimeSession(
   const keyterms = [...new Set((options.keyterms ?? []).map((term) => term.trim()))]
     .filter((term) => term.length > 0 && term.length <= 50)
     .slice(0, 100);
+  // Documented as `replace`: matched whole-word and case-insensitively, before speech.
+  const replace = Object.fromEntries(
+    (options.pronunciations ?? []).map(({ word, say }) => [word, say]),
+  );
   return {
     model: resolveXAIGrokVoiceModel(),
     instructions: options.instructions ?? String(openAISession.instructions || ""),
-    voice: options.customVoiceId || xaiVoiceForSavedVoice(output.voice),
+    voice: options.customVoiceId || xaiVoiceForSavedVoice(options.stockVoice ?? output.voice),
     reasoning: { effort: resolveXAIReasoningEffort() },
     tools,
     tool_choice: openAISession.tool_choice === "none" ? "none" : "auto",
@@ -227,7 +238,7 @@ export function toXAIRealtimeSession(
     audio: {
       output: {
         ...(options.carrierAudio ? { format: { type: "audio/pcmu" } } : {}),
-        speed: resolvePhoneSpeakingRate(),
+        speed: options.speakingRate ?? resolvePhoneSpeakingRate(),
       },
       input: {
         ...(options.carrierAudio ? { format: { type: "audio/pcmu" } } : {}),
@@ -237,6 +248,7 @@ export function toXAIRealtimeSession(
         },
       },
     },
+    ...(Object.keys(replace).length ? { replace } : {}),
   };
 }
 
@@ -244,11 +256,14 @@ export function toXAIRealtimeSession(
  * xAI reports no playback-drain event (no output_audio_buffer.* on its
  * Voice Agent API), so a forced line's playback is inferred: a deliberately
  * slow speaking rate plus TTS and SIP latency margin, timed from when the
- * line was sent. The estimate errs late, never early.
+ * line was sent. The estimate errs late, never early: a Bot set to speak
+ * slower than normal gets proportionally longer, and a faster one gets no less.
  */
-export function xaiForcedMessagePlaybackMs(text: string): number {
+export function xaiForcedMessagePlaybackMs(text: string, speakingRate?: number | null): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return Math.ceil((words / 2.2) * 1000) + 1500;
+  const slowdown =
+    typeof speakingRate === "number" && speakingRate > 0 && speakingRate < 1 ? speakingRate : 1;
+  return Math.ceil((words / (2.2 * slowdown)) * 1000) + 1500;
 }
 
 /**

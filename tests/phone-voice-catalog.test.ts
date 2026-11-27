@@ -244,10 +244,36 @@ describe("Cartesia phone audio", () => {
       chunks.push(chunk);
     expect([...Buffer.concat(chunks)]).toEqual([255, 127, 20, 42]);
     expect(reserve).toHaveBeenCalledWith("cartesia", "Hello.");
-    expect(JSON.parse(request.mock.calls[0][1].body)).toMatchObject({
+    const body = JSON.parse(request.mock.calls[0][1].body);
+    expect(body).toMatchObject({
       voice: publicVoice.id,
       output_format: { container: "raw", encoding: "pcm_mulaw", sample_rate: 8000 },
     });
+    // No chosen pace: the request carries no speed guidance at all.
+    expect(body).not.toHaveProperty("generation_config");
+  });
+  it.each([
+    { speakingRate: 1.3, generation: { speed: 1.2 } },
+    { speakingRate: 0.9, generation: { speed: 0.8 } },
+    // Natural is this engine's own default, so nothing is sent.
+    { speakingRate: 1.1, generation: undefined },
+  ])("guides the speed for a Bot's pace ($speakingRate)", async ({ speakingRate, generation }) => {
+    const request = vi.fn().mockResolvedValue(new Response(new Uint8Array([255])));
+    const stream = clonedSpeechStreams({
+      voiceId: publicVoice.id,
+      speechProvider: "cartesia",
+      speakingRate,
+      cartesiaKey: "test-key",
+      elevenLabsKey: "",
+      openAIKey: "fallback-test",
+      stockVoice: "nova",
+      fetchImpl: request,
+      reserve: async () => {},
+    });
+    for await (const _chunk of stream.cloneSpeech("Hello.", new AbortController().signal)) {
+      /* consume */
+    }
+    expect(JSON.parse(request.mock.calls[0][1].body).generation_config).toEqual(generation);
   });
   it("never starts a paid provider request when spend admission fails", async () => {
     const request = vi.fn();

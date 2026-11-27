@@ -388,7 +388,7 @@ test("a blocked stock sample can play on another tap without fetching it again",
     }),
   );
   let sampleRequests = 0;
-  await page.route("**/voice/sample?voice=marin", (route) => {
+  await page.route("**/voice/sample?voice=marin*", (route) => {
     sampleRequests += 1;
     return route.fulfill({ contentType: "audio/wav", body: syntheticWav() });
   });

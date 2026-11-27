@@ -30,6 +30,7 @@ import {
 } from "./live-voice-service";
 import { referTransferTwiml } from "./inbound-bridge";
 import { PHONE_CATALOG_VOICE_KEY, type CatalogPhoneVoice } from "../phone-voice-catalog";
+import type { Pronunciation } from "../phone-voices";
 import { phoneCatalogService, CARTESIA_SPEECH_MODEL } from "./phone-catalog-service";
 
 type RegisteredStream = {
@@ -156,6 +157,10 @@ export function createClonedMediaSession(input: {
   userId: string;
   voice: RuntimeCustomVoice | null;
   catalogVoice?: CatalogPhoneVoice | null;
+  /** The Bot's own speaking pace, where the speech engine takes one. */
+  speakingRate?: number | null;
+  /** Words this Bot says differently from how they are written. */
+  pronunciations?: readonly Pronunciation[];
 }): ElevenLabsMediaSession {
   const entry = streams.get(input.callId);
   if (!entry || entry.claimed || entry.carrier.readyState !== WebSocket.OPEN)
@@ -181,6 +186,8 @@ export function createClonedMediaSession(input: {
   const speech = clonedSpeechStreams({
     voiceId: input.voice?.voiceId ?? catalogVoice?.id ?? "",
     catalogVoice: Boolean(catalogVoice),
+    speakingRate: input.speakingRate ?? null,
+    pronunciations: input.pronunciations ?? [],
     elevenLabsKey,
     cartesiaKey,
     speechProvider,

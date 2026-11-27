@@ -4,12 +4,14 @@ import { Check, ChevronDown, Loader2, Mic, Play, RotateCcw, Square, Volume2 } fr
 import { authFetch } from "../../lib/api";
 import { useAuth } from "../../contexts/AuthContext";
 import type { BotMarkKey } from "../../lib/bot-mark";
-import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog";
+import { OPENAI_REALTIME_VOICES } from "../../lib/voice-catalog";
+import { PHONE_VOICES, PHONE_VOICE_PROVIDER, phoneVoiceDescription } from "../../lib/phone-voices";
 import OpenAILiveVoiceSandbox from "../OpenAILiveVoiceSandbox";
 import { StatusNotice } from "../molecules";
 import LiveVoiceCloneStudio, { LIVE_VOICE_ANCHOR_ID } from "./LiveVoiceCloneStudio";
 import VoiceClonePanel from "./VoiceClonePanel";
 import PhoneVoiceCatalog from "./PhoneVoiceCatalog";
+import CallDeliverySettings, { type CallDeliveryView } from "./CallDeliverySettings";
 import type { CatalogPhoneVoice } from "../../lib/phone-voice-catalog";
 
 type SimpleVoicePickerProps = {
@@ -27,6 +29,48 @@ type SimpleVoicePickerProps = {
 /** The voice callers actually hear when phone calls run on another provider. */
 type PhoneCallVoice = { provider: string; voice: string } | null;
 
+/** One built-in voice in the list. Its name reads "Carina · Soft & Soothing". */
+type PickerVoice = {
+  id: string;
+  name: string;
+  provider: "openai" | typeof PHONE_VOICE_PROVIDER;
+  gender?: "female" | "male" | "neutral";
+};
+
+/** The saved ten, listed when calls cannot speak the phone catalog. */
+const SAVED_VOICES: readonly PickerVoice[] = OPENAI_REALTIME_VOICES.map(({ id, name, gender }) => ({
+  id,
+  name,
+  provider: "openai",
+  gender,
+}));
+/** Every built-in phone voice, each picked by its own name. */
+const PHONE_CATALOG_VOICES: readonly PickerVoice[] = PHONE_VOICES.map((voice) => ({
+  id: voice.id,
+  name: `${voice.name} · ${phoneVoiceDescription(voice)}`,
+  provider: PHONE_VOICE_PROVIDER,
+  gender: voice.gender,
+}));
+
+const VOICE_FILTERS = [
+  { id: "all", label: "All" },
+  { id: "female", label: "Female" },
+  { id: "male", label: "Male" },
+] as const;
+type VoiceFilter = (typeof VOICE_FILTERS)[number]["id"];
+
+/**
+ * Query for a sample that sounds like the call. It changes whenever the saved
+ * pace or pronunciations do, so a replayed sample is never a stale one.
+ */
+function sampleDeliveryQuery(delivery: CallDeliveryView | null): string {
+  if (!delivery) return "";
+  let hash = 0;
+  for (const char of JSON.stringify([delivery.speakingRate, delivery.pronunciations]))
+    hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  return `&pace=${delivery.speakingRate}&rev=${(hash >>> 0).toString(36)}`;
+}
+
 type AgentVoiceResponse = {
   voice?: {
     voiceId?: string | null;
@@ -36,6 +80,9 @@ type AgentVoiceResponse = {
     phoneCall?: PhoneCallVoice;
     phoneCallReady?: boolean | null;
     catalogVoice?: CatalogPhoneVoice | null;
+    /** The built-in phone voice in effect; absent when calls cannot speak the phone catalog. */
+    phoneVoice?: string | null;
+    delivery?: CallDeliveryView | null;
     /** Rehearsal speaks the same stock phone voice callers hear. */
     rehearsalHearsPhoneVoice?: boolean;
   };
@@ -56,9 +103,18 @@ export default function SimpleVoicePicker({
 }: SimpleVoicePickerProps) {
   const { user } = useAuth();
   const ownerId = user?.id ?? null;
-  const includedVoices = useMemo(() => {
-    return [...OPENAI_REALTIME_VOICES];
-  }, []);
+  const [phoneCatalog, setPhoneCatalog] = useState(false);
+  const [voiceFilter, setVoiceFilter] = useState<VoiceFilter>("all");
+  const [delivery, setDelivery] = useState<CallDeliveryView | null>(null);
+  const builtInVoices = phoneCatalog ? PHONE_CATALOG_VOICES : SAVED_VOICES;
+  const visibleVoices = useMemo(
+    () =>
+      voiceFilter === "all"
+        ? builtInVoices
+        : builtInVoices.filter((voice) => voice.gender === voiceFilter),
+    [builtInVoices, voiceFilter],
+  );
+  const voiceListRef = useRef<HTMLDivElement | null>(null);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +134,7 @@ export default function SimpleVoicePicker({
   }, []);
   const [cloneCardEpoch, setCloneCardEpoch] = useState(0);
   // The voice that was live before the last pick, so a mis-tap is one tap to undo.
-  const [undoVoice, setUndoVoice] = useState<VoiceOption | null>(null);
+  const [undoVoice, setUndoVoice] = useState<PickerVoice | null>(null);
   const [sampleVoiceId, setSampleVoiceId] = useState<string | null>(null);
   const [sampleLoading, setSampleLoading] = useState(false);
   const [sampleNeedsTap, setSampleNeedsTap] = useState(false);
@@ -105,6 +161,9 @@ export default function SimpleVoicePicker({
     setPhoneCall(null);
     setRehearsalHearsPhoneVoice(false);
     setCatalogVoice(null);
+    setPhoneCatalog(false);
+    setVoiceFilter("all");
+    setDelivery(null);
     if (!agentId || !ownerId) {
       setLoading(false);
       return;
@@ -132,7 +191,13 @@ export default function SimpleVoicePicker({
         const managedVoice = OPENAI_REALTIME_VOICES.find(
           (voice) => voice.id.toLowerCase() === storedVoiceId?.toLowerCase(),
         );
-        setSelectedVoiceId(managedVoice?.id ?? storedVoiceId);
+        // Calls that can speak the phone catalog list it, with the voice in effect selected.
+        const phoneVoice = PHONE_CATALOG_VOICES.find(
+          (voice) => voice.id === agentData.voice?.phoneVoice?.trim().toLowerCase(),
+        );
+        setPhoneCatalog(Boolean(phoneVoice));
+        setDelivery(agentData.voice?.delivery ?? null);
+        setSelectedVoiceId(phoneVoice?.id ?? managedVoice?.id ?? storedVoiceId);
         setPhoneCall(agentData.voice?.phoneCall ?? null);
         setRehearsalHearsPhoneVoice(agentData.voice?.rehearsalHearsPhoneVoice === true);
         setCatalogVoice(agentData.voice?.catalogVoice ?? null);
@@ -142,9 +207,11 @@ export default function SimpleVoicePicker({
             : null,
         );
         setSelectedProvider(
-          managedVoice && (!storedProvider || storedProvider === "openai")
-            ? "openai"
-            : storedProvider,
+          phoneVoice
+            ? phoneVoice.provider
+            : managedVoice && (!storedProvider || storedProvider === "openai")
+              ? "openai"
+              : storedProvider,
         );
       })
       .catch((reason) => {
@@ -203,7 +270,7 @@ export default function SimpleVoicePicker({
     }
   }
 
-  async function playSample(voice: VoiceOption) {
+  async function playSample(voice: PickerVoice) {
     if (sampleVoiceId === voice.id) {
       if (sampleNeedsTap && sampleAudioRef.current) {
         await startLoadedSample(sampleAudioRef.current, sampleRequestRef.current);
@@ -219,7 +286,7 @@ export default function SimpleVoicePicker({
     setError(null);
     try {
       const response = await authFetch(
-        `/api/agent-config/${encodeURIComponent(agentId)}/voice/sample?voice=${encodeURIComponent(voice.id)}`,
+        `/api/agent-config/${encodeURIComponent(agentId)}/voice/sample?voice=${encodeURIComponent(voice.id)}&provider=${voice.provider}${sampleDeliveryQuery(delivery)}`,
       );
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -243,10 +310,10 @@ export default function SimpleVoicePicker({
     }
   }
 
-  async function selectVoice(voice: VoiceOption, options: { undo?: boolean } = {}) {
+  async function selectVoice(voice: PickerVoice, options: { undo?: boolean } = {}) {
     if (!agentId || !ownerId || savingVoiceId) return;
     const previousVoice =
-      includedVoices.find(
+      builtInVoices.find(
         (candidate) => candidate.id === selectedVoiceId && candidate.provider === selectedProvider,
       ) ?? null;
     const requestedAgentId = agentId;
@@ -265,7 +332,7 @@ export default function SimpleVoicePicker({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ voiceId: voice.id, provider: "openai" }),
+          body: JSON.stringify({ voiceId: voice.id, provider: voice.provider }),
         },
       );
       const body = (await response.json().catch(() => null)) as {
@@ -278,6 +345,7 @@ export default function SimpleVoicePicker({
           phoneVoiceId?: string | null;
           phoneVoiceProvider?: string | null;
           phoneCall?: PhoneCallVoice;
+          phoneVoice?: string | null;
           rehearsalHearsPhoneVoice?: boolean;
         };
       } | null;
@@ -292,15 +360,21 @@ export default function SimpleVoicePicker({
       const savedPrimaryProvider = body?.voice?.provider?.trim().toLowerCase() || null;
       const savedPrimaryVoiceId = body?.voice?.voiceId?.trim() || null;
       const savedWithPhoneFallback = savedPrimaryProvider === "presenter";
+      // A phone catalog pick is the voice itself; the saved voice behind it is its backup.
+      const pickedByName = voice.provider === PHONE_VOICE_PROVIDER;
       setSelectedVoiceId(
-        savedWithPhoneFallback
-          ? (body?.voice?.phoneVoiceId ?? voice.id)
-          : (savedPrimaryVoiceId ?? voice.id),
+        pickedByName
+          ? voice.id
+          : savedWithPhoneFallback
+            ? (body?.voice?.phoneVoiceId ?? voice.id)
+            : (savedPrimaryVoiceId ?? voice.id),
       );
       setSelectedProvider(
-        savedWithPhoneFallback
-          ? (body?.voice?.phoneVoiceProvider ?? voice.provider)
-          : (savedPrimaryProvider ?? voice.provider),
+        pickedByName
+          ? voice.provider
+          : savedWithPhoneFallback
+            ? (body?.voice?.phoneVoiceProvider ?? voice.provider)
+            : (savedPrimaryProvider ?? voice.provider),
       );
       setPreviewOpen(false);
       if (body?.customVoiceCleared) {
@@ -332,7 +406,7 @@ export default function SimpleVoicePicker({
     target.focus({ preventScroll: true });
   }
 
-  function renderVoice(voice: VoiceOption) {
+  function renderVoice(voice: PickerVoice) {
     const selected =
       !clonedVoiceName &&
       !catalogVoice &&
@@ -343,6 +417,7 @@ export default function SimpleVoicePicker({
     return (
       <div
         key={`${voice.provider}:${voice.id}`}
+        data-selected={selected || undefined}
         className={`flex min-h-16 min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2.5 transition-colors sm:px-3 ${
           selected ? "border-primary/40 bg-primary/5" : "border-border bg-background"
         }`}
@@ -397,7 +472,7 @@ export default function SimpleVoicePicker({
     );
   }
 
-  const selectedVoice = includedVoices.find(
+  const selectedVoice = builtInVoices.find(
     (voice) => voice.id === selectedVoiceId && voice.provider === selectedProvider,
   );
   const selectedIsAvailable = Boolean(selectedVoice);
@@ -405,6 +480,13 @@ export default function SimpleVoicePicker({
   useEffect(() => {
     if (!loading && !selectedIsAvailable) setChoicesOpen(true);
   }, [loading, selectedIsAvailable]);
+
+  // The long list opens on the voice in use, without moving the page around it.
+  useEffect(() => {
+    const list = voiceListRef.current;
+    const card = choicesOpen ? list?.querySelector<HTMLElement>("[data-selected]") : null;
+    if (list && card) list.scrollTop = Math.max(0, card.offsetTop - 8);
+  }, [choicesOpen, phoneCatalog]);
 
   return (
     <div className="min-w-0 space-y-3">
@@ -488,13 +570,40 @@ export default function SimpleVoicePicker({
           </summary>
           <div className="min-w-0 space-y-3 border-t border-border p-2 sm:p-3">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span>{includedVoices.length} Built-In Voices</span>
+              <span>{builtInVoices.length} Built-In Voices</span>
               <span>
                 {clonedVoiceName ? "Choosing one replaces your clone." : "Saves when you pick."}
               </span>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
-              {includedVoices.map(renderVoice)}
+            {phoneCatalog ? (
+              <div role="group" aria-label="Filter Voices" className="flex flex-wrap gap-1.5">
+                {VOICE_FILTERS.map((filter) => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    aria-pressed={voiceFilter === filter.id}
+                    onClick={() => setVoiceFilter(filter.id)}
+                    className={`min-h-11 rounded-full border px-4 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+                      voiceFilter === filter.id
+                        ? "border-primary/40 bg-primary/5 text-foreground"
+                        : "border-border bg-background text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div
+              ref={voiceListRef}
+              className={`grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2 ${
+                // The padding keeps a card's focus ring from being cut off at the list's edge.
+                phoneCatalog
+                  ? "relative -mx-1 max-h-[26rem] overflow-y-auto overscroll-contain p-1"
+                  : ""
+              }`}
+            >
+              {visibleVoices.map(renderVoice)}
             </div>
           </div>
         </details>
@@ -513,6 +622,29 @@ export default function SimpleVoicePicker({
             setNotice("Phone Voice Saved.");
             setCloneCardEpoch((epoch) => epoch + 1);
           }}
+        />
+      ) : null}
+
+      {!loading && ownerId && phoneCatalog && delivery ? (
+        <CallDeliverySettings
+          key={`delivery:${ownerId}:${agentId}`}
+          agentId={agentId}
+          agentName={agentName}
+          initial={delivery}
+          onSaved={(saved) => {
+            stopSample();
+            setDelivery(saved);
+          }}
+          libraryVoiceAnswers={Boolean(catalogVoice)}
+          sample={
+            selectedVoice && phoneCall && !clonedVoiceName && !catalogVoice
+              ? {
+                  playing: sampleVoiceId === selectedVoice.id && !sampleNeedsTap,
+                  loading: sampleVoiceId === selectedVoice.id && sampleLoading,
+                  toggle: () => void playSample(selectedVoice),
+                }
+              : null
+          }
         />
       ) : null}
 

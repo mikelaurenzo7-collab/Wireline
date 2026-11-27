@@ -33,27 +33,58 @@ describe("voice samples", () => {
     const fetchImpl = vi.fn(
       async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 }),
     ) as never;
-    const first = await synthesizeVoiceSample("eve", "Ava", fetchImpl);
-    const second = await synthesizeVoiceSample("eve", "Ava", fetchImpl);
+    const first = await synthesizeVoiceSample("eve", "Ava", { fetchImpl });
+    const second = await synthesizeVoiceSample("eve", "Ava", { fetchImpl });
     expect([...first]).toEqual([1, 2, 3]);
     expect(second).toBe(first);
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
     expect(calls).toHaveLength(1);
     expect(calls[0][0]).toBe(VOICE_SAMPLE_URL);
-    expect(JSON.parse(String(calls[0][1].body))).toMatchObject({
+    const body = JSON.parse(String(calls[0][1].body));
+    expect(body).toMatchObject({
       voice_id: "eve",
       language: "en",
       output_format: { codec: "mp3" },
     });
+    // Nothing about pace or pronunciation is sent unless the Bot has some.
+    expect(body).not.toHaveProperty("speed");
+    expect(body).not.toHaveProperty("replace");
+  });
+
+  it("plays at the Bot's pace with its pronunciations, and caches each combination apart", async () => {
+    vi.stubEnv("XAI_API_KEY", "test-key");
+    const fetchImpl = vi.fn(
+      async () => new Response(new Uint8Array([4, 5, 6]), { status: 200 }),
+    ) as never;
+    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const pronunciations = [{ word: "Ava", say: "Ah-vah" }];
+    await synthesizeVoiceSample("luna", "Ava", { fetchImpl, speakingRate: 1.2, pronunciations });
+    expect(JSON.parse(String(calls[0][1].body))).toMatchObject({
+      voice_id: "luna",
+      speed: 1.2,
+      replace: { Ava: "Ah-vah" },
+    });
+    await synthesizeVoiceSample("luna", "Ava", { fetchImpl, speakingRate: 1.2, pronunciations });
+    expect(calls).toHaveLength(1);
+    // A different pace, or a changed pronunciation, is a different sample.
+    await synthesizeVoiceSample("luna", "Ava", { fetchImpl, speakingRate: 0.9, pronunciations });
+    await synthesizeVoiceSample("luna", "Ava", { fetchImpl, speakingRate: 1.2 });
+    expect(calls).toHaveLength(3);
+    expect(JSON.parse(String(calls[1][1].body)).speed).toBe(0.9);
+    expect(JSON.parse(String(calls[2][1].body))).not.toHaveProperty("replace");
   });
 
   it("fails without caching when the provider refuses or the key is missing", async () => {
     vi.stubEnv("XAI_API_KEY", "test-key");
     const refused = vi.fn(async () => new Response("no", { status: 429 })) as never;
-    await expect(synthesizeVoiceSample("rex", "Ava", refused)).rejects.toThrow("HTTP 429");
+    await expect(synthesizeVoiceSample("rex", "Ava", { fetchImpl: refused })).rejects.toThrow(
+      "HTTP 429",
+    );
     vi.stubEnv("XAI_API_KEY", "");
     expect(isVoiceSampleAvailable()).toBe(false);
-    await expect(synthesizeVoiceSample("rex", "Ava", refused)).rejects.toThrow("not configured");
+    await expect(synthesizeVoiceSample("rex", "Ava", { fetchImpl: refused })).rejects.toThrow(
+      "not configured",
+    );
   });
 
   it("is owner-scoped, rate limited, and plays from each voice card", () => {

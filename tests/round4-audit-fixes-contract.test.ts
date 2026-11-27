@@ -125,10 +125,8 @@ describe("round-4 audit fix contracts", () => {
     const check = roster.slice(roster.indexOf("normalizeManagedOpenAIVoiceId"));
     expect(check.slice(0, 500)).toContain("OPENAI_REALTIME_VOICE_IDS");
     expect(check.slice(0, 500)).toContain(".includes(candidate)");
-    expect(picker).toContain(
-      'import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog"',
-    );
-    expect(picker).toContain("return [...OPENAI_REALTIME_VOICES]");
+    expect(picker).toContain('import { OPENAI_REALTIME_VOICES } from "../../lib/voice-catalog"');
+    expect(picker).toContain("SAVED_VOICES: readonly PickerVoice[] = OPENAI_REALTIME_VOICES.map(");
     for (const voice of OPENAI_REALTIME_VOICES) {
       expect(normalizeManagedOpenAIVoiceId(voice.id)).toBe(voice.id);
     }

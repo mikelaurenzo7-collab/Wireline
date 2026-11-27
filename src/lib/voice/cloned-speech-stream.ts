@@ -3,8 +3,13 @@ import {
   ELEVENLABS_CLONE_SPEECH_SETTINGS,
   ELEVENLABS_SPEECH_SETTINGS,
   ELEVENLABS_SPEECH_MODEL,
+  ELEVENLABS_SPEED_RANGE,
+  CARTESIA_SPEED_RANGE,
+  librarySpeechSpeed,
 } from "./elevenlabs-speech-settings";
 import { CARTESIA_API_VERSION, CARTESIA_SPEECH_MODEL } from "./phone-catalog-service";
+import { pronunciationRewriter } from "./pronunciation-text";
+import type { Pronunciation } from "../phone-voices";
 
 export const clonedStockVoice = (gender: "female" | "male" | null): "nova" | "onyx" =>
   gender === "male" ? "onyx" : "nova";
@@ -88,6 +93,10 @@ export function clonedSpeechStreams(input: {
   cartesiaKey?: string;
   speechProvider?: "elevenlabs" | "cartesia";
   catalogVoice?: boolean;
+  /** The Bot's own speaking pace, where the speech engine takes one. */
+  speakingRate?: number | null;
+  /** Words this Bot says differently. No engine here takes a list, so the text is rewritten. */
+  pronunciations?: readonly Pronunciation[];
   openAIKey: string;
   stockVoice: string;
   fetchImpl?: typeof fetch;
@@ -95,6 +104,10 @@ export function clonedSpeechStreams(input: {
   reserve: (provider: "elevenlabs" | "cartesia" | "openai", text: string) => Promise<void>;
 }): { cloneSpeech: SpeechStream; stockSpeech: SpeechStream } {
   const request = input.fetchImpl ?? fetch;
+  const elevenLabsSpeed = librarySpeechSpeed(input.speakingRate, ELEVENLABS_SPEED_RANGE);
+  const cartesiaSpeed = librarySpeechSpeed(input.speakingRate, CARTESIA_SPEED_RANGE);
+  // Only what is sent to be spoken changes; spend and transcripts keep the written words.
+  const spoken = pronunciationRewriter(input.pronunciations ?? []);
   // Keep audio continuity within this call and utterance. Text context alone
   // cannot carry the preceding generation's actual cadence or voice delivery.
   let completedSpeech = { text: "", requestIds: [] as string[] };
@@ -127,15 +140,18 @@ export function clonedSpeechStreams(input: {
                     "Content-Type": "application/json",
                   },
                   body: JSON.stringify({
-                    text,
+                    text: spoken(text),
                     model_id: ELEVENLABS_SPEECH_MODEL,
-                    voice_settings: input.catalogVoice
-                      ? ELEVENLABS_SPEECH_SETTINGS
-                      : ELEVENLABS_CLONE_SPEECH_SETTINGS,
+                    voice_settings: {
+                      ...(input.catalogVoice
+                        ? ELEVENLABS_SPEECH_SETTINGS
+                        : ELEVENLABS_CLONE_SPEECH_SETTINGS),
+                      ...(elevenLabsSpeed === null ? {} : { speed: elevenLabsSpeed }),
+                    },
                     ...(previousRequestIds.length
                       ? { previous_request_ids: previousRequestIds }
                       : previousText
-                        ? { previous_text: previousText }
+                        ? { previous_text: spoken(previousText) }
                         : {}),
                   }),
                 },
@@ -152,9 +168,12 @@ export function clonedSpeechStreams(input: {
                   },
                   body: JSON.stringify({
                     model_id: CARTESIA_SPEECH_MODEL,
-                    transcript: text,
+                    transcript: spoken(text),
                     voice: input.voiceId,
                     output_format: { container: "raw", encoding: "pcm_mulaw", sample_rate: 8000 },
+                    ...(cartesiaSpeed === null
+                      ? {}
+                      : { generation_config: { speed: cartesiaSpeed } }),
                   }),
                 })
               : await request("https://api.openai.com/v1/audio/speech", {
@@ -167,7 +186,7 @@ export function clonedSpeechStreams(input: {
                   body: JSON.stringify({
                     model: "tts-1",
                     voice: input.stockVoice,
-                    input: text,
+                    input: spoken(text),
                     response_format: "pcm",
                   }),
                 });

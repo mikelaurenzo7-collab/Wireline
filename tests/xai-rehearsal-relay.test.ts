@@ -52,6 +52,8 @@ vi.mock("../src/lib/voice/openai-phone-agent-runtime", () => ({
     agentId: "bot-a",
     agentName: "Riley",
     voice: "marin",
+    stockPhoneVoice: "marin",
+    delivery: { speakingRate: null, pronunciations: [], recognizedNames: [] },
     customVoice: null,
     greeting: "Thanks for calling Acme Plumbing. How can I help?",
     surface: input.surface,
@@ -249,6 +251,41 @@ describe("xAI rehearsal relay", () => {
     expect(session.audio.output.format).toEqual({ type: "audio/pcm", rate: 24_000 });
     expect(session.audio.output.speed).toBe(1.1);
     expect(session.audio.input.transcription.keyterms).toEqual(["Riley", "Acme Plumbing"]);
+    expect(session).not.toHaveProperty("replace");
+  });
+
+  it("rehearses in the voice, pace and pronunciations the owner chose for calls", async () => {
+    const runtime = await vi.mocked(buildOpenAIRealtimeAgentRuntime)({
+      userId: "user-1",
+      agentId: "bot-a",
+      surface: "browser_test",
+    });
+    vi.mocked(buildOpenAIRealtimeAgentRuntime).mockClear();
+    vi.mocked(buildOpenAIRealtimeAgentRuntime).mockResolvedValueOnce({
+      ...runtime,
+      // Picked by name: the saved voice behind it stays the closest of the ten.
+      stockPhoneVoice: "luna",
+      delivery: {
+        speakingRate: 0.9,
+        pronunciations: [{ word: "Riley", say: "Rye-lee" }],
+        recognizedNames: ["Siobhan"],
+      },
+    } as never);
+    const before = xaiReceived.length;
+    const relay = await tenantStore.run("tenant-1", () =>
+      createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env }),
+    );
+    expect(relay.voice).toBe("luna");
+    const update = xaiReceived.slice(before).find((event) => event.type === "session.update")!;
+    const session = update.session as Record<string, any>;
+    expect(session.voice).toBe("luna");
+    expect(session.audio.output.speed).toBe(0.9);
+    expect(session.replace).toEqual({ Riley: "Rye-lee" });
+    expect(session.audio.input.transcription.keyterms).toEqual([
+      "Riley",
+      "Acme Plumbing",
+      "Siobhan",
+    ]);
   });
 
   it("speaks the phone opening, relays audio both ways, and runs knowledge on the server", async () => {

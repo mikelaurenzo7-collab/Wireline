@@ -447,6 +447,68 @@ describe("native SIP opening delivery", () => {
   );
 });
 
+describe("phone engine call delivery", () => {
+  const xaiCall = { ...call, callId: "xai:rtc_test", businessName: "Ridge Dental" };
+  const sessionUpdates = () =>
+    h.sent.filter((event) => event.type === "session.update").map((event) => event.session);
+
+  it("opens the call in the voice, pace and pronunciations the owner chose", async () => {
+    vi.stubEnv("XAI_API_KEY", "test-only-no-provider-calls");
+    const session = runOpenAISipCallSession(
+      xaiCall,
+      {
+        ...runtime,
+        // Picked by name: the saved voice behind it is only the backup engine's.
+        voice: "marin",
+        stockPhoneVoice: "luna",
+        delivery: {
+          speakingRate: 0.9,
+          pronunciations: [{ word: "Ridge", say: "Rij" }],
+          recognizedNames: ["Siobhan"],
+        },
+      } as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sessionUpdates()).toHaveLength(1);
+    expect(sessionUpdates()[0]).toMatchObject({
+      voice: "luna",
+      replace: { Ridge: "Rij" },
+      audio: {
+        output: { speed: 0.9 },
+        input: { transcription: { keyterms: ["Service Bot", "Ridge Dental", "Siobhan"] } },
+      },
+    });
+    h.sockets[0].close();
+    await session;
+  });
+
+  it("speaks the saved voice's closest match at the platform pace when nothing was chosen", async () => {
+    vi.stubEnv("XAI_API_KEY", "test-only-no-provider-calls");
+    const session = runOpenAISipCallSession(
+      xaiCall,
+      {
+        ...runtime,
+        voice: "cedar",
+        stockPhoneVoice: "cedar",
+        delivery: { speakingRate: null, pronunciations: [], recognizedNames: [] },
+      } as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    const [update] = sessionUpdates();
+    expect(update).toMatchObject({ voice: "castor", audio: { output: { speed: 1.1 } } });
+    expect(update).not.toHaveProperty("replace");
+    expect(update.audio.input.transcription.keyterms).toEqual(["Service Bot", "Ridge Dental"]);
+    h.sockets[0].close();
+    await session;
+  });
+});
+
 describe("native SIP semantic tool accounting", () => {
   it("does not continue a completed tool over a newer caller response received during the tool", async () => {
     const held = heldResult<{ result: string }>();

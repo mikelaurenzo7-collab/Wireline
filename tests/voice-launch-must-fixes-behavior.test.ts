@@ -424,7 +424,8 @@ describe("Codex #1360 review fixes", () => {
 
   it("choosing a built-in voice clears the cloned voice it would otherwise hide", () => {
     const route = read("src/routes/agent-routes-v2.ts");
-    expect(route).toContain("delete variables[LIVE_CUSTOM_VOICE_KEY]");
+    // Removed in the same statement that saves the voice, so no other change is lost.
+    expect(route).toContain("- ${LIVE_CUSTOM_VOICE_KEY} - ${PHONE_CATALOG_VOICE_KEY}");
     expect(route).toContain("customVoiceCleared,");
     expect(read("src/components/voice/SimpleVoicePicker.tsx")).toContain(
       "if (body?.customVoiceCleared)",

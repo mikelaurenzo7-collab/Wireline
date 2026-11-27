@@ -24,6 +24,7 @@ import {
   hangupOpenAIRealtimeCall,
 } from "./openai-realtime-call-control";
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
+import { PHONE_BUILTIN_VOICE_KEY } from "../phone-voices";
 import { createLiveVoiceCleanupIssuer } from "./live-voice-cleanup-token";
 import {
   RUNTIME_ACTION_SAFETY_BLOCK,
@@ -542,6 +543,8 @@ export async function setOpenAILiveVoiceProfile(
   delete variables.grokVoiceId;
   delete variables.grok_voice_id;
   delete variables.wirelineLiveCustomVoice;
+  // The profile's saved voice decides again, not a phone voice picked by name earlier.
+  delete variables[PHONE_BUILTIN_VOICE_KEY];
   variables.wirelineLiveVoiceProfile = profile;
   const voice = PROFILE_VOICES[profile];
   await drizzle

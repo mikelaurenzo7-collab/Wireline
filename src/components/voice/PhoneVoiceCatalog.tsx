@@ -226,7 +226,7 @@ export default function PhoneVoiceCatalog({
             className="min-h-11 rounded-lg border border-border bg-background px-2 text-sm wl-focus-ring-halo"
           >
             {/* Owners pick a voice, not a vendor: BotBound is the product they bought. */}
-            <option value="all">Built-in Phone Voices</option>
+            <option value="all">Extended Voices</option>
             <option value="library">Voice Library</option>
           </select>
         </div>

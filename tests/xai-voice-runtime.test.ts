@@ -155,6 +155,43 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(LIVE_VOICE_BY_GENDER).toEqual({ female: "carina", male: "castor" });
   });
 
+  it("speaks the voice, pace and pronunciations an owner chose, and nothing extra otherwise", () => {
+    const saved = { instructions: "Call instructions", audio: { output: { voice: "cedar" } } };
+    const chosen = toXAIRealtimeSession(saved, {
+      stockVoice: "luna",
+      speakingRate: 1.3,
+      pronunciations: [
+        { word: "Laurenzo", say: "Lor-EN-zo" },
+        { word: "BotBound", say: "Bot Bound" },
+      ],
+      keyterms: ["Front Desk", "Laurenzo"],
+    }) as Record<string, any>;
+    expect(chosen.voice).toBe("luna");
+    expect(chosen.audio.output.speed).toBe(1.3);
+    expect(chosen.replace).toEqual({ Laurenzo: "Lor-EN-zo", BotBound: "Bot Bound" });
+    expect(chosen.audio.input.transcription.keyterms).toEqual(["Front Desk", "Laurenzo"]);
+
+    // No choices: the saved voice's closest match, the platform pace, no replacements.
+    const plain = toXAIRealtimeSession(saved, { stockVoice: null, speakingRate: null }) as Record<
+      string,
+      any
+    >;
+    expect(plain.voice).toBe("castor");
+    expect(plain.audio.output.speed).toBe(1.1);
+    expect(plain).not.toHaveProperty("replace");
+    // A cloned voice still outranks any built-in choice.
+    expect(
+      toXAIRealtimeSession(saved, { stockVoice: "luna", customVoiceId: "clone123" }).voice,
+    ).toBe("clone123");
+  });
+
+  it("allows a slower Bot more time to finish its opening, and a faster one no less", () => {
+    const line = "This call may be recorded.";
+    expect(xaiForcedMessagePlaybackMs(line, null)).toBe(3773);
+    expect(xaiForcedMessagePlaybackMs(line, 1.3)).toBe(3773);
+    expect(xaiForcedMessagePlaybackMs(line, 0.9)).toBe(4026);
+  });
+
   it("speaks a little faster than the default, within the documented range", () => {
     expect(resolvePhoneSpeakingRate({})).toBe(1.1);
     expect(resolvePhoneSpeakingRate({ WIRELINE_PHONE_SPEAKING_RATE: "1" })).toBe(1);

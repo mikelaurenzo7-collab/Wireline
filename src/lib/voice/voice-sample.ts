@@ -1,5 +1,6 @@
 import { fetchWithTimeout } from "../server-context";
 import type { XAIGrokVoice } from "./xai-voice-config";
+import type { Pronunciation } from "../phone-voices";
 
 /**
  * A few seconds of the exact voice phone callers hear, spoken as this Bot.
@@ -31,10 +32,21 @@ export function voiceSampleLine(agentName: string): string {
 export async function synthesizeVoiceSample(
   voice: XAIGrokVoice,
   agentName: string,
-  fetchImpl: typeof fetchWithTimeout = fetchWithTimeout,
+  options: {
+    /** The pace this Bot speaks at on calls, so the sample sounds like the call. */
+    speakingRate?: number | null;
+    /** The Bot's pronunciations, so an owner can hear a fix before a caller does. */
+    pronunciations?: readonly Pronunciation[];
+    fetchImpl?: typeof fetchWithTimeout;
+  } = {},
 ): Promise<Buffer> {
+  const fetchImpl = options.fetchImpl ?? fetchWithTimeout;
   const text = voiceSampleLine(agentName);
-  const key = `${voice}\u0000${text}`;
+  const speed = options.speakingRate ?? null;
+  const replace = Object.fromEntries(
+    (options.pronunciations ?? []).map(({ word, say }) => [word, say]),
+  );
+  const key = [voice, text, speed ?? "", JSON.stringify(replace)].join("\u0000");
   const cached = cache.get(key);
   if (cached) {
     // Refresh recency so frequently played samples stay cached.
@@ -54,6 +66,8 @@ export async function synthesizeVoiceSample(
         voice_id: voice,
         language: "en",
         output_format: { codec: "mp3", sample_rate: 24000, bit_rate: 64000 },
+        ...(speed === null ? {} : { speed }),
+        ...(Object.keys(replace).length ? { replace } : {}),
       }),
     },
     SAMPLE_TIMEOUT_MS,

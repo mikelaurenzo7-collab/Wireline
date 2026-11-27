@@ -522,6 +522,69 @@ describe("speech provider transport", () => {
       });
     },
   );
+  it.each([
+    // The steps are named for a natural phone pace: Natural leaves the request as it is.
+    { speakingRate: 1.1, speed: 1 },
+    { speakingRate: 0.9, speed: 0.8 },
+    { speakingRate: 1.2, speed: 1.1 },
+    // Held inside the range the speech engine documents.
+    { speakingRate: 1.5, speed: 1.2 },
+    { speakingRate: null, speed: 1 },
+  ])("speaks at the Bot's pace (pace $speakingRate)", async ({ speakingRate, speed }) => {
+    let body: Record<string, any> = {};
+    const stream = clonedSpeechStreams({
+      voiceId: "voice1",
+      catalogVoice: true,
+      speakingRate,
+      elevenLabsKey: "test",
+      openAIKey: "test",
+      stockVoice: "nova",
+      reserve: async () => {},
+      fetchImpl: async (_input, init) => {
+        body = JSON.parse(String(init?.body));
+        return new Response(new Uint8Array([255]));
+      },
+    });
+    for await (const _chunk of stream.cloneSpeech("Hello", new AbortController().signal)) {
+      /* consume */
+    }
+    expect(body.voice_settings).toEqual({
+      stability: 0.5,
+      similarity_boost: 0.75,
+      style: 0,
+      speed,
+      use_speaker_boost: false,
+    });
+  });
+  it("says a Bot's pronunciations while spend and continuity keep the written words", async () => {
+    const reserved: string[] = [];
+    let body: Record<string, any> = {};
+    const stream = clonedSpeechStreams({
+      voiceId: "voice1",
+      catalogVoice: true,
+      pronunciations: [{ word: "Nguyen", say: "Win" }],
+      elevenLabsKey: "test",
+      openAIKey: "test",
+      stockVoice: "nova",
+      reserve: async (_provider, text) => {
+        reserved.push(text);
+      },
+      fetchImpl: async (_input, init) => {
+        body = JSON.parse(String(init?.body));
+        return new Response(new Uint8Array([255]));
+      },
+    });
+    for await (const _chunk of stream.cloneSpeech(
+      "Dr. NGUYEN is in.",
+      new AbortController().signal,
+      { previousText: "You asked for Nguyen." },
+    )) {
+      /* consume */
+    }
+    expect(body.text).toBe("Dr. Win is in.");
+    expect(body.previous_text).toBe("You asked for Win.");
+    expect(reserved).toEqual(["Dr. NGUYEN is in."]);
+  });
   it("never contacts a provider when cost admission fails", async () => {
     let requests = 0;
     const stream = clonedSpeechStreams({

@@ -129,7 +129,8 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(picker).toContain("/voice");
     expect(picker).toContain("OPENAI_REALTIME_VOICES");
     expect(picker).toContain("voice.provider");
-    expect(selection).toContain('JSON.stringify({ voiceId: voice.id, provider: "openai" })');
+    // The picker sends the list the voice came from; the route decides what is stored.
+    expect(selection).toContain("JSON.stringify({ voiceId: voice.id, provider: voice.provider })");
     expect(selection).not.toContain("phoneVoiceId: voice.id");
     expect(selection).not.toContain("phoneVoiceProvider: voice.provider");
   });

@@ -146,6 +146,8 @@ type RelaySession = {
   tenantId: string;
   voice: XAIGrokVoice;
   opening: string;
+  /** The Bot's own pace, so the opening's playback estimate allows for a slower voice. */
+  speakingRate: number | null;
   upstream: WebSocket;
   browser: WebSocket | null;
   createdAt: number;
@@ -452,8 +454,8 @@ async function openRelaySession(input: RelayInput, env: NodeJS.ProcessEnv, apiKe
   // rehearsal stays on stock (Studio labels the difference) and otherwise uses
   // the exact voice a caller hears for the saved choice.
   const voice = runtime.customVoice
-    ? stockFallbackVoiceFor(runtime.voice, runtime.customVoice.gender)
-    : xaiVoiceForSavedVoice(runtime.voice);
+    ? stockFallbackVoiceFor(runtime.stockPhoneVoice, runtime.customVoice.gender)
+    : xaiVoiceForSavedVoice(runtime.stockPhoneVoice);
   const opening = composeInboundOpening({
     greeting: runtime.greeting,
     agentName: runtime.agentName,
@@ -463,8 +465,11 @@ async function openRelaySession(input: RelayInput, env: NodeJS.ProcessEnv, apiKe
   });
   const xaiSession = toXAIRealtimeSession(runtime.session as Record<string, unknown>, {
     instructions: `${runtime.session.instructions}\n\n${AFTER_OPENING_INSTRUCTIONS}`,
-    keyterms: [runtime.agentName, businessName ?? ""],
+    keyterms: [runtime.agentName, businessName ?? "", ...runtime.delivery.recognizedNames],
     customVoiceId: voice,
+    // The same pace and pronunciations a caller hears, so a rehearsal sounds like the call.
+    speakingRate: runtime.delivery.speakingRate,
+    pronunciations: runtime.delivery.pronunciations,
   });
   const audio = asRecord(xaiSession.audio);
   xaiSession.audio = {
@@ -504,6 +509,7 @@ async function openRelaySession(input: RelayInput, env: NodeJS.ProcessEnv, apiKe
     tenantId: tenantStore.getStore() ?? input.userId,
     voice,
     opening,
+    speakingRate: runtime.delivery.speakingRate,
     upstream,
     browser: null,
     createdAt: Date.now(),
@@ -1030,7 +1036,7 @@ async function attachBrowser(session: RelaySession, browser: WebSocket): Promise
   // deliberately slow playback estimate rather than never.
   session.openingTimer = setTimeout(
     () => finishOpening(session),
-    xaiForcedMessagePlaybackMs(session.opening),
+    xaiForcedMessagePlaybackMs(session.opening, session.speakingRate),
   );
   session.openingTimer.unref?.();
 }

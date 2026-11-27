@@ -119,7 +119,11 @@ describe("stock fallback voice", () => {
     const source = readFileSync("src/lib/voice/openai-sip-session.ts", "utf8");
     expect(source).toContain('if (slowCustomVoiceReplies >= 2) fallBackToStockVoice("latency")');
     expect(source).toContain('fallBackToStockVoice("provider_error")');
-    expect(source).toContain("stockFallbackVoiceFor(runtime.voice, runtime.customVoice?.gender)");
+    // The stock voice is the one the owner picked for calls, not only the saved one.
+    expect(source).toContain(
+      "stockFallbackVoiceFor(runtime.stockPhoneVoice, runtime.customVoice?.gender)",
+    );
+    expect(source).not.toContain("stockFallbackVoiceFor(runtime.voice");
     expect(source).toContain("Cloned voice switched to stock voice mid-call");
   });
 });
