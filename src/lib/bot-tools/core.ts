@@ -59,6 +59,10 @@ async function searchKnowledgeForCaller(
   }
 
   const words = knowledgeSearchWords(query);
+  // The owner is shown what was asked, with a link to add the answer. Not
+  // waited for: the caller is on the line, and it never throws.
+  const saveForOwner = () =>
+    void recordKnowledgeGap(drizzle, { userId, agentId, question: query, callId }).catch(() => {});
   const matches = await searchAgentKnowledge(drizzle, {
     userId,
     agentId,
@@ -70,13 +74,20 @@ async function searchKnowledgeForCaller(
     if (words.length === 0) {
       return "NO_VERIFIED_MATCH: The question is too broad to verify safely. Ask the caller for the specific product, service, policy, date, or detail they need.";
     }
-    // The owner is shown what was asked, with a link to add the answer.
-    await recordKnowledgeGap(drizzle, { userId, agentId, question: query, callId });
+    saveForOwner();
     return "NO_VERIFIED_MATCH: No approved knowledge matched the caller's question. Do not answer from memory, inference, or an unrelated entry. For current public facts, use the approved live-research tool only when enabled; otherwise take a message or escalate.";
   }
 
+  // Nothing saved uses the caller's words: what follows was found by meaning
+  // alone, and the nearest entry is returned however far it is. The Bot is
+  // told so instead of being handed it as verified, and the owner is told
+  // what was asked.
+  const byMeaningOnly = matches.every((match) => match.score <= 0);
+  if (byMeaningOnly && words.length > 0) saveForOwner();
   return [
-    "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
+    byMeaningOnly
+      ? "POSSIBLE_MATCH: Nothing saved uses the caller's words. The entries below were found by meaning and may not answer the question. Use one only if it clearly answers what was asked; otherwise say you do not have that information and offer to take a message. Do not combine them with assumptions."
+      : "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
     ...matches.map(
       (match) =>
         `[${match.source}] ${excerptAroundMatch(match.content, words, MAX_KB_RESULT_CHARS)}`,

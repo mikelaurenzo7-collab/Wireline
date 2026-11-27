@@ -258,29 +258,38 @@ describe("agent tool execution authorization", () => {
     expect(source).toContain("return NO_TENANT_INTEGRATIONS");
   });
 
-  it("lets every Bot look up its own knowledge, whatever its saved selection", async () => {
-    // A call opens with a handful of facts. A Bot whose selection left the
+  it("gives every Bot the three actions it cannot do without, whatever its saved selection", async () => {
+    // A call opens with a handful of facts, and a Bot whose selection left the
     // search out could never use the rest: thirty Bots were found that way.
+    // Taking a message and honouring a do-not-call request were already
+    // allowed to run for every Bot; all three are now offered to every Bot too.
     const { isAlwaysAvailableTool } = await import("../src/lib/agent-tool-authorization");
     expect(isAlwaysAvailableTool("search_knowledge_base")).toBe(true);
-    for (const other of ["send_email", "send_text_message", "book_appointment", "add_to_dnc"]) {
-      expect(isAlwaysAvailableTool(other), other).toBe(false);
+    expect(isSystemRuntimeTool("create_followup_task")).toBe(true);
+    expect(isSystemRuntimeTool("add_to_dnc")).toBe(true);
+    for (const other of ["send_email", "send_text_message", "book_appointment"]) {
+      expect(isAlwaysAvailableTool(other) || isSystemRuntimeTool(other), other).toBe(false);
     }
+    const always = ["search_knowledge_base", "create_followup_task", "add_to_dnc"];
     // Offered on a narrow selection, and on one that saved nothing at all.
     const names = (selection: unknown) =>
       buildAgentToolDefs(selection).map((tool) => (tool as { name: string }).name);
-    expect(names(["book_appointment"])).toEqual(["book_appointment", "search_knowledge_base"]);
-    expect(names([])).toEqual(["search_knowledge_base"]);
+    expect(names(["book_appointment"])).toEqual(["book_appointment", ...always]);
+    expect(names([])).toEqual(always);
     // Not listed twice when it was selected.
     expect(names(["search_knowledge_base", "book_appointment"])).toEqual([
       "search_knowledge_base",
       "book_appointment",
+      "create_followup_task",
+      "add_to_dnc",
     ]);
     const tenantList = readFileSync(
       resolve(process.cwd(), "src/lib/agent-runtime-helpers.ts"),
       "utf8",
     );
-    expect(tenantList).toContain("allowed.push(AGENT_TOOL_DEFS.search_knowledge_base);");
+    expect(tenantList).toContain(
+      "withAlwaysOnTools(allowed, (name) => isAgentToolChannelAllowed(name, entitlements.channels));",
+    );
   });
 
   it("reads a saved selection the same way when offering tools and when running them", () => {

@@ -299,27 +299,52 @@ export function playbookPromptBlock(
 
 /** Marks the owner's limits in a voice prompt, so a prompt cut to fit keeps them. */
 export const OWNER_LIMITS_HEADING = "## LIMITS SET BY THE ACCOUNT HOLDER";
-const MAX_LIMIT_LIST_CHARS = 1_200;
+/** What Set Up accepts for a list of topics or triggers. A row saved another way is bounded the same. */
+const MAX_LIMIT_LIST_ITEMS = 24;
+const MAX_LIMIT_ITEM_CHARS = 120;
+
+function limitList(heading: string, values: readonly string[]): string[] {
+  const items = values
+    .map((value) =>
+      String(value ?? "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, MAX_LIMIT_ITEM_CHARS),
+    )
+    .filter(Boolean)
+    .slice(0, MAX_LIMIT_LIST_ITEMS);
+  return items.length ? [heading, ...items.map((item) => `- ${item}`)] : [];
+}
 
 /**
- * What the owner ruled out, in one block: topics not to discuss, what to
- * hand to a person, and the Playbook's never-say and check-first lists. A
- * voice prompt that is too long is cut from the end of the owner's content,
- * and these were the first things lost. The block sits with the fixed safety
- * text, which the cut keeps.
+ * What the owner ruled out, in one block: the compliance mode, topics not to
+ * discuss, what to hand to a person, and the Playbook's never-say and
+ * check-first lists. A voice prompt that is too long is cut from the end of
+ * the owner's content, and these were the first things lost. The block sits
+ * with the fixed safety text, which the cut keeps.
+ *
+ * One item to a line, the most binding first. When even this block has to
+ * give way it is cut from its end by whole lines, so what goes first is the
+ * check-first list, which the message review also enforces on its own.
  */
 export function ownerLimitsBlock(input: {
+  complianceMode?: string | null;
   disallowedTopics: readonly string[];
   escalationKeywords: readonly string[];
   playbook: unknown;
+  /** A handoff number or address is saved, so a person can take over. */
+  humanRoute?: boolean;
 }): string {
-  const listed = (values: readonly string[]) => values.join(", ").slice(0, MAX_LIMIT_LIST_CHARS);
+  // "standard" is the stored default and tells the Bot nothing.
+  const mode = String(input.complianceMode ?? "").trim();
   const lines = [
-    input.disallowedTopics.length ? `Do not discuss: ${listed(input.disallowedTopics)}.` : "",
-    input.escalationKeywords.length
-      ? `Escalate or take a message when the caller raises: ${listed(input.escalationKeywords)}.`
-      : "",
+    mode && !["none", "standard"].includes(mode) ? `Compliance mode: ${mode.slice(0, 80)}.` : "",
+    ...limitList("Do not discuss:", input.disallowedTopics),
+    ...limitList("Escalate or take a message when the caller raises:", input.escalationKeywords),
     ...playbookLimitLines(readStoredAgentPlaybook(input.playbook)),
+    input.humanRoute
+      ? "A human escalation route exists; offer a callback or handoff only when policy permits."
+      : "",
   ].filter(Boolean);
   if (!lines.length) return "";
   return [

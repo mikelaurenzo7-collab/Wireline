@@ -412,6 +412,19 @@ export function normalizeEnabledTools(value: unknown): AgentToolName[] | null {
   return next;
 }
 
+/**
+ * What every Bot can do, whatever its owner ticked: look up what it was
+ * taught, leave the owner a message, and honour a do-not-call request. These
+ * are offered on every call and always allowed to run. A Bot that cannot take
+ * a message has nothing to fall back on, and after hours it is the only thing
+ * a Bot does.
+ */
+export const ALWAYS_ON_AGENT_TOOL_NAMES = [
+  "search_knowledge_base",
+  "create_followup_task",
+  "add_to_dnc",
+] as const satisfies readonly AgentToolName[];
+
 /** Full integration toolbox available when an agent has no explicit selection. */
 export function getDefaultAgentTools(): AgentToolName[] {
   return [...AGENT_TOOL_NAME_VALUES];

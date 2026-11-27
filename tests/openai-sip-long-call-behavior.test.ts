@@ -358,7 +358,7 @@ describe("funded inbound runtime construction", () => {
   });
   it("lets the after-hours message-taker say when the business opens", () => {
     const hours =
-      "BUSINESS HOURS (America/Chicago): Monday to Friday 8 AM to 5 PM.\nThe business is closed right now.";
+      "BUSINESS HOURS (America/Chicago): Monday to Friday 8 AM to 5 PM.\nIt is Friday 6:02 PM there, and the business is closed right now.";
     const canTakeMessages = {
       ...runtime,
       businessHours: hours,

@@ -185,28 +185,38 @@ function clockInWords(minutes: number): string {
  * The saved weekly hours in plain words, for a Bot to answer "when are you
  * open?": "Monday to Friday 8 AM to 5 PM. Saturday 9 AM to 1 PM. Sunday
  * closed." Empty when no hours are saved, so a Bot is never told hours nobody
- * set. A day with no saved rule is left out, as it is when deciding whether
- * the business is open.
+ * set.
+ *
+ * Every day is named once any is saved, read the way `isWithinBusinessHours`
+ * reads it: Set Up saves a day that is open all day as a day with no rule, so
+ * a missing day is "open all day", and so is one whose times cannot be read.
+ * Leaving those days out told a Bot the business keeps Friday hours only while
+ * the same Bot was told it was open on a Tuesday.
  */
 export function businessHoursInWords(hours: unknown): string {
   if (!hours || typeof hours !== "object" || Array.isArray(hours)) return "";
   const rules = hours as Partial<
     Record<DayOfWeek, { open?: string; close?: string; closed?: boolean } | null>
   >;
+  const saved = (day: DayOfWeek) => {
+    const rule = rules[day];
+    return rule && typeof rule === "object" ? rule : null;
+  };
+  if (!WEEK_ORDER.some((day) => saved(day))) return "";
   const groups: Array<{ from: DayOfWeek; to: DayOfWeek; text: string }> = [];
   WEEK_ORDER.forEach((day, index) => {
-    const rule = rules[day];
-    if (!rule || typeof rule !== "object") return;
-    const open = parseHHMM(rule.open);
-    const close = parseHHMM(rule.close);
-    const text = rule.closed
-      ? "closed"
-      : open == null || close == null
-        ? ""
-        : open === close
-          ? "closed"
-          : `${clockInWords(open)} to ${clockInWords(close)}`;
-    if (!text) return;
+    const rule = saved(day);
+    const open = parseHHMM(rule?.open);
+    const close = parseHHMM(rule?.close);
+    const text = !rule
+      ? "open all day"
+      : rule.closed
+        ? "closed"
+        : open == null || close == null
+          ? "open all day"
+          : open === close
+            ? "closed"
+            : `${clockInWords(open)} to ${clockInWords(close)}`;
     const last = groups.at(-1);
     if (last && last.text === text && WEEK_ORDER.indexOf(last.to) === index - 1) last.to = day;
     else groups.push({ from: day, to: day, text });
@@ -237,9 +247,26 @@ export function businessHoursContext(
     business_hours: agent.businessHours as never,
     timezone: agent.timezone ?? null,
   };
+  // The day and time are given in the zone the hours are kept in, beside
+  // them. A Bot with no zone of its own is told the date in UTC, and the
+  // after-hours message-taker is told no date at all, so "when do you next
+  // open?" had no answer from the hours alone.
+  const zone = businessHoursTimeZone(profile);
+  const state = isWithinBusinessHours(profile, now) ? "open" : "closed";
+  let clock = "";
+  try {
+    clock = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      weekday: "long",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(now);
+  } catch {
+    // A zone that cannot be read leaves the clock out; the hours still stand.
+  }
   return [
-    `BUSINESS HOURS (${businessHoursTimeZone(profile)}): ${hours}`,
-    `The business is ${isWithinBusinessHours(profile, now) ? "open" : "closed"} right now. Say these hours when someone asks when the business is open. They are opening hours, not appointment availability.`,
+    `BUSINESS HOURS (${zone}): ${hours}`,
+    `${clock ? `It is ${clock} there, and the` : "The"} business is ${state} right now. Say these hours when someone asks when the business is open. They are opening hours, not appointment availability.`,
   ].join("\n");
 }
 

@@ -1018,6 +1018,15 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
           ? {
               ...current,
               knowledge_gaps: (current.knowledge_gaps || []).filter((gap) => String(gap.id) !== id),
+              // The tab shows this number.
+              ...(current.counts
+                ? {
+                    counts: {
+                      ...current.counts,
+                      knowledge_gaps: Math.max(0, (current.counts.knowledge_gaps ?? 1) - 1),
+                    },
+                  }
+                : {}),
             }
           : current,
       );
@@ -1376,8 +1385,9 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                 <h3 className="text-sm font-semibold">{taskTypeLabel(item)}</h3>
                 {gap ? (
                   <>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Your Bot could not answer: {question}
+                    <p className="mt-2 text-sm text-foreground">A caller asked: {question}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Nothing your Bot was taught uses these words. If it should know this, add it.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link

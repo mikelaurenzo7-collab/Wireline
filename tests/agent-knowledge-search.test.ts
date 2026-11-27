@@ -5,11 +5,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/lib/server-context", () => ({ drizzle: {} }));
 
+import * as schema from "../src/db/schema";
 import {
+  CORE_FACT_PATTERN,
   excerptAroundMatch,
   knowledgeMatchScore,
   knowledgeSearchWords,
   loadPromptKnowledge,
+  NEWEST_FACTS_ORDER,
+  OPENING_FACTS_ORDER,
+  OPENING_NEWEST_FACTS,
+  openingFacts,
   searchAgentKnowledge,
 } from "../src/lib/agent-knowledge-search";
 
@@ -47,7 +53,7 @@ function fakeDb(rows: Rows) {
               }
               const content = sql.includes('"wireline_directives"')
                 ? rows.rules
-                : sql.includes("ilike")
+                : sql.includes(" ~* ") || sql.includes("ilike")
                   ? rows.facts
                   : rows.newest;
               const result = content.map((value) => ({ content: value }));
@@ -83,13 +89,7 @@ describe("knowledge search words", () => {
       "del",
       "año",
     ]);
-    expect(knowledgeSearchWords("the the THE price price")).toEqual([
-      "price",
-      "cost",
-      "$",
-      "fee",
-      "rate",
-    ]);
+    expect(knowledgeSearchWords("the the THE price price")).toEqual(["price", "cost", "$"]);
     expect(knowledgeSearchWords("is it ok?")).toEqual([]);
     // Matching is by substring: "any" is inside "company", "all" inside "install".
     expect(knowledgeSearchWords("Do you have any of them at all, or not?")).toEqual([]);
@@ -128,13 +128,12 @@ describe("questions callers really ask", () => {
     expect(knowledgeMatchScore("Closed Sunday.", words)).toBe(2);
     expect(knowledgeSearchWords("batteries, boxes, classes and prices")).toEqual([
       "batter",
-      "box",
+      // A stem of three letters starts too many other words, so it is not cut.
+      "boxes",
       "class",
       "price",
       "cost",
       "$",
-      "fee",
-      "rate",
     ]);
     // Words that only look plural are left alone.
     expect(knowledgeSearchWords("business address")).toEqual([
@@ -155,8 +154,9 @@ describe("questions callers really ask", () => {
       "price",
       "cost",
       "$",
-      "fee",
     ]);
+    // "will" is what an estate lawyer's caller is asking about.
+    expect(knowledgeSearchWords("Do I need a will?")).toEqual(["need", "will"]);
   });
 
   it("keeps short forms written with a slash, and numbers", () => {
@@ -169,6 +169,55 @@ describe("questions callers really ask", () => {
       "close",
     ]);
     expect(knowledgeSearchWords("Is it $85 or 90?")).toEqual(["85", "90"]);
+  });
+
+  // Matching used to be by substring. "Do you allow cats?" became "cat",
+  // found "location", and the Bot was handed the address as a verified answer.
+  it("matches a word where a word starts, never inside another", () => {
+    const cats = knowledgeSearchWords("Do you allow cats?");
+    expect(cats).toEqual(["allow", "cats"]);
+    expect(knowledgeMatchScore("We have one location downtown.", cats)).toBe(0);
+    expect(knowledgeMatchScore("Catering is available for parties.", cats)).toBe(0);
+    expect(knowledgeMatchScore("Cats and dogs are welcome.", cats)).toBe(1);
+    expect(knowledgeMatchScore("Find us on Facebook.", ["book"])).toBe(0);
+    expect(knowledgeMatchScore("Booking opens Monday.", ["book"])).toBe(1);
+    expect(knowledgeMatchScore("Room 185 is upstairs.", ["85"])).toBe(0);
+    expect(knowledgeMatchScore("It costs $85.", ["85", "$"])).toBe(2);
+    expect(knowledgeMatchScore("Open 24/7, including A/C repair.", ["24/7", "a/c"])).toBe(2);
+    expect(knowledgeMatchScore("El año pasado.", ["año"])).toBe(1);
+  });
+
+  it("asks Postgres for the same thing, with the word as a bound value", async () => {
+    const { db, queries } = fakeDb({
+      rules: [],
+      facts: ["Cats and dogs are welcome."],
+      newest: [],
+    });
+    await searchAgentKnowledge(db, { ...scope, query: "Do you allow cats?", limit: 3 });
+    const facts = queries.find((sql) => sql.includes('"wireline_knowledge"')) ?? "";
+    // Words are parameters, never text in the statement.
+    expect(facts).not.toContain("cats");
+    expect(facts).not.toContain("allow");
+    expect(facts).toContain(" ~* ");
+    // The caller's own words order the rows before the count of all words.
+    const ordering = facts.split("order by")[1] ?? "";
+    expect(ordering.match(/end\)\) desc/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("keeps the fact a plain price question is about among many other prices", async () => {
+    const prices = Array.from(
+      { length: 10 },
+      (_, index) => "Service " + index + " costs $" + index + "9.",
+    );
+    const repiping = "Repiping: we give a written estimate after an inspection.";
+    const { db } = fakeDb({ rules: [], facts: [...prices, repiping], newest: [] });
+    const matches = await searchAgentKnowledge(db, {
+      ...scope,
+      query: "How much is repiping?",
+      limit: 8,
+    });
+    expect(matches[0].content).toBe(repiping);
+    expect(matches).toHaveLength(8);
   });
 
   it("keeps the caller's own words when a long message is capped", () => {
@@ -294,9 +343,10 @@ describe("searching everything a Bot was taught", () => {
       "Never quote a price for gift wrapping.",
     ]);
     const facts = queries.find((sql) => sql.includes('"wireline_knowledge"')) ?? "";
-    // Filtered to rows that mention a query word, best match first, any age.
-    expect(facts).toMatch(/ilike \$\d+ or .*ilike \$\d+/);
-    expect(facts).toMatch(/order by \(\(case when .* ilike \$\d+ then 1 else 0 end\)/);
+    // Filtered to rows that hold a query word where a word starts, best
+    // match first, any age.
+    expect(facts).toMatch(/"content" ~\* \$\d+ or .*"content" ~\* \$\d+/);
+    expect(facts).toMatch(/order by \(\(case when .* ~\* \$\d+ then 1 else 0 end\)/);
     // Newest first among equals, then the id: one import saves many rows with
     // one timestamp, and without it the order changed from call to call.
     expect(facts).toContain('"created_at" desc, "wireline_knowledge"."id" desc limit');
@@ -343,6 +393,98 @@ describe("searching everything a Bot was taught", () => {
         total: 1,
       }),
     ).toEqual([topicFact]);
+  });
+});
+
+/**
+ * A call used to open with the eight newest facts. It now opens with up to
+ * twenty-four: the few the owner added last, then facts on the subjects
+ * callers ask about most, shortest first.
+ */
+describe("the facts a call opens with", () => {
+  it("leads with what the owner added last, then the rest, without repeats", () => {
+    const holiday = "Closed December 24 to January 2.";
+    const newest = [
+      { content: holiday },
+      { content: "x".repeat(900) },
+      { content: "y".repeat(200) },
+      { content: "  " },
+    ];
+    const ordered = [
+      { content: "We are at 12 Main St." },
+      { content: holiday },
+      { content: "Oil change: $49." },
+    ];
+    expect(openingFacts(newest, ordered, 24).map((fact) => fact.content)).toEqual([
+      holiday,
+      "x".repeat(900),
+      // The third newest would take the newest past their share of the room.
+      "We are at 12 Main St.",
+      "Oil change: $49.",
+    ]);
+    expect(openingFacts(newest, ordered, 2).map((fact) => fact.content)).toEqual([
+      holiday,
+      "x".repeat(900),
+    ]);
+    // Only the last few count as newest; the rest keep their order.
+    const many = Array.from({ length: 10 }, (_, index) => ({ content: `New fact ${index}.` }));
+    expect(openingFacts(many, [], 24)).toHaveLength(OPENING_NEWEST_FACTS);
+    expect(openingFacts([], ordered, 24)).toEqual(ordered);
+  });
+
+  it("puts facts on a core subject first, matched where a word starts", () => {
+    const query = drizzle
+      .mock()
+      .select({ content: schema.knowledge.content })
+      .from(schema.knowledge)
+      .orderBy(...OPENING_FACTS_ORDER)
+      .toSQL();
+    expect(query.sql).toMatch(
+      /order by \(case when "wireline_knowledge"."content" ~\* \$1 then 1 else 0 end\) desc, \(case when .* ~\* \$2 then length\(.*\) else 2147483647 end\) asc, .*"created_at" desc, .*"id" desc/,
+    );
+    expect(query.params).toEqual([CORE_FACT_PATTERN, CORE_FACT_PATTERN]);
+    // The same pattern in JavaScript terms, to pin what counts as core.
+    const core = new RegExp(
+      CORE_FACT_PATTERN.replace("\\m", "(?<![A-Za-z0-9_])").replace("\\$", "\\$"),
+      "i",
+    );
+    for (const yes of [
+      "Opening hours are 9 to 5.",
+      "We're located at 12 Main St.",
+      "Fees apply after 30 days.",
+      "Booking is online.",
+      "Oil change: $49.",
+      "Free estimates.",
+      "We deliver on Fridays.",
+      "Rescheduling is free.".replace("Rescheduling", "Scheduling"),
+    ]) {
+      expect(core.test(yes), yes).toBe(true);
+    }
+    for (const no of [
+      "We serve great coffee.",
+      "Find us on Facebook.",
+      "We keep a separate entrance.",
+      "Our team is friendly.",
+    ]) {
+      expect(core.test(no), no).toBe(false);
+    }
+    const newestFirst = drizzle
+      .mock()
+      .select({ content: schema.knowledge.content })
+      .from(schema.knowledge)
+      .orderBy(...NEWEST_FACTS_ORDER)
+      .toSQL();
+    expect(newestFirst.sql).toMatch(/order by .*"created_at" desc, .*"id" desc$/);
+  });
+
+  it("loads both for a call and merges them", () => {
+    const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    expect(runtime).toContain(".orderBy(...OPENING_FACTS_ORDER)");
+    expect(runtime).toContain(".orderBy(...NEWEST_FACTS_ORDER)");
+    expect(runtime).toContain(".limit(OPENING_NEWEST_FACTS),");
+    expect(runtime).toContain(
+      "knowledge: openingFacts(newestKnowledge ?? [], knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),",
+    );
   });
 });
 

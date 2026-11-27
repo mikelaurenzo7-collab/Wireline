@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import {
+  ALWAYS_ON_AGENT_TOOL_NAMES,
   AGENT_TOOL_NAME_VALUES,
   applyPlanToolUnlocks,
   getDefaultAgentTools,
@@ -39,7 +40,9 @@ const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>(["add_to_dnc", "create_
  * offered and callable whatever the saved selection, once the Bot's identity
  * is verified.
  */
-const ALWAYS_AVAILABLE_TOOL_NAMES = new Set<AgentToolName>(["search_knowledge_base"]);
+const ALWAYS_AVAILABLE_TOOL_NAMES = new Set<AgentToolName>(
+  ALWAYS_ON_AGENT_TOOL_NAMES.filter((name) => !SYSTEM_RUNTIME_TOOL_NAMES.has(name)),
+);
 export function isAlwaysAvailableTool(name: string): name is AgentToolName {
   return isAgentToolName(name) && ALWAYS_AVAILABLE_TOOL_NAMES.has(name);
 }

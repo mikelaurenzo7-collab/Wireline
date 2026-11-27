@@ -97,7 +97,7 @@ describe("what an owner set, in a text reply", () => {
     expect(system).toContain(
       "BUSINESS HOURS (America/Chicago): Monday to Friday 8 AM to 5 PM. Saturday to Sunday closed.",
     );
-    expect(system).toContain("The business is open right now.");
+    expect(system).toContain("It is Friday 3:42 PM there, and the business is open right now.");
     // Not the saved JSON, and not the internal settings that sat beside it.
     expect(system).not.toContain('"mon"');
     expect(system).not.toContain("Operating hours:");
@@ -109,7 +109,9 @@ describe("what an owner set, in a text reply", () => {
     );
 
     vi.setSystemTime(new Date("2026-11-28T16:00:00Z"));
-    expect(await systemFor("")).toContain("The business is closed right now.");
+    expect(await systemFor("")).toContain(
+      "It is Saturday 10:00 AM there, and the business is closed right now.",
+    );
     expect(await systemFor("", undefined, { businessHours: null })).not.toContain("BUSINESS HOURS");
   });
 

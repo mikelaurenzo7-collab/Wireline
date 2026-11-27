@@ -1,4 +1,4 @@
-import { and, eq, like, sql } from "drizzle-orm";
+import { and, eq, gte, like, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import type { drizzle as serverDrizzle } from "./server-context";
@@ -11,8 +11,13 @@ import type { drizzle as serverDrizzle } from "./server-context";
 export const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
 export const KNOWLEDGE_GAP_SOURCE = "knowledge_gap";
 const MAX_QUESTION_CHARS = 200;
-/** A Bot that misses constantly must not fill the table. The owner reads the newest 30. */
-const MAX_OPEN_GAPS_PER_BOT = 60;
+/**
+ * A Bot that misses constantly must not fill the table: the owner reads the
+ * newest 30. The limit counts recent questions only, so a list nobody has
+ * cleared still takes new ones once these are two weeks old.
+ */
+const MAX_RECENT_OPEN_GAPS_PER_BOT = 60;
+const RECENT_GAP_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 type GapDb = Pick<typeof serverDrizzle, "select" | "insert">;
 
@@ -50,9 +55,10 @@ export async function recordKnowledgeGap(
           eq(schema.agentLessons.agentId, input.agentId),
           like(schema.agentLessons.lesson, `${KNOWLEDGE_GAP_PREFIX}%`),
           sql`${schema.agentLessons.lessonStatus} is distinct from 'rejected'`,
+          gte(schema.agentLessons.createdAt, new Date(Date.now() - RECENT_GAP_WINDOW_MS)),
         ),
       );
-    if (Number(open?.count ?? 0) >= MAX_OPEN_GAPS_PER_BOT) return false;
+    if (Number(open?.count ?? 0) >= MAX_RECENT_OPEN_GAPS_PER_BOT) return false;
     await db
       .insert(schema.agentLessons)
       .values({

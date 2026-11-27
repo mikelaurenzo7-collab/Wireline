@@ -990,7 +990,8 @@ test("approvals let the owner call back, open the source, and fill a knowledge g
 
   await page.getByRole("button", { name: /Gaps/ }).click();
   const gap = page.getByRole("article").filter({ hasText: "tankless" });
-  await expect(gap).toContainText("Your Bot could not answer: Do you service tankless heaters?");
+  await expect(gap).toContainText("A caller asked: Do you service tankless heaters?");
+  await expect(gap).toContainText("Nothing your Bot was taught uses these words.");
   await expect(gap).not.toContainText("[KNOWLEDGE GAP]");
   await expect(gap.getByRole("link", { name: "Add to Knowledge" })).toHaveAttribute(
     "href",

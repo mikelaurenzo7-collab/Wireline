@@ -24,9 +24,14 @@ export function readSetupDeliveryTone(personality?: string | null): string {
 export function personalityForPrompt(personality: string | null | undefined, max: number): string {
   const raw = (personality || "").trim();
   if (!raw || max <= 0) return "";
+  // The stanza runs to the next heading, as it does where it is written
+  // (`replaceDeliveryTone`). Anything typed under the tone line with no
+  // heading of its own is part of it, and is carried, not dropped.
   const toneSection =
-    /(^|\r?\n)## DELIVERY TONE[\t ]*\r?\n[\s\S]*?(?=\r?\n[\t ]{0,3}#{1,6}[\t ]+\S|$)/gi;
-  const stanza = raw.match(/(?:^|\n)## DELIVERY TONE[\t ]*\r?\n([^\r\n]+)/i)?.[1]?.trim() || "";
+    /(^|\r?\n)## DELIVERY TONE[\t ]*\r?\n([\s\S]*?)(?=\r?\n[\t ]{0,3}#{1,6}[\t ]+\S|$)/gi;
+  const stanza = (new RegExp(toneSection.source, "i").exec(raw)?.[2] ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
   const rest = stanza
     ? raw
         .replace(toneSection, "$1")

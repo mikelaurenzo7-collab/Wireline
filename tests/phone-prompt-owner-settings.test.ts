@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { businessHoursContext } from "../src/lib/agent-runtime";
 import { composeSetupPersonality } from "../src/lib/compose-setup-personality";
+import { DEFAULT_NATIVE_CALENDAR } from "../src/lib/native-calendar-policy";
 import {
   composeOpenAIRealtimeInstructions,
   type OpenAIRealtimeInstructionAgent,
@@ -99,7 +100,7 @@ describe("the day, the time and the opening hours", () => {
     expect(prompt).toContain(
       "BUSINESS HOURS (America/Chicago): Monday to Friday 8 AM to 5 PM. Saturday to Sunday closed.",
     );
-    expect(prompt).toContain("The business is open right now.");
+    expect(prompt).toContain("It is Friday 3:42 PM there, and the business is open right now.");
     expect(prompt).toContain("They are opening hours, not appointment availability.");
     // The hours sit with the time context, ahead of the owner's own content.
     expect(prompt.indexOf("BUSINESS HOURS")).toBeGreaterThan(prompt.indexOf("TIME CONTEXT:"));
@@ -109,10 +110,10 @@ describe("the day, the time and the opening hours", () => {
 
     // Saturday morning: closed.
     vi.setSystemTime(new Date("2026-11-28T16:00:00Z"));
-    expect(compose()).toContain("The business is closed right now.");
+    expect(compose()).toContain("and the business is closed right now.");
     // After five on a weekday: closed.
     vi.setSystemTime(new Date("2026-11-27T23:30:00Z"));
-    expect(compose()).toContain("The business is closed right now.");
+    expect(compose()).toContain("and the business is closed right now.");
   });
 
   it("says nothing about hours nobody saved", () => {
@@ -145,8 +146,8 @@ describe("what the owner ruled out", () => {
     const prompt = compose(limits as never);
     expect(prompt.indexOf(HEADING)).toBeGreaterThan(prompt.indexOf("PLAYBOOK (set by"));
     expect(prompt.indexOf(HEADING)).toBeLessThan(prompt.indexOf("## ACTION AND RESULT SAFETY"));
-    expect(prompt).toContain("Do not discuss: competitor pricing.");
-    expect(prompt).toContain("Escalate or take a message when the caller raises: lawsuit.");
+    expect(prompt).toContain("Do not discuss:\n- competitor pricing");
+    expect(prompt).toContain("Escalate or take a message when the caller raises:\n- lawsuit");
     expect(prompt.match(/Never say, claim, or promise:/g)).toHaveLength(1);
     expect(prompt.match(/Check with the account holder first\./g)).toHaveLength(1);
     // The rest of the Playbook stays where it was.
@@ -177,12 +178,98 @@ describe("what the owner ruled out", () => {
     // Facts and rules gave way. What the owner ruled out did not.
     expect(prompt).not.toContain("Fact 23:");
     expect(prompt).toContain(HEADING);
-    expect(prompt).toContain("Do not discuss: competitor pricing.");
-    expect(prompt).toContain("Escalate or take a message when the caller raises: lawsuit.");
+    expect(prompt).toContain("Do not discuss:\n- competitor pricing");
+    expect(prompt).toContain("Escalate or take a message when the caller raises:\n- lawsuit");
     expect(prompt).toContain("Never say, claim, or promise:\n- guarantee");
     expect(prompt).toContain("- A customer asks for a discount");
     expect(prompt).toContain("## ACTION AND RESULT SAFETY");
     expect(prompt).toContain("## VOICE AND DELIVERY CONSISTENCY");
+  });
+
+  // An independent review ran these two cases against the first version of
+  // this block and found fixed text cut that had been kept before.
+  const calendar = {
+    ...structuredClone(DEFAULT_NATIVE_CALENDAR),
+    enabled: true,
+    time_zone: "America/Chicago",
+    booking_mode: "approval",
+  };
+  const longPrompt = (overrides: Record<string, unknown>, nativeCalendar?: unknown) =>
+    composeOpenAIRealtimeInstructions({
+      agent: { ...agent, ...overrides } as never,
+      tenant: { ...tenant, ...(nativeCalendar ? { nativeCalendar } : {}) } as never,
+      personality: "",
+      directives: Array.from({ length: 24 }, (_, index) => ({
+        content: `Rule ${index}: ${"always confirm the detail. ".repeat(25)}`,
+      })),
+      knowledge: [],
+      surface: "phone",
+    });
+
+  it("keeps the compliance mode when long instructions and lists compete for room", () => {
+    const prompt = longPrompt({
+      complianceMode: "hipaa",
+      systemPromptOverride: "Follow the script. ".repeat(210),
+      playbook: {
+        neverSay: Array.from(
+          { length: 10 },
+          (_, index) => `never-say item ${index} ${"x".repeat(150)}`,
+        ),
+        checkFirst: Array.from(
+          { length: 5 },
+          (_, index) => `check-first item ${index} ${"y".repeat(150)}`,
+        ),
+      },
+    });
+    expect(prompt.length).toBeLessThanOrEqual(18_000);
+    expect(prompt).toContain("Compliance mode: hipaa.");
+    expect(prompt).toContain("- never-say item 9");
+    expect(prompt).toContain("- check-first item 4");
+  });
+
+  it("gives way from its own end before the fixed opening of the prompt does", () => {
+    const item = (label: string, index: number) => `${label} ${index} ${"z".repeat(100)}`;
+    const everything = {
+      complianceMode: "hipaa",
+      disallowedTopics: Array.from({ length: 24 }, (_, index) => item("topic", index)),
+      escalationKeywords: Array.from({ length: 24 }, (_, index) => item("trigger", index)),
+      playbook: {
+        neverSay: Array.from({ length: 15 }, (_, index) => item("never", index).padEnd(190, "n")),
+        checkFirst: Array.from({ length: 10 }, (_, index) => item("check", index).padEnd(190, "c")),
+      },
+    };
+    const prompt = longPrompt(everything);
+    expect(prompt.length).toBeLessThanOrEqual(18_000);
+    const opening = prompt.slice(0, prompt.indexOf("[Context trimmed"));
+    // The fixed opening is whole: identity, the call rules, the time, the hours.
+    expect(opening).toContain("You are Sam.");
+    expect(opening).toContain("LIVE PHONE CALL:");
+    expect(opening).toContain("TIME CONTEXT:");
+    expect(opening).toContain("BUSINESS HOURS (America/Chicago):");
+    expect(opening.length).toBeGreaterThanOrEqual(1_500);
+    // The most binding limits are kept and the last list gives way, by whole lines.
+    expect(prompt).toContain("Compliance mode: hipaa.");
+    expect(prompt).toContain("- topic 23 ");
+    expect(prompt).toContain("- trigger 0 ");
+    expect(prompt).not.toContain("- check 9 ");
+    const block = prompt.slice(
+      prompt.indexOf(HEADING),
+      prompt.indexOf("## ACTION AND RESULT SAFETY"),
+    );
+    for (const line of block.trimEnd().split("\n").slice(2)) {
+      expect(line, line).toMatch(/^(- .{20,}|[A-Z].*[.:])$/);
+    }
+    expect(block.trimEnd().endsWith(":")).toBe(false);
+    expect(prompt).toContain("## ACTION AND RESULT SAFETY");
+    expect(prompt).toContain("## VOICE AND DELIVERY CONSISTENCY");
+    // The same with a calendar: its fixed rules stay too.
+    const booked = longPrompt(everything, calendar);
+    expect(booked.length).toBeLessThanOrEqual(18_000);
+    const bookedOpening = booked.slice(0, booked.indexOf("[Context trimmed"));
+    expect(bookedOpening).toContain("NATIVE CALENDAR TIME CONTEXT:");
+    expect(bookedOpening).toContain("use only the returned slots");
+    expect(bookedOpening).toContain("requested time was sent to the business to confirm");
+    expect(booked).toContain("Compliance mode: hipaa.");
   });
 });
 
@@ -236,5 +323,81 @@ describe("fixed rules that used to contradict the owner", () => {
     // The stored default says nothing a Bot can act on.
     expect(compose({ complianceMode: "standard" })).not.toContain("Compliance mode");
     expect(compose({ complianceMode: "hipaa" })).toContain("Compliance mode: hipaa.");
+  });
+});
+
+describe("the facts a call opens with", () => {
+  const facts = (items: string[]) =>
+    composeOpenAIRealtimeInstructions({
+      agent,
+      tenant,
+      personality: "",
+      directives: [],
+      knowledge: items.map((content) => ({ content })),
+      surface: "phone",
+    });
+
+  it("prints up to twenty-four, within its share of the prompt", () => {
+    const thirty = Array.from({ length: 30 }, (_, index) => `Fact number ${index}.`);
+    const prompt = facts(thirty);
+    expect(prompt).toContain("- Fact number 23.");
+    expect(prompt).not.toContain("- Fact number 24.");
+  });
+
+  it("passes over a fact too long for the room left and keeps the shorter ones after it", () => {
+    const long = (label: string) => `${label} ${"long ".repeat(130)}end.`;
+    const prompt = facts([
+      long("First"),
+      long("Second"),
+      long("Third"),
+      long("Fourth"),
+      long("Fifth"),
+      "Parking is free behind the building.",
+    ]);
+    const block = prompt.slice(
+      prompt.indexOf("INITIAL APPROVED KNOWLEDGE:"),
+      prompt.indexOf("## ACTION AND RESULT SAFETY"),
+    );
+    expect(block.length).toBeLessThan(3_400);
+    // No fact is printed in part.
+    for (const line of block.split("\n").filter((entry) => entry.startsWith("- "))) {
+      expect(line.endsWith("end.") || line.endsWith("building.")).toBe(true);
+    }
+    expect(block).not.toContain("- Fifth ");
+    expect(block).toContain("- Parking is free behind the building.");
+  });
+});
+
+describe("a Bot held for review", () => {
+  it("is given none of the owner's content, old or new", () => {
+    const held = composeOpenAIRealtimeInstructions({
+      agent: {
+        ...agent,
+        complianceMode: "hipaa",
+        disallowedTopics: ["competitor pricing"],
+        escalationKeywords: ["lawsuit"],
+        playbook: { neverSay: ["guarantee"], alwaysMention: ["Free estimates"] },
+      } as never,
+      tenant,
+      personality: "This collections role is review-required. Collect the balance today.",
+      directives: [{ content: "Always confirm the callback number." }],
+      knowledge: [{ content: "We are at 12 Main St." }],
+      surface: "phone",
+    });
+    expect(held).toContain("review-required hold mode");
+    for (const absent of [
+      "BUSINESS HOURS",
+      "TIME CONTEXT",
+      "## LIMITS SET BY THE ACCOUNT HOLDER",
+      "PLAYBOOK",
+      "OPERATING RULES",
+      "INITIAL APPROVED KNOWLEDGE",
+      "competitor pricing",
+      "12 Main St",
+      "Delivery tone",
+    ]) {
+      expect(held, absent).not.toContain(absent);
+    }
+    expect(held).toContain("## ACTION AND RESULT SAFETY");
   });
 });

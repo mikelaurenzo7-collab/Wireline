@@ -27,6 +27,7 @@ import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
 import { PHONE_BUILTIN_VOICE_KEY } from "../phone-voices";
 import { createLiveVoiceCleanupIssuer } from "./live-voice-cleanup-token";
 import {
+  businessHoursContext,
   RUNTIME_ACTION_SAFETY_BLOCK,
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
@@ -127,6 +128,9 @@ export type OpenAILiveInstructionAgent = {
   phoneVoiceId?: string | null;
   /** The owner's Playbook (src/lib/agent-playbook.ts). */
   playbook?: unknown;
+  /** Saved opening hours and their zone, spoken as on a call. */
+  businessHours?: unknown;
+  timezone?: string | null;
 };
 
 function trimLine(value: unknown, max = MAX_PROMPT_LINE_LENGTH): string {
@@ -240,22 +244,13 @@ export function composeOpenAILiveInstructions(
         "Explain the review hold briefly and direct the caller only to a verified general contact channel.",
       ].join("\n")
     : [`You are ${agent.name}.`, ...NON_NEGOTIABLE_RUNTIME_RULES].join("\n");
-  const compliance = [
-    // "standard" is the stored default and tells the Bot nothing.
-    agent.complianceMode && !["none", "standard"].includes(agent.complianceMode)
-      ? `Compliance mode: ${agent.complianceMode}.`
-      : "",
-    agent.escalationPhone || agent.escalationEmail || agent.transferPhone
-      ? "A human escalation route exists; offer a callback or handoff only when policy permits."
-      : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
   // Printed beside the fixed safety text, as on a phone call, so a prompt cut
   // to fit keeps what the owner ruled out.
   const ownerLimits = runtimeReviewRequired
     ? ""
     : ownerLimitsBlock({
+        complianceMode: agent.complianceMode,
+        humanRoute: Boolean(agent.escalationPhone || agent.escalationEmail || agent.transferPhone),
         disallowedTopics: toStringArray(agent.disallowedTopics),
         escalationKeywords: toStringArray(agent.escalationKeywords),
         playbook: agent.playbook,
@@ -279,16 +274,18 @@ export function composeOpenAILiveInstructions(
             // it goes first so the cut cannot drop it, as on a phone call.
             personalityForPrompt(personality, 1_500)) ||
         (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
+  // A rehearsal hears the same hours, day and time a call would.
+  const hours = runtimeReviewRequired ? "" : businessHoursContext(agent);
   return clampRuntimePromptPreservingTail(
     [
       identity,
+      hours ? `\n${hours}` : "",
       customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
         : "",
       tone ? `\nTONE:\n${tone}` : "",
       templateGuidance ? `\n${templateGuidance}` : "",
-      !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
       playbook ? `\n${playbook}` : "",
       runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
       runtimeReviewRequired
@@ -338,6 +335,8 @@ async function loadAgentRuntime(agentId: string, userId: string) {
           voiceId: schema.agents.voiceId,
           phoneVoiceId: schema.agents.phoneVoiceId,
           playbook: schema.agents.playbook,
+          businessHours: schema.agents.businessHours,
+          timezone: schema.agents.timezone,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))

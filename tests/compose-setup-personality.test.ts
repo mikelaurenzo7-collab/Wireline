@@ -60,6 +60,21 @@ describe("the tone an owner chose reaches the prompt", () => {
     // A tight budget still carries the tone before anything else.
     expect(personalityForPrompt(withTail, 30)).toBe("Delivery tone: Polished. Conci");
   });
+
+  it("carries what an owner typed under the tone line instead of dropping it", () => {
+    // With no heading of its own, that text belongs to the tone stanza where
+    // the stanza is written. An earlier version kept only the first line.
+    const typedUnder =
+      "Front desk role.\n\n## DELIVERY TONE\nWarm. Concise, useful, and discreet.\nAlways greet returning customers by name.";
+    expect(personalityForPrompt(typedUnder, 1_500)).toBe(
+      "Delivery tone: Warm. Concise, useful, and discreet. Always greet returning customers by name.\n\nFront desk role.",
+    );
+    // A later heading still ends the stanza.
+    const thenHeading = `${typedUnder}\n\n## ACCOUNT HOLDER INSTRUCTIONS\nAsk before booking.`;
+    expect(personalityForPrompt(thenHeading, 1_500)).toBe(
+      "Delivery tone: Warm. Concise, useful, and discreet. Always greet returning customers by name.\n\nFront desk role.\n\n## ACCOUNT HOLDER INSTRUCTIONS\nAsk before booking.",
+    );
+  });
 });
 
 describe("delivery-tone section replacement", () => {

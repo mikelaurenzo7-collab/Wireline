@@ -1,7 +1,13 @@
 import { actionExecutionMode } from "../bot-permission";
 import { OPENING_GREETING_PREFIX, resolveAgentGreeting } from "../agent-greeting";
 import { ownerLimitsBlock, playbookPromptBlock } from "../agent-playbook";
-import { DIRECTIVE_PROMPT_ORDER, OPENING_FACTS_ORDER } from "../agent-knowledge-search";
+import {
+  DIRECTIVE_PROMPT_ORDER,
+  NEWEST_FACTS_ORDER,
+  OPENING_FACTS_ORDER,
+  OPENING_NEWEST_FACTS,
+  openingFacts,
+} from "../agent-knowledge-search";
 import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
@@ -205,8 +211,10 @@ function listBlock(
   for (const item of values) {
     const line = trimLine(item.content);
     if (!line) continue;
+    if (lines.length >= maxItems) break;
     // Whole items only: a fact cut in half is worse than one left to search.
-    if (lines.length >= maxItems || used + line.length > maxChars) break;
+    // One too long for the room that is left is passed over for a shorter one.
+    if (used + line.length > maxChars) continue;
     lines.push(`- ${line}`);
     used += line.length;
   }
@@ -366,22 +374,15 @@ export function composeOpenAIRealtimeInstructions(input: {
       ]
         .filter(Boolean)
         .join("\n");
-  const compliance = [
-    // "standard" is the stored default and tells the Bot nothing.
-    input.agent.complianceMode && !["none", "standard"].includes(input.agent.complianceMode)
-      ? `Compliance mode: ${input.agent.complianceMode}.`
-      : "",
-    input.agent.escalationPhone || input.agent.escalationEmail || input.agent.transferPhone
-      ? "A human escalation route exists; offer a callback or handoff only when policy permits."
-      : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
   // What the owner ruled out is printed beside the fixed safety text, which a
   // prompt cut to fit keeps. It used to be the first thing a long prompt lost.
   const ownerLimits = runtimeReviewRequired
     ? ""
     : ownerLimitsBlock({
+        complianceMode: input.agent.complianceMode,
+        humanRoute: Boolean(
+          input.agent.escalationPhone || input.agent.escalationEmail || input.agent.transferPhone,
+        ),
         disallowedTopics: toStringArray(input.agent.disallowedTopics),
         escalationKeywords: toStringArray(input.agent.escalationKeywords),
         playbook: input.agent.playbook,
@@ -436,7 +437,6 @@ export function composeOpenAIRealtimeInstructions(input: {
       !runtimeReviewRequired && input.agent.kpiFocus
         ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}`
         : "",
-      !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
       runtimeReviewRequired ? "" : playbookBlock(input.agent.playbook),
       runtimeReviewRequired
         ? ""
@@ -468,7 +468,7 @@ export function composeOpenAIRealtimeInstructions(input: {
 }
 
 async function loadRuntime(agentId: string, userId: string) {
-  const [agents, settings, personalities, directives, knowledge, owners] =
+  const [agents, settings, personalities, directives, knowledge, owners, newestKnowledge] =
     await drizzle.transaction((tx) =>
       serialQueryBatch([
         tx
@@ -538,6 +538,13 @@ async function loadRuntime(agentId: string, userId: string) {
           .from(schema.users)
           .where(eq(schema.users.id, userId))
           .limit(1),
+        // What the owner added last opens the call too, whatever its subject.
+        tx
+          .select({ content: schema.knowledge.content })
+          .from(schema.knowledge)
+          .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
+          .orderBy(...NEWEST_FACTS_ORDER)
+          .limit(OPENING_NEWEST_FACTS),
       ]),
     );
 
@@ -568,7 +575,7 @@ async function loadRuntime(agentId: string, userId: string) {
     tenant,
     personality: personalities[0]?.content || "",
     directives,
-    knowledge,
+    knowledge: openingFacts(newestKnowledge ?? [], knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
   };
 }
 
