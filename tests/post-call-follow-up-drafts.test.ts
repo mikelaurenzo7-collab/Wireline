@@ -144,7 +144,7 @@ describe("post-call follow-up drafts", () => {
     expect(digest).toContain("queuePostCallEnrichment(job, ctx, coreBase.outcomeTag)");
     const worker = read("src/lib/job-worker-base.ts");
     expect(worker).toContain("actions.map(postCallFollowUpAction)");
-    expect(worker).toContain("const action = addressedToCaller(extracted, p.customerNumber);");
+    expect(worker).toContain("const action = addressedToCaller(read, p.customerNumber);");
     // Only a follow-up the owner has to finish is forced to wait. Everything
     // else runs at the Bot's own permission.
     expect(worker).toContain(
@@ -261,10 +261,24 @@ describe("post-call follow-up drafts", () => {
         { status: "completed", result: "DRAFT_SAVED: +17735550100\nThe text is written." },
       ]),
     ).toBe("held");
-    // A clean text to someone else says nothing about this caller.
+    // A clean text to someone else is still a use of the tool on this call.
     expect(
       liveTextOutcome(caller, [{ status: "completed", result: "SMS sent to +17735550199." }]),
-    ).toBe("none");
+    ).toBe("other");
+    expect(
+      liveTextOutcome(caller, [
+        { status: "completed", result: "DRAFT_SAVED: +17735550199\nThe text is written." },
+      ]),
+    ).toBe("other");
+    // What happened to this caller's own number outranks what went elsewhere.
+    expect(
+      liveTextOutcome(caller, [
+        { status: "completed", result: "SMS sent to +17735550199." },
+        { status: "completed", result: "DRAFT_SAVED: +17735550100\nThe text is written." },
+        { status: "completed", result: "SMS sent to +17735550100." },
+        { status: "completed", result: "DRAFT_SAVED: +17735550100\nThe text is written." },
+      ]),
+    ).toBe("sent");
     // The carrier never answered: a text may or may not have arrived.
     expect(
       liveTextOutcome(caller, [
@@ -292,7 +306,7 @@ describe("post-call follow-up drafts", () => {
 
   it("does not let the Bot text again when it texted, or tried to, during the call", () => {
     const followUp = text("+17735550100");
-    const during = (liveText: "sent" | "held" | "unsettled") =>
+    const during = (liveText: "sent" | "held" | "other" | "unsettled") =>
       planPostCallFollowUp(followUp, { callerNumber: "+17735550100", liveText });
     expect(during("sent")).toEqual({
       finisher: "owner",
@@ -302,10 +316,44 @@ describe("post-call follow-up drafts", () => {
       finisher: "owner",
       why: "A text to this number is already waiting from the call. Send this only if it says something new.",
     });
+    // Once the tool was used at all, the answer never returns to "go ahead",
+    // so a retry of the follow-up job cannot change its mind and send.
+    expect(during("other")).toEqual({
+      finisher: "owner",
+      why: "Your Bot texted a different number during the call. Check Texts before you send this one.",
+    });
     expect(during("unsettled")).toEqual({
       finisher: "owner",
       why: "Your Bot tried to text during the call and the result is not known. Check Texts before you send, so the caller is not texted twice.",
     });
+  });
+
+  it("gives the Bot one text of its own per call and the owner any other", () => {
+    const untouched = { callerNumber: "+17735550100", liveText: "none" as const };
+    expect(
+      planPostCallFollowUp(text("+17735550100"), { ...untouched, botIsTexting: true }),
+    ).toEqual({
+      finisher: "owner",
+      why: "Your Bot is already texting this caller about the call. Send this only if it says something new.",
+    });
+    // What the Bot did during the call still decides first.
+    expect(
+      planPostCallFollowUp(text("+17735550100"), {
+        callerNumber: "+17735550100",
+        liveText: "sent",
+        botIsTexting: true,
+      }),
+    ).toEqual({
+      finisher: "owner",
+      why: "Your Bot already texted this number during the call. Send this only if it says something new.",
+    });
+    // A note is not a message to a customer and is never held back by one.
+    expect(
+      planPostCallFollowUp(
+        { type: "create_internal_task", priority: "high", payload: { description: "Call back." } },
+        { ...untouched, botIsTexting: true },
+      ),
+    ).toEqual({ finisher: "bot" });
   });
 
   it("tells the extraction what the Bot already did, so it is not read out again", () => {
@@ -434,10 +482,12 @@ describe("post-call follow-up drafts", () => {
       worker.indexOf("async function enqueueActionExtractionOnce("),
       worker.indexOf("export async function handleJob("),
     );
-    // A retry finds the extraction it already queued.
+    // A retry finds the extraction it already queued, and so does a second
+    // enrichment job for the same call: a call's follow-ups are read once.
     expect(helper).toContain(
       "sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`",
     );
+    expect(helper).toContain("sql`${schema.jobs.payload}->>'callId' = ${p.callId}`");
     expect(helper).toContain("enrichmentJobId: enrichmentJob.id,");
     // `enqueue` reports failure instead of throwing; the worker must raise it.
     expect(helper).toContain(

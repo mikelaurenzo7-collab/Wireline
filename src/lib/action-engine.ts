@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 
 import * as schema from "../db/schema";
-import { runIdempotentActionExecution } from "./action-execution-idempotency";
+import {
+  hasOtherAutonomousExecution,
+  runIdempotentActionExecution,
+} from "./action-execution-idempotency";
 import {
   NO_TENANT_INTEGRATIONS,
   isSystemRuntimeTool,
@@ -654,6 +657,24 @@ async function handleSendTextMessage(
         error: "Too long had passed since the call for your Bot to text on its own.",
       };
     }
+    // One call, at most one text the Bot chose to send. The same request read
+    // from the transcript a second time comes back worded differently, and
+    // the ledger alone would take that for a new text.
+    if (
+      await hasOtherAutonomousExecution({
+        userId,
+        action,
+        sourceId: context.sourceId,
+        sourceType: context.sourceType,
+      })
+    ) {
+      return {
+        success: false,
+        retryable: true,
+        errorCode: "UNATTENDED_TEXT_ALREADY_SENT",
+        error: "Your Bot had already sent, or tried to send, a text for this call.",
+      };
+    }
   }
   const [lead] = await drizzle
     .select({
@@ -897,9 +918,20 @@ export async function recordOwnerNote(
     )
     .limit(1);
   if (existing) return;
+  // A Bot deleted since the call cannot be named on the note: the reference
+  // would fail on every retry and the note would never reach the owner.
+  let agentId = note.agentId;
+  if (agentId) {
+    const [bot] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+    if (!bot) agentId = undefined;
+  }
   await insertFollowUpTask({
     userId,
-    agentId: note.agentId,
+    agentId,
     taskType: "internal_task",
     description,
     priority: note.priority || "medium",

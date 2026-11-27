@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   screen: vi.fn(),
   environment: vi.fn(),
   rows: [] as unknown[][],
+  other: vi.fn(),
 }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
@@ -35,6 +36,7 @@ vi.mock("../src/lib/server-context", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 vi.mock("../src/lib/action-execution-idempotency", () => ({
+  hasOtherAutonomousExecution: h.other,
   runIdempotentActionExecution: ({ execute }: { execute: () => Promise<unknown> }) => execute(),
 }));
 vi.mock("../src/lib/ai-supervisor", () => ({
@@ -130,6 +132,7 @@ beforeEach(() => {
   h.gate.mockResolvedValue({ allowed: true });
   h.supervise.mockResolvedValue({ body: "We're at 12 Main St. See you soon." });
   h.send.mockResolvedValue({ ok: true });
+  h.other.mockResolvedValue(false);
 });
 
 describe("a text the Bot sends on its own after a call", () => {
@@ -189,6 +192,35 @@ describe("a text the Bot sends on its own after a call", () => {
 
     botWorking("auto", "auto", { endedMsAgo: UNATTENDED_TEXT_WINDOW_MS - 60_000 });
     expect(await executeAction("tenant", action, context)).toEqual({ success: true });
+  });
+
+  it("sends one text of its own per call, however the request was worded", async () => {
+    // The transcript read a second time comes back worded differently. The
+    // ledger takes that for a new text; this does not.
+    botWorking("auto");
+    h.other.mockResolvedValue(true);
+    const result = await executeAction("tenant", action, context);
+    expect(h.other).toHaveBeenCalledExactlyOnceWith({
+      userId: "tenant",
+      action,
+      sourceId: "call-1",
+      sourceType: "phone_call",
+    });
+    expect(result).toEqual({
+      success: false,
+      retryable: true,
+      errorCode: "UNATTENDED_TEXT_ALREADY_SENT",
+      error: "Your Bot had already sent, or tried to send, a text for this call.",
+    });
+    expect(h.screen).not.toHaveBeenCalled();
+    expect(h.supervise).not.toHaveBeenCalled();
+    expect(h.send).not.toHaveBeenCalled();
+    // An owner's own send is not held to that: they can see what went.
+    botWorking("draft");
+    expect(
+      await executeAction("tenant", action, { ...context, approvalTaskId: "task-1" }, "auto"),
+    ).toEqual({ success: true });
+    expect(h.other).toHaveBeenCalledOnce();
   });
 
   it("texts nobody but the person who called", async () => {
@@ -365,7 +397,8 @@ describe("a note for the owner", () => {
   });
 
   it("can be written directly as a last resort, once, and fails loudly so it is retried", async () => {
-    h.rows = [[]];
+    // No such note yet, and the Bot it names still exists.
+    h.rows = [[], [{ id: "bot-1" }]];
     await recordOwnerNote("tenant", {
       description: "  Your Bot could not confirm a text was sent.  ",
       priority: "high",
@@ -395,7 +428,22 @@ describe("a note for the owner", () => {
     });
     expect(h.insert).not.toHaveBeenCalled();
 
+    // A Bot deleted since the call is left off the note. Naming it would fail
+    // on every retry and the note would never reach the owner.
+    h.insert.mockClear();
+    h.rows = [[], []];
+    await recordOwnerNote("tenant", {
+      description: "Call Dana back.",
+      agentId: "deleted-bot",
+      sourceId: "call-1",
+      sourceType: "phone_call",
+    });
+    expect(h.insert).toHaveBeenCalledOnce();
+    expect(h.insert.mock.calls[0][0]).toMatchObject({ description: "Call Dana back." });
+    expect(h.insert.mock.calls[0][0].agentId).toBeUndefined();
+
     // A write that fails is not swallowed: the queue has to try again.
+    h.insert.mockClear();
     h.rows = [[]];
     h.insert.mockImplementationOnce(() => {
       throw new Error("Database unavailable");

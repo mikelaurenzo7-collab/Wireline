@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { log, drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, lt } from "drizzle-orm";
+import { eq, and, or, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
 import type { ExtractedBusinessAction } from "./ai-brains";
 import { getErrorMessage } from "./server-utils";
@@ -39,8 +39,11 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
 }
 
 /**
- * Queue one follow-up extraction per enrichment job. `enqueue` reports a
- * failure instead of throwing, so it is raised here for the queue to retry.
+ * Queue one follow-up extraction per call. A retry of the enrichment job
+ * finds the one it queued; so does a second enrichment job for the same
+ * call, which would otherwise have the transcript read, and its follow-ups
+ * worded, a second time. `enqueue` reports a failure instead of throwing, so
+ * it is raised here for the queue to retry.
  */
 async function enqueueActionExtractionOnce(
   enrichmentJob: JobRow,
@@ -60,7 +63,12 @@ async function enqueueActionExtractionOnce(
       and(
         eq(schema.jobs.userId, p.userId),
         eq(schema.jobs.type, "v2a_action_extraction"),
-        sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`,
+        p.callId
+          ? or(
+              sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`,
+              sql`${schema.jobs.payload}->>'callId' = ${p.callId}`,
+            )
+          : sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`,
       ),
     )
     .limit(1);
@@ -136,18 +144,29 @@ async function liveTextAttempts(userId: string, callId: string): Promise<LiveToo
   });
 }
 
-/** Follow-ups an earlier attempt of this job already read from the transcript. */
-function savedExtractedActions(result: unknown): ExtractedBusinessAction[] | null {
+/** One follow-up as it is queued: the action, the call it came from, and who finishes it. */
+type PlannedFollowUp = {
+  userId: string;
+  action: ExtractedBusinessAction & { agentId?: string };
+  context: { sourceId: string; sourceType: string };
+  autonomy?: "draft";
+};
+
+/** The follow-ups an earlier attempt of this job already decided on. */
+function savedFollowUps(result: unknown): PlannedFollowUp[] | null {
   if (!result || typeof result !== "object" || Array.isArray(result)) return null;
-  const saved = (result as Record<string, unknown>).extractedActions;
+  const saved = (result as Record<string, unknown>).followUps;
   if (!Array.isArray(saved)) return null;
   return saved.filter(
-    (action): action is ExtractedBusinessAction =>
-      !!action &&
-      typeof action === "object" &&
-      typeof (action as ExtractedBusinessAction).type === "string" &&
-      !!(action as ExtractedBusinessAction).payload &&
-      typeof (action as ExtractedBusinessAction).payload === "object",
+    (followUp): followUp is PlannedFollowUp =>
+      !!followUp &&
+      typeof followUp === "object" &&
+      typeof (followUp as PlannedFollowUp).userId === "string" &&
+      !!(followUp as PlannedFollowUp).action &&
+      typeof (followUp as PlannedFollowUp).action === "object" &&
+      typeof (followUp as PlannedFollowUp).action.type === "string" &&
+      !!(followUp as PlannedFollowUp).context &&
+      typeof (followUp as PlannedFollowUp).context.sourceId === "string",
   );
 }
 
@@ -228,61 +247,69 @@ export async function handleJob(job: JobRow): Promise<void> {
       customerNumber?: string;
     };
 
-    const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
-    const textAttempts = await liveTextAttempts(p.userId, p.callId);
-
     // The model words the same follow-up differently each time it is asked,
-    // and to the ledger a differently worded text is a different text. So the
-    // model is asked once: its answer is saved on the job before anything is
-    // queued, and a retry of this job reuses it.
-    const saved = savedExtractedActions((job as { result?: unknown }).result);
-    const actions =
-      saved ??
-      (await claudeBrain.extractActions({
+    // and to the ledger a differently worded text is a different text. What
+    // the Bot did during the call can also still be settling while this runs.
+    // So the follow-ups are decided once: the plan is saved on the job before
+    // anything is queued, and a retry of this job queues exactly that again.
+    let followUps =
+      savedFollowUps((job as { result?: unknown }).result)?.filter(
+        (followUp) => followUp.userId === p.userId,
+      ) ?? null;
+    const reusedSavedPlan = Boolean(followUps);
+    let extracted = 0;
+    let skippedDuplicateEmails = 0;
+    if (!followUps) {
+      const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
+      const textAttempts = await liveTextAttempts(p.userId, p.callId);
+      const actions = await claudeBrain.extractActions({
         transcript: p.transcript,
         summary: p.summary,
         customerNumber: p.customerNumber,
         completedOnCall: completedOnCall({ emailResults: completedEmailSends, textAttempts }),
-      }));
-    if (!saved) await persistJobResult(job.id, { extractedActions: actions });
-
-    let skippedDuplicateEmails = 0;
-    let leftForOwner = 0;
-    for (const extracted of actions.map(postCallFollowUpAction)) {
-      const action = addressedToCaller(extracted, p.customerNumber);
-      if (liveEmailAlreadyHandled(action, completedEmailSends)) {
-        skippedDuplicateEmails += 1;
-        continue;
-      }
-      // The Bot finishes what is not a guess, at its own permission. The rest
-      // waits for the owner whatever the permission says, with the reason.
-      const plan = planPostCallFollowUp(action, {
-        callerNumber: p.customerNumber,
-        liveText: liveTextOutcome(action.payload?.to, textAttempts),
       });
-      const followUp = plan.finisher === "owner" ? withReasonForOwner(action, plan.why) : action;
-      if (plan.finisher === "owner") leftForOwner += 1;
-      const queued = await enqueue(drizzle, {
-        userId: p.userId,
-        type: "execute_action",
-        payload: {
+      extracted = actions.length;
+      followUps = [];
+      // One text of the Bot's own per call. Decided here, in order, so two
+      // texts from one call cannot each wait on the other and neither leave.
+      let botIsTexting = false;
+      for (const read of actions.map(postCallFollowUpAction)) {
+        const action = addressedToCaller(read, p.customerNumber);
+        if (liveEmailAlreadyHandled(action, completedEmailSends)) {
+          skippedDuplicateEmails += 1;
+          continue;
+        }
+        // The Bot finishes what is not a guess, at its own permission. The
+        // rest waits for the owner whatever the permission says, with the reason.
+        const plan = planPostCallFollowUp(action, {
+          callerNumber: p.customerNumber,
+          liveText: liveTextOutcome(action.payload?.to, textAttempts),
+          botIsTexting,
+        });
+        if (plan.finisher === "bot" && action.type === "send_text_message") botIsTexting = true;
+        const followUp = plan.finisher === "owner" ? withReasonForOwner(action, plan.why) : action;
+        followUps.push({
           userId: p.userId,
           action: p.agentId ? { ...followUp, agentId: p.agentId } : followUp,
           context: { sourceId: p.callId, sourceType: "phone_call" },
           ...(plan.finisher === "owner" ? { autonomy: "draft" as const } : {}),
-        },
-      });
-      // `enqueue` reports failure instead of throwing. Raised so the queue
-      // retries; the saved answer above keeps that retry from rewording.
-      if (!queued.ok) throw new Error(`Failed to enqueue a call follow-up: ${queued.error}`);
+        });
+      }
+      await persistJobResult(job.id, { followUps });
+    }
+
+    // `enqueue` throws when it cannot queue this job type, which fails this
+    // job; the retry finds the saved plan above.
+    for (const payload of followUps) {
+      await enqueue(drizzle, { userId: p.userId, type: "execute_action", payload });
     }
     log.info("V2A extraction complete", {
       userId: p.userId,
       callId: p.callId,
-      actionsCount: actions.length,
+      actionsCount: reusedSavedPlan ? followUps.length : extracted,
       skippedDuplicateEmails,
-      leftForOwner,
-      reusedSavedActions: Boolean(saved),
+      leftForOwner: followUps.filter((followUp) => followUp.autonomy === "draft").length,
+      reusedSavedPlan,
     });
   }
 

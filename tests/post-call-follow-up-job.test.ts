@@ -137,32 +137,95 @@ describe("reading follow-ups from a finished call", () => {
     expect(note.action).toEqual({ ...message, agentId: "bot-1" });
   });
 
-  it("asks the model once: its answer is saved first and a retry reuses it", async () => {
-    h.extract.mockResolvedValue([textBack]);
+  it("gives the Bot one text of its own per call, and the owner any other", async () => {
+    // Two workers can pick these up at the same moment. Decided here, in
+    // order, the two cannot each wait on the other and neither leave.
+    const hours = {
+      ...textBack,
+      reasoning: "Caller asked for the hours too.",
+      payload: { to: CALLER, body: "We are open 8 to 5, Monday to Friday." },
+    };
+    h.extract.mockResolvedValue([message, textBack, hours]);
+    await handleJob(extraction());
+
+    const [note, first, second] = queued();
+    expect(note).not.toHaveProperty("autonomy");
+    expect(first).not.toHaveProperty("autonomy");
+    expect(first.action.payload).toEqual({ ...textBack.payload, to: CALLER });
+    expect(second.autonomy).toBe("draft");
+    expect(second.action.payload).toEqual({
+      ...hours.payload,
+      reasoning:
+        "Your Bot is already texting this caller about the call. Send this only if it says something new.",
+    });
+  });
+
+  it("decides the follow-ups once: the plan is saved first and a retry queues exactly that", async () => {
+    h.extract.mockResolvedValue([textBack, quoteEmail]);
     await handleJob(extraction());
     expect(h.extract).toHaveBeenCalledOnce();
-    expect(h.saved).toEqual([{ extractedActions: [textBack] }]);
     const first = queued();
+    // What is saved is what is queued: the action, the call, and who finishes it.
+    expect(h.saved).toEqual([{ followUps: first }]);
 
-    // The retry carries what was saved. Asked again, the model would word the
-    // text differently, and a differently worded text would be sent again.
+    // The retry carries the saved plan. Asked again, the model would word the
+    // text differently, and a differently worded text would be sent again. The
+    // live text that was still in flight would also be read differently now.
     vi.clearAllMocks();
     h.saved = [];
     h.enqueue.mockResolvedValue({ ok: true, jobId: "queued" });
     h.extract.mockResolvedValue([
       { ...textBack, payload: { to: CALLER, body: "Our address is 12 Main Street." } },
     ]);
-    await handleJob(extraction({ extractedActions: [textBack] }));
+    h.reads = [
+      [],
+      [{ metadata: { status: "completed", output: { result: `SMS sent to ${CALLER}.` } } }],
+    ];
+    await handleJob(extraction({ followUps: first }));
     expect(h.extract).not.toHaveBeenCalled();
     expect(h.saved).toEqual([]);
     expect(queued()).toEqual(first);
   });
 
-  it("saves the answer before queueing anything, so a failed enqueue is retried safely", async () => {
+  it("reuses a saved plan with nothing in it, and never one saved for another owner", async () => {
+    await handleJob(extraction({ followUps: [] }));
+    expect(h.extract).not.toHaveBeenCalled();
+    expect(h.enqueue).not.toHaveBeenCalled();
+
+    const foreign = {
+      userId: "owner-2",
+      action: { ...textBack, payload: { to: "+17735550199", body: "Hello." } },
+      context: { sourceId: "call-9", sourceType: "phone_call" },
+    };
+    await handleJob(extraction({ followUps: [foreign] }));
+    expect(h.enqueue).not.toHaveBeenCalled();
+
+    // Anything that is not a plan is ignored, and the transcript is read.
+    for (const result of [null, { skipped: true }, { followUps: "all" }, []]) {
+      vi.clearAllMocks();
+      h.enqueue.mockResolvedValue({ ok: true, jobId: "queued" });
+      h.extract.mockResolvedValue([message]);
+      await handleJob(extraction(result));
+      expect(h.extract).toHaveBeenCalledOnce();
+      expect(queued()).toHaveLength(1);
+    }
+  });
+
+  it("saves the plan before queueing anything, so a failed enqueue is retried safely", async () => {
     h.extract.mockResolvedValue([textBack, message]);
-    h.enqueue.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false, error: "db" });
-    await expect(handleJob(extraction())).rejects.toThrow("Failed to enqueue a call follow-up: db");
-    expect(h.saved).toEqual([{ extractedActions: [textBack, message] }]);
+    // The queue throws when it cannot take a follow-up, which fails this job.
+    h.enqueue
+      .mockResolvedValueOnce({ ok: true, jobId: "queued" })
+      .mockRejectedValueOnce(new Error("Failed to enqueue execute_action job"));
+    await expect(handleJob(extraction())).rejects.toThrow("Failed to enqueue execute_action job");
+    expect(h.saved).toHaveLength(1);
+    const plan = (h.saved[0] as { followUps: unknown[] }).followUps;
+    expect(plan).toHaveLength(2);
+    // The retry queues both again; the ledger turns the first into a no-op.
+    vi.clearAllMocks();
+    h.enqueue.mockResolvedValue({ ok: true, jobId: "queued" });
+    await handleJob(extraction({ followUps: plan }));
+    expect(queued()).toEqual(plan);
   });
 
   it.each([

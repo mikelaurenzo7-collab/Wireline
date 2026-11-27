@@ -1024,7 +1024,9 @@ router.post(
 // POST /api/agents/:id/workspace/run-action — execute an approved
 // communication action (email/text) the agent drafted in chat. Routes
 // through the existing Action Engine, which enforces per-agent tool
-// authorization + supervisor review. Outbound CALLS are intentionally NOT
+// authorization, the compliance screening for a text, and message review
+// for an email. A text goes as the owner approved it in chat: the review of
+// texts is for ones nobody read. Outbound CALLS are intentionally NOT
 // handled here — the client routes those to /api/outbound/dial so the
 // DNC/TCPA/quota gates run unchanged.
 router.post(

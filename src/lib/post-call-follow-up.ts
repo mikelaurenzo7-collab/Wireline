@@ -103,12 +103,17 @@ export type LiveToolAttempt = { status: string | null | undefined; result: strin
  * - "sent": a text to this number left during the call.
  * - "held": a text to this number is already waiting for an owner who asked
  *   to see texts first.
+ * - "other": it was used, cleanly, for a different number only.
  * - "unsettled": some attempt has no clean receipt. The carrier response was
  *   interrupted, the send was refused, or the record never finished. A text
  *   may or may not have reached the caller, so nothing more may leave without
  *   a person looking.
+ *
+ * Only "none" lets the Bot text after the call on its own. Attempts are only
+ * ever added to a call, so once the answer is not "none" it stays that way,
+ * and a retry of the follow-up job cannot change its mind and send.
  */
-export type LiveTextOutcome = "none" | "sent" | "held" | "unsettled";
+export type LiveTextOutcome = "none" | "sent" | "held" | "other" | "unsettled";
 
 export function liveTextOutcome(
   phone: unknown,
@@ -123,7 +128,9 @@ export function liveTextOutcome(
       : null;
     if (attempt.status !== "completed" || (!sent && held === null)) return "unsettled";
     if (sent && samePhoneNumber(sent[1], phone)) outcome = "sent";
-    else if (held !== null && samePhoneNumber(held, phone) && outcome === "none") outcome = "held";
+    else if (held !== null && samePhoneNumber(held, phone)) {
+      if (outcome !== "sent") outcome = "held";
+    } else if (outcome === "none") outcome = "other";
   }
   return outcome;
 }
@@ -173,14 +180,21 @@ export function completedOnCall(input: {
  *   the address back and sends it then.
  * - A text to any other number. That is new outreach, and the owner has to
  *   confirm they have permission to make it.
- * - A text when one already left, is already waiting, or was attempted with
- *   no clean receipt during the call. A second text is the owner's call.
+ * - A text when the Bot used its text tool at all during the call: one
+ *   already left, is already waiting, went to another number, or was
+ *   attempted with no clean receipt. A further text is the owner's call.
+ * - A second text from the same call. The Bot sends one text of its own per
+ *   call; `botIsTexting` says an earlier follow-up from this call has it.
  */
 export type PostCallFollowUpPlan = { finisher: "bot" } | { finisher: "owner"; why: string };
 
 export function planPostCallFollowUp(
   action: ExtractedBusinessAction,
-  call: { callerNumber: string | null | undefined; liveText: LiveTextOutcome },
+  call: {
+    callerNumber: string | null | undefined;
+    liveText: LiveTextOutcome;
+    botIsTexting?: boolean;
+  },
 ): PostCallFollowUpPlan {
   if (action.type === "create_internal_task") return { finisher: "bot" };
   if (action.type === "send_email") {
@@ -200,7 +214,12 @@ export function planPostCallFollowUp(
   }
   switch (call.liveText) {
     case "none":
-      return { finisher: "bot" };
+      return call.botIsTexting
+        ? {
+            finisher: "owner",
+            why: "Your Bot is already texting this caller about the call. Send this only if it says something new.",
+          }
+        : { finisher: "bot" };
     case "sent":
       return {
         finisher: "owner",
@@ -210,6 +229,11 @@ export function planPostCallFollowUp(
       return {
         finisher: "owner",
         why: "A text to this number is already waiting from the call. Send this only if it says something new.",
+      };
+    case "other":
+      return {
+        finisher: "owner",
+        why: "Your Bot texted a different number during the call. Check Texts before you send this one.",
       };
     default:
       return {
