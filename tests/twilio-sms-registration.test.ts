@@ -10,6 +10,7 @@ import {
   INBOUND_REPLY_COVERAGE,
   classifySmsSender,
   readSmsRegistrationSnapshot,
+  readSmsSenderRegistrationForDisplay,
   resetSmsRegistrationCache,
   resolveSmsSenderRegistration,
   smsSenderKind,
@@ -665,5 +666,42 @@ describe("a registration read that is slow or never comes back", () => {
       resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: slow, nowMs: 9_000 }),
     ).resolves.toMatchObject({ status: "registered", messagingServiceSid: "MGapproved" });
     expect(calls.services).toBe(1);
+  });
+});
+
+describe("the registration verdict a screen shows", () => {
+  beforeEach(() => resetSmsRegistrationCache());
+  afterEach(() => resetSmsRegistrationCache());
+
+  it("answers at once from an aging snapshot and reads again for the next visit", async () => {
+    const { client, calls } = fakeClient();
+    await resolveSmsSenderRegistration(LOCAL_REGISTERED, { client, nowMs: 0 });
+    expect(calls.services).toBe(1);
+
+    // Past the ten-minute lifetime the account is slow to answer. A send would
+    // wait on it; the screen is answered from the snapshot it already has.
+    const slow: SmsRegistrationClient = {
+      ...client,
+      incomingPhoneNumbers: { list: () => new Promise<never>(() => undefined) },
+    };
+    await expect(
+      readSmsSenderRegistrationForDisplay(LOCAL_REGISTERED, { client: slow, nowMs: 11 * 60_000 }),
+    ).resolves.toMatchObject({ status: "registered" });
+    expect(calls.services).toBe(2);
+  });
+
+  it("waits on the read when the process has no snapshot yet", async () => {
+    const { client, calls } = fakeClient();
+    await expect(
+      readSmsSenderRegistrationForDisplay(LOCAL_PENDING, { client, nowMs: 0 }),
+    ).resolves.toMatchObject({ status: "unregistered", code: "SMS_SENDER_REGISTRATION_PENDING" });
+    expect(calls.services).toBe(1);
+  });
+
+  it("stays unknown when the account cannot be read and nothing is cached", async () => {
+    const { client } = fakeClient({ failServices: true });
+    await expect(
+      readSmsSenderRegistrationForDisplay(LOCAL_REGISTERED, { client, nowMs: 0 }),
+    ).resolves.toMatchObject({ status: "unknown" });
   });
 });

@@ -440,7 +440,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("restaurants") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Callers hear the restaurant identity and the built in OpenAI voice you choose; that speaker stays consistent for the full call.",
+      "Callers hear the restaurant identity and the voice you choose; that speaker stays consistent for the full call.",
     faqs: [
       {
         q: "Will It Integrate with Resy, OpenTable, or Tock?",
