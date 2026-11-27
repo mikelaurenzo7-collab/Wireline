@@ -1,50 +1,6 @@
-import { authFetch } from "./api";
-
 export const FRESH_SIGNUP_SESSION_KEY = "wireline_fresh_signup";
 export const POST_SIGNUP_FLOW_SESSION_KEY = "wireline_post_signup_flow";
-export const POST_SIGNUP_DISMISS_KEY = "wireline_post_signup_dismissed";
 export const ACTIVATION_CELEBRATED_KEY = "wireline_activation_celebrated";
-
-export type UserPreferencesSnake = {
-  tour_completed?: boolean;
-  onboarding_completed?: boolean;
-};
-
-export async function fetchUserPreferences(): Promise<UserPreferencesSnake | null> {
-  try {
-    const res = await authFetch("/api/user-preferences");
-    if (!res.ok) return null;
-    return (await res.json()) as UserPreferencesSnake;
-  } catch {
-    return null;
-  }
-}
-
-/** Setup onboarding finished — also marks console tour done (orientation lives in celebration UI). */
-export async function markOnboardingCompleted(): Promise<void> {
-  try {
-    await authFetch("/api/user-preferences", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ onboarding_completed: true, tour_completed: true }),
-    });
-  } catch {
-    /* non-critical */
-  }
-}
-
-/** Skip auto product tour without finishing Assistants setup (explore-first path). */
-export async function markTourCompleted(): Promise<void> {
-  try {
-    await authFetch("/api/user-preferences", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tour_completed: true }),
-    });
-  } catch {
-    /* non-critical */
-  }
-}
 
 export function markFreshSignupSession(): void {
   try {
@@ -87,40 +43,6 @@ export function isPostSignupFlowActive(): boolean {
   }
 }
 
-export function markPostSignupDismissed(): void {
-  try {
-    localStorage.setItem(POST_SIGNUP_DISMISS_KEY, "true");
-  } catch {
-    /* ignore */
-  }
-}
-
-export function isPostSignupDismissed(): boolean {
-  try {
-    return localStorage.getItem(POST_SIGNUP_DISMISS_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-export function beginOnboardingTimer(): void {
-  try {
-    if (!localStorage.getItem("wireline_onboarding_start")) {
-      localStorage.setItem("wireline_onboarding_start", Date.now().toString());
-    }
-  } catch {
-    /* ignore */
-  }
-}
-
-export function markOnboardingCelebrated(): void {
-  try {
-    localStorage.setItem("wireline_onboarding_celebrated", "true");
-  } catch {
-    /* ignore */
-  }
-}
-
 export function activationCelebratedStorageKey(scopeId: string): string {
   return `${ACTIVATION_CELEBRATED_KEY}:${scopeId}`;
 }
@@ -131,14 +53,5 @@ export function isActivationCelebrated(scopeId: string | null | undefined): bool
     return localStorage.getItem(activationCelebratedStorageKey(scopeId)) === "true";
   } catch {
     return false;
-  }
-}
-
-export function markActivationCelebrated(scopeId: string | null | undefined): void {
-  if (!scopeId) return;
-  try {
-    localStorage.setItem(activationCelebratedStorageKey(scopeId), "true");
-  } catch {
-    /* ignore */
   }
 }

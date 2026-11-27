@@ -72,18 +72,3 @@ export async function listAgentsForUser(userId: string, limit = 500): Promise<Ag
     return rows.map((row) => ({ ...row, markKey: null }));
   }
 }
-
-export async function listAgentSummariesForUser(
-  userId: string,
-  limit = 500,
-): Promise<
-  Array<{ id: string; name: string | null; role: string | null; isBusinessAgent: boolean }>
-> {
-  const rows = await listAgentsForUser(userId, limit);
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name ?? null,
-    role: r.role ?? null,
-    isBusinessAgent: r.isBusinessAgent,
-  }));
-}

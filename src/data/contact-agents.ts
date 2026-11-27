@@ -225,9 +225,6 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   },
 ];
 
-/** Primary product-help role profile — never a public telephone CTA. */
-export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
-
 /**
  * Retired founder PSTN routing registry.
  *

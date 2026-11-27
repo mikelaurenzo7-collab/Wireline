@@ -148,11 +148,6 @@ const ALLOWANCE_CHECK_INTERVAL_MS = 10 * 60_000;
 const ALLOWANCE_CHECK_MAX_ENTRIES = 10_000;
 const allowanceCheckedAt = new Map<string, number>();
 
-/** Test seam: forget which accounts were recently checked. */
-export function resetRuntimeAllowanceCheckCache(): void {
-  allowanceCheckedAt.clear();
-}
-
 /**
  * Post the current month's slice when a customer spends or opens usage.
  * The subscription webhook posts the first slice; later months do not wait
@@ -277,12 +272,4 @@ export async function reverseSubscriptionRuntimeAllowance(
       applied,
     });
   }
-}
-
-export async function grantWelcomeSubscriptionCredit(
-  userId: string,
-  subscriptionId: string,
-  planId: string | null | undefined,
-): Promise<void> {
-  return grantSubscriptionRuntimeAllowance(userId, subscriptionId, planId, "month");
 }

@@ -30,9 +30,6 @@ vi.mock("react", async (original) => ({
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/contexts/ToastContext", () => ({ useToast: () => ({ success: vi.fn() }) }));
-vi.mock("../src/hooks/useApiError", () => ({
-  useApiError: () => ({ handleApiError: vi.fn(), handleCatchError: vi.fn() }),
-}));
 vi.mock("../src/lib/product-event-client", () => ({ emitProductEventOnce: vi.fn() }));
 vi.mock("../src/components/ui/EmptyState", () => ({ EmptyState: "empty-state" }));
 vi.mock("../src/components/ui/shadcn/ShadButton", () => ({ ShadButton: "button" }));

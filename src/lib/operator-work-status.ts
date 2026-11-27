@@ -1,7 +1,5 @@
 export const ACTIVE_OPERATOR_TASK_STATUSES = ["pending", "open", "in_progress"] as const;
 
-export type ActiveOperatorTaskStatus = (typeof ACTIVE_OPERATOR_TASK_STATUSES)[number];
-
 /** Human work created by Bot tools, with no deferred provider action to execute. */
 export const MANUAL_OPERATOR_TASK_TYPES = [
   "internal_task",

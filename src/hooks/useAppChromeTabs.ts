@@ -108,14 +108,3 @@ export function useAppChromeTabs():
     tabs: [] as [],
   };
 }
-
-/** @deprecated Use useAppChromeTabs — kept for narrow imports. */
-export function useAppPageSubTabs() {
-  const chrome = useAppChromeTabs();
-  if (chrome.showAdminTabs) return { showAdminTabs: true as const };
-  if ("tabs" in chrome && chrome.tabs.length > 0) {
-    const { secondary: _s, ...primary } = chrome;
-    return { ...primary, showAdminTabs: false as const };
-  }
-  return null;
-}

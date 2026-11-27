@@ -7,10 +7,8 @@ import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { drizzle, log, tenantStore } from "./server-context";
 import {
-  evaluateDncSellerRegistration,
   readStoredDncSellerRegistration,
   dncSellerRegistrationState,
-  type DncSellerGateResult,
   type DncSellerRegistration,
   type DncSellerRegistrationState,
 } from "./dnc-seller-registration-rules";
@@ -24,14 +22,6 @@ export async function readDncSellerRegistration(
     .where(eq(schema.settings.userId, userId))
     .limit(1);
   return readStoredDncSellerRegistration(row?.registration);
-}
-
-/** Marketing gate: a missing, unlinked, expired or non-covering registration fails closed. */
-export async function evaluateSellerDncForMarketing(
-  userId: string,
-  phone: string,
-): Promise<DncSellerGateResult> {
-  return evaluateDncSellerRegistration(await readDncSellerRegistration(userId), phone);
 }
 
 /**

@@ -573,8 +573,6 @@ export function isCloneEngineId(value: unknown): value is CloneEngineId {
   return (CLONE_ENGINE_IDS as readonly unknown[]).includes(value);
 }
 
-/** Preview text is bounded identically for every engine. */
-export const CLONE_PREVIEW_MAX_CHARS = 400;
 export { ELEVENLABS_VOICE_PREVIEW };
 
 const lastAlertAt = new Map<string, number>();
@@ -626,8 +624,4 @@ export async function alertCloneEngineCapacity(
     });
   }
   return true;
-}
-
-export function resetCloneEngineAlertsForTests(): void {
-  lastAlertAt.clear();
 }

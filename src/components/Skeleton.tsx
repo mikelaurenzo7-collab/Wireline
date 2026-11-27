@@ -6,7 +6,6 @@ export { Skeleton, skeletonVariants, type SkeletonProps } from "./atoms/Skeleton
 export {
   PanelSkeleton,
   RowSkeleton,
-  CardRowSkeleton,
   type PanelSkeletonProps,
   type RowSkeletonProps,
 } from "./atoms/skeleton-presets";

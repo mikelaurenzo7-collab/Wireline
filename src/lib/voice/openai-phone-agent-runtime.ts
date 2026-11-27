@@ -15,6 +15,7 @@ import { spokenBusinessName } from "./spoken-business-name";
 import { AppError } from "../api-error";
 import {
   businessHoursContext,
+  complianceRulesText,
   RUNTIME_ACTION_SAFETY_BLOCK,
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
@@ -53,7 +54,7 @@ import {
   type OpenAIRealtimeVoice,
 } from "./openai-realtime-config";
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
-import { customVoiceSelection, resolveRuntimeCustomVoice } from "./live-voice-service";
+import { resolveRuntimeCustomVoice } from "./live-voice-service";
 import { phoneCatalogService } from "./phone-catalog-service";
 import { phoneVoiceSelection } from "../phone-voices";
 import { callDeliveryFor } from "./call-delivery";
@@ -379,7 +380,7 @@ export function composeOpenAIRealtimeInstructions(input: {
   const ownerLimits = runtimeReviewRequired
     ? ""
     : ownerLimitsBlock({
-        complianceMode: input.agent.complianceMode,
+        complianceRules: complianceRulesText(input.agent.complianceMode),
         humanRoute: Boolean(
           input.agent.escalationPhone || input.agent.escalationEmail || input.agent.transferPhone,
         ),
@@ -718,46 +719,5 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     businessHours: reviewRequired ? "" : businessHoursContext(runtime.agent),
     session: commonSession,
     toolNames: tools.map((tool) => tool.name),
-  };
-}
-
-function resolveWirelineOpenAIVoice(profile?: WirelineVoiceProfile): OpenAIRealtimeVoice {
-  return PROFILE_TO_VOICE[profile || resolveWirelineVoiceProfile(undefined)];
-}
-
-export async function getOpenAIRealtimeVoiceProfile(userId: string, agentId: string) {
-  const runtime = await loadRuntime(agentId, userId);
-  const profile = resolveWirelineVoiceProfile(storedProfile(runtime.agent.businessVariables));
-  return {
-    profile,
-    profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: resolveWirelineOpenAIVoice(profile),
-    customVoiceConfigured: customVoiceSelection(runtime.agent.businessVariables) !== null,
-  };
-}
-
-export async function setOpenAIRealtimeVoiceProfile(
-  userId: string,
-  agentId: string,
-  profile: WirelineVoiceProfile,
-) {
-  const normalized = normalizeWirelineVoiceProfile(profile);
-  if (!normalized) throw AppError.badRequest("Choose a valid live voice profile.");
-  const runtime = await loadRuntime(agentId, userId);
-  const variables = { ...asRecord(runtime.agent.businessVariables) };
-  delete variables.grokVoiceId;
-  delete variables.grok_voice_id;
-  delete variables.wirelineLiveCustomVoice;
-  variables.wirelineLiveVoiceProfile = normalized;
-  await drizzle
-    .update(schema.agents)
-    .set({ businessVariables: variables })
-    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)));
-
-  return {
-    profile: normalized,
-    profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: resolveWirelineOpenAIVoice(normalized),
-    customVoiceConfigured: false,
   };
 }

@@ -218,26 +218,10 @@ describe("BotBound appearance contrast", () => {
     }
   });
 
-  it("keeps recipe fields, placeholders, and results on semantic theme tokens", () => {
-    const shared = readFileSync("src/components/recipes/shared.tsx", "utf8");
-    const playbook = readFileSync("src/components/recipes/forms/CallPlaybookForm.tsx", "utf8");
-    expect(shared).toContain("placeholder:text-muted-foreground");
-    expect(shared).toContain("border-[var(--wireline-color-border-strong)]");
-    expect(shared).toContain("focus-visible:outline-primary");
-    expect(shared).toContain("wireline-color-feedback-error-surface");
-    expect(shared).not.toContain("placeholder:text-muted/70");
-    expect(shared).not.toContain("border-white/10");
-    expect(playbook).toContain("text-muted-foreground");
-    expect(playbook).toContain("wireline-color-feedback-warning-surface");
-    expect(playbook).not.toContain("text-muted text-");
-    expect(playbook).not.toContain("bg-white/5");
-  });
-
   it("does not reference undefined brand tiers in active product controls", () => {
     const components = [
       "src/components/insights/TopicsView.tsx",
       "src/components/IntakeKeysManager.tsx",
-      "src/components/recipes/forms/AgentReviewForm.tsx",
     ];
     for (const path of components) {
       const source = readFileSync(path, "utf8");
@@ -246,8 +230,6 @@ describe("BotBound appearance contrast", () => {
     const topics = readFileSync("src/components/insights/TopicsView.tsx", "utf8");
     expect(topics).toContain("wireline-color-feedback-info-surface");
     expect(topics).toContain("wireline-color-feedback-neutral-surface");
-    const review = readFileSync("src/components/recipes/forms/AgentReviewForm.tsx", "utf8");
-    expect(review).toContain("wireline-color-feedback-warning-surface");
     const intake = readFileSync("src/components/IntakeKeysManager.tsx", "utf8");
     expect(intake).toContain("wireline-color-action-primary-container");
   });
@@ -258,9 +240,6 @@ describe("BotBound appearance contrast", () => {
     const surfaces = [
       "src/components/UsageMeter.tsx",
       "src/components/IntegrationCapabilityPanel.tsx",
-      "src/components/recipes/forms/QualifyForm.tsx",
-      "src/components/recipes/forms/AgentWireForm.tsx",
-      "src/components/recipes/forms/KnowledgeFromDocumentForm.tsx",
       "src/components/CrmConnectionCard.tsx",
       "src/components/WebhooksManager.tsx",
       "src/components/PrivacyPolicyPage.tsx",
@@ -288,11 +267,6 @@ describe("BotBound appearance contrast", () => {
       "src/components/TrialGateModal.tsx",
       "src/components/CreateAgentDialog.tsx",
       "src/components/admin/AuditActivityPanel.tsx",
-      "src/components/recipes/forms/ObjectionDrillForm.tsx",
-      "src/components/recipes/forms/AgentReviewForm.tsx",
-      "src/components/recipes/forms/CoachForm.tsx",
-      "src/components/recipes/forms/ThreadSummaryForm.tsx",
-      "src/components/recipes/RecipeModal.tsx",
     ];
     for (const path of surfaces) {
       const source = readFileSync(path, "utf8");
@@ -301,14 +275,5 @@ describe("BotBound appearance contrast", () => {
     }
     const phonePicker = readFileSync("src/components/PhoneNumberPicker.tsx", "utf8");
     expect(phonePicker).not.toContain("text-eyebrow/60");
-    for (const path of [
-      "src/components/recipes/forms/CoachForm.tsx",
-      "src/components/recipes/forms/ThreadSummaryForm.tsx",
-    ]) {
-      const source = readFileSync(path, "utf8");
-      expect(source).toContain("wireline-color-feedback-warning-surface");
-      expect(source).toContain("wireline-color-feedback-error-surface");
-      expect(source).toContain("wireline-color-feedback-neutral-surface");
-    }
   });
 });

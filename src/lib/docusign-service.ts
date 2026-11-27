@@ -127,28 +127,3 @@ export async function sendContract(params: SendContractParams): Promise<DocuSign
     return null;
   }
 }
-
-/**
- * Get the current status of a sent envelope.
- */
-export async function getEnvelopeStatus(envelopeId: string): Promise<string | null> {
-  if (!DOCUSIGN_ACCOUNT_ID) return null;
-  const accessToken = await getAccessToken();
-  if (!accessToken) return null;
-
-  try {
-    const response = await fetch(
-      `${DOCUSIGN_BASE_URI}/v2.1/accounts/${DOCUSIGN_ACCOUNT_ID}/envelopes/${envelopeId}`,
-      {
-        signal: AbortSignal.timeout(15_000),
-        headers: { Authorization: `Bearer ${accessToken}` },
-      },
-    );
-
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.status; // "sent" | "delivered" | "completed" | "declined" | "voided"
-  } catch {
-    return null;
-  }
-}

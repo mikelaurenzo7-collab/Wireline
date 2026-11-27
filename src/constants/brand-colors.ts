@@ -104,6 +104,3 @@ export const BRAND = {
   pipeline:
     "DTCG-style JSON source -> dependency-free generator -> CSS custom properties and typed TypeScript. Native adapters follow once active.",
 } as const;
-
-export type BrandTokenCategory = keyof typeof BRAND;
-export type BrandColorToken = keyof typeof BRAND.colors;

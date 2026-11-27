@@ -11,8 +11,6 @@ import { configuredPhoneVoiceProvider } from "./realtime-provider";
  */
 export const XAI_GROK_VOICE_PINNED_MODEL = "grok-voice-3.0" as const;
 export const XAI_GROK_VOICE_TRANSCRIBER = "grok-transcribe" as const;
-/** Published Voice Agent API price, used for spend estimates and receipts. */
-export const XAI_GROK_VOICE_USD_PER_MINUTE = 0.08 as const;
 
 /**
  * Every built-in voice the Voice Agent API documents. The first five are the

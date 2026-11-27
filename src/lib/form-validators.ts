@@ -6,8 +6,6 @@ export const SignInFormSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export type SignInForm = z.infer<typeof SignInFormSchema>;
-
 export const SignUpFormSchema = z
   .object({
     email: z.string().email("Invalid email address"),
@@ -23,13 +21,9 @@ export const SignUpFormSchema = z
     path: ["confirmPassword"],
   });
 
-export type SignUpForm = z.infer<typeof SignUpFormSchema>;
-
 export const ResetPasswordFormSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
-
-export type ResetPasswordForm = z.infer<typeof ResetPasswordFormSchema>;
 
 // Agent creation/update form
 export const AgentFormSchema = z.object({
@@ -38,12 +32,10 @@ export const AgentFormSchema = z.object({
   personality: z.string().max(2000, "Personality must be 2000 characters or less").optional(),
 });
 
-export type AgentForm = z.infer<typeof AgentFormSchema>;
-
 // ── Agent business-profile (hours / compliance / guardrails) ──────────
-// Applied at runtime by buildAgentRuntimeContext to layer business
-// rules on top of the agent's role-derived system prompt. Each field
-// is optional so partial PATCH-style updates work.
+// Applied at runtime to layer business rules on top of the agent's
+// role-derived system prompt. Each field is optional so partial
+// PATCH-style updates work.
 
 // Accepts 24-hour HH:MM with an optional leading zero on the hour (e.g. "9:00"
 // or "09:00"). Rejects out-of-range values such as "24:00", "25:30" or "9:70".
@@ -160,8 +152,6 @@ export const AgentBusinessProfileSchema = z
   })
   .strict();
 
-export type AgentBusinessProfile = z.infer<typeof AgentBusinessProfileSchema>;
-
 const AgentChannelEnum = z.enum(["voice", "email", "sms"]);
 
 /** Optional PATCH fields for per-agent capability overrides (mirrors agent-routes validation). */
@@ -174,8 +164,6 @@ export const AgentCapabilityFieldsSchema = z
   })
   .strict();
 
-export type AgentCapabilityFields = z.infer<typeof AgentCapabilityFieldsSchema>;
-
 // Directive input validation
 export const DirectiveSchema = z.object({
   id: z.string().optional(),
@@ -185,8 +173,6 @@ export const DirectiveSchema = z.object({
     .max(1000, "Directive must be 1000 characters or less"),
 });
 
-export type Directive = z.infer<typeof DirectiveSchema>;
-
 // Training source entry
 export const KnowledgeSchema = z.object({
   id: z.string().optional(),
@@ -195,8 +181,6 @@ export const KnowledgeSchema = z.object({
     .min(1, "Knowledge entry cannot be empty")
     .max(2000, "Entry must be 2000 characters or less"),
 });
-
-export type Knowledge = z.infer<typeof KnowledgeSchema>;
 
 // Campaign creation validation
 export const CampaignCreateSchema = z.object({
@@ -228,8 +212,6 @@ export const CampaignCreateSchema = z.object({
     .positive("Max attempts must be greater than 0")
     .optional(),
 });
-
-export type Campaign = z.infer<typeof CampaignCreateSchema>;
 
 // Campaign update validation (all fields optional)
 export const CampaignUpdateSchema = z
@@ -264,8 +246,6 @@ export const CampaignUpdateSchema = z
   })
   .strict();
 
-export type CampaignUpdate = z.infer<typeof CampaignUpdateSchema>;
-
 // Email reply validation
 export const EmailReplySchema = z.object({
   body: z
@@ -273,8 +253,6 @@ export const EmailReplySchema = z.object({
     .min(1, "Email body cannot be empty")
     .max(5000, "Email body must be 5000 characters or less"),
 });
-
-export type EmailReply = z.infer<typeof EmailReplySchema>;
 
 // Email draft validation
 export const EmailDraftSchema = z.object({
@@ -292,8 +270,6 @@ export const EmailDraftSchema = z.object({
     .min(1, "At least one message is required"),
   context: z.string().max(1000, "Context must be 1000 characters or less").optional(),
 });
-
-export type EmailDraft = z.infer<typeof EmailDraftSchema>;
 
 // Outbound lead — single contact submitted to /api/outbound/dial.
 // Phone number format kept liberal (E.164 with optional formatting)
@@ -337,8 +313,6 @@ export const OutboundLeadSchema = z
   })
   .passthrough(); // Allow extra fields (custom CRM data) to flow through
 
-export type OutboundLead = z.infer<typeof OutboundLeadSchema>;
-
 // Bulk outbound — capped at 5000 leads/request so a single accidental
 // upload can't lock a database transaction or starve the dial queue.
 export const OutboundBulkSchema = z.object({
@@ -349,8 +323,6 @@ export const OutboundBulkSchema = z.object({
   campaign_id: z.string().uuid("Invalid campaign ID").optional().nullable(),
   has_express_written_consent: z.boolean().optional().default(false),
 });
-
-export type OutboundBulk = z.infer<typeof OutboundBulkSchema>;
 
 // Appointment — created from voice/email triage flows.
 export const AppointmentSchema = z.object({
@@ -363,8 +335,6 @@ export const AppointmentSchema = z.object({
   notes: z.string().max(2000, "Notes must be 2000 characters or less").optional().nullable(),
   agent_id: z.string().uuid("Invalid agent ID").optional().nullable(),
 });
-
-export type Appointment = z.infer<typeof AppointmentSchema>;
 
 // Result shape for `parseFormData`. Both `data` and `errors` are optional
 // so that call sites can do `if (!result.success) { use result.errors }`
@@ -405,13 +375,11 @@ export const GeminiLeadScoreSchema = z.object({
   score: z.number().min(0).max(100).default(0),
   label: z.string().max(100).default("none"),
 });
-export type GeminiLeadScore = z.infer<typeof GeminiLeadScoreSchema>;
 
 /** Gemini post-call lesson extraction: { lesson } */
 export const GeminiLessonSchema = z.object({
   lesson: z.string().max(2000),
 });
-export type GeminiLesson = z.infer<typeof GeminiLessonSchema>;
 
 /** Gemini post-call follow-up task detection: { has_task, task_description, priority, target_channel } */
 export const GeminiFollowupTaskSchema = z.object({
@@ -420,11 +388,6 @@ export const GeminiFollowupTaskSchema = z.object({
   priority: z.enum(["high", "medium", "low"]).default("medium"),
   target_channel: z.enum(["email", "manual", "sms"]).default("manual"),
 });
-export type GeminiFollowupTask = z.infer<typeof GeminiFollowupTaskSchema>;
-
-/** Gemini email lead scoring: { score, label } — same shape as lead scoring */
-export const GeminiEmailScoreSchema = GeminiLeadScoreSchema;
-export type GeminiEmailScore = GeminiLeadScore;
 
 /** Gemini agent extraction (from training text): { directives, knowledge, personality } */
 export const GeminiAgentExtractionSchema = z.object({
@@ -436,7 +399,6 @@ export const GeminiAgentExtractionSchema = z.object({
   knowledge: z.array(z.object({ content: z.string().max(4000) })).default([]),
   personality: z.string().max(2000).default(""),
 });
-export type GeminiAgentExtraction = z.infer<typeof GeminiAgentExtractionSchema>;
 
 // ─── Assistants Task Schema ───────────────────────────────────────────────────────
 
@@ -475,4 +437,3 @@ export const FollowUpTaskCreateSchema = z.object({
       message: "due_date must be a valid date",
     }),
 });
-export type FollowUpTaskCreate = z.infer<typeof FollowUpTaskCreateSchema>;

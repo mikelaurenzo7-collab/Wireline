@@ -34,11 +34,6 @@ export interface DncProvider {
 
 const extraProviders = new Map<string, DncProvider>();
 
-/** Register a future vendor or in-house adapter. Does not screen by itself. */
-export function registerDncProvider(provider: DncProvider): void {
-  extraProviders.set(provider.id, provider);
-}
-
 /** US 10-digit NANP for DNCScrub scrub requests. */
 export function normalizeUsPhone10(phone: string): string | null {
   const digits = phone.replace(/\D/g, "");

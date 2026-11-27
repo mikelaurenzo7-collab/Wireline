@@ -19,7 +19,6 @@ export {
   deriveCallEmailState,
 } from "./call-outcome";
 export type { CallEmailExecution, CallEmailState } from "./call-outcome";
-export type { CallHappened } from "./call-happened";
 export { callHappenedDetail, callHappenedLabel, classifyCallHappened } from "./call-happened";
 
 /**

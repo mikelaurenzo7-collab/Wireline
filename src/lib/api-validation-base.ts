@@ -58,28 +58,6 @@ export function validateQuery<T extends ZodSchema>(schema: T) {
 }
 
 /**
- * Validate request parameters (URL path params)
- */
-export function validateParams<T extends ZodSchema>(schema: T) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const result = schema.safeParse(req.params);
-
-    if (!result.success) {
-      const errors = formatZodError(result.error);
-      res.status(400).json({
-        error: "Invalid URL parameters",
-        code: "VALIDATION_ERROR",
-        details: errors,
-      });
-      return;
-    }
-
-    req.params = result.data as typeof req.params;
-    next();
-  };
-}
-
-/**
  * Format Zod error into a user-friendly object
  */
 export function formatZodError(error: ZodError): Array<{ field: string; message: string }> {
@@ -603,33 +581,3 @@ export const workspaceMessageSchema = z.object({
 export const directorChatModelPatchSchema = z.object({
   selection: z.record(z.string(), z.unknown()),
 });
-
-// ============================================================================
-// Validation Helpers
-// ============================================================================
-
-/**
- * Sanitize string input to prevent XSS
- */
-export function sanitizeString(input: string): string {
-  return input
-    .replace(/[<>]/g, "") // Remove angle brackets
-    .trim();
-}
-
-/**
- * Validate and sanitize an object of string values
- */
-export function sanitizeStrings<T extends Record<string, unknown>>(
-  obj: T,
-  keys: Array<keyof T>,
-): T {
-  const result = { ...obj };
-  for (const key of keys) {
-    const value = result[key];
-    if (typeof value === "string") {
-      (result as Record<string, unknown>)[key as string] = sanitizeString(value);
-    }
-  }
-  return result;
-}

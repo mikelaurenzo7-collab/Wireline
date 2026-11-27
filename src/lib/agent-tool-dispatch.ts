@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /** Shared dispatch for live agent tools and Director-approved integration jobs. */
-import { randomUUID } from "node:crypto";
 
 import { handleCalendarToolCall } from "./bot-tools/calendar";
 import { handleCoreToolCall } from "./bot-tools/core";
@@ -21,7 +20,6 @@ import {
   dispatchStartComputerTaskForOwner,
   dispatchStopComputerTaskForOwner,
 } from "./cloud-computer/worker-client";
-import { drizzle, log } from "./server-context";
 
 const COMPUTER_TOOL_NAMES = new Set([
   "start_computer_task",
@@ -310,27 +308,4 @@ export async function dispatchAgentToolCall(
   return runIdempotentAgentToolCall(fn, context, () =>
     dispatchToFirstAvailableHandler(fn, args, context),
   );
-}
-
-export function buildDirectorToolContext(input: {
-  userId: string;
-  agentId: string;
-  agentName?: string | null;
-  toolCallId?: string;
-}): ToolCallContext {
-  return {
-    toolCallId: input.toolCallId || `director-${randomUUID()}`,
-    payload: {},
-    message: {},
-    agent: {
-      id: input.agentId,
-      user_id: input.userId,
-    },
-    userId: input.userId,
-    agentId: input.agentId,
-    webhookAgentId: input.agentId,
-    agentVoiceName: input.agentName || undefined,
-    drizzle,
-    log,
-  };
 }

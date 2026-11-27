@@ -10,7 +10,6 @@ describe("agent runtime performance and action integrity", () => {
   const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
   const route = read("src/routes/openai-sip-routes.ts");
   const session = read("src/lib/voice/openai-sip-session.ts");
-  const helpers = read("src/lib/agent-runtime-helpers.ts");
   const workflow = read("src/lib/bot-tools/workflow.ts");
   const dispatch = read("src/lib/agent-tool-dispatch.ts");
   const idempotency = read("src/lib/agent-tool-idempotency.ts");
@@ -20,9 +19,6 @@ describe("agent runtime performance and action integrity", () => {
   const dncMigration = read("drizzle/migrations/0109_dnc_user_phone_uniqueness.sql");
 
   it("keeps the live prompt bounded and interruption-aware", () => {
-    expect(helpers).toContain("MAX_RUNTIME_DIRECTIVES = 24");
-    expect(helpers).toContain("MAX_RUNTIME_KNOWLEDGE = 18");
-    expect(helpers).toContain("truncateRuntimeSnippet");
     expect(factory).toContain("clampRuntimePromptPreservingTail");
     expect(factory).toContain('type: "semantic_vad"');
     expect(factory).toContain("interrupt_response: true");

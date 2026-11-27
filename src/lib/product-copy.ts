@@ -61,27 +61,6 @@ const BOT_LANGUAGE = {
   nameLabel: "Bot Name",
 } as const;
 
-/** Both legacy postures deliberately resolve to the same customer language. */
-export const CUSTOMER_AGENT_LANGUAGE = {
-  personal: BOT_LANGUAGE,
-  business: BOT_LANGUAGE,
-} as const satisfies Record<
-  CustomerAgentPosture,
-  {
-    singular: string;
-    indefiniteSingular: string;
-    plural: string;
-    navLabel: string;
-    navShort: string;
-    createCta: string;
-    createCtaShort: string;
-    setupLabel: string;
-    setupPrompt: string;
-    setupDescription: string;
-    nameLabel: string;
-  }
->;
-
 export function customerAgentLanguage(_posture?: CustomerAgentPosture) {
   return BOT_LANGUAGE;
 }
@@ -156,22 +135,6 @@ export const CLIENT_SURFACE_POSTURE = {
   ios: { status: "Planned", action: "Join Waitlist" },
 } as const;
 
-/** Retained export name for compatibility with older marketing modules. */
-export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "VOICE BOTS WITH A COMPUTER, PHONE NUMBER, TEXT, AND EMAIL ADDRESS",
-  proof: [
-    "Answers calls",
-    "Captures requests",
-    "Uses a computer",
-    "Replies by email",
-    "Logs outcomes",
-  ],
-  differentiator: "BotBound helps small businesses answer incoming calls and continue by email.",
-  beforeStrip: OUTBOUND_WEDGE.beforeStrip,
-} as const;
-
-export const CAMPAIGN_CALLING_TITLE = "Outbound Calling" as const;
-
 export const WORKSPACE_VOICE = {
   createHeadline: "Create Your Bot",
   runHeadline: "Your Bot Is Live",
@@ -182,14 +145,6 @@ export const WORKSPACE_VOICE = {
     "Can you send the details by email?",
     "I need to speak with a person.",
   ],
-} as const;
-
-export const PRODUCT_VERSATILITY = {
-  eyebrow: "ONE BOT. EVERY TASK.",
-  tagline: "One Bot answers, follows up and books. Turn on the tasks it should handle.",
-  short:
-    "Bots for incoming calls, reviewed service calls, email, web research, support, and appointment requests.",
-  hero: "Give the Work a Bot. Step In Only When You Want To",
 } as const;
 
 /** Legacy keys remain, but both render the same unified Bot posture. */
@@ -221,9 +176,3 @@ export function formatAgentRoleLabel(role?: string | null): string {
 /** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */
 export const TRUST_DISCLOSURE_FAQ =
   "BotBound Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. Required permissions and recording rules still apply." as const;
-
-export function rosterSummary(personalCount: number, businessCount: number): string {
-  const total = personalCount + businessCount;
-  if (total === 0) return "No Bots yet";
-  return `${total} Bot${total === 1 ? "" : "s"}`;
-}

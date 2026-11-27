@@ -16,24 +16,8 @@ export function sanitizePhone(phone: string | undefined | null): string {
   return (phone || "").replace(/[^0-9+]/g, "").slice(0, 20);
 }
 
-export const MAX_RUNTIME_LESSONS = 5;
-export const MAX_RUNTIME_DIRECTIVES = 24;
-export const MAX_RUNTIME_KNOWLEDGE = 18;
 /** Bound the assembled live-agent prompt to protect latency and runtime cost. */
 export const MAX_RUNTIME_PROMPT_CHARS = 18_000;
-export const MAX_RUNTIME_SNIPPET_CHARS = 360;
-export const MAX_CONTEXT_PREVIEW_LENGTH = 200;
-
-export function truncateRuntimeSnippet(text: string, max = MAX_RUNTIME_SNIPPET_CHARS): string {
-  // Collapse whitespace runs (including newlines) to single spaces so a
-  // tenant-ingested knowledge/directive snippet cannot embed "\n\n## …" and
-  // masquerade as a system-authored guardrail section in the composed prompt —
-  // the prompt is assembled from newline-delimited "## " headers, and the
-  // overflow clamp locates the guardrail block by those markers.
-  const t = (text || "").replace(/\s+/g, " ").trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max)}…`;
-}
 
 export function clampRuntimePrompt(text: string, max = MAX_RUNTIME_PROMPT_CHARS): string {
   if (text.length <= max) return text;
@@ -41,13 +25,15 @@ export function clampRuntimePrompt(text: string, max = MAX_RUNTIME_PROMPT_CHARS)
 }
 
 /**
- * Runtime guardrail section headers appended by buildAgentRuntimeContext, in
- * the order they appear in the composed prompt: COMPLIANCE first, VOICE AND
- * DELIVERY CONSISTENCY always last. Each string MUST be a prefix of the real header
- * emitted by complianceDisclosure / disallowedTopicsBlock /
- * escalationKeywordsBlock and the inline VOICE AND DELIVERY CONSISTENCY push — a marker
- * that never matches its section silently forfeits that guardrail's
- * protection during a clamp.
+ * Runtime guardrail section headers, in the order they appear in a composed
+ * prompt: COMPLIANCE first, VOICE AND DELIVERY CONSISTENCY always last. Each
+ * string MUST be a prefix of the real header — a marker that never matches its
+ * section silently forfeits that guardrail's protection during a clamp.
+ *
+ * The COMPLIANCE, DO-NOT-DISCUSS and IMMEDIATE-ESCALATION headers were written
+ * by buildAgentRuntimeContext. Nothing in production called it, so it has been
+ * removed; the markers stay so a prompt that carries those headers is clamped
+ * the same way.
  */
 const RUNTIME_GUARDRAIL_MARKERS = [
   "\n\n## COMPLIANCE",
@@ -81,8 +67,8 @@ export function wasRuntimePromptTrimmed(prompt: string): boolean {
 
 /**
  * Clamp an assembled runtime prompt without dropping the compliance /
- * do-not-discuss / escalation / voice-consistency guardrails that
- * buildAgentRuntimeContext appends at the tail.
+ * do-not-discuss / escalation / voice-consistency guardrails appended at the
+ * tail.
  *
  * The guardrail block runs from the EARLIEST guardrail marker to the end of
  * the prompt, so preservation must slice from that earliest marker and
@@ -152,93 +138,6 @@ export function clampRuntimePromptPreservingTail(
 
   return clampRuntimePrompt(text, max);
 }
-
-export const SENTIMENT_ANGRY_SIGNALS = [
-  "angry",
-  "furious",
-  "terrible",
-  "horrible",
-  "ridiculous",
-  "unacceptable",
-  "disgusting",
-  "hate",
-  "sue",
-  "lawyer",
-  "scam",
-  "fraud",
-  "cancel",
-  "refund",
-  "waste",
-  "useless",
-  "incompetent",
-  "nightmare",
-  "lawsuit",
-  "overcharged",
-  "false advertising",
-  "wasted my time",
-  "never again",
-  "disgusted",
-  "no one cares",
-  "bbb complaint",
-  "posting online",
-  "absolutely ridiculous",
-  "worst experience",
-  "completely unacceptable",
-  "outrageous",
-  "unbelievable",
-  "disappointed",
-  "been on hold",
-  "waiting forever",
-  "third time calling",
-  "calling back again",
-  "no one helped",
-  "terrible service",
-  "fed up",
-  "done with you",
-  "this is a joke",
-  "get me a supervisor",
-];
-export const SENTIMENT_POSITIVE_SIGNALS = [
-  "great",
-  "wonderful",
-  "excellent",
-  "perfect",
-  "love",
-  "thank you",
-  "thanks",
-  "appreciate",
-  "happy",
-  "fantastic",
-  "amazing",
-  "exactly",
-  "that works",
-  "sounds good",
-  "let's move forward",
-  "i'm interested",
-  "send me the details",
-  "sounds perfect",
-  "let's do it",
-  "i'll take it",
-  "when can we start",
-  "i'm sold",
-  "sign me up",
-  "that's exactly what i need",
-  "makes total sense",
-  "i'm ready",
-  "let's go ahead",
-  "sounds great",
-  "perfect timing",
-  "absolutely",
-  "you've been very helpful",
-  "i'll definitely",
-  "book it",
-  "yes please",
-  "that's what i was looking for",
-  "much better",
-  "really appreciate",
-  "you're the best",
-  "makes sense",
-];
 
 export const AGENT_TOOL_DEFS = {
   search_knowledge_base: {

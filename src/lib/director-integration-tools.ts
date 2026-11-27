@@ -2,7 +2,11 @@
  * OAuth-backed agent tools the Director may propose as integration_jobs.
  * Comms (email / SMS / calls) use `actions` instead — not listed here.
  */
-import { AGENT_TOOL_CATALOG, isAgentToolConfigurable, type AgentToolName } from "./agent-capabilities";
+import {
+  AGENT_TOOL_CATALOG,
+  isAgentToolConfigurable,
+  type AgentToolName,
+} from "./agent-capabilities";
 
 const EXCLUDED: ReadonlySet<AgentToolName> = new Set(["send_text_message", "lookup_phone_number"]);
 
@@ -20,7 +24,3 @@ export const DIRECTOR_INTEGRATION_TOOLS: readonly AgentToolName[] = [
     ...PLATFORM_RESEARCH_TOOLS,
   ]),
 ] as AgentToolName[];
-
-export function isDirectorIntegrationTool(tool: string): tool is AgentToolName {
-  return (DIRECTOR_INTEGRATION_TOOLS as readonly string[]).includes(tool);
-}

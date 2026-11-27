@@ -33,7 +33,3 @@ export const SentryEvents = {
   spendGuardDegraded: logEvent("spend_guard_degraded"),
   agentOptimized: logEvent("agent_optimized"),
 };
-
-export function reportBatchEvent(_event: string, _params: Record<string, unknown>): void {
-  return;
-}

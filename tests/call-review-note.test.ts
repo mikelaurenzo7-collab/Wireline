@@ -24,9 +24,6 @@ describe("legacy post-call review notes", () => {
 
   it("keeps the outcome ledger's review filter while call history shows the new report", () => {
     const calls = readFileSync("src/components/CallLogsClaude.tsx", "utf8");
-    const outcomes = readFileSync("src/components/OutcomeLedger.tsx", "utf8");
-    expect(outcomes).toContain("displayCallReviewNote(");
-    expect(outcomes).toContain("isLegacyCallReviewFailure(");
     expect(calls).toContain("callOutcomeLabelFor(reportHappened(selected), selected.direction)");
     expect(calls).not.toContain("selected.coaching_note");
     expect(calls).not.toContain("selected.coachingNote");

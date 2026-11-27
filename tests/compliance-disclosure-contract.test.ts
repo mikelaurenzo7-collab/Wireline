@@ -1,5 +1,10 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { complianceDisclosure, complianceFirstMessagePrefix } from "../src/lib/agent-runtime";
+import {
+  complianceDisclosure,
+  complianceFirstMessagePrefix,
+  complianceRulesText,
+} from "../src/lib/agent-runtime";
 import { ComplianceModeSchema } from "../src/lib/form-validators";
 
 /**
@@ -126,6 +131,29 @@ describe("complianceDisclosure", () => {
       });
       expect(prefix).not.toContain("stop calling");
     });
+  });
+
+  // These rules were printed only by a prompt builder no call used. Every
+  // prompt now takes them from one helper.
+  it("is what every prompt is given for a mode, without a heading of its own", () => {
+    for (const mode of ["hipaa", "pci", "gdpr", "financial", "legal", "tcpa"] as const) {
+      const text = complianceRulesText(mode);
+      expect(text, mode).toBe(complianceDisclosure(mode).replace(/^## /, ""));
+      expect(text, mode).toMatch(/^COMPLIANCE: /);
+      expect(text, mode).not.toContain("##");
+    }
+    for (const none of ["none", "standard", "", "  ", null, undefined]) {
+      expect(complianceRulesText(none)).toBe("");
+    }
+    expect(complianceRulesText("sox")).toBe("Compliance mode: sox.");
+    for (const path of [
+      "src/lib/voice/openai-phone-agent-runtime.ts",
+      "src/lib/voice/openai-live-agent-service.ts",
+      "src/lib/agent-text-reply.ts",
+      "src/routes/agent-test-routes.ts",
+    ]) {
+      expect(readFileSync(path, "utf8"), path).toContain("complianceRulesText(");
+    }
   });
 
   it("ComplianceModeSchema accepts tcpa and rejects unknown modes", () => {

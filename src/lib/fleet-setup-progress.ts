@@ -11,11 +11,6 @@ export type AssistantSetupProgress = {
 
 export const FLEET_SETUP_STEP_COUNT = 6;
 
-export type ActivationStatusResponse = {
-  ok?: boolean;
-  activated?: boolean;
-};
-
 export type ActivationNudgeStatus = {
   activated: boolean;
   activatedAt: string | null;
@@ -24,17 +19,6 @@ export type ActivationNudgeStatus = {
   hasAgent: boolean;
   phoneNumber: string | null;
 };
-
-export async function fetchActivationStatus(): Promise<boolean> {
-  try {
-    const res = await authFetch("/api/activation/status");
-    if (!res.ok) return false;
-    const data = (await res.json()) as ActivationStatusResponse;
-    return data.activated === true;
-  } catch {
-    return false;
-  }
-}
 
 export async function fetchActivationNudgeStatus(): Promise<ActivationNudgeStatus | null> {
   try {
@@ -85,19 +69,4 @@ export async function fetchAssistantSetupProgress(): Promise<AssistantSetupProgr
     activated: activation?.activated === true,
     approvedAction: activation?.activationWithApprovedAction === true,
   };
-}
-
-export function fleetSetupCompletedCount(progress: AssistantSetupProgress): number {
-  let n = 0;
-  if (progress.agents > 0) n++;
-  if (progress.knowledge > 0) n++;
-  if (progress.numbers > 0) n++;
-  if (progress.calls > 0) n++;
-  if (progress.activated) n++;
-  if (progress.approvedAction) n++;
-  return n;
-}
-
-export function isAssistantSetupComplete(progress: AssistantSetupProgress): boolean {
-  return fleetSetupCompletedCount(progress) >= FLEET_SETUP_STEP_COUNT;
 }

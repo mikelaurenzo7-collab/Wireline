@@ -25,9 +25,7 @@ function dncFailsafeKey(userId: string, phone: string): string | null {
   const canonicalUserId = userId.trim();
   const canonicalNumber = canonicalPhone(phone);
   if (!canonicalUserId || canonicalNumber.length < 7) return null;
-  const digest = createHash("sha256")
-    .update(`${canonicalUserId}:${canonicalNumber}`)
-    .digest("hex");
+  const digest = createHash("sha256").update(`${canonicalUserId}:${canonicalNumber}`).digest("hex");
   return `${KEY_PREFIX}${digest}`;
 }
 
@@ -80,8 +78,4 @@ export async function isDncFailsafeBlocked(userId: string, phone: string): Promi
     if (isProductionLike()) throw new Error("DNC_FAILSAFE_UNAVAILABLE");
     return false;
   }
-}
-
-export function resetDncFailsafeForTests(): void {
-  redis = null;
 }

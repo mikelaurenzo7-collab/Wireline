@@ -338,9 +338,6 @@ export async function enforcePrivateVoiceSimulationSpendCap(
 
 const AI_DAILY_ALERT_USD = resolveAiDailySpendAlertUsd();
 
-/** @deprecated Blocking removed — kept for tests/metrics that referenced the old 1% valve. */
-export const DAILY_SPEND_LIMIT_USD = 0;
-
 export function recordDailySpend(usd: number): void {
   void recordDailySpendUsd(usd)
     .then(() => getDailySpendUsd())

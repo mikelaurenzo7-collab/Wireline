@@ -89,9 +89,7 @@ const PRIVATE_MSG = "Webhook URL must not target private or internal addresses."
 const DNS_MSG = "Could not resolve webhook hostname.";
 
 export type WebhookHostnameResolution =
-  | { status: "public" }
-  | { status: "private" }
-  | { status: "dns_error" };
+  { status: "public" } | { status: "private" } | { status: "dns_error" };
 
 function parseWebhookHost(
   raw: string,
@@ -127,10 +125,7 @@ export async function resolveWebhookDeliveryHostname(
 ): Promise<WebhookHostnameResolution> {
   const parsed = parseWebhookHost(raw);
   if ("error" in parsed) return { status: "dns_error" };
-  if (
-    (parsed.protocol !== "https:" && parsed.protocol !== "http:") ||
-    parsed.hasCredentials
-  ) {
+  if ((parsed.protocol !== "https:" && parsed.protocol !== "http:") || parsed.hasCredentials) {
     return { status: "dns_error" };
   }
 
@@ -149,11 +144,6 @@ export async function resolveWebhookDeliveryHostname(
   } catch {
     return { status: "dns_error" };
   }
-}
-
-export async function hostnameResolvesToPrivate(raw: string): Promise<boolean> {
-  const resolution = await resolveWebhookDeliveryHostname(raw);
-  return resolution.status === "private" || resolution.status === "dns_error";
 }
 
 export async function validateWebhookUrl(raw: string): Promise<string | null> {

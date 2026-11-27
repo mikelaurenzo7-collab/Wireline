@@ -22,9 +22,6 @@ const MAX_BRAND = 60;
 // 60 UTF-16 units are at most 180 UTF-8 bytes, 240 base64url characters.
 const TOKEN_SHAPE = /^[A-Za-z0-9_-]{1,240}\.[A-Za-z0-9_-]{43}$/;
 
-export const TEXTING_POLICY_DOCUMENTS = ["privacy", "terms"] as const;
-export type TextingPolicyDocument = (typeof TEXTING_POLICY_DOCUMENTS)[number];
-
 function policyKey(): string {
   return createHmac("sha256", getDataKey().toString("base64")).update(TOKEN_LABEL).digest("hex");
 }

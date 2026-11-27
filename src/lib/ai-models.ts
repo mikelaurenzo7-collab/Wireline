@@ -70,16 +70,6 @@ export function isOpenAIModelId(value: unknown): value is string {
   return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
 }
 
-export function isGeminiModelId(value: unknown): value is string {
-  return typeof value === "string" && value.trim().toLowerCase().includes("gemini");
-}
-
-export function clampVoiceTemperature(value: unknown, fallback: number): number {
-  if (value == null) return fallback;
-  const n = Number(value);
-  return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : fallback;
-}
-
 export type TaskComplexity = "simple" | "medium" | "complex";
 export interface ModelPricingRow {
   input: number;
@@ -258,20 +248,4 @@ export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
  */
 export function selectModelForTask(_complexity: TaskComplexity): string {
   return STRUCTURED_PRIMARY_MODEL;
-}
-
-export function modelLabel(model: string): string {
-  if (/^grok-/i.test(model.trim())) return "BotBound Standard";
-  if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";
-  if (model === OPENAI_MODELS.GPT_5_6_LUNA) return "GPT-5.6 Luna";
-  if (model === OPENAI_MODELS.GPT_5_6_SOL) return "GPT-5.6 Sol";
-  if (model === OPENAI_MODELS.GPT_5) return "GPT-5";
-  if (model === OPENAI_MODELS.GPT_4O) return "GPT-4o";
-  if (model.toLowerCase().includes("gemini")) return "BotBound Legacy";
-  return model;
-}
-export type AdaptiveEffort = "low" | "medium" | "high";
-export function resolveAdaptiveEffort(): AdaptiveEffort {
-  const value = process.env.WIRELINE_DEEP_EFFORT?.trim().toLowerCase();
-  return value === "low" || value === "medium" || value === "high" ? value : "medium";
 }

@@ -212,35 +212,6 @@ export function getCatalogEntry(name: AgentToolName): AgentToolCatalogEntry | un
   return catalogByName.get(name);
 }
 
-/** Tasks for an integration that match tools currently enabled on the agent. */
-export function getActiveTasksForIntegration(
-  integration: ToolIntegration,
-  enabledTools: readonly AgentToolName[],
-): IntegrationTask[] {
-  const playbook = PLAYBOOKS[integration];
-  if (!playbook) return [];
-  const enabled = new Set(enabledTools);
-  return playbook.tasks.filter((task) => task.tools.some((t) => enabled.has(t)));
-}
-
-/** Inbound email — routed mailbox agents (Integration Hub → Email carriers). */
-export const EMAIL_INBOUND_TASKS: readonly IntegrationTask[] = [
-  {
-    id: "email-triage",
-    callerMoment: "New thread in connected Gmail / Outlook",
-    agentAction:
-      "Classifies intent, drafts an on-brand reply, and escalates when confidence is low.",
-    tools: ["send_email", "create_followup_task", "escalate_to_human"],
-  },
-  {
-    id: "email-followup",
-    callerMoment: "Customer asks for pricing, scheduling, or docs",
-    agentAction:
-      "Sends the right follow-up and can book time if calendar tools are enabled on the agent.",
-    tools: ["send_email", "check_calendar_availability", "book_appointment"],
-  },
-] as const;
-
 const PROVIDER_TOOL_INTEGRATION: Partial<
   Record<
     "slack" | "x" | "zoom" | "microsoft_teams" | "microsoft_excel" | "google_sheets",

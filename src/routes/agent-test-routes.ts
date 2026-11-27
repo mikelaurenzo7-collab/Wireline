@@ -1,6 +1,6 @@
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { playbookPromptBlock } from "../lib/agent-playbook";
-import { businessHoursContext } from "../lib/agent-runtime";
+import { businessHoursContext, complianceRulesText } from "../lib/agent-runtime";
 import { nativeCalendarRehearsalContext } from "../lib/native-calendar-rehearsal";
 import { Router, type Response } from "express";
 import { and, eq } from "drizzle-orm";
@@ -164,10 +164,8 @@ router.post(
         businessHoursContext(agent),
         agent.timezone ? `Timezone: ${agent.timezone}` : "",
         agent.outOfHoursMessage ? `After-hours response: ${agent.outOfHoursMessage}` : "",
-        // "standard" is the stored default and tells the Bot nothing.
-        agent.complianceMode && !["none", "standard"].includes(agent.complianceMode)
-          ? `Compliance mode: ${agent.complianceMode}.`
-          : "",
+        // The rules for the mode, as a call carries them.
+        complianceRulesText(agent.complianceMode),
         agent.disallowedTopics?.length
           ? `Do not discuss: ${agent.disallowedTopics.join(", ")}.`
           : "",

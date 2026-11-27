@@ -123,10 +123,3 @@ export function clearPostCreateWizard(): void {
     /* ignore */
   }
 }
-
-/** @deprecated Use readPostCreateWizard + clearPostCreateWizard on dismiss. */
-export function consumePostCreateWizard(): PostCreateWizardPayload | null {
-  const payload = readPostCreateWizard();
-  if (payload) clearPostCreateWizard();
-  return payload;
-}

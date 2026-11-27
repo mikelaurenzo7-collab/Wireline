@@ -63,11 +63,8 @@ describe("Wireline design token pipeline", () => {
   });
 
   it("keeps compatibility manifests backed by typed semantic values", () => {
-    const manifest = source("src/constants/design-tokens.ts");
     const brand = source("src/constants/brand-colors.ts");
 
-    expect(manifest).toContain("dtcg-json -> css-custom-properties + typed-typescript");
-    expect(manifest).toContain("wirelineTokenValues");
     expect(brand).toContain('token["color.action.primary.default"]');
     expect(brand).toContain('token["color.text.primary"]');
   });

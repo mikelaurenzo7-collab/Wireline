@@ -51,14 +51,9 @@ describe("OpenAI Realtime voice routing contracts", () => {
   });
 
   it("retains the governed default xAI PSTN lane, OpenAI fallback, and admission controls", () => {
-    const policy = read("src/lib/voice/runtime-policy.ts");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     const inbound = read("src/routes/openai-inbound-twilio-routes.ts");
     const webhook = read("src/routes/openai-sip-routes.ts");
-    expect(policy).toContain('runtime: "xai_realtime"');
-    expect(policy).toContain('phoneTransport: "xai_sip"');
-    expect(policy).toContain('carrier: "twilio"');
-    expect(policy).toContain('fallbackRuntime: "openai_realtime"');
     expect(runtime).toContain("buildOpenAIRealtimeAgentRuntime");
     expect(runtime).toContain("resolveOpenAIAgentVoiceSelection");
     expect(runtime).toContain('input.voiceProvider?.trim().toLowerCase() === "presenter"');
@@ -79,9 +74,7 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(lease).toBeGreaterThan(admission);
     expect(reserve).toBeGreaterThan(lease);
     expect(accept).toBeGreaterThan(reserve);
-    expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(
-      /api\.vapi\.ai|api\.x\.ai/i,
-    );
+    expect(`${runtime}\n${inbound}\n${webhook}`).not.toMatch(/api\.vapi\.ai|api\.x\.ai/i);
   });
 
   it("marks an outbound lead connected only inside its durable OpenAI call claim", () => {

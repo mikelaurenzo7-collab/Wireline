@@ -6,8 +6,6 @@
  */
 import { classifyCallOutcome, type CallOutcome, type CallOutcomeInput } from "./call-outcome";
 
-export type CallHappened = CallOutcome;
-
 export type CallHappenedInput = CallOutcomeInput & {
   /**
    * Legacy signal: an internal task exists for the call. The old classifier

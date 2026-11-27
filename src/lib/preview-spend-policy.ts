@@ -36,10 +36,6 @@ function affirmative(value: string | undefined): boolean {
   return ["1", "true", "yes", "on"].includes(normalized(value).toLowerCase());
 }
 
-export function isVercelPreview(env: RuntimeEnvironment = process.env): boolean {
-  return getDeploymentIdentity(env).provider === "vercel" && isPreviewDeployment(env);
-}
-
 /** Ambiguous or non-production Render releases must never inherit live authority. */
 export function requiresPreviewProviderIsolation(env: RuntimeEnvironment = process.env): boolean {
   const identity = getDeploymentIdentity(env);

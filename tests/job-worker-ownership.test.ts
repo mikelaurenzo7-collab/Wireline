@@ -152,7 +152,6 @@ vi.mock("../src/lib/job-queue", () => ({
   writeTransactionConfig: {},
 }));
 vi.mock("../src/lib/ai-audit", () => ({}));
-vi.mock("../src/lib/post-call-analysis-policy", () => ({}));
 vi.mock("../src/lib/server-utils", () => ({}));
 vi.mock("../src/lib/action-engine", () => ({}));
 vi.mock("../src/lib/action-types", () => ({}));

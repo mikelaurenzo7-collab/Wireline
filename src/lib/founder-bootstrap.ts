@@ -144,8 +144,3 @@ export async function bootstrapFounderAssistantIfEmpty(
 export function scheduleFounderBootstrap(userId: string, email: string | null | undefined): void {
   void bootstrapFounderAssistantIfEmpty(userId, email);
 }
-
-/** Test helper — clear in-flight guard. */
-export function resetFounderBootstrapForTests(): void {
-  bootstrapInFlight.clear();
-}

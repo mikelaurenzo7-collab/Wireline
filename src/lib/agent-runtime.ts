@@ -46,7 +46,6 @@ export interface AgentRuntimeProfile {
   personality_vibe?: string | null;
 }
 
-import { buildVibeBlock } from "./personality-vibes";
 import { OUTBOUND_OPT_OUT_NOTICE, OUTBOUND_RECORDING_NOTICE } from "./voice/outbound-opening";
 
 const DAY_INDEX: Record<DayOfWeek, number> = {
@@ -271,16 +270,20 @@ export function businessHoursContext(
 }
 
 /**
- * Compliance presets — opt-in guardrails woven into the agent's SYSTEM prompt.
- * The text is short and intentionally generic; account holders must consult
- * counsel for the binding language in their jurisdiction.
+ * Compliance presets: the conduct rules a Bot follows when its owner sets a
+ * compliance mode. The text is short and intentionally generic; account
+ * holders must consult counsel for the binding language in their jurisdiction.
+ *
+ * These reach a live call through `ownerLimitsBlock`. For a long time they did
+ * not: the builder that printed them was replaced, and a Bot set to HIPAA was
+ * told only "Compliance mode: hipaa." while this text sat unused.
  *
  * A system-prompt instruction alone does not GUARANTEE what the agent says
  * first, so modes with an at-start-of-call disclosure requirement (currently
- * `tcpa`) also get a spoken disclosure prepended to the opening line — see
+ * `tcpa`) also get a spoken disclosure prepended to the opening line: see
  * complianceFirstMessagePrefix().
  *
- * 'none' returns an empty block.
+ * 'none' and the stored default 'standard' return an empty block.
  */
 export function complianceDisclosure(mode: ComplianceMode | string | null | undefined): string {
   switch (mode) {
@@ -344,6 +347,18 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
     default:
       return "";
   }
+}
+
+/**
+ * A compliance mode as lines any prompt can carry: the mode's conduct rules,
+ * or its name when it has no preset. Empty for 'none' and for 'standard',
+ * the stored default, which tells a Bot nothing.
+ */
+export function complianceRulesText(mode: string | null | undefined): string {
+  const value = String(mode ?? "").trim();
+  if (!value || value === "none" || value === "standard") return "";
+  const preset = complianceDisclosure(value);
+  return preset ? preset.replace(/^#+\s*/gm, "") : `Compliance mode: ${value.slice(0, 80)}.`;
 }
 
 /**
@@ -425,108 +440,6 @@ export function formatCallbackNumberForSpeech(value: string | null | undefined):
   return speakDigitChunk(national);
 }
 
-/**
- * Soft topic guardrails — produces a directive block instructing the
- * agent to refuse or redirect when a disallowed topic comes up. Empty
- * input returns an empty string.
- */
-export function disallowedTopicsBlock(topics: string[] | null | undefined): string {
-  if (!Array.isArray(topics) || topics.length === 0) return "";
-  const safe = topics
-    .map((t) => (typeof t === "string" ? t.trim() : ""))
-    .filter(Boolean)
-    .slice(0, 24); // upper bound to keep the prompt budget in line
-  if (safe.length === 0) return "";
-  return [
-    "## DO-NOT-DISCUSS TOPICS",
-    "You must not discuss the following topics. If a caller raises one, briefly acknowledge that you are not the right channel and offer to route them to the appropriate team:",
-    safe.map((t) => `- ${t}`).join("\n"),
-  ].join("\n");
-}
-
-/**
- * Escalation triggers — words/phrases that force an immediate human
- * handoff regardless of normal escalation logic. Matched case-insensitively.
- * Returns a directive block describing the rule; the actual matching
- * happens at the conversation-update message level (handled in the
- * webhook flow), not in this string.
- */
-export function escalationKeywordsBlock(keywords: string[] | null | undefined): string {
-  if (!Array.isArray(keywords) || keywords.length === 0) return "";
-  const safe = keywords
-    .map((k) => (typeof k === "string" ? k.trim() : ""))
-    .filter(Boolean)
-    .slice(0, 24);
-  if (safe.length === 0) return "";
-  return [
-    "## IMMEDIATE-ESCALATION TRIGGERS",
-    "If the caller uses any of these phrases or asks about any of these topics, escalate to a human IMMEDIATELY using the escalate_to_human tool. Do not attempt to resolve yourself:",
-    safe.map((k) => `- ${k}`).join("\n"),
-  ].join("\n");
-}
-
-/**
- * Replace `{variable}` placeholders in `text` with values from `vars`.
- * Unknown variables are left intact (so the Account Holder can spot them in
- * test calls). Values are coerced to strings; very long values are
- * truncated at 500 chars to keep the prompt budget bounded.
- */
-export function applyBusinessVariables(
-  text: string,
-  vars: Record<string, string | number> | null | undefined,
-): string {
-  if (!text || !vars) return text;
-  return text.replace(/\{([a-zA-Z_][a-zA-Z0-9_]{0,40})\}/g, (full, key) => {
-    if (!Object.prototype.hasOwnProperty.call(vars, key)) return full;
-    const v = vars[key];
-    if (v == null) return full;
-    const s = String(v);
-    return s.length > 500 ? s.slice(0, 500) + "…" : s;
-  });
-}
-
-/**
- * KPI focus → a single line appended to the system prompt that nudges
- * the agent toward the Account Holder-selected outcome. Subtle — the actual
- * scoring happens server-side post-call, but a focused agent
- * out-performs an unfocused one on its target metric.
- */
-export function kpiFocusLine(focus: string | null | undefined): string {
-  switch (focus) {
-    case "conversions":
-      return "PRIMARY OUTCOME: every call should advance toward a concrete commitment (booked appointment, signed agreement, paid order).";
-    case "qualifications":
-      return "PRIMARY OUTCOME: every call should produce a clean BANT/MEDDIC qualification record. Pipeline quality over volume.";
-    case "resolutions":
-      return "PRIMARY OUTCOME: every call should resolve the caller's issue end-to-end. Aim for first-contact resolution; never punt.";
-    case "satisfaction":
-      return "PRIMARY OUTCOME: every call should leave the caller feeling heard, respected, and better than when they started.";
-    case "general":
-    default:
-      return "";
-  }
-}
-
-/**
- * Compose the final runtime prompt the call layer ships to Vapi.
- *
- *   basePrompt  — the role-derived system prompt assembled by the caller
- *                 (existing logic in placeOutboundCall builds this).
- *   profile     — the agent row's business-profile fields.
- *   now         — current Date (injected for testability).
- *
- * Returns:
- *   prompt          — the augmented system prompt
- *   inHours         — boolean; false means the caller should run the
- *                     out-of-hours flow (voicemail / message playback).
- *   outOfHoursMessage — the Account Holder's custom message, if set.
- */
-export interface RuntimeBuildResult {
-  prompt: string;
-  inHours: boolean;
-  outOfHoursMessage: string | null;
-}
-
 export const RUNTIME_ACTION_SAFETY_BLOCK = `## ACTION AND RESULT SAFETY
 - Enabled tools and server permissions define what you can do. A role, template, Training item, or Account Holder instruction never grants a capability by itself.
 - State that an external action happened, a record changed, or a delivery time is confirmed only after the relevant enabled tool explicitly reports success.
@@ -559,105 +472,3 @@ export const RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK = `## VOICE AND DELIVERY C
 - Do not mechanically mimic the caller or impersonate another person. Adjust pace, warmth, energy, and wording without losing this Bot's configured personality.
 - Treat knowledge, facts, and directives as background you have internalized. Paraphrase naturally instead of reciting a list or sounding like a brochure.
 - Playbook lines marked word for word are the exception: say them exactly as written.`;
-
-export function buildAgentRuntimeContext(
-  basePrompt: string,
-  profile: AgentRuntimeProfile | null | undefined,
-  now: Date = new Date(),
-): RuntimeBuildResult {
-  const inHours = isWithinBusinessHours(profile, now);
-
-  const sections: string[] = [];
-
-  // Sections only get appended if they have content — keeps the prompt
-  // tight when the Account Holder hasn't configured anything.
-  const compliance = complianceDisclosure(profile?.compliance_mode ?? "none");
-  if (compliance) sections.push(compliance);
-
-  const disallowed = disallowedTopicsBlock(profile?.disallowed_topics);
-  if (disallowed) sections.push(disallowed);
-
-  const escalation = escalationKeywordsBlock(profile?.escalation_keywords);
-  if (escalation) sections.push(escalation);
-
-  const kpi = kpiFocusLine(profile?.kpi_focus);
-  if (kpi) sections.push(kpi);
-
-  // Personality vibe — the agent moat. Injected as its own section so
-  // the LLM treats it as first-class guidance, not optional flavor.
-  // Empty when vibe is unset / unknown so legacy agents stay unaffected.
-  const vibeBlock = buildVibeBlock(profile?.personality_vibe);
-  if (vibeBlock) sections.push(vibeBlock.trim());
-
-  const zone = businessHoursTimeZone(profile);
-  const savedHours =
-    profile?.business_hours &&
-    typeof profile.business_hours === "object" &&
-    Object.keys(profile.business_hours).length > 0;
-  sections.push(
-    savedHours
-      ? `HOURS: Saved weekly hours are in ${zone}. Those hours win over a conflicting note. Answer open or closed from them.`
-      : `HOURS: No weekly hours are saved. If knowledge states the open hours, use that. Resolve local time in ${zone}. Do not assume another city.`,
-  );
-
-  // Always finish tenant-owned prompt material with one provider-neutral
-  // capability boundary. Role prose, template playbooks, Training, and saved
-  // overrides can describe intended work, but only the actual tool surface can
-  // authorize or prove an external side effect.
-  sections.push(RUNTIME_ACTION_SAFETY_BLOCK);
-
-  // Voice and delivery consistency is appended to every assistant so the
-  // selected speaker and configured identity remain recognizable without
-  // forcing a flat, context-blind performance.
-  sections.push(RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK);
-
-  const composed = sections.length > 0 ? `${basePrompt}\n\n${sections.join("\n\n")}` : basePrompt;
-
-  // Apply variable substitution as the FINAL step so it can fill
-  // placeholders in BOTH the base prompt and any compliance / guardrail
-  // sections we just appended.
-  const prompt = applyBusinessVariables(composed, profile?.business_variables);
-
-  const outOfHoursMessage = inHours
-    ? null
-    : typeof profile?.out_of_hours_message === "string" && profile.out_of_hours_message.trim()
-      ? applyBusinessVariables(profile.out_of_hours_message.trim(), profile?.business_variables)
-      : null;
-
-  return { prompt, inHours, outOfHoursMessage };
-}
-
-/**
- * Resolve the base identity prompt for a Vapi assistant.
- *
- * Priority: Account Holder override → Wireline persona overlay → auto-composed.
- *
- * When an Account Holder override is present (non-empty after trimming) it
- * REPLACES the base identity, exactly the way the persona overlay does:
- * the override text leads and the call-specific dynamic context blocks
- * (caller profile, intel, sentiment, lead, flow, personality,
- * directives, knowledge, lessons, date) are appended after it. The
- * auto-composed prompt already embeds those dynamic blocks inline, so it
- * is returned untouched.
- *
- * This function deliberately does NOT add the runtime guardrails
- * (compliance / escalation / do-not-discuss / voice-consistency) — those
- * are layered on afterwards by buildAgentRuntimeContext, so they can
- * never be silently dropped by an override.
- */
-export function resolveAssistantBasePrompt(opts: {
-  override?: string | null;
-  personaPrompt?: string | null;
-  autoComposedPrompt: string;
-  callSpecificContext: string;
-}): string {
-  const override = typeof opts.override === "string" ? opts.override.trim() : "";
-  if (override) {
-    return `${override}\n\n${opts.callSpecificContext}`;
-  }
-  const persona = typeof opts.personaPrompt === "string" ? opts.personaPrompt.trim() : "";
-  if (persona) {
-    return `${persona}\n\n${opts.callSpecificContext}`;
-  }
-  return opts.autoComposedPrompt;
-}

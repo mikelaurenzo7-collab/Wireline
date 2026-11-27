@@ -31,9 +31,11 @@ People is the tenant-owned customer record at `/people` (`src/lib/people/`, `src
 
 Owner-managed memory uses `wireline_agent_lessons.source = 'owner_memory'`. Only the authenticated owner can save or forget notes through `/api/agents/:id/workspace/memory`; writes lock the owned Bot row, cap at 20 notes of 500 characters, and repeated identical saves are idempotent. Reads and deletes filter owner, Bot, and source. These notes are loaded into private chat and new computer tasks, excluded from learning review/digests and fleet activity, and never added to customer-facing knowledge or voice/email prompts. Bot deletion cascades; account export/deletion retain their existing lesson-table coverage. Forgetting a note does not remove copies already present in chat or task history.
 
+What a Bot could not answer uses `wireline_agent_lessons.source = 'knowledge_gap'` (`src/lib/knowledge-gaps.ts`). A knowledge search on a call that finds nothing by the caller's own words saves the question once per Bot as a `pending` row prefixed `[KNOWLEDGE GAP]`. It is a caller's words and is never loaded into a prompt. Needs You lists open rows under Gaps; dismissing one marks it `rejected` through the lesson review route, and a dismissed question is not saved again.
+
 Computer tasks may delegate up to two bounded analysis, drafting, or planning requests to internal text-only specialists. Each call uses the existing spend reservation and usage settlement, no tools or browser, no separate Bot row or identity, and no independent authority to act. Spend failures terminate the task through the existing runner. Stop and owner takeover are checked before and after helper work; takeover discards the stale result and plan.
 
-Automations links to the existing account-level post-call output and daily/weekly report controls. A general per-Bot recurring computer-task scheduler is not implemented. It requires durable schedule/occurrence records, idempotent task admission, pause/delete fencing, timezone handling, quota enforcement, and isolated database/worker certification before activation.
+The Details panel's Reports row links to the existing account-level post-call output and daily/weekly report controls. A general per-Bot recurring computer-task scheduler is not implemented. It requires durable schedule/occurrence records, idempotent task admission, pause/delete fencing, timezone handling, quota enforcement, and isolated database/worker certification before activation.
 
 ## Frontend surfaces
 

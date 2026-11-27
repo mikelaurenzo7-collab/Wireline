@@ -27,15 +27,6 @@
 
 export type ReasoningProviderId = "xai" | "openai" | "gateway";
 
-export type ReasoningProviderOption = {
-  id: ReasoningProviderId;
-  /** Operator-facing label. Never rendered to tenants. */
-  label: string;
-  /** Credentials that make this lane eligible. */
-  envKeys: readonly string[];
-  note: string;
-};
-
 /**
  * Default attempt order. Every entry after the first is continuity: it is
  * reached only when the providers before it have failed for this request.
@@ -47,27 +38,6 @@ export const REASONING_PROVIDER_ORDER: readonly ReasoningProviderId[] = [
 ] as const;
 
 export const DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "xai";
-
-export const REASONING_PROVIDER_CATALOG: readonly ReasoningProviderOption[] = [
-  {
-    id: "xai",
-    label: "xAI",
-    envKeys: ["XAI_API_KEY"],
-    note: "BotBound default for structured reasoning.",
-  },
-  {
-    id: "openai",
-    label: "OpenAI",
-    envKeys: ["OPENAI_API_KEY"],
-    note: "Structured backup when the primary lane fails.",
-  },
-  {
-    id: "gateway",
-    label: "AI Gateway",
-    envKeys: ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
-    note: "Legacy governed continuity route on deployments that still configure it.",
-  },
-] as const;
 
 export function normalizeReasoningProvider(value: unknown): ReasoningProviderId | null {
   const candidate = typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -115,9 +85,4 @@ export function orderReasoningProviders(
     return eligible;
   }
   return [preference, ...eligible.filter((id) => id !== preference)];
-}
-
-/** Catalog lookup for operator-facing status surfaces. */
-export function reasoningProviderLabel(id: ReasoningProviderId): string {
-  return REASONING_PROVIDER_CATALOG.find((option) => option.id === id)?.label ?? id;
 }

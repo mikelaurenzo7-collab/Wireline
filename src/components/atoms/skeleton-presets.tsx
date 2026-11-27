@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./Skeleton";
 
@@ -40,18 +38,5 @@ export function PanelSkeleton({ rows = 4, className }: PanelSkeletonProps) {
         <RowSkeleton key={i} />
       ))}
     </div>
-  );
-}
-
-/** Compact card-row skeleton for call logs and dense lists. */
-export function CardRowSkeleton({ rows = 4, className }: PanelSkeletonProps) {
-  return (
-    <ul className={cn("flex flex-col gap-2.5", className)} aria-busy="true" aria-label="Loading…">
-      {Array.from({ length: rows }, (_, index) => (
-        <li key={index}>
-          <Skeleton className="h-[76px] rounded-lg" shape="surface" />
-        </li>
-      ))}
-    </ul>
   );
 }

@@ -42,12 +42,6 @@ export function estimateVoiceMinutesFromBalance(
   return Math.floor(balanceUsd / ratePerMin);
 }
 
-export function formatVoiceMinutesEstimate(balanceUsd: number): string {
-  const minutes = estimateVoiceMinutesFromBalance(balanceUsd);
-  if (minutes <= 0) return "N/A";
-  return `≈ ${minutes.toLocaleString()} extra min`;
-}
-
 export function conversationBalanceMinuteEstimates(): Array<{
   amountUsd: number;
   minutes: number;

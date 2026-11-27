@@ -79,10 +79,6 @@ export function isMcpOAuthPath(value: string | null): value is string {
   return Boolean(value && isSafeInternalPath(value) && value.startsWith("/mcp/oauth/"));
 }
 
-export function isMcpOAuthRedirect(search: string): boolean {
-  return isMcpOAuthPath(readRedirectFromSearch(search));
-}
-
 function isFreshSignupPreservedRedirect(value: string | null): value is string {
   return isMcpOAuthPath(value) || value === "/accept-invite";
 }

@@ -41,27 +41,16 @@ describe("activation path contract", () => {
   });
 
   it("aligns the activation checklist with verifiable live-work progress", () => {
-    const checklist = read("src/components/ActivationChecklist.tsx");
     const progress = read("src/lib/fleet-setup-progress.ts");
     expect(progress).toContain("FLEET_SETUP_STEP_COUNT = 6");
-    expect(checklist).toContain('id: "job"');
-    expect(checklist).toContain('id: "facts"');
-    expect(checklist).toContain('id: "line"');
-    expect(checklist).toContain('id: "live"');
-    expect(checklist).toContain('id: "review"');
-    expect(checklist).toContain('href: "/approvals"');
-    expect(checklist).toContain("First live customer handled");
   });
 
   it("isolates browser activation state per account", () => {
     const storage = read("src/lib/post-signup-onboarding.ts");
-    const checklist = read("src/components/ActivationChecklist.tsx");
     const nudge = read("src/components/ActivationNudge.tsx");
 
     expect(storage).toContain("activationCelebratedStorageKey(scopeId)");
     expect(storage).toContain("${ACTIVATION_CELEBRATED_KEY}:${scopeId}");
-    expect(checklist).toContain("markActivationCelebrated(activationScope)");
-    expect(checklist).toContain("${DISMISS_KEY}:${activationScope}");
     expect(nudge).toContain("isActivationCelebrated(activationScope)");
     expect(nudge).toContain("accountId: activeAccount?.id");
     expect(nudge).toContain("scope: activationScope");

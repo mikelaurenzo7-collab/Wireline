@@ -6,12 +6,6 @@ import { errorReportRoute } from "./error-report-route";
 import { errorReportContext } from "./error-report-context";
 import { getErrorMessage, sanitizeErrorMessage } from "./server-utils";
 
-type SentryNamespace = Record<string, never>;
-
-export async function initSentry(): Promise<void> {
-  return;
-}
-
 export function captureException(error: unknown, context?: Record<string, unknown>): void {
   const message = getErrorMessage(error);
   const stack =
@@ -46,8 +40,4 @@ export function captureException(error: unknown, context?: Record<string, unknow
   }
 
   console.error("[wireline]", message);
-}
-
-export function getSentry(): SentryNamespace | null {
-  return null;
 }

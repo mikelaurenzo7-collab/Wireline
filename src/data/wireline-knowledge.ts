@@ -12,9 +12,6 @@ import {
   USAGE_TIERS,
 } from "../lib/usage-billing-catalog";
 
-export const WIRELINE_URL = "https://botbound.app";
-export const WIRELINE_SUPPORT_EMAIL = "support@botbound.app";
-
 export const WIRELINE_ONE_LINER =
   "BotBound gives your Bot a phone number, email address, and Computer to answer calls, follow up with people who asked to hear from you, book appointments, and support customers.";
 

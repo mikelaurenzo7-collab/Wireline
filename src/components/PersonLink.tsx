@@ -119,8 +119,3 @@ export default function PersonLink({
     </Button>
   );
 }
-
-/** Test seam: forget remembered lookups between cases. */
-export function resetPersonLinkCache() {
-  recent.clear();
-}

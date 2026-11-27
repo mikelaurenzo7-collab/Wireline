@@ -30,12 +30,7 @@ import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { jobOwnerId } from "./job-owner";
 import { POST_CALL_FINALIZATION_RECOVERY_TYPE } from "./post-call-finalization-recovery";
-import {
-  DEFAULT_MAX_ATTEMPTS,
-  startWorker,
-  type JobRow,
-  writeTransactionConfig,
-} from "./job-queue";
+import { DEFAULT_MAX_ATTEMPTS, type JobRow, writeTransactionConfig } from "./job-queue";
 import { handleTwilioMessageReconciliationJob } from "./twilio-message-reconciliation";
 import { processIntakeAutoDialJob, type IntakeAutoDialJobPayload } from "./intake-auto-dial";
 import { runTenantJobAfterDeletionCheck, withAccountDeletionFence } from "./account-deletion-fence";
@@ -670,22 +665,4 @@ export async function handleJob(job: JobRow): Promise<void> {
       }),
     writeTransactionConfig(),
   );
-}
-
-/** Initializes the extended worker outside Vercel serverless. */
-export function initJobWorker(opts?: { dbReady?: boolean }) {
-  if (process.env.VERCEL === "1") return null;
-  if (opts?.dbReady === false) {
-    log.warn("job worker skipped, database not connected");
-    return null;
-  }
-
-  return startWorker(drizzle, handleJob, {
-    pollIntervalMs: 10_000,
-    onError: (error) =>
-      log.error("job worker poll failed", {
-        error: error.message,
-        hint: "Check POSTGRES_URL and that wireline_jobs exists",
-      }),
-  });
 }

@@ -3,7 +3,6 @@ import { isGatewayCredentialAvailable } from "./ai-gateway-auth";
 import { perplexityRuntimeAvailable } from "./platform-integration-flags";
 import { resendWebhookSecretConfigured } from "./resend-webhook-signature";
 
-export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
   "core" | "ai" | "voice" | "oauth" | "billing" | "actions" | "infra" | "security";
 export type IntegrationDescriptor = {

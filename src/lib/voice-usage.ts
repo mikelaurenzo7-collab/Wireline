@@ -35,11 +35,6 @@ export function monthlyPeriodKey(now: Date = new Date()): string {
   return now.toISOString().slice(0, 7);
 }
 
-export function nextMonthlyResetIso(now: Date = new Date()): string {
-  const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  return t.toISOString();
-}
-
 export interface VoiceUsageSnapshot {
   plan_id: string | null;
   subscription_status: string | null;

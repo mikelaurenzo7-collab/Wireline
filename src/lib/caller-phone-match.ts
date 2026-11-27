@@ -12,10 +12,3 @@ export function callerPhoneKey(value: unknown): string | null {
   if (digits.length === 11 && digits.startsWith("1")) return digits;
   return null;
 }
-
-/** Stored North American numbers may omit +1; all other countries stay exact. */
-export function callerPhoneDigitsCandidates(value: unknown): string[] {
-  const key = callerPhoneKey(value);
-  if (!key) return [];
-  return key.length === 11 && key.startsWith("1") ? [key, key.slice(1)] : [key];
-}

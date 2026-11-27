@@ -21,10 +21,6 @@ export function getLiveAvatarStatus() {
   };
 }
 
-export function getDefaultLiveAvatarId(): string | null {
-  return null;
-}
-
 export function businessAgentVideoPresenterDefaults(): {
   videoPresenterProvider: string;
   videoPresenterAvatarId: string | null;
@@ -35,8 +31,4 @@ export function businessAgentVideoPresenterDefaults(): {
     videoPresenterAvatarId: null,
     videoPresenterConsentStatus: "not_started",
   };
-}
-
-export function resetLiveAvatarCatalogCacheForTests(): void {
-  // Catalog fetches are retired. Kept so older tests can import the helper.
 }

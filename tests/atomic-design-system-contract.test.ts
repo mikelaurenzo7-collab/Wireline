@@ -64,13 +64,11 @@ describe("Atomic Design completion contract", () => {
 
   it("ships one production phone-Bot artwork source across every brand surface", () => {
     const mark = source("src/components/brand/BotBoundMark.tsx");
-    const legacyMark = source("src/components/brand/WirelineMark.tsx");
     const renderer = source("scripts/render-image-assets.mjs");
 
     expect(mark).toContain('src="/brand/botbound-operator-512.webp"');
     expect(mark).toContain('data-botbound-mark="phone-bot"');
     expect(mark).not.toContain("<svg");
-    expect(legacyMark).toContain('from "./BotBoundMark"');
     expect(renderer).toContain("public/brand/botbound-app-icon.png");
 
     for (const asset of [

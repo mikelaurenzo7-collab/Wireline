@@ -10,7 +10,3 @@ export const WEBHOOK_DELIVERY_STATUSES = [
 ] as const;
 
 export type WebhookDeliveryStatus = (typeof WEBHOOK_DELIVERY_STATUSES)[number];
-
-export function isWebhookDeliveryStatus(value: string): value is WebhookDeliveryStatus {
-  return (WEBHOOK_DELIVERY_STATUSES as readonly string[]).includes(value);
-}

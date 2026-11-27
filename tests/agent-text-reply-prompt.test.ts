@@ -104,8 +104,9 @@ describe("what an owner set, in a text reply", () => {
     expect(system).not.toContain("Workspace profile");
     // The stored default says nothing a Bot can act on.
     expect(system).not.toContain("Compliance mode: standard.");
+    // A real mode brings its rules, as it does on a call.
     expect(await systemFor("", undefined, { complianceMode: "hipaa" })).toContain(
-      "Compliance mode: hipaa.",
+      "COMPLIANCE: HIPAA\nTreat all caller-provided health information as PHI:",
     );
 
     vi.setSystemTime(new Date("2026-11-28T16:00:00Z"));

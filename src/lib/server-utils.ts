@@ -189,18 +189,3 @@ export function mapObjectToSnake(obj: any): any {
   }
   return result;
 }
-
-export async function ownsRow(
-  db: { from: (table: string) => any },
-  table: string,
-  id: string | number,
-  userId: string,
-): Promise<boolean> {
-  const { data } = await db
-    .from(table)
-    .select("id")
-    .eq("id", id)
-    .eq("user_id", userId)
-    .maybeSingle();
-  return !!data;
-}

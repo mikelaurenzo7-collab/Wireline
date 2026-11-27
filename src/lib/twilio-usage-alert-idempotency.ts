@@ -47,8 +47,3 @@ export async function claimTwilioUsageAlert(idempotencyToken: string): Promise<U
   developmentClaims.add(token);
   return "claimed";
 }
-
-export function resetTwilioUsageAlertClaimsForTests(): void {
-  developmentClaims.clear();
-  redis = null;
-}

@@ -47,12 +47,10 @@ describe("WIRELINE design-system double-pass contract", () => {
   });
 
   it("keeps retired face and presenter layers out of active launch identity", () => {
-    const compatibilityFace = read("src/components/AgentFace.tsx");
     const spendBoundary = read("tests/credential-and-spend-boundary-contract.test.ts");
 
     expect(existsSync(resolve(root, "src/pages/LiveVideoStudioPage.tsx"))).toBe(false);
     expect(existsSync(resolve(root, "src/components/LiveVideoPresenter.tsx"))).toBe(false);
-    expect(compatibilityFace).toContain('import BotMark from "./BotMark"');
 
     // Security/spend auditing must prove the real retirement boundary rather
     // than requiring a retired face symbol to remain in source as a sentinel.

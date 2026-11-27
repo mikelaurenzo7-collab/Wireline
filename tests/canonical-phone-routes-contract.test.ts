@@ -86,14 +86,11 @@ describe("canonical Phone routes", () => {
 
   it("keeps the callbacks tab a resilient authenticated read, not an AI-runtime gated endpoint", () => {
     const routes = read("src/routes/outbound-routes.ts");
-    const panel = read("src/components/outbound/CallbacksPanel.tsx");
 
     expect(routes).not.toContain("claudeRateLimiter");
     expect(routes).toContain('"/api/callbacks"');
     expect(routes).toContain("authenticateUser");
     expect(routes).toContain("scheduled_at: schema.outboundLeads.callbackScheduledAt");
     expect(routes).toContain("status: schema.outboundLeads.status");
-    expect(panel).toContain("cb.scheduled_at");
-    expect(panel).toContain("cb.status");
   });
 });

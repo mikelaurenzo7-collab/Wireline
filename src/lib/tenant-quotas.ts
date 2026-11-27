@@ -127,25 +127,6 @@ export interface QuotaOverrideRow {
   enabled: boolean;
 }
 
-/**
- * Resolve the effective limit for one dimension.
- * Hard cap = min(plan_default, override) when override is set+enabled
- * and override < plan_default. An override that is *higher* than the
- * plan default is ALSO honored — account holders may grant a tenant extra
- * headroom temporarily.
- */
-export function resolveLimit(
-  plan: PlanTier,
-  dimension: QuotaDimension,
-  override?: { value: number; enabled: boolean } | null,
-): number {
-  const planDefault = PLAN_DEFAULTS[plan][dimension];
-  if (override && override.enabled && Number.isFinite(override.value) && override.value >= 0) {
-    return override.value;
-  }
-  return planDefault;
-}
-
 export function resolveProfile(
   plan: PlanTier,
   overrides: QuotaOverrideRow[],

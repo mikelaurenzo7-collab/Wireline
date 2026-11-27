@@ -167,28 +167,6 @@ describe("the daily AI-token dimension bounds spend instead of only counting it"
 });
 
 describe("a provider's auth failure is never dressed up as the tenant's", () => {
-  const helper = read("src/lib/provider-http-error.ts");
-
-  it("maps platform credential failures to 502, never through to the caller", () => {
-    // The browser force-signs-out on any 401, so passing a provider 401 through
-    // would eject the account holder over a key rotation they cannot see.
-    expect(helper).toContain("isPlatformCredentialFailure");
-    expect(helper).toContain("status === 401");
-    expect(helper).toContain("status === 403");
-    expect(helper).toContain("status === 402");
-    const branch = helper.slice(helper.indexOf("if (isPlatformCredentialFailure(status))"));
-    expect(branch.slice(0, branch.indexOf("}\n\n"))).toContain("AppError.fromHttpStatus(502");
-  });
-
-  it("does not reflect the provider's own message on the credential path", () => {
-    const branch = helper.slice(
-      helper.indexOf("if (isPlatformCredentialFailure(status))"),
-      helper.indexOf("if (status === 429)"),
-    );
-    expect(branch).toContain("unavailableMessage");
-    expect(branch).not.toContain("detail ||");
-  });
-
   it("keeps the shared Realtime call boundary generic on provider failure", () => {
     const source = read("src/lib/voice/openai-realtime-call-control.ts");
     expect(source).toContain("openAIRealtimeProviderFailure");
