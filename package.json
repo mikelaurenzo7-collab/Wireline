@@ -126,7 +126,7 @@
     "googleapis": "^171.4.0",
     "imapflow": "^1.6.5",
     "lucide-react": "^0.546.0",
-    "motion": "^12.43.0",
+    "motion": "^14.6.0",
     "nodemailer": "^10.0.16",
     "papaparse": "^5.5.4",
     "pg": "^8.22.0",
