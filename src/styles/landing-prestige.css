@@ -38,46 +38,19 @@
   width: 100%;
   display: grid;
   place-items: center;
+  align-content: center;
   text-align: center;
-  gap: clamp(1.15rem, 2.2vh, 1.65rem);
-  max-width: 54rem;
+  gap: clamp(1.35rem, 2.6vh, 2rem);
+  max-width: 64rem;
+  /* The opening promise has room around it instead of sitting in a narrow
+     column, and still leaves both actions above the fold on a laptop. */
+  min-height: clamp(20rem, 44vh, 30rem);
   margin-inline: auto;
 }
 
 .landing-prestige__hero > * {
   min-width: 0;
   max-width: 100%;
-}
-
-.landing-prestige__hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.375rem 0.9rem 0.375rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--wireline-action) 32%, var(--wireline-rule));
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-default) 86%,
-    var(--wireline-action-soft)
-  );
-  box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--wireline-action) 28%, transparent);
-}
-
-.landing-prestige .landing-prestige__hero-mark {
-  width: 2rem;
-  height: 2rem;
-  flex: 0 0 2rem;
-  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.2));
-}
-
-.landing-prestige__hero-badge-copy {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--wireline-ink);
 }
 
 .landing-prestige__hero h1 {
@@ -87,11 +60,13 @@
   justify-content: center;
   column-gap: 0.26em;
   row-gap: 0.06em;
-  font-family: var(--wireline-font-display);
-  font-size: clamp(2.5rem, 5.4vw, 4.75rem);
+  /* Inter at its normal width, not the display cut: at this size the
+     tighter face read as squeezed. */
+  font-family: var(--wireline-font-sans);
+  font-size: clamp(2.75rem, 6.4vw, 6rem);
   font-weight: 700;
   line-height: 1.04;
-  letter-spacing: -0.028em;
+  letter-spacing: -0.024em;
   text-wrap: balance;
 }
 
@@ -118,8 +93,8 @@
 
 .landing-prestige__hero-subcopy {
   margin: 0;
-  max-width: 40rem;
-  font-size: clamp(1.025rem, 1.35vw, 1.2rem);
+  max-width: 47rem;
+  font-size: clamp(1.075rem, 1.5vw, 1.35rem);
   line-height: 1.6;
   color: var(--wireline-ink-muted);
   text-wrap: balance;
@@ -908,7 +883,7 @@
 
 @media (max-width: 639px) {
   .landing-prestige__main {
-    padding-top: calc(var(--wl-marketing-chrome-top, 4rem) + 1.5rem);
+    padding-top: calc(var(--wl-marketing-chrome-top, 4rem) + 2.25rem);
     padding-inline: min(1.25rem, 20px);
     gap: 2.75rem;
   }
@@ -919,8 +894,12 @@
     padding-top: 1.5rem;
   }
 
+  .landing-prestige__hero {
+    min-height: 0;
+  }
+
   .landing-prestige__hero h1 {
-    font-size: clamp(2.15rem, 9.5vw, 2.85rem);
+    font-size: clamp(2.25rem, 10vw, 3rem);
   }
 
   .landing-prestige__actions,

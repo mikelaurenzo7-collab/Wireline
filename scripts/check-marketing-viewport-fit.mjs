@@ -136,7 +136,6 @@ for (const [needle, description] of [
   ["marketing-surface", "home must keep the public marketing surface"],
   ["landing-prestige__hero", "home must keep the centered hero"],
   ["<PrecisionPublicHeader />", "home must share the public header"],
-  ["<BotBoundMark", "home must lead with the canonical phone-Bot mascot"],
   ['signedIn ? "/studio" : "/signup"', "home must keep neutral account creation"],
   ["The Bot Gets:", "home must introduce the three product assets"],
   ["landing-prestige__showcase-grid", "home must show its static capability cards"],

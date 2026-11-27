@@ -130,7 +130,11 @@ describe("BotBound public iPhone prestige contract", () => {
     const component = read("src/components/BotMark.tsx");
     const generator = read("src/lib/bot-mark.ts");
 
-    expect(landing).toContain("<BotBoundMark");
+    // The master brand is the header's wordmark; the home page draws no Bot mark.
+    expect(read("src/components/marketing/PrecisionPublicHeader.tsx")).toContain(
+      '<BotBoundWordmark className="wl-public-header__wordmark" />',
+    );
+    expect(landing).not.toContain("<BotMark");
     expect(landing).not.toContain("markKey");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);

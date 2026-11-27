@@ -232,8 +232,11 @@ describe("E2E design and BotBound brand polish", () => {
     expect(read("src/components/marketing/PrecisionPublicHeader.tsx")).toContain('to="/signin"');
     expect(landing).toMatch(/<h1[^>]*>[\s\S]*Your next hire[\s\S]*is a bot\.[\s\S]*<\/h1>/);
     expect(landing).not.toContain("landing-prestige__promise");
-    expect(landing).toContain("<BotBoundMark");
-    expect(landing).toContain("landing-prestige__hero-mark");
+    // The founder removed the badge and mascot above the headline (2026-11-27):
+    // the header carries the brand, and the headline opens the page.
+    expect(landing).not.toContain("<BotBoundMark");
+    expect(landing).not.toContain("landing-prestige__hero-badge");
+    expect(prestige).not.toContain(".landing-prestige__hero-badge");
     expect(landing).not.toContain("landing-prestige__directions");
     expect(landing).not.toContain("Personal is $12 a month");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
