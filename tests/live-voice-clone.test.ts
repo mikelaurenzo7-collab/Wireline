@@ -92,9 +92,12 @@ describe("live voice quality check", () => {
 
 describe("stock fallback voice", () => {
   it("prefers the clone's voice type, then the saved voice", () => {
-    expect(LIVE_VOICE_BY_GENDER).toEqual({ female: "ara", male: "rex" });
-    expect(stockFallbackVoiceFor("marin", "male")).toBe("rex");
-    expect(stockFallbackVoiceFor("cedar", "female")).toBe("ara");
+    expect(LIVE_VOICE_BY_GENDER).toEqual({ female: "carina", male: "castor" });
+    expect(stockFallbackVoiceFor("marin", "male")).toBe("castor");
+    expect(stockFallbackVoiceFor("cedar", "female")).toBe("carina");
+    // A saved voice that already matches the speaker is kept.
+    expect(stockFallbackVoiceFor("cedar", "male")).toBe("castor");
+    expect(stockFallbackVoiceFor("marin", "female")).toBe("carina");
     expect(stockFallbackVoiceFor("rex", null)).toBe("rex");
   });
 

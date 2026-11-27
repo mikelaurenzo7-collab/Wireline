@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { composeInboundOpening } from "../src/lib/voice/inbound-opening";
+import { composeOutboundOpening } from "../src/lib/voice/outbound-opening";
 import { detectAiDisclosure, detectRecordingDisclosure } from "../src/lib/tcpa-consent";
 
 const read = (path: string) => readFileSync(path, "utf8");
@@ -157,8 +158,14 @@ describe("live call recording (owner choice) contract", () => {
     expect(detectAiDisclosure(recordedOpening).found).toBe(true);
     expect(detectRecordingDisclosure(recordedOpening).found).toBe(true);
     // AI-identity disclosure composition stays flag-independent.
-    expect(session).toContain("complianceFirstMessagePrefix(");
-    expect(session).toContain("outboundAiCall: true");
+    expect(session).toContain("composeOutboundOpening({");
+    const outbound = { agentName: "Nora", businessName: "BotBound", telemarketing: false };
+    const quietOutbound = composeOutboundOpening({ ...outbound, recordingEnabled: false });
+    const recordedOutbound = composeOutboundOpening({ ...outbound, recordingEnabled: true });
+    expect(detectAiDisclosure(quietOutbound).found).toBe(true);
+    expect(detectRecordingDisclosure(quietOutbound).found).toBe(false);
+    expect(detectAiDisclosure(recordedOutbound).found).toBe(true);
+    expect(detectRecordingDisclosure(recordedOutbound).found).toBe(true);
   });
 
   it("erases live-call recordings on account deletion regardless of provider prefix", () => {

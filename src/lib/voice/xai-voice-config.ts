@@ -13,26 +13,75 @@ export const XAI_GROK_VOICE_TRANSCRIBER = "grok-transcribe" as const;
 /** Published Voice Agent API price, used for spend estimates and receipts. */
 export const XAI_GROK_VOICE_USD_PER_MINUTE = 0.08 as const;
 
-export const XAI_GROK_VOICES = ["eve", "ara", "rex", "sal", "leo"] as const;
+/**
+ * Every built-in voice the Voice Agent API documents. The first five are the
+ * original set; the rest arrived with the current voice library.
+ * https://docs.x.ai/developers/model-capabilities/audio/text-to-speech#voices
+ */
+export const XAI_GROK_VOICES = [
+  "eve",
+  "ara",
+  "rex",
+  "sal",
+  "leo",
+  "carina",
+  "celeste",
+  "iris",
+  "ursa",
+  "aurora",
+  "luna",
+  "liora",
+  "castor",
+  "atlas",
+  "helios",
+  "altair",
+  "lux",
+  "cosmo",
+  "lumen",
+  "perseus",
+  "kepler",
+  "zenith",
+  "rigel",
+  "naksh",
+  "sirius",
+  "orion",
+  "helix",
+  "zagan",
+] as const;
 export type XAIGrokVoice = (typeof XAI_GROK_VOICES)[number];
 
 /**
- * Bots keep their saved OpenAI voice choice; on xAI each one maps to the
- * closest built-in Grok voice by character, so switching providers never
- * leaves a Bot without a voice.
+ * Bots keep their saved voice choice. On a phone call each one is spoken by
+ * the current built-in voice closest to it in character, chosen from the
+ * voices the vendor describes for support and assistant work, without a
+ * regional accent. The original five sounded dated on a phone line.
  */
 const OPENAI_TO_XAI_VOICE: Record<OpenAIRealtimeVoiceId, XAIGrokVoice> = {
-  marin: "eve",
-  shimmer: "eve",
-  coral: "ara",
-  sage: "ara",
-  cedar: "rex",
-  echo: "rex",
-  ballad: "rex",
-  alloy: "sal",
-  verse: "leo",
-  ash: "leo",
+  marin: "carina",
+  shimmer: "iris",
+  coral: "ursa",
+  sage: "celeste",
+  cedar: "castor",
+  echo: "helios",
+  ballad: "altair",
+  alloy: "aurora",
+  verse: "atlas",
+  ash: "lux",
 };
+
+/**
+ * How fast the Bot speaks on a call: the documented `audio.output.speed`
+ * multiplier, 0.7 to 1.5. A little above the default reads as a natural
+ * conversational pace on a phone line; the default itself was heard as slow.
+ */
+export const PHONE_SPEAKING_RATE_DEFAULT = 1.1 as const;
+
+export function resolvePhoneSpeakingRate(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number(String(env.WIRELINE_PHONE_SPEAKING_RATE ?? "").trim() || Number.NaN);
+  return Number.isFinite(raw) && raw >= 0.7 && raw <= 1.5
+    ? Math.round(raw * 100) / 100
+    : PHONE_SPEAKING_RATE_DEFAULT;
+}
 
 export function resolveXAIGrokVoiceModel(env: NodeJS.ProcessEnv = process.env): string {
   const configured = String(env.XAI_GROK_VOICE_MODEL || "").trim();
@@ -42,7 +91,7 @@ export function resolveXAIGrokVoiceModel(env: NodeJS.ProcessEnv = process.env): 
 export function xaiVoiceForSavedVoice(voice: unknown): XAIGrokVoice {
   const id = typeof voice === "string" ? voice.trim().toLowerCase() : "";
   if ((XAI_GROK_VOICES as readonly string[]).includes(id)) return id as XAIGrokVoice;
-  return OPENAI_TO_XAI_VOICE[id as OpenAIRealtimeVoiceId] ?? "eve";
+  return OPENAI_TO_XAI_VOICE[id as OpenAIRealtimeVoiceId] ?? "carina";
 }
 
 /**
@@ -65,7 +114,7 @@ export function phoneCallVoiceFor(
  * the latency budget), the call switches to this stock voice and continues.
  */
 /** Stock voice that best matches a cloned speaker (salvaged from #1152). */
-export const LIVE_VOICE_BY_GENDER = { female: "ara", male: "rex" } as const satisfies Record<
+export const LIVE_VOICE_BY_GENDER = { female: "carina", male: "castor" } as const satisfies Record<
   "female" | "male",
   XAIGrokVoice
 >;
@@ -90,8 +139,31 @@ export function stockFallbackVoiceFor(
 export const XAI_STOCK_VOICE_GENDER: Record<XAIGrokVoice, "female" | "male" | "neutral"> = {
   eve: "female",
   ara: "female",
+  carina: "female",
+  celeste: "female",
+  iris: "female",
+  ursa: "female",
+  aurora: "female",
+  luna: "female",
+  liora: "female",
   rex: "male",
   leo: "male",
+  castor: "male",
+  atlas: "male",
+  helios: "male",
+  altair: "male",
+  lux: "male",
+  cosmo: "male",
+  lumen: "male",
+  perseus: "male",
+  kepler: "male",
+  zenith: "male",
+  rigel: "male",
+  naksh: "male",
+  sirius: "male",
+  orion: "male",
+  helix: "male",
+  zagan: "male",
   sal: "neutral",
 };
 
@@ -153,7 +225,10 @@ export function toXAIRealtimeSession(
     tool_choice: openAISession.tool_choice === "none" ? "none" : "auto",
     turn_detection: { type: "server_vad" },
     audio: {
-      ...(options.carrierAudio ? { output: { format: { type: "audio/pcmu" } } } : {}),
+      output: {
+        ...(options.carrierAudio ? { format: { type: "audio/pcmu" } } : {}),
+        speed: resolvePhoneSpeakingRate(),
+      },
       input: {
         ...(options.carrierAudio ? { format: { type: "audio/pcmu" } } : {}),
         transcription: {

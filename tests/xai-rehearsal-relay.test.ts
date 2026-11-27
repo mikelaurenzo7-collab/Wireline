@@ -232,13 +232,13 @@ describe("xAI rehearsal relay", () => {
     expect(relay.ticket).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(relay.maxDurationSeconds).toBe(300);
     // The saved OpenAI voice maps to the same xAI voice a caller hears.
-    expect(relay.voice).toBe("eve");
+    expect(relay.voice).toBe("carina");
     expect(xaiRequests[0]!.authorization).toBe("Bearer xai-test-key");
     expect(xaiRequests[0]!.url).toContain("model=grok-voice-");
 
     const update = xaiReceived.find((event) => event.type === "session.update")!;
     const session = update.session as Record<string, any>;
-    expect(session.voice).toBe("eve");
+    expect(session.voice).toBe("carina");
     expect(session.instructions).toContain("PRIVATE TEST");
     expect(session.instructions).toContain("Do not restart the introduction");
     expect(session.tools.map((tool: { name: string }) => tool.name)).toEqual([
@@ -247,6 +247,7 @@ describe("xAI rehearsal relay", () => {
     expect(session.turn_detection).toEqual({ type: "server_vad" });
     expect(session.audio.input.format).toEqual({ type: "audio/pcm", rate: 24_000 });
     expect(session.audio.output.format).toEqual({ type: "audio/pcm", rate: 24_000 });
+    expect(session.audio.output.speed).toBe(1.1);
     expect(session.audio.input.transcription.keyterms).toEqual(["Riley", "Acme Plumbing"]);
   });
 

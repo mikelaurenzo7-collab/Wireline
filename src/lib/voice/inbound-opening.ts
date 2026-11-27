@@ -1,4 +1,5 @@
 import { detectAiDisclosure } from "../tcpa-consent";
+import { agentNameAddsToBusiness } from "./outbound-opening";
 
 /**
  * The first spoken line of every inbound call says the caller is talking to
@@ -33,7 +34,7 @@ export function inboundDisclosureLine(input: {
 }): string {
   const business = clean(input.businessName);
   const agent = clean(input.agentName);
-  const namedAgent = agent && agent.toLowerCase() !== business.toLowerCase();
+  const namedAgent = agentNameAddsToBusiness(agent, business);
   const introduction = namedAgent ? `Hi, I'm ${agent}, and I'm` : "Hi, I'm";
   const affiliation = business ? ` with ${business}` : "";
   return `${introduction} an AI assistant${affiliation}${disclosureEnding(input.recordingEnabled)}`;

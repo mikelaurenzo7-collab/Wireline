@@ -9,10 +9,15 @@ import {
   realtimeProviderForCallId,
   xaiCallId,
 } from "../src/lib/voice/realtime-provider";
+import { OPENAI_REALTIME_VOICE_IDS } from "../src/lib/voice-catalog";
 import {
+  LIVE_VOICE_BY_GENDER,
   phoneCallVoiceFor,
+  resolvePhoneSpeakingRate,
   resolveXAIGrokVoiceModel,
   toXAIRealtimeSession,
+  XAI_GROK_VOICES,
+  XAI_STOCK_VOICE_GENDER,
   xaiForcedMessagePlaybackMs,
   xaiForceMessage,
   xaiVoiceForSavedVoice,
@@ -65,18 +70,20 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(resolveXAIGrokVoiceModel({ XAI_GROK_VOICE_MODEL: "grok-voice-3.1" })).toBe(
       "grok-voice-3.1",
     );
-    expect(xaiVoiceForSavedVoice("marin")).toBe("eve");
-    expect(xaiVoiceForSavedVoice("cedar")).toBe("rex");
+    expect(xaiVoiceForSavedVoice("marin")).toBe("carina");
+    expect(xaiVoiceForSavedVoice("cedar")).toBe("castor");
     expect(xaiVoiceForSavedVoice("ara")).toBe("ara");
-    expect(xaiVoiceForSavedVoice("unknown")).toBe("eve");
+    // A current built-in voice saved by name is spoken as itself.
+    expect(xaiVoiceForSavedVoice("Atlas")).toBe("atlas");
+    expect(xaiVoiceForSavedVoice("unknown")).toBe("carina");
     // Owner-facing labels name the voice callers actually hear.
     expect(phoneCallVoiceFor("cedar", { WIRELINE_PHONE_VOICE_PROVIDER: "xai" })).toEqual({
       provider: "xai",
-      voice: "rex",
+      voice: "castor",
     });
     expect(phoneCallVoiceFor("cedar", {})).toEqual({
       provider: "xai",
-      voice: "rex",
+      voice: "castor",
     });
     expect(phoneCallVoiceFor("cedar", { WIRELINE_PHONE_VOICE_PROVIDER: "openai" })).toBeNull();
   });
@@ -114,7 +121,7 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(session).toEqual({
       model: "grok-voice-3.0",
       instructions: "Call instructions",
-      voice: "rex",
+      voice: "castor",
       reasoning: { effort: "high" },
       tools: [
         {
@@ -127,11 +134,34 @@ describe("xAI Grok Voice phone runtime", () => {
       tool_choice: "auto",
       turn_detection: { type: "server_vad" },
       audio: {
+        output: { speed: 1.1 },
         input: {
           transcription: { model: "grok-transcribe", keyterms: ["Front Desk"] },
         },
       },
     });
+  });
+
+  it("offers every current built-in voice and none with an unknown gender", () => {
+    expect(XAI_GROK_VOICES).toHaveLength(28);
+    expect(new Set(XAI_GROK_VOICES).size).toBe(28);
+    expect(Object.keys(XAI_STOCK_VOICE_GENDER).sort()).toEqual([...XAI_GROK_VOICES].sort());
+    // The saved choices land on the newer voices, never on the original five.
+    for (const saved of OPENAI_REALTIME_VOICE_IDS) {
+      expect(["eve", "ara", "rex", "sal", "leo"], saved).not.toContain(
+        xaiVoiceForSavedVoice(saved),
+      );
+    }
+    expect(LIVE_VOICE_BY_GENDER).toEqual({ female: "carina", male: "castor" });
+  });
+
+  it("speaks a little faster than the default, within the documented range", () => {
+    expect(resolvePhoneSpeakingRate({})).toBe(1.1);
+    expect(resolvePhoneSpeakingRate({ WIRELINE_PHONE_SPEAKING_RATE: "1" })).toBe(1);
+    expect(resolvePhoneSpeakingRate({ WIRELINE_PHONE_SPEAKING_RATE: "1.25" })).toBe(1.25);
+    for (const outside of ["0.5", "1.6", "fast", ""]) {
+      expect(resolvePhoneSpeakingRate({ WIRELINE_PHONE_SPEAKING_RATE: outside })).toBe(1.1);
+    }
   });
 
   it("speaks the compliance opening verbatim and uninterrupted", () => {

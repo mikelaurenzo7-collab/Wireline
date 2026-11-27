@@ -473,7 +473,11 @@ async function openRelaySession(input: RelayInput, env: NodeJS.ProcessEnv, apiKe
       ...asRecord(audio.input),
       format: { type: "audio/pcm", rate: XAI_REHEARSAL_SAMPLE_RATE },
     },
-    output: { format: { type: "audio/pcm", rate: XAI_REHEARSAL_SAMPLE_RATE } },
+    // Keeps the speaking rate a caller hears, so a rehearsal sounds like the call.
+    output: {
+      ...asRecord(audio.output),
+      format: { type: "audio/pcm", rate: XAI_REHEARSAL_SAMPLE_RATE },
+    },
   };
 
   const startedAt = Date.now();

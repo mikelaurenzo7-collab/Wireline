@@ -325,6 +325,18 @@ const emit = async (event: Record<string, unknown>) => {
   h.sockets[0].emit("message", Buffer.from(JSON.stringify(event)));
   await vi.advanceTimersByTimeAsync(0);
 };
+/** Time passes on a call whose caller is still there: a little speech every 20 seconds. */
+const talkFor = async (ms: number) => {
+  for (let elapsed = 0; elapsed < ms; elapsed += 20_000) {
+    await emit({ type: "input_audio_buffer.speech_started" });
+    await emit({ type: "input_audio_buffer.speech_stopped" });
+    await vi.advanceTimersByTimeAsync(Math.min(20_000, ms - elapsed));
+  }
+};
+const quietCheckIns = () =>
+  h.sent.filter((event) =>
+    String(event.response?.instructions || "").includes("Are you still there?"),
+  );
 describe("funded inbound runtime construction", () => {
   it("never constructs a paid AI notice for suspended inbound work", () => {
     expect(() =>
@@ -416,7 +428,7 @@ describe("native SIP opening delivery", () => {
       const opening = h.sent.find((event) => event.type === "response.create")?.response;
       expect(opening?.instructions).toContain("warm, natural speaking style");
       expect(opening?.instructions).toContain(
-        `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, I'm Nora, and I'm an AI assistant with BOTBOUND LLC. How can I help you?" : "I am an AI assistant. Hi, this is Nora with BOTBOUND LLC. You can call us back at the business."}`,
+        `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, I'm Nora, and I'm an AI assistant with BOTBOUND LLC. How can I help you?" : "Hi, this is Nora. I'm an AI assistant calling for BOTBOUND LLC. You can call us back at the business. Is now a good time?"}`,
       );
       if (direction === "inbound") {
         const instructions = h.sent.find((event) => event.type === "session.update")?.session
@@ -1427,13 +1439,106 @@ describe("long business-call lifecycle", () => {
     });
   });
 
+  it("asks a quiet caller once whether they are still there, then releases the line", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await emit({
+      type: "conversation.item.input_audio_transcription.completed",
+      item_id: "turn-1",
+      transcript: "Can you email me that?",
+    });
+    await vi.advanceTimersByTimeAsync(29_000);
+    expect(quietCheckIns()).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(6_000);
+    expect(quietCheckIns()).toHaveLength(1);
+
+    // The Bot's own question is not the caller being heard.
+    await emit({ type: "response.created", response: { id: "check-in" } });
+    await emit({ type: "response.done", response: { id: "check-in", status: "completed" } });
+    await vi.advanceTimersByTimeAsync(44_000);
+    expect(h.sockets[0].readyState).toBe(1);
+    expect(h.provider).not.toHaveBeenCalled();
+    expect(quietCheckIns()).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(6_000);
+    await session;
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.digest).toHaveBeenCalledWith(
+      expect.objectContaining({ endedReason: "quiet-line-released" }),
+      expect.anything(),
+      expect.anything(),
+    );
+    // Roughly a minute and a half, not the hour the session allows.
+    expect(h.usage).toHaveBeenCalledWith(expect.objectContaining({ durationSeconds: 80 }));
+  });
+
+  it("keeps the line when the caller answers, and asks again only after a new silence", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await vi.advanceTimersByTimeAsync(31_000);
+    expect(quietCheckIns()).toHaveLength(1);
+
+    await emit({ type: "input_audio_buffer.speech_started" });
+    await emit({ type: "input_audio_buffer.speech_stopped" });
+    await emit({
+      type: "conversation.item.input_audio_transcription.completed",
+      item_id: "turn-1",
+      transcript: "Yes, I'm here.",
+    });
+    await vi.advanceTimersByTimeAsync(29_000);
+    expect(h.sockets[0].readyState).toBe(1);
+    expect(h.provider).not.toHaveBeenCalled();
+    expect(quietCheckIns()).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(6_000);
+    expect(quietCheckIns()).toHaveLength(2);
+    h.sockets[0].close();
+    await session;
+  });
+
+  it("counts a call on which nobody ever spoke as timed out in silence", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await vi.advanceTimersByTimeAsync(80_000);
+    await session;
+    expect(quietCheckIns()).toHaveLength(1);
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.digest).toHaveBeenCalledWith(
+      expect.objectContaining({ endedReason: "silence-timed-out" }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("does not take a reply in progress for a quiet line", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await emit({ type: "response.created", response: { id: "long-answer" } });
+    await vi.advanceTimersByTimeAsync(3 * 60_000);
+    expect(quietCheckIns()).toHaveLength(0);
+    expect(h.sockets[0].readyState).toBe(1);
+
+    await emit({ type: "response.done", response: { id: "long-answer", status: "completed" } });
+    await vi.advanceTimersByTimeAsync(29_000);
+    expect(quietCheckIns()).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(6_000);
+    expect(quietCheckIns()).toHaveLength(1);
+    h.sockets[0].close();
+    await session;
+  });
+
   it("keeps tools, transcript, ownership leases and rolling spend alive for a full hour, then finalizes once", async () => {
     const session = start();
     await vi.advanceTimersByTimeAsync(0);
     await emit({ type: "output_audio_buffer.stopped" });
-    await vi.advanceTimersByTimeAsync(20 * 60_000);
+    await talkFor(20 * 60_000);
     expect(h.sockets[0].readyState).toBe(1);
     expect(h.provider).not.toHaveBeenCalled();
+    expect(quietCheckIns()).toHaveLength(0);
     await emit({
       type: "conversation.item.input_audio_transcription.completed",
       item_id: "turn-late",
@@ -1447,7 +1552,7 @@ describe("long business-call lifecycle", () => {
     });
     await emit({ type: "response.done", response: { status: "completed" } });
     expect(h.tool).toHaveBeenCalledOnce();
-    await vi.advanceTimersByTimeAsync(40 * 60_000);
+    await talkFor(40 * 60_000);
     await session;
     expect(h.provider).toHaveBeenCalledOnce();
     expect(h.writes.filter((row) => row.openaiSipLeaseExpiresAt === "sql").length).toBeGreaterThan(

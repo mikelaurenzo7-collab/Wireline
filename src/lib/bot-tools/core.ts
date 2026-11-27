@@ -301,7 +301,7 @@ export async function handleCoreToolCall(
             result:
               approval.success && approval.queued
                 ? `DRAFT_SAVED: ${to_email}
-The team has the email request for approval. Say the request was saved and the email is pending. Do not claim submission or promise a delivery time.`
+The email is written and waiting for the team to send it. Tell the caller in plain words, for example: "I've written that up and passed it to the team to send." Do not say it was sent, do not mention approval or a queue, and do not promise a delivery time.`
                 : "The email request could not be saved for approval. No email was sent.",
           };
         }

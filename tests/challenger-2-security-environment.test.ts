@@ -411,10 +411,10 @@ describe("Challenger 2 — Security, Environment & Edge Case Empirical Suite", (
     });
 
     it("xaiVoiceForSavedVoice maps legacy OpenAI voices to appropriate Grok voices", () => {
-      expect(xaiVoiceForSavedVoice("marin")).toBe("eve");
-      expect(xaiVoiceForSavedVoice("cedar")).toBe("rex");
-      expect(xaiVoiceForSavedVoice("alloy")).toBe("sal");
-      expect(xaiVoiceForSavedVoice("unknown_voice")).toBe("eve"); // safe fallback
+      expect(xaiVoiceForSavedVoice("marin")).toBe("carina");
+      expect(xaiVoiceForSavedVoice("cedar")).toBe("castor");
+      expect(xaiVoiceForSavedVoice("alloy")).toBe("aurora");
+      expect(xaiVoiceForSavedVoice("unknown_voice")).toBe("carina"); // safe fallback
     });
 
     it("toXAIRealtimeSession sanitizes unsupported OpenAI-specific keys", () => {
@@ -429,7 +429,7 @@ describe("Challenger 2 — Security, Environment & Edge Case Empirical Suite", (
 
       const xaiSession = toXAIRealtimeSession(openAISession as any);
       expect(xaiSession.model).toBe("grok-voice-3.0");
-      expect(xaiSession.voice).toBe("eve");
+      expect(xaiSession.voice).toBe("carina");
       expect((xaiSession as any).noise_reduction).toBeUndefined();
       expect((xaiSession as any).semantic_vad).toBeUndefined();
       // Only function tools preserved

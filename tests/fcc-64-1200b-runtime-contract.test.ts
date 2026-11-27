@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { composeOutboundOpening, OUTBOUND_OPT_OUT_NOTICE } from "../src/lib/voice/outbound-opening";
+
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 /**
@@ -59,7 +61,18 @@ describe("64.1200(b) runtime wiring", () => {
   it("(b)(3) the telemarketing flag reaches the spoken opening disclosure", () => {
     const opening = session.slice(session.indexOf("function buildOutboundOpening"));
     expect(opening).toMatch(
-      /complianceFirstMessagePrefix\(\s*input\.complianceMode,[\s\S]{0,250}telemarketing/,
+      /composeOutboundOpening\(\{[\s\S]{0,500}telemarketing: isMarketingCallPurpose\(purpose\)/,
+    );
+    // The opt-out notice follows the identification directly, ahead of everything else.
+    const spoken = composeOutboundOpening({
+      agentName: "Sam",
+      businessName: "Ridge Dental",
+      callbackNumberSpoken: "three one two, five five five, zero one zero one",
+      recordingEnabled: true,
+      telemarketing: true,
+    });
+    expect(spoken).toContain(
+      `Hi, this is Sam. I'm an AI assistant calling for Ridge Dental. ${OUTBOUND_OPT_OUT_NOTICE}`,
     );
   });
 

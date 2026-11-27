@@ -98,8 +98,10 @@ describe("round-4 audit fix contracts", () => {
   it("actual live openings carry outbound AI identity and purpose disclosures", () => {
     const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
     const session = read("src/lib/voice/openai-sip-session.ts");
-    expect(session).toContain("complianceFirstMessagePrefix(");
-    expect(session).toContain("outboundAiCall: true");
+    expect(session).toContain("composeOutboundOpening({");
+    expect(read("src/lib/voice/outbound-opening.ts")).toContain(
+      "I'm an AI assistant${callingFor}.",
+    );
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
     expect(session).toContain("formatCallbackNumberForSpeech");
     expect(session).toContain("function buildOutboundOpening");

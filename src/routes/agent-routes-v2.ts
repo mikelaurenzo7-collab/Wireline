@@ -1199,7 +1199,7 @@ router.get(
       try {
         res.json(await phoneCatalogService.libraryPage(cleanText(req.query.search, 240), page));
       } catch {
-        throw AppError.fromHttpStatus(503, "ElevenLabs could not load its library. Try again.");
+        throw AppError.fromHttpStatus(503, "The voice library could not load. Try again.");
       }
       return;
     }
@@ -1223,7 +1223,7 @@ router.patch(
     try {
       voice = await phoneCatalogService.activate(req.body);
     } catch {
-      throw AppError.fromHttpStatus(503, "ElevenLabs could not activate this voice. Try again.");
+      throw AppError.fromHttpStatus(503, "This voice could not be turned on. Try again.");
     }
     if (!voice)
       throw AppError.fromHttpStatus(

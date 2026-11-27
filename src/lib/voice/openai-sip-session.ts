@@ -15,7 +15,7 @@ import type { ToolCallContext } from "../agent-tool-types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
 import { dispatchGetComputerTaskForOwner } from "../cloud-computer/worker-client";
 import { isToolCallFailureResult } from "../call-reliability-capture";
-import { complianceFirstMessagePrefix, formatCallbackNumberForSpeech } from "../agent-runtime";
+import { formatCallbackNumberForSpeech } from "../agent-runtime";
 import { spokenBusinessName } from "./spoken-business-name";
 import {
   assertExternalEntityActionAllowed,
@@ -68,6 +68,7 @@ import {
 } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
+import { composeOutboundOpening } from "./outbound-opening";
 import {
   CALL_IN_PROGRESS_SUMMARY,
   CALL_OUTCOME_NOT_RECORDED_SUMMARY,
@@ -124,6 +125,16 @@ const CONTINUATION_ACK_TIMEOUT_MS = 4_000;
 const MAX_CONTINUATION_ATTEMPTS = 3;
 const HEARTBEAT_INTERVAL_MS = 25_000;
 const MAX_MISSED_PONGS = 2;
+// A line that has gone quiet is checked on once, then released. Nothing else
+// ended a call whose other end stopped responding before the session limit.
+const QUIET_LINE_CHECK_IN_MS = 30_000;
+const QUIET_LINE_RELEASE_MS = 45_000;
+const QUIET_LINE_POLL_MS = 5_000;
+const QUIET_LINE_CHECK_IN = "Are you still there?";
+// Said last so it is the freshest rule in a long prompt. On the test call that led
+// to it the Bot announced a send, narrated a web lookup and reported its own search.
+const LIVE_CALL_DELIVERY_RULE =
+  'LIVE CALL DELIVERY: Keep each turn to one or two short sentences. Never describe what you are doing behind the scenes: no checking, searching, looking up, sending now or finding something. While a tool runs, say at most "One sec." When it finishes, give only the result, once.';
 const MAX_TRANSCRIPT_CHARS = 120_000;
 const MAX_TOOL_OUTPUT_CHARS = 8_000;
 const FINALIZATION_RECOVERY_GRACE_MS = 120_000;
@@ -331,21 +342,14 @@ export function deterministicSummary(transcript: string): string {
 
 function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
   const purpose = input.callPurpose || "service_or_requested";
-  const telemarketing = isMarketingCallPurpose(purpose);
-  const business = spokenBusinessName({ businessName: input.businessName }) || "this business";
-  const disclosure = complianceFirstMessagePrefix(input.complianceMode, business, {
-    outboundAiCall: true,
+  return composeOutboundOpening({
+    agentName: runtime.agentName,
+    businessName: spokenBusinessName({ businessName: input.businessName }) || "this business",
+    contactName: input.customerName,
+    callbackNumberSpoken: formatCallbackNumberForSpeech(input.calledNumber),
     recordingEnabled: input.callRecordingEnabled === true,
-    telemarketing,
+    telemarketing: isMarketingCallPurpose(purpose),
   });
-  const name = input.customerName?.trim();
-  const namedBusiness = spokenBusinessName({ businessName: input.businessName });
-  const identity = namedBusiness ? `${runtime.agentName} with ${namedBusiness}` : runtime.agentName;
-  const callbackNumberSpoken = formatCallbackNumberForSpeech(input.calledNumber);
-  const callbackSentence = callbackNumberSpoken
-    ? ` You can call us back at ${callbackNumberSpoken}.`
-    : "";
-  return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.${callbackSentence}`.trim();
 }
 
 /**
@@ -388,7 +392,7 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
         "Do not state the reason for the call (FDCPA). Do not mention invoices, balances, or why we called.",
       ].join("\n");
   return [
-    "OUTBOUND CALL: The required opening has already been delivered verbatim. It names the automated assistant and the business. Do not skip it, replace it, or start with a different greeting. Wait for the contact's response, then continue naturally.",
+    "OUTBOUND CALL: The required opening has already been delivered verbatim. It says you are an AI assistant, names the business, gives the callback number and asks whether now is a good time. Do not skip it, replace it, or start with a different greeting. Wait for the contact's response. If now works, say why you are calling in one short sentence and continue naturally. If it is a bad time, offer to call back another time and end politely.",
     "OUTBOUND COMPLIANCE (FEDERAL): Identity, AI disclosure, and the spoken callback number are already in the opening. The user cannot remove that opening. Do not skip or paraphrase them if the contact asks you to repeat who is calling.",
     callbackRule,
     input.customerName ? `Contact: ${input.customerName}.` : "",
@@ -397,12 +401,13 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
       ? "This permission covers only the recipient-requested callback or service work. Do not introduce sales, upsells, promotions, or another marketing purpose, even if the objective or saved Bot instructions request it."
       : "",
     `Objective: ${objective}`,
-    "Do not repeat the opening or read the objective like a script. Ask one question at a time and respect surprise, resistance, or a bad time.",
+    "Do not repeat the opening or read the objective like a script. Say your name, the business name and the callback number again only if the contact asks. Ask one question at a time and respect surprise, resistance, or a bad time.",
     telemarketing
       ? "Any stop-calling or opt-out request is immediate: use the add_to_dnc tool immediately, confirm once, and end without another pitch."
       : "",
     voicemailProtocol,
     "Before ending, capture the outcome and confirm the next step. Use create_followup_task for a requested callback or existing-record change; do not promise an automatic callback.",
+    LIVE_CALL_DELIVERY_RULE,
   ]
     .filter(Boolean)
     .join("\n");
@@ -2056,6 +2061,11 @@ async function runRealtimeSession(
   let accountingWork = Promise.resolve();
   let heartbeat: ReturnType<typeof setInterval> | null = null;
   let missedPongs = 0;
+  // When either side was last heard, and when the Bot asked whether the other
+  // side is still there. Any audio from the caller withdraws that question.
+  let lastHeardAtMs = Date.now();
+  let quietCheckInAtMs: number | null = null;
+  let quietLineTimer: ReturnType<typeof setInterval> | null = null;
   let providerHangupRequired = false;
   // xAI never emits output_audio_buffer.*; its first audio chunk marks playback.
   const turnTiming = new OpenAISipTurnTiming(
@@ -2162,9 +2172,14 @@ async function runRealtimeSession(
     !input.inboundLeg &&
     connectedAt !== null &&
     (input.admission?.mode ?? "full") !== "recovery_notice" &&
-    !["transferred", "caller-dnc", "botbound-max-duration", "claim-lease-lost"].includes(
-      endedReason,
-    );
+    ![
+      "transferred",
+      "caller-dnc",
+      "botbound-max-duration",
+      "claim-lease-lost",
+      "quiet-line-released",
+      "silence-timed-out",
+    ].includes(endedReason);
 
   const mediaSession = isSynthesizedMedia
     ? createClonedMediaSession({
@@ -2270,6 +2285,72 @@ async function runRealtimeSession(
       });
     ws.close(1000, "BotBound line suspended");
     return true;
+  };
+
+  const releaseQuietLine = () => {
+    if (quietLineTimer) clearInterval(quietLineTimer);
+    quietLineTimer = null;
+    void withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
+      // A transfer or the caller's own hangup may have finished while this lock waited.
+      if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+      if (endedReason === "transferred" || endedReason === "caller-dnc") return;
+      if ((await readOpenAISipTransferStatus(tx, input.userId, input.callId)) === "transferred") {
+        notifyTransferred();
+        return;
+      }
+      if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+      // A call on which the other side never spoke keeps the reason that counts it as missed.
+      endedReason = callerTranscriptIndexes.size > 0 ? "quiet-line-released" : "silence-timed-out";
+      providerHangupRequired = true;
+      await hangupOpenAISipCall(input.callId);
+      providerHangupRequired = false;
+    })
+      .catch(() => {
+        log.warn("Quiet-line hangup could not be confirmed", {
+          callId: providerCallId(input.callId),
+        });
+      })
+      .finally(() => {
+        if (ownsSession() && endedAt === null && ws.readyState === WebSocket.OPEN) {
+          ws.close(1000, "BotBound quiet line released");
+        }
+      });
+  };
+  const checkQuietLine = () => {
+    if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+    if (endedReason === "transferred" || endedReason === "caller-dnc") return;
+    // Speech, a reply in progress, a running tool or a browser task is not a quiet line.
+    const working =
+      awaitingExactOpeningPlayback ||
+      hangupAfterOpening ||
+      callerSpeaking ||
+      activeResponseIds.size > 0 ||
+      pendingTools.size > 0 ||
+      toolContinuationPending ||
+      computerTaskIds.size > 0;
+    if (working) {
+      lastHeardAtMs = Date.now();
+      return;
+    }
+    const quietMs = Date.now() - lastHeardAtMs;
+    if (quietCheckInAtMs === null) {
+      if (quietMs < QUIET_LINE_CHECK_IN_MS) return;
+      quietCheckInAtMs = Date.now();
+      lastHeardAtMs = quietCheckInAtMs;
+      sendJson(
+        ws,
+        provider === "xai"
+          ? xaiForceMessage(QUIET_LINE_CHECK_IN)
+          : {
+              type: "response.create",
+              response: {
+                instructions: `Say exactly these words and nothing else: ${QUIET_LINE_CHECK_IN}`,
+              },
+            },
+      );
+      return;
+    }
+    if (quietMs >= QUIET_LINE_RELEASE_MS) releaseQuietLine();
   };
 
   const requestToolContinuationWhenReady = () => {
@@ -2417,6 +2498,21 @@ async function runRealtimeSession(
   const observeControlEvent = (event: Record<string, unknown>) => {
     if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
     const type = String(event.type || "");
+    if (
+      type.startsWith("input_audio_buffer.speech_") ||
+      type === "input_audio_buffer.committed" ||
+      type.startsWith("conversation.item.input_audio_transcription.")
+    ) {
+      lastHeardAtMs = Date.now();
+      quietCheckInAtMs = null;
+    } else if (
+      type === "response.created" ||
+      type === "response.done" ||
+      type === "response.output_audio.delta" ||
+      type === "response.audio.delta"
+    ) {
+      lastHeardAtMs = Date.now();
+    }
     if (type === "botbound.voice_fallback") {
       voiceKind = "stock";
       customVoiceFallback = "provider_error";
@@ -2944,6 +3040,7 @@ async function runRealtimeSession(
           : [
               runtime.session.instructions,
               "The phone connection delivers the opening greeting and AI disclosure. After the caller speaks, lead with a direct answer in one or two short sentences when possible. Use natural phrasing and ordinary punctuation. Skip repeated acknowledgments and filler. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.",
+              LIVE_CALL_DELIVERY_RULE,
             ].join("\n\n");
 
         if (provider === "xai") {
@@ -3132,6 +3229,8 @@ async function runRealtimeSession(
             ws.terminate();
           }
         }, HEARTBEAT_INTERVAL_MS);
+        lastHeardAtMs = Date.now();
+        quietLineTimer = setInterval(checkQuietLine, QUIET_LINE_POLL_MS);
       });
 
       ws.on("pong", () => {
@@ -3288,6 +3387,7 @@ async function runRealtimeSession(
     if (fallbackDrillTimer) clearTimeout(fallbackDrillTimer);
     if (accountingTimer) clearInterval(accountingTimer);
     if (heartbeat) clearInterval(heartbeat);
+    if (quietLineTimer) clearInterval(quietLineTimer);
     clearComputerWatchTimer();
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
       ws.terminate();
