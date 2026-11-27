@@ -43,21 +43,22 @@ export const WORKSPACE_AUTONOMY_OPTIONS = STORED_AUTONOMY_VALUES;
 export const WORKSPACE_AUTONOMY_GUIDE = STORED_AUTONOMY_GUIDE;
 export type WorkspaceVibe = (typeof WORKSPACE_VIBE_OPTIONS)[number];
 
-/** Allowlisted agent fields the chat can configure conversationally. */
+/**
+ * Allowlisted agent fields the chat can configure conversationally. Every one
+ * changes something a Bot does. Four that changed nothing were removed: an
+ * email tone and an email auto-respond switch (no Bot answers email), a
+ * per-Bot Slack channel (alerts use the workspace's), and an archetype label.
+ */
 export type WorkspaceFieldKey =
   | "first_message"
   | "personality_vibe"
-  | "email_agent_tone"
   | "email_signature"
   | "out_of_hours_message"
   | "transfer_phone"
   | "escalation_email"
   | "escalation_phone"
   | "website_url"
-  | "archetype"
   | "timezone"
-  | "email_auto_respond"
-  | "slack_channel_id"
   | "name"
   | "auto_zoom_link"
   | "autonomy_level"
@@ -68,17 +69,13 @@ interface FieldSpec {
   column:
     | "firstMessage"
     | "personalityVibe"
-    | "emailAgentTone"
     | "emailSignature"
     | "outOfHoursMessage"
     | "transferPhone"
     | "escalationEmail"
     | "escalationPhone"
     | "websiteUrl"
-    | "archetype"
     | "timezone"
-    | "emailAutoRespond"
-    | "slackChannelId"
     | "name"
     | "autoZoomLink"
     | "autonomyLevel"
@@ -102,7 +99,6 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
     kind: "vibe",
     maxLen: 20,
   },
-  email_agent_tone: { column: "emailAgentTone", label: "Email tone", kind: "text", maxLen: 60 },
   email_signature: {
     column: "emailSignature",
     label: "Email signature",
@@ -139,33 +135,15 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
     kind: "url",
     maxLen: 200,
   },
-  archetype: {
-    column: "archetype",
-    label: "Agent archetype",
-    kind: "text",
-    maxLen: 50,
-  },
   timezone: {
     column: "timezone",
     label: "Timezone",
     kind: "text",
     maxLen: 50,
   },
-  email_auto_respond: {
-    column: "emailAutoRespond",
-    label: "Email auto-respond",
-    kind: "boolean",
-    maxLen: 5,
-  },
-  slack_channel_id: {
-    column: "slackChannelId",
-    label: "Slack channel ID",
-    kind: "text",
-    maxLen: 50,
-  },
   name: {
     column: "name",
-    label: "Agent name",
+    label: "Bot name",
     kind: "text",
     maxLen: 100,
   },
@@ -402,8 +380,7 @@ const COACH_DIRECTOR_WORKSPACE_TOOL: ToolSchema = {
 function buildSystemPrompt(input: PlanWorkspaceInput): string {
   const { agent, recentCalls, coachAsDirector } = input;
   const name = agent.name || "the agent";
-  const role = agent.role || "AI receptionist";
-  const archetype = agent.archetype || "warm professional";
+  const role = agent.role || "receptionist";
 
   const enabledTools = resolveAgentTools(agent.enabledTools);
   const enabledSet = new Set(enabledTools);
@@ -431,8 +408,8 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
           .join("\n");
 
   const persona = coachAsDirector
-    ? `You are the Director, the Account Holder's AI manager inside BotBound. The Account Holder selected **${name}** (${role}, archetype: ${archetype}) in the Coach menu. You're coaching them on how to improve this agent. Speak as the Director ("I'll update ${name}'s greeting…"), not in ${name}'s first person voice.`
-    : `You are ${name}, a BotBound AI ${role} (archetype: ${archetype}). You're in a private chat with your Account Holder, the person who owns and manages you.`;
+    ? `You are the Director, the Account Holder's AI manager inside BotBound. The Account Holder selected **${name}** (${role}) in the Coach menu. You're coaching them on how to improve this agent. Speak as the Director ("I'll update ${name}'s greeting…"), not in ${name}'s first person voice.`
+    : `You are ${name}, a BotBound Bot working as ${role}. You're in a private chat with your Account Holder, the person who owns and manages you.`;
 
   return `${persona} This chat is their PRIMARY control surface: instead of hunting through settings tabs, they direct you in plain language and you do the work for them.
 

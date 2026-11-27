@@ -249,8 +249,8 @@ test("the desktop roster opens each Bot's own work and its identity details", as
   );
   await panel.getByText("Memory", { exact: true }).click();
   await expect(panel.getByRole("textbox", { name: "Remember this" })).toBeVisible();
-  await panel.getByText("Automations", { exact: true }).click();
-  await expect(panel.getByRole("link", { name: "Manage scheduled reports" })).toHaveAttribute(
+  await expect(panel.getByText("Automations", { exact: true })).toHaveCount(0);
+  await expect(panel.getByRole("link", { name: /Reports/ })).toHaveAttribute(
     "href",
     "/phone?tab=settings",
   );
