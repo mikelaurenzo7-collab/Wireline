@@ -361,18 +361,3 @@ export async function syncStaleKnowledgeIndexes(
   }
   return { synced, failed };
 }
-
-/** Read a Bot's index state for cleanup before the Bot row is deleted. */
-export async function knowledgeIndexFor(
-  agentId: string,
-  userId: string,
-): Promise<KnowledgeIndexState | null> {
-  const [row] = await outsideTenant(() =>
-    drizzle
-      .select({ index: schema.agents.knowledgeIndex })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
-      .limit(1),
-  );
-  return parseKnowledgeIndexState(row?.index);
-}

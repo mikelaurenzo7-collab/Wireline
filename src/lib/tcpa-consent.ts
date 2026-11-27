@@ -78,10 +78,6 @@ export const STATE_CONSENT_RULES: Record<string, ConsentRule> = {
 
 export const CONSENT_RULE_VERSION = "2025.1";
 
-const STATES_TWO_PARTY: string[] = Object.entries(STATE_CONSENT_RULES)
-  .filter(([, rule]) => rule === "two_party")
-  .map(([s]) => s);
-
 const NORTH_AMERICAN_AREA_CODE_STATE: Record<string, string> = {
   // Compact subset of NANP area codes → state. Used for best-effort
   // jurisdiction inference when only a phone number is available.
@@ -545,11 +541,6 @@ export function evaluateOutboundConsent(input: ConsentInputs): ConsentDecision {
       state,
     }),
   };
-}
-
-/** Two-party jurisdictions, exposed for UI/admin views. */
-export function listTwoPartyStates(): string[] {
-  return [...STATES_TWO_PARTY].sort();
 }
 
 // ─────────────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ import { eq, and, or, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
 import type { ExtractedBusinessAction } from "./ai-brains";
 import { getErrorMessage } from "./server-utils";
-import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
+import { type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
 import { executeAction, recordOwnerNote } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import {
@@ -759,25 +759,4 @@ export async function handleJob(job: JobRow): Promise<void> {
       throw new Error(result.error || "Margin-at-risk alert was not accepted");
     }
   }
-}
-
-/**
- * Initializes the background job worker.
- * Returns a stop function.
- */
-export function initJobWorker(opts?: { dbReady?: boolean }) {
-  if (process.env.VERCEL === "1") return null;
-  if (opts?.dbReady === false) {
-    log.warn("job worker skipped, database not connected");
-    return null;
-  }
-
-  return startWorker(drizzle, handleJob, {
-    pollIntervalMs: 10_000,
-    onError: (err) =>
-      log.error("job worker poll failed", {
-        error: err.message,
-        hint: "Check POSTGRES_URL and that wireline_jobs exists",
-      }),
-  });
 }

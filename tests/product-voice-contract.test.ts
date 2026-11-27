@@ -37,7 +37,6 @@ const CORE_BUYING_SURFACES = [
 ] as const;
 
 const CUSTOMER_BOT_SURFACES = [
-  "src/components/ActivationChecklist.tsx",
   "src/components/CrmConnectionCard.tsx",
   "src/components/OutboundDialDialog.tsx",
   "src/components/PublicChangelog.tsx",
@@ -63,7 +62,6 @@ const UNIFIED_AUDIENCE_SURFACES = [
   "src/components/CommandBar.tsx",
   "src/components/CreateAgentDialog.tsx",
   "src/components/StudioAgentWorkspacePanel.tsx",
-  "src/components/bots/BotConfigurator.tsx",
   "src/components/StudioWorkspaceV2.tsx",
   "src/pages/KnowledgePage.tsx",
   "src/components/ContactPage.tsx",

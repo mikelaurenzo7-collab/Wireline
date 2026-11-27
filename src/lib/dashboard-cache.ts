@@ -142,30 +142,6 @@ export function invalidateDashboard(userId: string): void {
   if (idx !== -1) accessOrder.splice(idx, 1);
 }
 
-/**
- * Invalidate all dashboard caches (use sparingly — e.g., during maintenance)
- */
-export function invalidateAllDashboards(): void {
-  dashboardCache.clear();
-  accessOrder.length = 0;
-}
-
-/**
- * Get cache statistics for monitoring
- */
-export function getDashboardCacheStats(): {
-  size: number;
-  maxSize: number;
-  ttlMs: number;
-  hitRate?: number;
-} {
-  return {
-    size: dashboardCache.size,
-    maxSize: MAX_CACHE_ENTRIES,
-    ttlMs: DASHBOARD_TTL_MS,
-  };
-}
-
 // Periodic eviction — removes expired entries and enforces size limit
 const evictId = setInterval(() => {
   const cutoff = Date.now() - DASHBOARD_TTL_MS;

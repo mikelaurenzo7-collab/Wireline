@@ -362,13 +362,3 @@ export function createInitialState(persona: WirelinePersonaId): ConversationStat
     persona,
   };
 }
-
-/**
- * Internal export — used by the persona module to give each persona's
- * system prompt the explicit "you handle these without escalating" list.
- * Returning a fresh array on each call so callers can't mutate the
- * frozen module-level list.
- */
-export function getTier1TopicList(): string[] {
-  return [...TIER_1_TOPICS];
-}

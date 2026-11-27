@@ -92,20 +92,6 @@ export function requiresWrittenBiometricRelease(jurisdiction: SpeakerJurisdictio
   return WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS.includes(jurisdiction);
 }
 
-/** xAI's published region rule: US only, Illinois excluded. */
-export function xaiCustomVoiceRegionAllowed(jurisdiction: SpeakerJurisdiction): boolean {
-  return jurisdiction.startsWith("US-") && jurisdiction !== "US-IL";
-}
-
-export const XAI_CUSTOM_VOICE_TEAM_LIMIT_DEFAULT = 30;
-
-export function resolveXAICustomVoiceTeamLimit(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = Number(env.XAI_CUSTOM_VOICE_TEAM_LIMIT);
-  return Number.isSafeInteger(raw) && raw >= 1 && raw <= 10_000
-    ? raw
-    : XAI_CUSTOM_VOICE_TEAM_LIMIT_DEFAULT;
-}
-
 /**
  * Remembered answer for the Enterprise-gated xAI create endpoint. User clones
  * do not consult it. It stays so a later team-library decision can tell a 403
@@ -137,15 +123,6 @@ export function resolvePreferredCloneEngine(
   const raw = String(env.VOICE_CLONE_ENGINE_DEFAULT || "").trim();
   return raw === "inhouse" || raw === "xai" || raw === "elevenlabs" ? raw : null;
 }
-
-/** Errors that mean "this engine can't take the voice right now": try the next one. */
-export const CLONE_ENGINE_FALLTHROUGH_CODES = [
-  "not_configured",
-  "not_entitled",
-  "limit_reached",
-  "quota_exhausted",
-  "region_unavailable",
-] as const;
 
 export type CloneEngineSelectionInput = {
   jurisdiction: SpeakerJurisdiction;

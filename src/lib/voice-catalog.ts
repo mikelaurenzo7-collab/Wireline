@@ -51,23 +51,6 @@ export const OPENAI_REALTIME_VOICES: readonly OpenAIRealtimeVoiceOption[] = [
 
 export const WIRELINE_LIVE_VOICES = OPENAI_REALTIME_VOICES;
 
-export const DEFAULT_PRESENTER_PHONE_VOICE = OPENAI_REALTIME_VOICES[0];
-
-export const MANAGED_VOICE_BY_GENDER = {
-  female: "marin",
-  male: "cedar",
-} as const;
-
-export function defaultPresenterPhoneVoicePayload(): {
-  phoneVoiceId: string;
-  phoneVoiceProvider: "openai";
-} {
-  return {
-    phoneVoiceId: WIRELINE_LIVE_VOICES[0].id,
-    phoneVoiceProvider: "openai",
-  };
-}
-
 export function resolveVoiceLabel(voiceId: string | null | undefined): string {
   if (!voiceId) return "Not selected";
   const normalizedId = voiceId.toLowerCase();

@@ -395,13 +395,6 @@ export interface KnowledgeFromUrlInput {
   maxPages?: number;
 }
 
-export interface KnowledgeFromDocumentInput {
-  pdfBase64: string;
-  fileName?: string;
-  agentContext?: string;
-  maxEntries?: number;
-}
-
 export interface KnowledgeIngestionResult {
   page_summary: string;
   entries: Array<{ fact: string; category: string }>;
@@ -409,12 +402,6 @@ export interface KnowledgeIngestionResult {
 
 export async function knowledgeFromUrl(
   _input: KnowledgeFromUrlInput,
-): Promise<KnowledgeIngestionResult> {
-  throw new KnowledgeIngestionUnavailableError();
-}
-
-export async function knowledgeFromDocument(
-  _input: KnowledgeFromDocumentInput,
 ): Promise<KnowledgeIngestionResult> {
   throw new KnowledgeIngestionUnavailableError();
 }

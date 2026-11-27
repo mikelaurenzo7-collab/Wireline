@@ -61,66 +61,6 @@ export async function clusterTopics(input: {
   });
 }
 
-const FAILURE_MODES_TOOL = {
-  name: "cluster_failure_modes",
-  description: "Group failed or low-intent calls into failure modes.",
-  input_schema: {
-    type: "object",
-    properties: {
-      modes: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            failure_type: { type: "string" },
-            severity: { type: "string", enum: ["critical", "high", "medium", "low"] },
-            fix_target: { type: "string" },
-            count: { type: "integer" },
-            description: { type: "string" },
-            recommended_fix: { type: "string" },
-          },
-          required: ["failure_type", "severity", "fix_target", "count", "recommended_fix"],
-        },
-      },
-    },
-    required: ["modes"],
-  },
-} as const;
-
-export async function clusterFailureModes(input: {
-  failedCalls: Array<{
-    summary?: string | null;
-    transcript?: string | null;
-    lead_score?: number | null;
-    intent_label?: string | null;
-  }>;
-}) {
-  const payload = input.failedCalls
-    .map((c, i) => {
-      const excerpt = (c.transcript || c.summary || "").slice(0, 400);
-      return `${i + 1}. score=${c.lead_score ?? "N/A"} intent=${c.intent_label || "N/A"} ${excerpt}`;
-    })
-    .join("\n\n");
-  return runStructured<{
-    modes: Array<{
-      failure_type: string;
-      severity: "critical" | "high" | "medium" | "low";
-      fix_target: string;
-      count: number;
-      description?: string;
-      recommended_fix: string;
-    }>;
-  }>({
-    system:
-      "Identify recurring failure patterns in low-performing calls. Return actionable clusters with severity and a single recommended fix each.",
-    user: `Failed / low-intent calls:\n${payload}`,
-    tool: FAILURE_MODES_TOOL,
-    complexity: "medium",
-    maxTokens: 1400,
-    cacheSystem: true,
-  });
-}
-
 const DAILY_BRIEF_TOOL = {
   name: "daily_brief",
   description: "Executive daily brief for a voice AI operator.",

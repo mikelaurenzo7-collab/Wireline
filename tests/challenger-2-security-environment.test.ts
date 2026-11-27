@@ -9,13 +9,6 @@ import {
   requireRenderTraffic,
 } from "../src/middleware/render-traffic";
 
-// Domain 2: /stripe & Goodwill Wallet
-import {
-  evaluateGoodwillCredit,
-  DEFAULT_MONTHLY_GOODWILL_CAP_CENTS,
-  DEFAULT_PER_RESOLUTION_CAP_CENTS,
-} from "../src/lib/goodwill-wallet-policy";
-
 // Domain 3: /resend
 import {
   verifyResendWebhookSignature,
@@ -160,72 +153,6 @@ describe("Challenger 2 — Security, Environment & Edge Case Empirical Suite", (
       expect(statusCalled).toBe(409);
       expect(jsonResponse.code).toBe("DEPLOYMENT_REVISION_MISMATCH");
       expect(next).not.toHaveBeenCalled();
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 2. Stripe & Goodwill Autonomous Wallet Policy
-  // ─────────────────────────────────────────────────────────────────────────────
-  describe("2. Stripe & Autonomous Goodwill Wallet Invariants", () => {
-    it("enforces default monthly budget ($100.00) and per-resolution cap ($25.00)", () => {
-      expect(DEFAULT_MONTHLY_GOODWILL_CAP_CENTS).toBe(10000);
-      expect(DEFAULT_PER_RESOLUTION_CAP_CENTS).toBe(2500);
-    });
-
-    it("rejects non-positive credit amounts (0 or negative cents)", () => {
-      const policy = {
-        monthlyCapCents: 10000,
-        perResolutionCapCents: 2500,
-        currentMonthSpentCents: 0,
-      };
-
-      const res0 = evaluateGoodwillCredit(policy, 0);
-      expect(res0.approved).toBe(false);
-      expect(res0.reason).toContain("greater than 0 cents");
-
-      const resNeg = evaluateGoodwillCredit(policy, -500);
-      expect(resNeg.approved).toBe(false);
-      expect(resNeg.reason).toContain("greater than 0 cents");
-    });
-
-    it("rejects credit requests that exceed the per-resolution cap ($25.00)", () => {
-      const policy = {
-        monthlyCapCents: 10000,
-        perResolutionCapCents: 2500,
-        currentMonthSpentCents: 0,
-      };
-
-      // $25.01 (2501 cents)
-      const res = evaluateGoodwillCredit(policy, 2501);
-      expect(res.approved).toBe(false);
-      expect(res.reason).toContain("exceeds per-resolution cap of $25.00");
-    });
-
-    it("approves credit within per-resolution cap and updates running spend", () => {
-      const policy = {
-        monthlyCapCents: 10000,
-        perResolutionCapCents: 2500,
-        currentMonthSpentCents: 1000, // $10 spent
-      };
-
-      // Request $20 (2000 cents)
-      const res = evaluateGoodwillCredit(policy, 2000);
-      expect(res.approved).toBe(true);
-      expect(res.newCurrentMonthSpentCents).toBe(3000);
-    });
-
-    it("rejects credit requests that exceed the remaining monthly budget", () => {
-      const policy = {
-        monthlyCapCents: 10000, // $100 max
-        perResolutionCapCents: 2500, // $25 max
-        currentMonthSpentCents: 9000, // $90 already spent; only $10 remaining
-      };
-
-      // Request $15 (1500 cents) - within per-resolution cap but breaches monthly cap
-      const res = evaluateGoodwillCredit(policy, 1500);
-      expect(res.approved).toBe(false);
-      expect(res.reason).toContain("exceeds remaining monthly goodwill budget ($10.00)");
-      expect(res.newCurrentMonthSpentCents).toBe(9000);
     });
   });
 

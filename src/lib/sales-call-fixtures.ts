@@ -138,7 +138,3 @@ export const ALL_SALES_CALL_FIXTURES: SalesCallFixture[] = [
   ...GOLDEN_SALES_CALL_FIXTURES,
   ...RED_TEAM_SALES_CALL_FIXTURES,
 ];
-
-export function getSalesCallFixture(id: string): SalesCallFixture | undefined {
-  return ALL_SALES_CALL_FIXTURES.find((fixture) => fixture.id === id);
-}

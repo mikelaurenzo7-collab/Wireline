@@ -241,30 +241,6 @@ export function renderObjectionResponse(
 }
 
 /**
- * Match an utterance against the playbook. Returns the FIRST matching
- * entry (by declaration order) or null. We do not return all matches —
- * the agent only delivers one response at a time, and the playbook is
- * curated so the first hit is the best hit.
- */
-export function findObjectionMatch(utterance: string): ObjectionEntry | null {
-  const lower = utterance.toLowerCase();
-  for (const entry of WIRELINE_OBJECTIONS) {
-    for (const pattern of entry.objection_pattern) {
-      const p = pattern.toLowerCase();
-      if (p.includes(" ") || p.includes("-")) {
-        // multi-word phrase: substring match
-        if (lower.includes(p)) return entry;
-      } else {
-        // single word: word-boundary match to avoid "inexpensive" hitting "expensive"
-        const re = new RegExp(`(^|[^a-z])${p}([^a-z]|$)`);
-        if (re.test(lower)) return entry;
-      }
-    }
-  }
-  return null;
-}
-
-/**
  * Render the entire playbook as a prompt-injectable string. Used by
  * the persona module to embed the playbook into the system prompt.
  * Voice-friendly: no markdown, terse format the LLM can parse + paraphrase.

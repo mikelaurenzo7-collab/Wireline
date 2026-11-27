@@ -36,7 +36,3 @@ export function redactSensitiveText(text: string): string {
   if (!text) return text;
   return text.replace(SSN_PATTERN, "[redacted]").replace(CARD_PATTERN, "[redacted]");
 }
-
-export function redactSensitiveLines<T extends { text: string }>(lines: readonly T[]): T[] {
-  return lines.map((line) => ({ ...line, text: redactSensitiveText(line.text) }));
-}

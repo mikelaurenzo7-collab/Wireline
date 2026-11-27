@@ -3,11 +3,7 @@
  * has no persisted operational verification receipts; env presence must never
  * be presented as proof that credentials or provider workflows work.
  */
-import {
-  INTEGRATIONS,
-  getIntegrationsStatus,
-  type IntegrationStatusResult,
-} from "./integrations-registry";
+import { getIntegrationsStatus, type IntegrationStatusResult } from "./integrations-registry";
 
 export type BuyerTier = "supported" | "beta" | "internal";
 
@@ -66,8 +62,4 @@ export async function getCertifiedIntegrationsPublic(): Promise<CertifiedIntegra
       configuration_checked_at: now,
       verification_status: "not_performed",
     }));
-}
-
-export function extendIntegrationsRegistryDocs(): void {
-  void INTEGRATIONS;
 }

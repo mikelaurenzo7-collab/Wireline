@@ -109,7 +109,6 @@ vi.mock("../src/components/ui/shadcn/Select", () => ({
   SelectValue: "value",
 }));
 vi.mock("../src/components/settings/CompanyIdentityPack", () => ({ default: "company-identity" }));
-vi.mock("../src/components/AgentFace", () => ({ default: "agent-face" }));
 vi.mock("../src/components/OutboundDialDialog", () => ({ default: "outbound-dialog" }));
 vi.mock("../src/components/layout/WorkspaceControlBand", () => ({ default: "control-band" }));
 vi.mock("../src/components/layout/WorkspacePageFrame", () => ({

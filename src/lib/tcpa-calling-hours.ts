@@ -161,10 +161,3 @@ export function resolvePermissionCallingHours(
     inferred: false,
   };
 }
-
-export function isWithinTcpACallingHours(
-  phone: string | null | undefined,
-  now: Date = new Date(),
-): boolean {
-  return resolveCallingHoursForPhone(phone, now).allowed;
-}

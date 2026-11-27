@@ -13,13 +13,14 @@ import {
   type OpenAIRealtimeInstructionAgent,
   type OpenAIRealtimeTenantSettings,
 } from "../src/lib/voice/openai-phone-agent-runtime";
-import {
-  MAX_RUNTIME_DIRECTIVES,
-  MAX_RUNTIME_KNOWLEDGE,
-  MAX_RUNTIME_PROMPT_CHARS,
-} from "../src/lib/agent-runtime-helpers";
+import { MAX_RUNTIME_PROMPT_CHARS } from "../src/lib/agent-runtime-helpers";
 import { SUPPORT_REFUND_REVIEW_INSTRUCTION } from "../src/lib/wireline-agent-escalation";
 import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
+
+// Sizes of the oversized input below. They were exported from
+// agent-runtime-helpers, where nothing in production read them.
+const MAX_RUNTIME_DIRECTIVES = 24;
+const MAX_RUNTIME_KNOWLEDGE = 18;
 
 const INTERNAL_POLICY_HEADING = "BOTBOUND INTERNAL PERSONA POLICY:";
 const AUTHORITY_HEADING = "## BOTBOUND INTERNAL POLICY AUTHORITY";

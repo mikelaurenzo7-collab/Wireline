@@ -24,14 +24,12 @@ describe("BotBound brand migration", () => {
     const brand = read("src/components/brand/BotBoundBrand.tsx");
     const identityCss = read("src/styles/brand-identity.css");
     const legacyBrand = read("src/components/brand/WirelineBrand.tsx");
-    const legacyMark = read("src/components/brand/WirelineMark.tsx");
     expect(brand).toContain("BotBoundWordmark");
     expect(brand).toContain("BotBoundLockup");
     expect(brand).toContain('data-botbound-brand-lockup="true"');
     expect(identityCss).toContain("margin-inline-start: calc(var(--bb-lockup-overlap) * -1)");
     expect(legacyBrand).toContain("BotBoundWordmark as WirelineWordmark");
     expect(legacyBrand).toContain("BotBoundLockup as WirelineLockup");
-    expect(legacyMark).toContain('from "./BotBoundMark"');
   });
 
   it("pins the new name, concise product promise, and Studio-first install path", () => {

@@ -188,5 +188,3 @@ export const WIRELINE_DESIGN_VISION = {
     minTouchTargetPx: 44,
   },
 } as const;
-
-export type WirelineDesignVision = typeof WIRELINE_DESIGN_VISION;

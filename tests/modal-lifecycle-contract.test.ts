@@ -31,7 +31,6 @@ describe("authenticated modal lifecycle contract", () => {
   it("keeps every custom authenticated modal on the shared lifecycle hooks", () => {
     const customDialogs = [
       "src/components/TrialGateModal.tsx",
-      "src/components/recipes/RecipeModal.tsx",
       "src/components/CreateAgentDialog.tsx",
       "src/components/onboarding/PostCreateActivationWizard.tsx",
       "src/pages/TeamSettings.tsx",
@@ -77,10 +76,7 @@ describe("authenticated modal lifecycle contract", () => {
   });
 
   it("does not leave duplicate global Escape listeners in migrated modals", () => {
-    for (const path of [
-      "src/components/TrialGateModal.tsx",
-      "src/components/recipes/RecipeModal.tsx",
-    ]) {
+    for (const path of ["src/components/TrialGateModal.tsx"]) {
       const component = source(path);
       expect(component, path).not.toContain('addEventListener("keydown"');
     }

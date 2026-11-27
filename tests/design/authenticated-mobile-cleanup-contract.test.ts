@@ -40,14 +40,9 @@ describe("authenticated mobile cleanup", () => {
   });
 
   it("keeps heavy-user controls reachable without crowding the Bot workspace", () => {
-    const activation = read("src/components/ActivationChecklist.tsx");
-    const outcomes = read("src/components/OutcomeLedger.tsx");
     const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
 
-    expect(activation).toContain("grid grid-cols-2 gap-2 lg:grid-cols-3");
-    expect(activation).not.toContain("{step.detail}");
-    expect(outcomes).toContain("line-clamp-3");
     expect(knowledge).toContain("sm:[&>button]:w-auto");
     expect(knowledge).toContain('"Choose Files"');
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');

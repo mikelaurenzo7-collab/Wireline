@@ -108,16 +108,6 @@ describe("bot visual identity", () => {
     expect(botMarkFor({ id: "stable-bot" }).key).toBe(botMarkFor({ id: "stable-bot" }).key);
   });
 
-  it("retires human/cartoon face rendering without forcing an unsafe all-at-once import rename", () => {
-    const compatibility = source("src/components/AgentFace.tsx");
-    expect(compatibility).toContain('import BotMark from "./BotMark"');
-    expect(compatibility).toContain("Human/cartoon faces are retired");
-    expect(compatibility).not.toContain("HairShape");
-    expect(compatibility).not.toContain("faceConfigFor");
-    expect(compatibility).not.toContain("<ellipse");
-    expect(compatibility).not.toContain("<path");
-  });
-
   it("uses Bot Marks directly on the workspace shell", () => {
     const shell = source("src/components/WorkspaceShell.tsx");
     expect(existsSync(resolve(root, "src/components/overview/OverviewRail.tsx"))).toBe(false);

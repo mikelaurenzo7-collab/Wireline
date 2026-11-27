@@ -456,17 +456,6 @@ export function isMobileMoreActive(pathname: string) {
   return isMobilePrimaryActive(pathname, MOBILE_MORE_HREF);
 }
 
-export function findNavItemForPath(pathname: string): NavItem | undefined {
-  let route = workspaceRouteMeta(pathname);
-
-  while (route) {
-    if (route.icon && route.label) return toLegacyItem(shellItem(route));
-    route = route.parentHref ? ROUTE_BY_HREF.get(route.parentHref) : undefined;
-  }
-
-  return undefined;
-}
-
 export const PAGE_TITLES: Record<string, string> = Object.fromEntries(
   WORKSPACE_ROUTES.flatMap((route) =>
     [route.href, ...(route.matches ?? [])].map((href) => [href, route.title]),
@@ -475,15 +464,6 @@ export const PAGE_TITLES: Record<string, string> = Object.fromEntries(
 
 export function workspacePageTitle(pathname: string) {
   return workspaceRouteMeta(pathname)?.title ?? "Workspace";
-}
-
-export function workspacePageContext(pathname: string) {
-  const route = workspaceRouteMeta(pathname);
-  return {
-    title: route?.title ?? "Workspace",
-    eyebrow: route?.eyebrow ?? "System",
-    description: route?.description,
-  };
 }
 
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = Object.fromEntries(

@@ -820,9 +820,6 @@ export function validateEnv(): EnvValidationResult {
   return result;
 }
 
-export const getEnvByGroup = (group: EnvGroup) =>
-  ENV_REGISTRY.filter((entry) => entry.group === group);
-
 export function logEnvValidation(verbose = false) {
   const result = validateEnv();
   if (result.valid) log.info("Environment validation passed", { groups: result.byGroup });

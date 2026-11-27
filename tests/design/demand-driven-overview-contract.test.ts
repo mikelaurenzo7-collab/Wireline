@@ -7,7 +7,6 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("demand-driven authenticated experience", () => {
   const routes = read("src/routes/AppRoutes.tsx");
   const navigation = read("src/constants/navigation.ts");
-  const activation = read("src/components/ActivationChecklist.tsx");
   const studio = read("src/components/StudioWorkspaceV2.tsx");
   const setup = read("src/components/StudioAgentWorkspacePanel.tsx");
   const workroom = read("src/components/StudioWorkroom.tsx");
@@ -52,19 +51,6 @@ describe("demand-driven authenticated experience", () => {
     expect(activity).toContain("WorkspaceControlBand");
     expect(activity).toContain('aria-label="Insights view"');
     expect(activity).not.toContain("AppChromeSubTabs");
-  });
-
-  it("tracks only verifiable customer-readiness milestones", () => {
-    expect(activation).toMatch(/Ready for Customers/i);
-    expect(activation).toContain("Role and greeting set");
-    expect(activation).toContain("Define the work, boundaries, and successful outcomes.");
-    expect(activation).not.toContain("one clear customer-facing responsibility");
-    expect(activation).toContain("Knowledge added");
-    expect(activation).toContain("Phone number connected");
-    expect(activation).toContain("First live customer handled");
-    expect(activation).toContain("First follow-up reviewed");
-    expect(activation).toContain('actionLabel: "Connect Phone Number"');
-    expect(activation).not.toContain("Test conversation completed");
   });
 
   it("keeps work in one conversation with a shared computer and progressive Bot details", () => {

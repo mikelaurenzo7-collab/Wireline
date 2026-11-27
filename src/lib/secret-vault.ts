@@ -25,7 +25,7 @@
 // the encrypt/decrypt functions throw. Callers must catch and refuse
 // to persist plaintext fallbacks (`server.ts` does this for webhooks).
 
-import { randomBytes, createCipheriv, createDecipheriv, timingSafeEqual } from "node:crypto";
+import { randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 
 const ALGO = "aes-256-gcm";
 const IV_BYTES = 12;
@@ -116,31 +116,6 @@ export function decryptSecret(envelope: string): string {
   decipher.setAuthTag(tag);
   const plain = Buffer.concat([decipher.update(ct), decipher.final()]);
   return plain.toString("utf8");
-}
-
-/**
- * Cheap envelope-shape check used by callers that may receive either an
- * encrypted value or a legacy plaintext (e.g. during a backfill window).
- * Returns false for any string that is not a valid envelope; never
- * throws.
- */
-export function looksEncrypted(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  if (!value.startsWith(VERSION + ".")) return false;
-  const parts = value.split(".");
-  return parts.length === 4 && parts.every((p) => p.length > 0);
-}
-
-/**
- * Constant-time string compare — useful for comparing decrypted secrets
- * against a candidate without leaking length-based timing info. Returns
- * false for mismatched lengths.
- */
-export function safeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a, "utf8");
-  const bb = Buffer.from(b, "utf8");
-  if (ab.length !== bb.length) return false;
-  return timingSafeEqual(ab, bb);
 }
 
 /** Return the last 4 chars of a plaintext secret for display in UIs. */

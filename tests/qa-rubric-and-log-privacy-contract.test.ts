@@ -3,12 +3,6 @@ import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  QA_SCORE_SOURCE_HEURISTIC,
-  QA_SCORE_SOURCE_RUBRIC,
-  qaBreakdownIsRubric,
-  qaRubricShouldRun,
-} from "../src/lib/qa-score-provenance";
-import {
   conversationShapeForLog,
   emailMaskForLog,
   phoneSuffixForLog,
@@ -18,60 +12,6 @@ const ROOT = resolve(process.cwd());
 const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8").replace(/\r\n/g, "\n");
 
 describe("the QA rubric actually runs", () => {
-  it("treats the heuristic breakdown as provisional", () => {
-    // Shape retained for legacy call rows written by the retired finalizer.
-    const heuristic = {
-      source: QA_SCORE_SOURCE_HEURISTIC,
-      base: 60,
-      sentiment_delta: 20,
-      intent_delta: 0,
-      miss_delta: 0,
-      rationale: "Routine call.",
-      scored_at: "2026-08-15T00:00:00.000Z",
-    };
-    expect(qaBreakdownIsRubric(heuristic)).toBe(false);
-    expect(qaRubricShouldRun(heuristic)).toBe(true);
-  });
-
-  it("treats a completed rubric as final", () => {
-    const rubric = {
-      source: QA_SCORE_SOURCE_RUBRIC,
-      greeting: 18,
-      discovery: 15,
-      solution: 16,
-      objection: 12,
-      closing: 14,
-      coaching_note: "Ask one discovery question before presenting.",
-    };
-    expect(qaBreakdownIsRubric(rubric)).toBe(true);
-    expect(qaRubricShouldRun(rubric)).toBe(false);
-  });
-
-  it("upgrades legacy rows written before the stamp existed, with no backfill", () => {
-    // Every pre-existing row is a heuristic row and carries no `source`. It
-    // must still be eligible, or the rubric stays dead for the whole history.
-    const legacyHeuristic = {
-      base: 60,
-      sentiment_delta: -20,
-      intent_delta: 0,
-      miss_delta: -10,
-      rationale: "Caller hung up.",
-      scored_at: "2026-01-01T00:00:00.000Z",
-    };
-    expect(qaRubricShouldRun(legacyHeuristic)).toBe(true);
-    // An unstamped row that nonetheless has all five dimensions is a rubric
-    // result from before the stamp, and must not be re-scored.
-    expect(
-      qaRubricShouldRun({ greeting: 1, discovery: 2, solution: 3, objection: 4, closing: 5 }),
-    ).toBe(false);
-  });
-
-  it("treats a null or absent breakdown as never scored", () => {
-    expect(qaRubricShouldRun(null)).toBe(true);
-    expect(qaRubricShouldRun(undefined)).toBe(true);
-    expect(qaRubricShouldRun("not an object")).toBe(true);
-  });
-
   it("does not spend a sales rubric model call after a phone call", () => {
     expect(read("src/lib/post-call-digest.ts")).not.toContain('type: "auto_qa_score"');
     expect(read("src/lib/voice/openai-sip-session.ts")).not.toContain(

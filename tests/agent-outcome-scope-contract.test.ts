@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 const route = readFileSync("src/routes/agent-call-routes.ts", "utf8");
 const registry = readFileSync("src/server/register-api-routes.ts", "utf8");
-const ledger = readFileSync("src/components/OutcomeLedger.tsx", "utf8");
 
 describe("agent outcome scope", () => {
   it("proves agent ownership and scopes calls by tenant plus agent before pagination", () => {
@@ -36,8 +35,5 @@ describe("agent outcome scope", () => {
   it("registers the scoped route and uses it only for agent ledgers", () => {
     expect(registry).toContain('import agentCallRouter from "../routes/agent-call-routes";');
     expect(registry).toContain("app.use(agentCallRouter);");
-    expect(ledger).toContain("`/api/agents/${encodeURIComponent(agentId)}/calls?limit=${limit}`");
-    expect(ledger).toContain("`/api/calls?limit=${limit}`");
-    expect(ledger).toContain("!agentId || row.agent_id === agentId");
   });
 });

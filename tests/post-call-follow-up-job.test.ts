@@ -42,7 +42,6 @@ vi.mock("../src/lib/action-engine", () => ({
   recordOwnerNote: h.note,
 }));
 vi.mock("../src/lib/ai-audit", () => ({}));
-vi.mock("../src/lib/post-call-analysis-policy", () => ({}));
 vi.mock("../src/lib/agent-runtime-helpers", () => ({}));
 vi.mock("../src/middleware/audit-middleware", () => ({}));
 vi.mock("../src/lib/webhook-helpers", () => ({}));

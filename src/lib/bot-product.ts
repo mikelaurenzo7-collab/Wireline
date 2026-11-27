@@ -1,7 +1,3 @@
-export type BotChannelKey = "voice" | "text" | "email";
-export type BotTemplateCategory = "Operations" | "Everyday" | "Custom";
-export type BotDirection = "inbound" | "outbound" | "hybrid";
-
 export const BOT_BRAND = {
   name: "BotBound",
   slogan: "Your next hire is a bot.",

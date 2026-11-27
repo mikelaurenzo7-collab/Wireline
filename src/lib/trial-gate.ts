@@ -15,8 +15,6 @@ import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { isOwnerEmail } from "./auth-service";
 
-/** Legacy trial constants. New signups do not enter this path. */
-export const TRIAL_DAYS = 14;
 export const TRIAL_MAX_AGENTS = 1;
 export const TRIAL_MAX_OUTBOUND = 25;
 
@@ -465,9 +463,6 @@ export async function enforceLiveWorkActivation(req: Request, res: Response, nex
   if (!state) return;
   next();
 }
-
-/** @deprecated Use enforceLiveWorkActivation — retained for external imports. */
-export const enforceTrialAgentCap = enforceLiveWorkActivation;
 
 /** Block outbound dialing until verified and activated. */
 export async function enforceTrialOutboundCap(req: Request, res: Response, next: NextFunction) {

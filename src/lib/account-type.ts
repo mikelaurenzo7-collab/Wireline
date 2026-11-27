@@ -21,15 +21,6 @@ export function resolveAccountType(planId: string | null | undefined): AccountTy
   return planId === "personal" ? "personal" : "business";
 }
 
-/** Retained for callers that classify arbitrary legacy section labels. */
-export function isBusinessOnlySection(_section: string | undefined): boolean {
-  return false;
-}
-
-export function isPersonalOnlySection(_section: string | undefined): boolean {
-  return false;
-}
-
 /** Legacy signature; both stored account values use the same workspace routes. */
 export function isRouteAvailableForAccount(_type: AccountType, _path: string): boolean {
   return true;

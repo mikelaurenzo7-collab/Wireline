@@ -399,16 +399,3 @@ export async function researchPerplexity(
     semanticRerank: search?.semanticRerank === true,
   };
 }
-
-export function getPerplexityCapabilityPosture() {
-  const key = Boolean(apiKey());
-  return {
-    key,
-    sonar: key,
-    search: key,
-    agent: key && Boolean(AGENT_URL) && Boolean(AGENT_MODEL),
-    embeddings: key && Boolean(EMBEDDINGS_URL) && Boolean(EMBEDDINGS_MODEL),
-    productionKeyIgnoredInPreview:
-      requiresPreviewProviderIsolation() && Boolean(process.env.PERPLEXITY_API_KEY?.trim()),
-  } as const;
-}

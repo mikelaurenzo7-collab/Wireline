@@ -91,11 +91,3 @@ export function computeCallStats(
     : 0;
   return { answered: answered.length, avg_duration_sec, total_cost_usd, avg_lead_score };
 }
-
-// Returns the call_id values from leads that actually have one set —
-// used by the route handler to .in('id', …) the matching call logs.
-export function callIdsFromLeads(leads: CampaignLeadRow[]): string[] {
-  const ids: string[] = [];
-  for (const l of leads) if (l.call_id) ids.push(l.call_id);
-  return ids;
-}

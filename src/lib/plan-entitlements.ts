@@ -65,14 +65,6 @@ export function subscriptionPlanToTier(planId: string | null | undefined): PlanT
   }
 }
 
-export function effectivePlanIdForEntitlements(
-  planId: string | null | undefined,
-  email?: string | null,
-): string | null {
-  if (isOwnerEmail(email)) return FOUNDER_EFFECTIVE_PLAN_ID;
-  return planId ?? null;
-}
-
 export function subscriptionStatusGrantsEntitlements(status: string | null | undefined): boolean {
   return status === "active" || status === "trialing";
 }
@@ -152,13 +144,4 @@ export function voiceMinutesDailyQuotaForPlan(planId: string | null | undefined)
   // may use their monthly pool in a busy day; the separate durable wallet
   // admission still bounds every call and prevents unfunded concurrency.
   return Math.max(60, plan.voice_minutes_monthly);
-}
-
-export async function getSubscriptionPlanId(userId: string): Promise<string | null> {
-  const [sub] = await drizzle
-    .select({ plan: schema.subscriptions.plan })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, userId))
-    .limit(1);
-  return sub?.plan ?? null;
 }

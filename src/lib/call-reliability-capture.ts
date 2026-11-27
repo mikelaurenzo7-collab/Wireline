@@ -6,8 +6,6 @@ import { sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 
-export type WebhookHealthOutcome = "success" | "rejected" | "error";
-
 const PIPELINE_FAILURE_VALUES = new Set([
   "stt",
   "tts",
@@ -61,71 +59,6 @@ export function isToolCallFailureResult(result: string): boolean {
   return TOOL_FAILURE_PATTERNS.some((pattern) => pattern.test(text));
 }
 
-export async function recordInboundWebhookHealth(opts: {
-  userId?: string | null;
-  provider: string;
-  eventType: string;
-  outcome: WebhookHealthOutcome;
-}): Promise<void> {
-  try {
-    await drizzle.insert(schema.webhookHealth).values({
-      userId: opts.userId ?? null,
-      provider: opts.provider,
-      eventType: opts.eventType,
-      outcome: opts.outcome,
-    });
-  } catch (err) {
-    log.warn("recordInboundWebhookHealth failed", {
-      provider: opts.provider,
-      eventType: opts.eventType,
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
-}
-
-export async function recordToolCallBatch(opts: {
-  vapiCallId: string;
-  userId: string;
-  total: number;
-  failed: number;
-}): Promise<void> {
-  if (!opts.vapiCallId || opts.total <= 0) return;
-  try {
-    const updated = await drizzle
-      .update(schema.callLogs)
-      .set({
-        toolCallsTotal: sql`COALESCE(${schema.callLogs.toolCallsTotal}, 0) + ${opts.total}`,
-        toolCallsFailed: sql`COALESCE(${schema.callLogs.toolCallsFailed}, 0) + ${opts.failed}`,
-      })
-      .where(sql`${schema.callLogs.vapiCallId} = ${opts.vapiCallId}`)
-      .returning({ id: schema.callLogs.id });
-
-    if (updated.length > 0) return;
-
-    await drizzle
-      .insert(schema.callReliabilityStaging)
-      .values({
-        vapiCallId: opts.vapiCallId,
-        userId: opts.userId,
-        toolCallsTotal: opts.total,
-        toolCallsFailed: opts.failed,
-      })
-      .onConflictDoUpdate({
-        target: schema.callReliabilityStaging.vapiCallId,
-        set: {
-          toolCallsTotal: sql`${schema.callReliabilityStaging.toolCallsTotal} + ${opts.total}`,
-          toolCallsFailed: sql`${schema.callReliabilityStaging.toolCallsFailed} + ${opts.failed}`,
-          updatedAt: new Date(),
-        },
-      });
-  } catch (err) {
-    log.warn("recordToolCallBatch failed", {
-      vapiCallId: opts.vapiCallId,
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
-}
-
 export async function recordEscalationOutcome(opts: {
   vapiCallId: string;
   userId: string;
@@ -167,44 +100,5 @@ export async function recordEscalationOutcome(opts: {
       vapiCallId: opts.vapiCallId,
       error: err instanceof Error ? err.message : String(err),
     });
-  }
-}
-
-export interface StagedReliabilityMetrics {
-  toolCallsTotal: number;
-  toolCallsFailed: number;
-  escalationAttempted: boolean;
-  escalationSucceeded: boolean;
-}
-
-export async function takeStagedReliabilityMetrics(
-  vapiCallId: string,
-): Promise<StagedReliabilityMetrics | null> {
-  if (!vapiCallId) return null;
-  try {
-    const [row] = await drizzle
-      .select({
-        toolCallsTotal: schema.callReliabilityStaging.toolCallsTotal,
-        toolCallsFailed: schema.callReliabilityStaging.toolCallsFailed,
-        escalationAttempted: schema.callReliabilityStaging.escalationAttempted,
-        escalationSucceeded: schema.callReliabilityStaging.escalationSucceeded,
-      })
-      .from(schema.callReliabilityStaging)
-      .where(sql`${schema.callReliabilityStaging.vapiCallId} = ${vapiCallId}`)
-      .limit(1);
-
-    if (!row) return null;
-
-    await drizzle
-      .delete(schema.callReliabilityStaging)
-      .where(sql`${schema.callReliabilityStaging.vapiCallId} = ${vapiCallId}`);
-
-    return row;
-  } catch (err) {
-    log.warn("takeStagedReliabilityMetrics failed", {
-      vapiCallId,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return null;
   }
 }

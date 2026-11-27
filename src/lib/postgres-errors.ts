@@ -16,8 +16,3 @@ export function isPostgresMissingColumn(error: unknown, column = "reasoning"): b
       (msg.includes("does not exist") || msg.includes("undefined_column")))
   );
 }
-
-export function isPostgresMissingRelation(error: unknown): boolean {
-  const msg = getErrorMessage(error).toLowerCase();
-  return msg.includes("42p01") || msg.includes("does not exist");
-}

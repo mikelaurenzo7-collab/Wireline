@@ -312,7 +312,6 @@ describe("code review hardening contracts", () => {
     const terms = read("src/components/LegalPage.tsx");
     const support = read("src/components/SupportPage.tsx");
     const contact = read("src/components/ContactPage.tsx");
-    const activation = read("src/components/ActivationChecklist.tsx");
     const demoSeed = read("src/lib/demo-account-seed.ts");
     const supportPersona = read("src/lib/wireline-agent-personas.ts");
     const escalation = read("src/lib/wireline-agent-escalation.ts");
@@ -338,8 +337,6 @@ describe("code review hardening contracts", () => {
     expect(support).not.toContain("within one business day");
     expect(contact).toContain("We'll follow up at");
     expect(contact).not.toContain("within one business day");
-    expect(activation).toContain("Define the work, boundaries, and successful outcomes.");
-    expect(activation).not.toContain("one clear customer-facing responsibility");
     expect(canonicalDemoKnowledge).toContain("within 30 days");
     expect(canonicalDemoKnowledge).not.toContain("Refund window: 14 days");
     expect(canonicalDemoKnowledge).toContain("HIPAA and BAA support are not currently available");

@@ -11,7 +11,6 @@
  * setup script creates; `tests/usage-billing-catalog.test.ts` pins both.
  */
 
-export const USAGE_PLAN_ID = "usage" as const;
 export const USAGE_CATALOG_VERSION = "2026-10-usage-v2" as const;
 export const USAGE_TIERS = {
   previous: {
@@ -56,11 +55,6 @@ export const PUBLIC_USAGE_TIERS = ["lite", "standard", "plus"] as const;
 export const DEFAULT_PUBLIC_USAGE_TIER: UsageTierId = "standard";
 /** Starter's monthly price. Omitted tiers use this, not a retired offer. */
 export const USAGE_BASE_USD_MONTHLY = USAGE_TIERS[DEFAULT_PUBLIC_USAGE_TIER].monthlyUsd;
-/** Starter's included work. Omitted allowances use this, not a retired offer. */
-export const USAGE_INCLUDED_WORK_USD = USAGE_TIERS[DEFAULT_PUBLIC_USAGE_TIER].includedWorkUsd;
-export function publicUsageTierId(value: unknown): UsageTierId {
-  return PUBLIC_USAGE_TIERS.find((tier) => tier === value) ?? DEFAULT_PUBLIC_USAGE_TIER;
-}
 export function isUsageTierId(value: unknown): value is UsageTierId {
   return typeof value === "string" && Object.hasOwn(USAGE_TIERS, value);
 }

@@ -85,10 +85,6 @@ export async function getNativeCalendarConfiguration(userId: string) {
   });
 }
 
-export async function isNativeCalendarConfigured(userId: string): Promise<boolean> {
-  return (await getNativeCalendarSettings(userId)).enabled;
-}
-
 export async function saveNativeCalendarSettings(userId: string, value: unknown) {
   const settings = validateNativeCalendarSettings(value);
   await tenantStore.run(userId, () =>

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 const route = readFileSync("src/routes/call-ops-analytics-routes.ts", "utf8");
 const registry = readFileSync("src/server/register-api-routes.ts", "utf8");
-const analytics = readFileSync("src/components/CallOpsAnalytics.tsx", "utf8");
 const callOps = readFileSync("src/components/CallLogsClaude.tsx", "utf8");
 const phonePage = readFileSync("src/pages/PhonePage.tsx", "utf8");
 const insightsView = readFileSync("src/components/insights/InsightsView.tsx", "utf8");
@@ -39,17 +38,10 @@ describe("Call Ops analytics truth", () => {
   });
 
   it("keeps call analytics out of Insights — the Calls page is the one calls surface", () => {
-    expect(analytics).toContain("/api/call-ops/analytics?timezone=");
-    expect(analytics).toContain("Intl.DateTimeFormat().resolvedOptions().timeZone");
-    expect(analytics).toContain("analytics.totalCalls");
-    expect(analytics).toContain("analytics.totalSeconds");
-    expect(analytics).toContain("analytics.avgDurationSeconds");
-    expect(analytics).toContain("analytics.avgQaScore");
-    expect(analytics).toContain("analytics.weekdayCounts");
     // The duplicated Insights "Calls" view was cut (Oct 26 sweep): Insights
     // keeps Totals, Goals, Topics, Quality, Reliability. The analytics
-    // endpoint stays registered; its component's only UI consumer was the
-    // cut view — flagged for a follow-up decision, not silently deleted.
+    // endpoint stays registered; the component that view rendered had no
+    // other consumer and was removed with the unreachable-code sweep.
     expect(insightsView).not.toContain("CallOpsOverview");
     expect(opsDesign).toContain('tabs: ["funnel", "goals"]');
     expect(phonePage).not.toContain('{ id: "analytics", label: "Analytics" }');
@@ -59,18 +51,5 @@ describe("Call Ops analytics truth", () => {
     expect(callOps).toContain("Load More Calls");
     expect(callOps).not.toContain("/api/calls?limit=500");
     expect(callOps).not.toContain("function AnalyticsContent()");
-  });
-
-  it("keeps analytics recoverable without erasing the last successful view", () => {
-    expect(analytics).toContain("const loadAnalytics = useCallback");
-    expect(analytics).toContain("if (loading && !analytics && !error) return <CardRowSkeleton />");
-    expect(analytics).not.toContain("setAnalytics(null)");
-    expect(analytics).toContain('aria-label="Retry call analytics"');
-    expect(analytics).toContain("onClick={() => void loadAnalytics()}");
-    expect(analytics).toContain('title="Analytics May Be Out of Date"');
-    expect(analytics).toContain("Your last loaded metrics remain available below.");
-    expect(analytics.indexOf("{staleDataNotice}")).toBeLessThan(
-      analytics.indexOf('className="grid grid-cols-2 gap-3 sm:grid-cols-4"'),
-    );
   });
 });

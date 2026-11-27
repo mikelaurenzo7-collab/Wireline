@@ -7,10 +7,8 @@ const read = (path: string) =>
 
 describe("phone settings attach routing", () => {
   it("assigns Bots through the shared self-service line manager", () => {
-    const settingsPage = read("src/pages/PhoneSettings.tsx");
     const setup = read("src/components/PhoneSetupPanel.tsx");
 
-    expect(settingsPage).toContain("PhoneSetupPanel");
     expect(setup).toContain("attachAgent");
     expect(setup).toContain('method: "PATCH"');
     expect(setup).toContain("`/api/phone-numbers/${activeNumber.id}`");

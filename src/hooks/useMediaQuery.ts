@@ -31,8 +31,3 @@ export function useMediaQuery(query: string): boolean {
     () => false,
   );
 }
-
-/** Convenience: matches the `lg:` Tailwind breakpoint (>= 1024px). */
-export function useIsDesktop(): boolean {
-  return useMediaQuery("(min-width: 1024px)");
-}

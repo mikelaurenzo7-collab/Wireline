@@ -9,8 +9,6 @@ export const ActionTypeSchema = z.enum([
   "notify_slack",
 ]);
 
-export type ActionType = z.infer<typeof ActionTypeSchema>;
-
 export const ActionItemSchema = z.object({
   type: ActionTypeSchema,
   priority: z.enum(["low", "medium", "high"]),

@@ -3,10 +3,8 @@ import { OWNER_MEMORY_SOURCE } from "./owner-memory";
  * Lesson review and learning summaries.
  */
 import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { drizzle, log } from "./server-context";
+import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-
-export const PRODUCTIVE_OUTCOMES = new Set(["booked", "qualified", "followup", "info"]);
 
 export type LearningDigest = {
   agentId: string;
@@ -104,29 +102,4 @@ export async function getLearningDigest(userId: string, agentId: string): Promis
     outcomeLiftPct,
     objectionsTrending,
   };
-}
-
-export async function runWeeklyLearningDigest(userId: string): Promise<void> {
-  try {
-    const agents = await drizzle
-      .select({ id: schema.agents.id })
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, userId))
-      .limit(10);
-
-    for (const agent of agents) {
-      const digest = await getLearningDigest(userId, agent.id);
-      if (digest.topLessons.length === 0) continue;
-      log.info("weekly learning digest", {
-        userId,
-        agentId: agent.id,
-        lessons: digest.topLessons.length,
-        lift: digest.outcomeLiftPct,
-      });
-    }
-  } catch (err: unknown) {
-    log.warn("runWeeklyLearningDigest failed", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
 }

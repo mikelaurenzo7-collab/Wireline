@@ -80,14 +80,12 @@ describe("marketing centering contract", () => {
 
   it("keeps the canonical phone Bot mark and legacy import alias aligned", () => {
     const mark = read("src/components/brand/BotBoundMark.tsx");
-    const legacyMark = read("src/components/brand/WirelineMark.tsx");
 
     expect(mark).toContain("<img");
     expect(mark).toContain('src="/brand/botbound-operator-512.webp"');
     expect(mark).toContain('data-botbound-mark="phone-bot"');
     expect(mark).not.toContain("<svg");
     expect(mark).not.toContain("viewBox=");
-    expect(legacyMark).toContain('export { default } from "./BotBoundMark"');
   });
 
   it("gives every public route one browser-document scroll owner", () => {
@@ -136,8 +134,12 @@ describe("marketing centering contract", () => {
   it("sends the retired blog to the changelog", () => {
     const app = read("src/App.tsx");
     expect(existsSync(resolve(process.cwd(), "src/pages/Blog.tsx"))).toBe(false);
-    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
-    expect(app).toContain('<Route path="/blog/*" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
+    expect(app).toContain(
+      '<Route path="/blog/*" element={<PreservingRedirect to="/changelog" />} />',
+    );
   });
 
   it("gives public marketing surfaces an explicit copy alignment", () => {

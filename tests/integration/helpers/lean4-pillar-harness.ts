@@ -10,48 +10,6 @@
  * Pillar 4: Branded Bot Email Identity via AgentMail (Inbox provisioning, transactional confirmations, payment receipts, reply triage)
  */
 
-// Re-export production implementations for single-source-of-truth
-export {
-  MIN_TRAVEL_BUFFER_MINUTES,
-  MAX_TRAVEL_BUFFER_MINUTES,
-  DEFAULT_SOFT_HOLD_TTL_SECONDS,
-  calculateTravelBuffer,
-  createEphemeralHold,
-  isHoldActive,
-  checkSlotWithBufferAndHolds,
-  type EphemeralCalendarHold,
-  type TravelBufferCalculation,
-} from "../../../src/lib/calendar-holds";
-
-export { escapeIcsText, formatIcsDate, generateRfc5545Ics } from "../../../src/lib/ics-generator";
-
-export {
-  DEFAULT_MONTHLY_GOODWILL_CAP_CENTS,
-  DEFAULT_PER_RESOLUTION_CAP_CENTS,
-  evaluateGoodwillCredit,
-  type GoodwillWalletPolicy,
-} from "../../../src/lib/goodwill-wallet-policy";
-
-export {
-  VoiceSessionRegistry,
-  globalVoiceSessionRegistry,
-  constructStripePaymentLink,
-  verifyStripeWebhookHMAC,
-  type InCallPaymentRequest,
-  type InCallPaymentEvent,
-} from "../../../src/lib/stripe-voice-session";
-
-export {
-  buildBrandedInboxParams,
-  type SendAppointmentEmailParams,
-  type SendPaymentReceiptEmailParams,
-} from "../../../src/lib/agentmail-transactional";
-
-export {
-  triageInboundCustomerReply,
-  type EmailTriageResult,
-} from "../../../src/lib/agentmail-triage";
-
 // ============================================================================
 // 1. Interface Contracts (PROJECT.md § Interface Contracts)
 // ============================================================================

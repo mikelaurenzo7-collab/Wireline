@@ -96,10 +96,4 @@ export async function listAIGatewayLanguageModels(): Promise<GatewayModelEntry[]
   }
 }
 
-export async function isAIGatewayLanguageModel(modelId: string) {
-  const normalized = gatewayModelId(modelId);
-  const models = await listAIGatewayLanguageModels();
-  return models.some((model) => model.id === normalized);
-}
-
 export { AI_GATEWAY_BASE_URL };

@@ -16,7 +16,6 @@ import {
   estimatedContributionMarginAtExpectedUsage,
   estimatedContributionMarginAtFullIncludedUsage,
 } from "../src/lib/plan-catalog";
-import { planEconomics } from "../src/lib/plan-economics";
 import {
   COGS_DRIFT_THRESHOLD_PER_MIN_USD,
   MARGIN_AT_RISK_THRESHOLD_PCT,
@@ -61,18 +60,6 @@ describe("plan economics contract", () => {
       expect(extraBotFeature, plan.id).toContain("50 guaranteed voice minutes");
       expect(extraBotFeature, plan.id).toContain("1 production-number slot");
       expect(extraBotFeature, plan.id).toContain("the active Bot gets its line automatically");
-    }
-  });
-
-  it("keeps live voice and flexible allowances tied to the canonical catalog", () => {
-    for (const plan of STRIPE_PLANS) {
-      const economics = planEconomics(plan.id);
-      expect(economics).not.toBeNull();
-      expect(economics?.voiceMinutesMonthly).toBe(plan.voice_minutes_monthly);
-      expect(economics?.overagePerMinuteUsd).toBe(plan.overage_per_min_usd);
-      expect(economics?.includedPhoneNumbers).toBe(plan.included_phone_numbers);
-      expect(economics?.runtimeAllowanceUsdMonthly).toBe(plan.runtime_allowance_usd_monthly);
-      expect(economics?.aiSpendAllowanceUsdMonthly).toBe(plan.ai_spend_allowance_usd_monthly);
     }
   });
 

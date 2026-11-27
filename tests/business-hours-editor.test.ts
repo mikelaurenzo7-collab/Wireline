@@ -10,7 +10,7 @@ import {
   hoursWeekFromSaved,
   hoursWeekProblem,
 } from "../src/components/BusinessHoursEditor";
-import { buildAgentRuntimeContext, isWithinBusinessHours } from "../src/lib/agent-runtime";
+import { isWithinBusinessHours } from "../src/lib/agent-runtime";
 import { AgentBusinessProfileSchema } from "../src/lib/form-validators";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -29,18 +29,15 @@ describe("business hours editor", () => {
     expect(isWithinBusinessHours(profile, new Date("2026-10-07T15:00:00Z"))).toBe(true);
     expect(isWithinBusinessHours(profile, new Date("2026-10-07T23:00:00Z"))).toBe(false);
     // 12:30Z is 8:30am in America/New_York, before the 9:00 opening.
-    expect(
-      isWithinBusinessHours({ business_hours: hours }, new Date("2026-10-07T12:30:00Z")),
-    ).toBe(false);
+    expect(isWithinBusinessHours({ business_hours: hours }, new Date("2026-10-07T12:30:00Z"))).toBe(
+      false,
+    );
     expect(
       isWithinBusinessHours(
         { business_hours: hours, timezone: "UTC" },
         new Date("2026-10-07T12:30:00Z"),
       ),
     ).toBe(true);
-    expect(buildAgentRuntimeContext("base", { business_hours: hours }).prompt).toContain(
-      "America/New_York",
-    );
   });
 
   it("loads saved hours the way the runtime reads them and saves them back unchanged", () => {

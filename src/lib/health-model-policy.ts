@@ -45,5 +45,3 @@ export function getHealthModelTiering() {
     },
   };
 }
-
-export type HealthModelTiering = ReturnType<typeof getHealthModelTiering>;

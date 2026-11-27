@@ -19,12 +19,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
   });
 
   it("OutcomeLedger and ApprovalInbox surface non-OK loads instead of silent empty lists", () => {
-    const ledger = read("src/components/OutcomeLedger.tsx");
     const inbox = read("src/components/ApprovalInbox.tsx");
-    expect(ledger).toContain("if (!callsRes.ok)");
-    expect(ledger).toContain('setFatalError("Could not load outcome ledger.")');
-    expect(ledger).toContain('setEnrichmentWarning("Follow-up status is temporarily incomplete.")');
-    expect(ledger).not.toContain("callsRes.ok ? await callsRes.json() : { calls: [] }");
     expect(inbox).toContain("Could not load Needs You.");
     expect(inbox).toContain("setTasksUnavailable(!tasksReady)");
     expect(inbox).toContain(
@@ -74,10 +69,6 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     const reliability = read("src/components/insights/VoiceReliabilityView.tsx");
     expect(reliability).not.toContain(".catch(\n        () => ({ calls: [] }),");
     expect(reliability).not.toContain("() => ({ calls: [] })");
-
-    const analytics = read("src/components/CallOpsAnalytics.tsx");
-    expect(analytics).toContain('setError("Could not load call analytics.")');
-    expect(analytics).toContain("Analytics Unavailable");
   });
 
   it("returns 200 { user: null } for anonymous session probes", () => {

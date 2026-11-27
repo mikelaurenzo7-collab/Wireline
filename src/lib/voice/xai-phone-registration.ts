@@ -52,10 +52,6 @@ async function findRegistration(phoneNumber: string) {
   return row ?? null;
 }
 
-export async function isXAIPhoneRegistered(phoneNumber: string): Promise<boolean> {
-  return Boolean(await findRegistration(phoneNumber));
-}
-
 /** Digest credentials Twilio presents to xAI for this number, or null if unregistered. */
 export async function xaiSipCredentialsFor(phoneNumber: string): Promise<XAISipCredentials | null> {
   const row = await findRegistration(phoneNumber);
