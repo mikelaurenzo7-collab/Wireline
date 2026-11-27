@@ -73,7 +73,10 @@ async function loadApprovedText(
   return { screenApprovedText, smsActionResult, evaluateOutboundDialGate };
 }
 
-describe("approved text confirmations", () => {
+// Each test loads the action engine afresh behind its own mocks, and the first
+// load compiles that whole module graph: over a second alone, and past the
+// five-second default when the full suite is running beside it.
+describe("approved text confirmations", { timeout: 20_000 }, () => {
   beforeEach(() => {
     vi.stubEnv("FEDERAL_DNC_API_URL", "");
     vi.stubEnv("FEDERAL_DNC_API_KEY", "");

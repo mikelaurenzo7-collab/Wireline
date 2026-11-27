@@ -98,7 +98,7 @@ describe("private text rehearsal saved guardrails", () => {
     // The rules for the mode, not only its name.
     expect(prompt).toContain("COMPLIANCE: PCI DSS\nCardholder data handling:");
     expect(prompt).toContain(
-      "- Do not record, repeat, or write down card numbers, expiry dates, or CVVs.",
+      "- Never ask for, record, repeat, or write down card numbers, expiry dates, or CVVs. You cannot take a payment on the call.",
     );
     expect(prompt).toContain("Do not discuss: payment card details, legal advice.");
     expect(prompt).toContain(
