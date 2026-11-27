@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   entity: vi.fn(),
   gate: vi.fn(),
   note: vi.fn(),
+  waiting: vi.fn(),
 }));
 vi.mock("../src/lib/action-engine", () => ({ executeAction: h.queue }));
 vi.mock("../src/lib/ai-supervisor", () => ({ superviseClientCommunication: h.supervise }));
@@ -55,7 +56,12 @@ const context = {
   drizzle: {
     insert: () => ({ values: h.note }),
     select: () => ({
-      from: () => ({ leftJoin: () => ({ where: () => ({ limit: h.permission }) }) }),
+      from: () => ({
+        // The Bot's permission is read with its workspace's.
+        leftJoin: () => ({ where: () => ({ limit: h.permission }) }),
+        // What already waits for the owner from this call.
+        where: () => ({ limit: h.waiting }),
+      }),
     }),
   },
   log: { warn: vi.fn(), error: vi.fn() },
@@ -63,6 +69,7 @@ const context = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  h.waiting.mockResolvedValue([]);
   h.environment.mockResolvedValue({ allowed: true });
   h.entity.mockResolvedValue({ allowed: true });
   h.gate.mockResolvedValue({ allowed: true });
@@ -159,6 +166,23 @@ describe("live text and the owner's choice to check first", () => {
     expect(result?.result).not.toContain("DRAFT_SAVED");
   });
 
+  it("leaves the owner a note, and claims nothing, when saving the held text throws", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "draft", tenantLevel: "auto" }]);
+    h.queue.mockRejectedValue(new Error("Database unavailable."));
+    h.note.mockResolvedValue(undefined);
+    const result = await handleCoreToolCall("send_text_message", args, context);
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    // The failure reaches the tool's own fallback instead of escaping it.
+    expect(h.note).toHaveBeenCalledOnce();
+    expect(h.note.mock.calls[0][0]).toMatchObject({
+      taskType: "send_text_message",
+      status: "pending",
+      payload: { to: CALLER, body: "We are at 12 Main St." },
+    });
+    expect(result?.result).toContain("The message was not confirmed.");
+    expect(result?.result).not.toContain("DRAFT_SAVED");
+  });
+
   it("sends nothing when the Bot's permission cannot be read", async () => {
     h.permission.mockResolvedValue([]);
     const result = await handleCoreToolCall("send_text_message", args, context);
@@ -175,5 +199,183 @@ describe("live text and the owner's choice to check first", () => {
     expect(h.queue).not.toHaveBeenCalled();
     expect(h.permission).not.toHaveBeenCalled();
     expect(result?.result).toContain("do-not-contact list");
+  });
+});
+
+/**
+ * Auto is where a Bot starts. It sends on its own, and the review that reads
+ * every message also decides whether the owner would want a say.
+ */
+describe("live text on Auto: the Bot decides when its owner would want a say", () => {
+  const refund = { ...args, message_body: "No problem, we will refund the full $240 today." };
+  const decision = "This promises a $240 refund. Confirm you want to give it.";
+  const playbook = { checkFirst: ["A customer asks for a refund"] };
+
+  it("asks the review to decide, with the owner's own rules", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    await handleCoreToolCall("send_text_message", args, context);
+    expect(h.supervise).toHaveBeenCalledOnce();
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+    });
+    // A routine text still just goes.
+    expect(h.sendMessage).toHaveBeenCalledOnce();
+    expect(h.queue).not.toHaveBeenCalled();
+
+    // A Bot nobody gave rules to still decides, from the review's own criteria.
+    h.supervise.mockClear();
+    h.permission.mockResolvedValue([{ agentLevel: null, tenantLevel: null, playbook: null }]);
+    await handleCoreToolCall("send_text_message", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({ rules: [] });
+  });
+
+  it("uses no judgement of its own on a Bot set to never ask, only the owner's rules", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "full", tenantLevel: "auto", playbook: null }]);
+    await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.supervise).toHaveBeenCalledOnce();
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
+    expect(h.sendMessage).toHaveBeenCalledOnce();
+    expect(h.queue).not.toHaveBeenCalled();
+
+    // A case the owner named is still the owner's to decide.
+    h.supervise.mockClear();
+    h.permission.mockResolvedValue([{ agentLevel: "full", tenantLevel: "auto", playbook }]);
+    await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+      rulesOnly: true,
+    });
+  });
+
+  it("holds the text as the Bot wrote it, with what the owner has to decide", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.message_body,
+      ownerDecision: decision,
+    });
+    const result = await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(h.queue).toHaveBeenCalledExactlyOnceWith(
+      "tenant-owned",
+      {
+        type: "send_text_message",
+        agentId: "agent-owned",
+        priority: "medium",
+        payload: { to: CALLER, body: refund.message_body, reasoning: decision },
+      },
+      { sourceType: "phone_call", sourceId: "call-owned" },
+      "draft",
+    );
+    // The Bot tells the caller it is checking, and promises nothing.
+    expect(result?.result).toContain(`DRAFT_SAVED: ${CALLER}`);
+    expect(result?.result).toContain("checking one thing with the team before it goes out");
+    expect(result?.result).toContain("do not promise what the answer will be");
+    expect(result?.result).not.toMatch(/approv/i);
+    // The after-call pass reads that receipt as a text already waiting.
+    expect(liveTextOutcome(CALLER, [{ status: "completed", result: result!.result }])).toBe("held");
+  });
+
+  it("keeps a WhatsApp message the Bot held on WhatsApp, with the reason", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "auto", playbook }]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.message_body,
+      ownerDecision: decision,
+    });
+    h.note.mockResolvedValue(undefined);
+    const result = await handleCoreToolCall(
+      "send_text_message",
+      { ...refund, channel: "whatsapp" },
+      context,
+    );
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(h.queue).not.toHaveBeenCalled();
+    expect(h.note).toHaveBeenCalledOnce();
+    expect(h.note.mock.calls[0][0]).toMatchObject({
+      taskType: "follow_up",
+      status: "pending",
+      payload: { to: CALLER, body: refund.message_body, reasoning: decision, channel: "whatsapp" },
+    });
+    expect(result?.result).toContain("The WhatsApp message is written and the owner needs to");
+  });
+
+  it("sends nothing and says so when a held text could not be saved", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "auto", playbook }]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.message_body,
+      ownerDecision: decision,
+    });
+    h.queue.mockResolvedValue({ success: false, error: "Database unavailable." });
+    const result = await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(result?.result).toContain("The message was not confirmed.");
+    expect(result?.result).not.toContain("DRAFT_SAVED");
+
+    // A save that throws is the same to the caller: nothing sent, nothing claimed.
+    h.queue.mockRejectedValue(new Error("Database unavailable."));
+    const thrown = await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(thrown?.result).toContain("The message was not confirmed.");
+    expect(thrown?.result).not.toContain("DRAFT_SAVED");
+  });
+
+  it("shows the review what already waits from this call, and never files the same text twice", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    // The caller heard "I'm checking with the team" and said "just send it".
+    h.waiting.mockResolvedValue([
+      { payload: { to: CALLER, body: "No problem,  we will refund the full $240 TODAY. " } },
+      { payload: { to: CALLER } },
+      { payload: null },
+    ]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: refund.message_body,
+      ownerDecision: decision,
+    });
+    const result = await handleCoreToolCall("send_text_message", refund, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+      alreadyWaiting: ["No problem,  we will refund the full $240 TODAY. "],
+    });
+    // The same words are already with the owner: no second copy, nothing sent.
+    expect(h.queue).not.toHaveBeenCalled();
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(result?.result).toContain(`DRAFT_SAVED: ${CALLER}`);
+    expect(result?.result).toContain("checking one thing with the team before it goes out");
+    expect(liveTextOutcome(CALLER, [{ status: "completed", result: result!.result }])).toBe("held");
+
+    // Different words the review also holds are a new item for the owner.
+    const reworded = { ...refund, message_body: "We will take $240 off your next visit." };
+    h.supervise.mockResolvedValue({
+      approved: false,
+      body: reworded.message_body,
+      ownerDecision: decision,
+    });
+    await handleCoreToolCall("send_text_message", reworded, context);
+    expect(h.queue).toHaveBeenCalledOnce();
+    expect(h.queue.mock.calls[0][1].payload).toEqual({
+      to: CALLER,
+      body: reworded.message_body,
+      reasoning: decision,
+    });
+  });
+
+  it("still reviews on its own criteria when what waits cannot be read", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    h.waiting.mockRejectedValue(new Error("Database unavailable."));
+    await handleCoreToolCall("send_text_message", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["A customer asks for a refund"],
+    });
+    expect(h.sendMessage).toHaveBeenCalledOnce();
+  });
+
+  it("does not look up what waits for a Bot that is never asked to decide", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "full", tenantLevel: "auto", playbook: null }]);
+    await handleCoreToolCall("send_text_message", args, context);
+    expect(h.waiting).not.toHaveBeenCalled();
+    expect(h.sendMessage).toHaveBeenCalledOnce();
   });
 });

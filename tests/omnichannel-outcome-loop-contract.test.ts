@@ -105,12 +105,23 @@ describe("omnichannel outcome loop", () => {
     expect(approvals).toContain('rawTaskType(task) === "human_handoff"');
     expect(approvals).toContain("manualHandoff || isManualOperatorTask(rawTaskType(task))");
     expect(approvals).toMatch(
-      /\{reviewConflict && !canEditMessage\s*\? reviewConflict\.reason === "unconfirmed"\s*\? "Review status"\s*:\s*"Review changes"\s*:\s*manualTask\s*\? "I handled this"\s*:\s*"Approve"\}/,
+      /\{reviewConflict && !canEditMessage\s*\? reviewConflict\.reason === "unconfirmed"\s*\? "Review status"\s*:\s*"Review changes"\s*:\s*primaryActionLabel\(task, manualTask\)\}/,
     );
     expect(approvals).toMatch(
       /if \(reviewConflict\) \{\s*if \(!canEditMessage && refreshedReviewReady\) \{[\s\S]*?onReviewReset\(\);[\s\S]*?\}\s*return;\s*\}\s*void approve\(\);/,
     );
-    expect(approvals).toContain('{manualHandoff ? "Dismiss" : "Reject"}');
+    expect(approvals).toContain("{declineActionLabel(task, manualHandoff)}");
+    // The buttons say what pressing them does. Nothing asks the owner to
+    // "approve" or "reject" the Bot's work.
+    expect(approvals).toContain('if (manualTask) return "I handled this";');
+    expect(approvals).toContain('if (isMessageTask(task)) return "Send";');
+    expect(approvals).toContain('return "Book it";');
+    expect(approvals).toContain(
+      'return !manualHandoff && isMessageTask(task) ? "Don\'t send" : "Dismiss";',
+    );
+    expect(approvals).not.toMatch(/"Approve"|"Reject"|Approval failed|approval inbox/);
+    // Why the Bot left it is on the card, not behind "Read details".
+    expect(approvals).toContain('<span className="font-medium">From your Bot: </span>');
     expect(approvals).toContain("if (!manualTask) {");
   });
 

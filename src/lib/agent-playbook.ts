@@ -1,6 +1,7 @@
 /**
  * The owner's Playbook: the words a Bot must use, the situations it handles
- * a specific way, and what it must always or never say.
+ * a specific way, what it must always or never say, and what it must check
+ * with the owner before it agrees to or sends.
  *
  * Knowledge and rules are background the Bot paraphrases. The Playbook is the
  * owner's direct control over wording, so every instruction builder (phone,
@@ -67,6 +68,13 @@ export type AgentPlaybook = {
   situations: PlaybookSituation[];
   alwaysMention: string[];
   neverSay: string[];
+  /**
+   * "Check with me first when…", in the owner's words. A Bot on Auto decides
+   * for itself when its owner would want a say; these are the cases the owner
+   * has already decided. The Bot will not agree to them on a call, and the
+   * message review holds a text or email they apply to.
+   */
+  checkFirst: string[];
 };
 
 export const PLAYBOOK_LIMITS = {
@@ -76,6 +84,7 @@ export const PLAYBOOK_LIMITS = {
   situations: 20,
   alwaysMention: 10,
   neverSay: 15,
+  checkFirst: 10,
 } as const;
 
 export const EMPTY_PLAYBOOK: AgentPlaybook = {
@@ -84,6 +93,7 @@ export const EMPTY_PLAYBOOK: AgentPlaybook = {
   situations: [],
   alwaysMention: [],
   neverSay: [],
+  checkFirst: [],
 };
 
 const MOMENT_IDS = new Set<string>(PLAYBOOK_MOMENTS.map((moment) => moment.id));
@@ -177,7 +187,21 @@ export function parseAgentPlaybook(
       error: `"Never say" holds up to ${PLAYBOOK_LIMITS.neverSay} items of up to ${PLAYBOOK_LIMITS.itemChars} characters each.`,
     };
 
-  return { ok: true, value: { version: 1, exactLines, situations, alwaysMention, neverSay } };
+  const checkFirst = cleanList(
+    root.checkFirst,
+    PLAYBOOK_LIMITS.checkFirst,
+    PLAYBOOK_LIMITS.itemChars,
+  );
+  if (!checkFirst)
+    return {
+      ok: false,
+      error: `"Check with me first" holds up to ${PLAYBOOK_LIMITS.checkFirst} items of up to ${PLAYBOOK_LIMITS.itemChars} characters each.`,
+    };
+
+  return {
+    ok: true,
+    value: { version: 1, exactLines, situations, alwaysMention, neverSay, checkFirst },
+  };
 }
 
 /** Tolerant read of the stored column; anything malformed reads as empty. */
@@ -191,8 +215,14 @@ export function isPlaybookEmpty(playbook: AgentPlaybook): boolean {
     Object.keys(playbook.exactLines).length === 0 &&
     playbook.situations.length === 0 &&
     playbook.alwaysMention.length === 0 &&
-    playbook.neverSay.length === 0
+    playbook.neverSay.length === 0 &&
+    playbook.checkFirst.length === 0
   );
+}
+
+/** The owner's "check with me first" rules, for the review that holds a message. */
+export function playbookCheckFirstRules(stored: unknown): string[] {
+  return readStoredAgentPlaybook(stored).checkFirst;
 }
 
 const quote = (text: string) => `"${text.replace(/"/g, "'")}"`;
@@ -238,6 +268,13 @@ export function playbookPromptBlock(stored: unknown): string {
   if (playbook.neverSay.length) {
     lines.push("Never say, claim, or promise:");
     for (const item of playbook.neverSay) lines.push(`- ${item}`);
+  }
+
+  if (playbook.checkFirst.length) {
+    lines.push(
+      "Check with the account holder first. When any of these applies, do not agree to it, promise it, or send it yourself. Say you will check and get back to them, and take the details:",
+    );
+    for (const item of playbook.checkFirst) lines.push(`- ${item}`);
   }
 
   lines.push(

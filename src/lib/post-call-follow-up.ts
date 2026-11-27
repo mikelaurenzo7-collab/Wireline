@@ -1,4 +1,4 @@
-import type { ActionItem, ActionResult } from "./action-types";
+import { OWNER_DECISION_NEEDED, type ActionItem, type ActionResult } from "./action-types";
 import type { ExtractedBusinessAction } from "./ai-brains";
 import { cleanOutboundSmsPhone } from "./approved-text-confirmations";
 
@@ -301,7 +301,11 @@ export function postCallFollowUpHandBack(
     return note(field(payload, "description") || action.reasoning?.trim() || reason);
   }
   if (attempted === "auto" && result.retryable === true) {
-    return { kind: "draft", action: withReasonForOwner(action, `Not sent by your Bot: ${reason}`) };
+    // When the Bot itself decided to ask, the reason is already a sentence
+    // to the owner about what to decide. Any other refusal says what stopped it.
+    const why =
+      result.errorCode === OWNER_DECISION_NEEDED ? reason : `Not sent by your Bot: ${reason}`;
+    return { kind: "draft", action: withReasonForOwner(action, why) };
   }
   const to = field(payload, "to") || "the caller";
   const body = field(payload, "body");

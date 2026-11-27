@@ -82,12 +82,13 @@ test("old owner work keeps truthful creation context and unchanged actions at 32
   await expect(manual).toContainText("33 days ago");
   await expect(manual).toContainText("Manual task");
   await expect(manual.getByRole("button", { name: "I handled this", exact: true })).toBeEnabled();
-  await expect(manual.getByRole("button", { name: "Approve", exact: true })).toHaveCount(0);
+  // A task the owner does themselves offers no send button.
+  await expect(manual.getByRole("button", { name: "Send", exact: true })).toHaveCount(0);
 
   const email = page.getByRole("article").filter({ hasText: "customer@example.test" });
   await expect(email.locator("time")).toHaveAttribute("datetime", "2026-10-09T12:00:00.000Z");
   await expect(email).toContainText("14 days ago");
-  await expect(email.getByRole("button", { name: "Approve", exact: true })).toBeEnabled();
+  await expect(email.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
   await expect(email.getByText("Manual task", { exact: true })).toHaveCount(0);
 
   for (const description of ["missing creation metadata", "invalid creation metadata"]) {

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { actionExecutionMode } from "../bot-permission";
-import { superviseClientCommunication } from "../ai-supervisor";
+import { superviseClientCommunication, type OwnerDecisionRequest } from "../ai-supervisor";
+import { ownerDecisionRequestFor } from "../owner-decision";
+import { ACTIVE_OPERATOR_TASK_STATUSES } from "../operator-work-status";
 import * as schema from "../../db/schema";
 import { auditLogger, log as serverLog } from "../server-context";
 import { normalizeDncPhone } from "../compliance";
@@ -137,6 +139,55 @@ async function recordCommsFollowUpTask(
   }
 }
 
+const sameWords = (a: unknown, b: unknown) =>
+  typeof a === "string" &&
+  typeof b === "string" &&
+  a.replace(/\s+/g, " ").trim().toLowerCase() === b.replace(/\s+/g, " ").trim().toLowerCase();
+
+/**
+ * Messages from this call that already wait for the owner. A caller who hears
+ * "I'm checking with the team" and says "just send it" must not get a second,
+ * luckier verdict, so the review is shown what is already waiting, and the
+ * same message is never filed twice. A lookup that fails reads as nothing
+ * waiting: the review still runs on its own criteria.
+ */
+async function waitingForOwnerOnThisCall(
+  drizzle: any,
+  input: { userId: string; callId: string; taskType: "send_email" | "send_text_message" },
+): Promise<string[]> {
+  try {
+    const rows: Array<{ payload: unknown }> = await drizzle
+      .select({ payload: schema.followUpTasks.payload })
+      .from(schema.followUpTasks)
+      .where(
+        and(
+          eq(schema.followUpTasks.userId, input.userId),
+          eq(schema.followUpTasks.sourceType, "phone_call"),
+          eq(schema.followUpTasks.sourceId, input.callId),
+          eq(schema.followUpTasks.taskType, input.taskType),
+          inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
+        ),
+      )
+      .limit(3);
+    return rows
+      .map((row) => (row.payload as { body?: unknown } | null)?.body)
+      .filter((body): body is string => typeof body === "string" && Boolean(body.trim()));
+  } catch {
+    return [];
+  }
+}
+
+/** The review is told what already waits from this call, when anything does. */
+async function withWhatAlreadyWaits(
+  drizzle: any,
+  request: OwnerDecisionRequest | undefined,
+  input: { userId: string; callId: string; taskType: "send_email" | "send_text_message" },
+): Promise<OwnerDecisionRequest | undefined> {
+  if (!request) return undefined;
+  const alreadyWaiting = await waitingForOwnerOnThisCall(drizzle, input);
+  return alreadyWaiting.length ? { ...request, alreadyWaiting } : request;
+}
+
 async function tenantLiveExternalActionBlock(
   userId: string | null | undefined,
   action: string,
@@ -260,6 +311,9 @@ export async function handleCoreToolCall(
     const { to_email, subject, body, email_confirmed } = args || {};
     let sendAttempted = false;
     let emailPayload = { to: to_email, subject, body };
+    // Set for a Bot on Auto: the review then also decides whether the owner
+    // would want a say before this goes.
+    let ownerDecision: OwnerDecisionRequest | undefined;
     try {
       const blocked = await tenantLiveExternalActionBlock(agent?.user_id, "vapi_email_send", {
         email: to_email,
@@ -278,6 +332,7 @@ export async function handleCoreToolCall(
           .select({
             agentLevel: schema.agents.autonomyLevel,
             tenantLevel: schema.settings.autonomyLevel,
+            playbook: schema.agents.playbook,
           })
           .from(schema.agents)
           .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
@@ -288,6 +343,11 @@ export async function handleCoreToolCall(
             toolCallId,
             result: "Email permission could not be verified. No email was sent.",
           };
+        ownerDecision = await withWhatAlreadyWaits(
+          drizzle,
+          ownerDecisionRequestFor(permissions, permissions.playbook),
+          { userId: agent.user_id, callId, taskType: "send_email" },
+        );
         if (actionExecutionMode({ ...permissions, actionType: "send_email" }) === "draft") {
           const { executeAction } = await import("../action-engine");
           const approval = await executeAction(
@@ -319,7 +379,38 @@ The email is written and waiting for the team to send it. Tell the caller in pla
         body,
         context:
           "Outbound email generated from a live Bot tool call during a customer conversation.",
+        ownerDecision,
       });
+      if (reviewed.ownerDecision) {
+        const waitingForOwner = `DRAFT_SAVED: ${to_email}
+The email is written and the owner needs to confirm one thing before it goes. Tell the caller in plain words, for example: "I've written that up, and I'm checking one thing with the team before it goes out." Do not say it was sent, do not promise what the answer will be, and do not mention approval or a queue.`;
+        // The same email is already with the owner from this call.
+        if (ownerDecision?.alreadyWaiting?.some((waiting) => sameWords(waiting, body))) {
+          return { toolCallId, result: waitingForOwner };
+        }
+        // The Bot decided its owner would want a say. The email waits as it
+        // was written, with what the owner has to decide. `ownerDecision` is
+        // only requested inside the branch above, so the call is known.
+        const { executeAction } = await import("../action-engine");
+        const held = await executeAction(
+          agent.user_id,
+          {
+            type: "send_email",
+            agentId: agent.id,
+            priority: "medium",
+            payload: { ...emailPayload, reasoning: reviewed.ownerDecision },
+          },
+          { sourceType: "phone_call", sourceId: String(callId) },
+          "draft",
+        );
+        return {
+          toolCallId,
+          result:
+            held.success && held.queued
+              ? waitingForOwner
+              : "The email request could not be saved for the team. No email was sent.",
+        };
+      }
       emailPayload = { to: to_email, subject: reviewed.subject || subject, body: reviewed.body };
       const service = new IntegrationService(agent?.user_id);
       sendAttempted = true;
@@ -413,6 +504,9 @@ The email is written and waiting for the team to send it. Tell the caller in pla
     const requestedChannel = args?.channel === "whatsapp" ? "whatsapp" : "sms";
     let sendAttempted = false;
     let recoveryBody = args?.message_body;
+    // Set for a Bot on Auto: the review then also decides whether the owner
+    // would want a say before this goes.
+    let ownerDecision: OwnerDecisionRequest | undefined;
     const notConfirmed = (reason: string): ToolCallResult => ({
       toolCallId,
       result: `The message was not confirmed. ${reason}`,
@@ -491,24 +585,36 @@ The email is written and waiting for the team to send it. Tell the caller in pla
         );
       }
 
-      // A Bot acts on its own unless its owner asked to see customer messages
+      // A Bot works on its own unless its owner asked to see customer messages
       // first. Email already honoured that choice; a text did not, so an owner
       // who chose to check first still had texts leave during the call.
       const textCallId =
         (message.call as { id?: string } | undefined)?.id ||
         (payload.call as { id?: string } | undefined)?.id;
+      // Leaves the text waiting for the owner. With a reason, the Bot itself
+      // decided the owner would want a say, and the owner is told why.
+      let holdTextForOwner: ((reason?: string) => Promise<ToolCallResult>) | null = null;
       if (typeof textCallId === "string" && textCallId && agent?.id) {
         const [permissions] = await drizzle
           .select({
             agentLevel: schema.agents.autonomyLevel,
             tenantLevel: schema.settings.autonomyLevel,
+            playbook: schema.agents.playbook,
           })
           .from(schema.agents)
           .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
           .where(and(eq(schema.agents.id, agent.id), eq(schema.agents.userId, agent.user_id)))
           .limit(1);
         if (!permissions) return notConfirmed("Text permission could not be verified.");
-        if (actionExecutionMode({ ...permissions, actionType: "send_text_message" }) === "draft") {
+        holdTextForOwner = async (reason) => {
+          const heldPayload = {
+            to: targetNumber,
+            body: message_body,
+            ...(reason ? { reasoning: reason } : {}),
+          };
+          const waiting = reason
+            ? `the owner needs to confirm one thing before it goes. Tell the caller in plain words, for example: "I've written that up, and I'm checking one thing with the team before it goes out." Do not say it was sent, and do not promise what the answer will be.`
+            : `waiting for the team to send it. Tell the caller in plain words, for example: "I've written that up and passed it to the team to send." Do not say it was sent.`;
           // A held WhatsApp request must stay WhatsApp. The owner's send
           // button for a held text sends SMS, so this one waits as a note
           // that says which channel the caller asked for.
@@ -518,37 +624,46 @@ The email is written and waiting for the team to send it. Tell the caller in pla
               agentId: agent.id,
               channel: "whatsapp",
               recipient: targetNumber,
-              payload: { to: targetNumber, body: message_body },
+              payload: heldPayload,
               deliveryStatus: "not_sent",
             });
             return noted
               ? {
                   toolCallId,
                   result: `DRAFT_SAVED: ${targetNumber}
-The WhatsApp message is written and waiting for the team to send it. Tell the caller in plain words, for example: "I've written that up and passed it to the team to send." Do not say it was sent.`,
+The WhatsApp message is written and ${waiting}`,
                 }
               : notConfirmed("The request could not be saved for the team. No message was sent.");
           }
           const { executeAction } = await import("../action-engine");
-          const waiting = await executeAction(
+          const held = await executeAction(
             agent.user_id,
             {
               type: "send_text_message",
               agentId: agent.id,
               priority: "medium",
-              payload: { to: targetNumber, body: message_body },
+              payload: heldPayload,
             },
             { sourceType: "phone_call", sourceId: textCallId },
             "draft",
           );
-          return waiting.success && waiting.queued
+          return held.success && held.queued
             ? {
                 toolCallId,
                 result: `DRAFT_SAVED: ${targetNumber}
-The text is written and waiting for the team to send it. Tell the caller in plain words, for example: "I've written that up and passed it to the team to send." Do not say it was sent.`,
+The text is written and ${waiting}`,
               }
             : notConfirmed("The text request could not be saved for the team. No text was sent.");
+        };
+        if (actionExecutionMode({ ...permissions, actionType: "send_text_message" }) === "draft") {
+          // Awaited here so a save that throws reaches the fallback below.
+          return await holdTextForOwner();
         }
+        ownerDecision = await withWhatAlreadyWaits(
+          drizzle,
+          ownerDecisionRequestFor(permissions, permissions.playbook),
+          { userId: agent.user_id, callId: textCallId, taskType: "send_text_message" },
+        );
       }
 
       // Throws ClientCommunicationBlockedError on a block (no approved:false
@@ -562,7 +677,24 @@ The text is written and waiting for the team to send it. Tell the caller in plai
         recipient: targetNumber,
         body: message_body,
         context: `Requested channel: ${channel === "whatsapp" ? "whatsapp" : "sms"}.`,
+        ownerDecision,
       });
+      // The Bot decided its owner would want a say. The text waits as it was
+      // written, with what the owner has to decide.
+      if (reviewed.ownerDecision) {
+        // The same text is already with the owner from this call.
+        if (ownerDecision?.alreadyWaiting?.some((waiting) => sameWords(waiting, message_body))) {
+          return {
+            toolCallId,
+            result: `DRAFT_SAVED: ${targetNumber}
+The text is written and the owner needs to confirm one thing before it goes. Tell the caller in plain words, for example: "I've written that up, and I'm checking one thing with the team before it goes out." Do not say it was sent, and do not promise what the answer will be.`,
+          };
+        }
+        // Awaited here so a save that throws reaches the fallback below.
+        return holdTextForOwner
+          ? await holdTextForOwner(reviewed.ownerDecision)
+          : notConfirmed("The request could not be saved for the team. No message was sent.");
+      }
       recoveryBody = reviewed.body;
       sendAttempted = true;
       const outcome = await sendTenantMessage(agent.user_id, {

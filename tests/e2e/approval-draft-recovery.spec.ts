@@ -43,7 +43,7 @@ for (const status of ["Requested", "Scheduled", "Confirmed", "Rescheduled", "Can
     });
     await page.goto("/approvals");
     const card = page.getByRole("article").filter({ hasText: "Site visit" });
-    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await card.getByRole("button", { name: "Book it", exact: true }).click();
     if (status === "Cancelled") {
       await expect(card.getByRole("alert")).toContainText("Action status could not be confirmed");
       await expect(page.getByText("Booking confirmed.", { exact: true })).toHaveCount(0);
@@ -127,11 +127,11 @@ for (const stage of ["edit", "approve", "approve network"] as const) {
     await card
       .getByRole("textbox", { name: "Message", exact: true })
       .fill("Keep this owner-edited reply.");
-    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await card.getByRole("button", { name: "Send", exact: true }).click();
     await expect(card.getByRole("alert")).toContainText("Action status could not be confirmed");
     await expect(page.getByText("Actions Unavailable", { exact: true })).toBeVisible();
-    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
-    await expect(card.getByRole("button", { name: "Reject", exact: true })).toBeDisabled();
+    await expect(card.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
+    await expect(card.getByRole("button", { name: "Don't send", exact: true })).toBeDisabled();
     await expect(card.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
       "Keep this owner-edited reply.",
     );
@@ -139,18 +139,18 @@ for (const stage of ["edit", "approve", "approve network"] as const) {
     expect(saves).toBe(1);
     await page.getByRole("button", { name: /^Compliance/ }).click();
     await page.getByRole("button", { name: /^Pending Actions/ }).click();
-    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    await expect(card.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
     recovered = true;
     await page.getByRole("button", { name: "Retry", exact: true }).click();
     await expect(page.getByText("Actions Unavailable", { exact: true })).toHaveCount(0);
-    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    await expect(card.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
     expect(approvals).toBe(stage === "edit" ? 0 : 1);
     await card.getByRole("button", { name: "Cancel", exact: true }).click();
     await card.getByRole("button", { name: "Edit", exact: true }).click();
     await expect(card.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
       stage === "edit" ? "Original body" : "Keep this owner-edited reply.",
     );
-    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await card.getByRole("button", { name: "Send", exact: true }).click();
     await expect(card).toHaveCount(0);
     expect(approvals).toBe(stage === "edit" ? 1 : 2);
     expect(saves).toBe(2);
@@ -205,7 +205,7 @@ for (const kind of ["reject", "dismiss"] as const) {
     await page.goto("/approvals");
     const card = page.getByRole("article").filter({ hasText: "Return the customer's call" });
     const reject = card.getByRole("button", {
-      name: kind === "dismiss" ? "Dismiss" : "Reject",
+      name: "Dismiss",
       exact: true,
     });
     await reject.click();
@@ -271,7 +271,7 @@ test("approvals show a short draft first and keep the full action available", as
   const draft = page.getByRole("article").filter({ hasText: "customer@example.test" });
   await expect(draft.locator("p").nth(1)).toContainText("Here is the plan overview you requested.");
   await expect(draft.locator("details p")).toBeHidden();
-  await expect(draft.getByRole("button", { name: "Approve", exact: true })).toBeVisible();
+  await expect(draft.getByRole("button", { name: "Send", exact: true })).toBeVisible();
   await draft.getByText("Read details").focus();
   await page.keyboard.press("Enter");
   await expect(draft.locator("details p")).toContainText("Final price requires review.");
@@ -508,8 +508,8 @@ test("edited approvals require a fresh recipient review if the destination chang
     })
     .check();
   await sms.getByRole("checkbox", { name: /responsible for having permission/i }).check();
-  await email.getByRole("button", { name: "Approve", exact: true }).click();
-  await sms.getByRole("button", { name: "Approve", exact: true }).click();
+  await email.getByRole("button", { name: "Send", exact: true }).click();
+  await sms.getByRole("button", { name: "Send", exact: true }).click();
   await expect(email.getByRole("alert")).toContainText("recipient changed while you were editing");
   await expect(sms.getByRole("alert")).toContainText("recipient changed while you were editing");
   expect(writes).toHaveLength(0);
@@ -519,7 +519,7 @@ test("edited approvals require a fresh recipient review if the destination chang
   await page.clock.fastForward(30_000);
   await expect(email).toContainText(originalEmailTo);
   await expect(sms).toContainText(originalSmsTo);
-  await email.getByRole("button", { name: "Approve", exact: true }).click();
+  await email.getByRole("button", { name: "Send", exact: true }).click();
   await expect.poll(() => writes.length).toBe(2);
   expect(writes[0].path).toBe("/api/Assistants/tasks/email-draft");
   expect(writes[0].body.expected_to).toBe(originalEmailTo);
@@ -535,7 +535,7 @@ test("edited approvals require a fresh recipient review if the destination chang
   expect(writes[1].body.expected_priority).toBeNull();
 
   await sms.getByRole("button", { name: "Cancel", exact: true }).click();
-  await sms.getByRole("button", { name: "Approve", exact: true }).click();
+  await sms.getByRole("button", { name: "Send", exact: true }).click();
   await expect.poll(() => writes.length).toBe(3);
   expect(writes[2].path).toBe("/api/Assistants/tasks/sms-draft/approve");
   expect(writes[2].body).toEqual({
@@ -619,7 +619,7 @@ for (const conflictAt of ["save", "approve"] as const) {
     await card.getByRole("button", { name: "Edit", exact: true }).click();
     await card.getByRole("textbox", { name: "Message", exact: true }).fill("My unsaved message");
     const initialTaskLoads = taskLoads;
-    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await card.getByRole("button", { name: "Send", exact: true }).click();
 
     await expect(card.getByRole("alert")).toContainText("Your draft is kept");
     await expect(card.getByRole("alert")).toContainText("Cancel it, review");
@@ -632,18 +632,18 @@ for (const conflictAt of ["save", "approve"] as const) {
 
     const blockedSaves = saves;
     const blockedApprovals = approvals;
-    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    await expect(card.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
     await card.getByRole("button", { name: "Cancel", exact: true }).click();
-    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    await expect(card.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
     expect(saves).toBe(blockedSaves);
     expect(approvals).toBe(blockedApprovals);
 
     await card.getByRole("button", { name: "Edit", exact: true }).click();
-    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeEnabled();
+    await expect(card.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
     await expect(card.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
       conflictAt === "save" ? "Original body" : "Another editor's message",
     );
-    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await card.getByRole("button", { name: "Send", exact: true }).click();
     await expect.poll(() => saves).toBe(blockedSaves + 1);
     expect(saveBodies[saveBodies.length - 1]).toMatchObject({
       expected_to: conflictAt === "save" ? changedTo : originalTo,
@@ -729,7 +729,7 @@ for (const changedField of ["payload", "agent"] as const) {
     await page.goto("/approvals");
     const card = page.getByRole("article").filter({ hasText: "Schedule Calendar" });
     await expect(card).toContainText("14:00");
-    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await card.getByRole("button", { name: "Book it", exact: true }).click();
     await expect(card.getByRole("alert")).toContainText("Review the refreshed details");
     await expect(card.getByRole("button", { name: "Review changes", exact: true })).toBeDisabled();
     expect(approvals).toEqual([
@@ -747,7 +747,7 @@ for (const changedField of ["payload", "agent"] as const) {
     await expect(review).toBeEnabled();
     await review.click();
     expect(approvals).toHaveLength(1);
-    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await card.getByRole("button", { name: "Book it", exact: true }).click();
     await expect.poll(() => approvals.length).toBe(2);
     expect(approvals[1]).toEqual({
       expected_payload: currentTask.payload,

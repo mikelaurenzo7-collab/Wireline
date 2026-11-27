@@ -82,6 +82,7 @@ function summary(playbook: AgentPlaybook): string {
       ? `${playbook.situations.length} ${playbook.situations.length === 1 ? "situation" : "situations"}`
       : "",
     playbook.alwaysMention.length || playbook.neverSay.length ? "must / never" : "",
+    playbook.checkFirst.length ? "check first" : "",
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : "Not set";
 }
@@ -95,8 +96,9 @@ function playbookSignature(playbook: AgentPlaybook): string {
 
 /**
  * The owner's Playbook: exact wording for key moments, how to handle specific
- * situations, and what to always or never say. Saved as one document and
- * applied to calls, rehearsals, and text replies.
+ * situations, what to always or never say, and what to check with the owner
+ * first. Saved as one document and applied to calls, rehearsals, and text
+ * replies.
  */
 export default function PlaybookEditor({ agentId, compact }: Props) {
   const [open, setOpen] = useState(false);
@@ -113,6 +115,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
   // Free-text lists keep the owner's line breaks while typing.
   const [alwaysText, setAlwaysText] = useState("");
   const [neverText, setNeverText] = useState("");
+  const [checkFirstText, setCheckFirstText] = useState("");
 
   const retryLoad = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
 
@@ -130,6 +133,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
         setDraft(playbook);
         setAlwaysText(listToText(playbook.alwaysMention));
         setNeverText(listToText(playbook.neverSay));
+        setCheckFirstText(listToText(playbook.checkFirst));
       })
       .catch((reason: unknown) => {
         if (!cancelled)
@@ -146,8 +150,13 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
   }, [agentId, loadAttempt]);
 
   const current = useMemo<AgentPlaybook>(
-    () => ({ ...draft, alwaysMention: textToList(alwaysText), neverSay: textToList(neverText) }),
-    [draft, alwaysText, neverText],
+    () => ({
+      ...draft,
+      alwaysMention: textToList(alwaysText),
+      neverSay: textToList(neverText),
+      checkFirst: textToList(checkFirstText),
+    }),
+    [draft, alwaysText, neverText, checkFirstText],
   );
   const dirty = JSON.stringify(current) !== JSON.stringify(saved);
   const unusedMoments = PLAYBOOK_MOMENTS.filter((moment) => !(moment.id in draft.exactLines));
@@ -231,6 +240,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
         !Array.isArray(receipt.situations) ||
         !Array.isArray(receipt.alwaysMention) ||
         !Array.isArray(receipt.neverSay) ||
+        !Array.isArray(receipt.checkFirst) ||
         !confirmed.ok ||
         !submitted.ok ||
         playbookSignature(confirmed.value) !== playbookSignature(submitted.value)
@@ -241,6 +251,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
       setDraft(savedPlaybook);
       setAlwaysText(listToText(savedPlaybook.alwaysMention));
       setNeverText(listToText(savedPlaybook.neverSay));
+      setCheckFirstText(listToText(savedPlaybook.checkFirst));
       setNotice("Playbook saved. Your Bot uses it on the next call, text, or rehearsal.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Your Playbook could not be saved.");
@@ -500,6 +511,27 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
                   <span className={hintClass}>One per line. Words, claims, or promises.</span>
                 </label>
               </div>
+
+              <label className="grid gap-1.5" htmlFor="playbook-check-first">
+                <span className={labelClass}>Check With Me First When</span>
+                <Textarea
+                  id="playbook-check-first"
+                  rows={3}
+                  placeholder={
+                    "A customer asks for a discount or a refund\nA job is outside our service area"
+                  }
+                  value={checkFirstText}
+                  onChange={(event) => {
+                    touch();
+                    setCheckFirstText(event.target.value);
+                  }}
+                />
+                <span className={hintClass}>
+                  One per line. Your Bot will not agree to these on its own. On a call it says it
+                  will check, and a text or email they apply to waits for you in Needs You instead
+                  of going out.
+                </span>
+              </label>
             </fieldset>
           )}
 

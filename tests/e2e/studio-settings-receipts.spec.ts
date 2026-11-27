@@ -7,6 +7,7 @@ const emptyPlaybook = {
   situations: [],
   alwaysMention: [],
   neverSay: [],
+  checkFirst: [],
 };
 
 async function mockStudio(page: Page, config: Record<string, unknown> = {}) {
@@ -108,21 +109,29 @@ test("Human Handoff preserves routing after a different destination and confirms
 });
 
 test("Permission rejects another Bot's receipt and confirms a safe retry", async ({ page }) => {
-  await mockStudio(page, { permission: "auto" });
+  // The server answers in today's names (`autonomy`) and, for a tab opened
+  // before them, in the old ones (`permission`). The screen reads only the first.
+  await mockStudio(page, { autonomy: "messages", permission: "auto" });
   const writes: unknown[] = [];
   await page.route(`**/api/agents/${bot.id}/permission`, (route) => {
     writes.push(route.request().postDataJSON());
     return route.fulfill({
-      json: { id: writes.length === 1 ? "another-bot" : bot.id, permission: "ask" },
+      json: { id: writes.length === 1 ? "another-bot" : bot.id, autonomy: "ask" },
     });
   });
   await openSetup(page);
   const permission = page.getByLabel("How Your Bot Works", { exact: true });
-  await expect(permission).toHaveValue("auto");
+  await expect(permission).toHaveValue("messages");
+  await expect(permission.locator("option")).toHaveText([
+    "Auto: it decides when to check with me",
+    "On its own, always",
+    "Check with me before it emails or texts a customer",
+    "Check with me before it does anything",
+  ]);
   await permission.selectOption("ask");
   await expect(page.getByText(/That change could not be confirmed\./)).toBeVisible();
-  await expect(permission).toHaveValue("auto");
-  expect(writes).toEqual([{ level: "ask" }]);
+  await expect(permission).toHaveValue("messages");
+  expect(writes).toEqual([{ autonomy: "ask" }]);
   await permission.selectOption("ask");
   await expect(permission).toHaveValue("ask");
   await expect(page.getByText(/That change could not be confirmed\./)).toHaveCount(0);
@@ -130,7 +139,7 @@ test("Permission rejects another Bot's receipt and confirms a safe retry", async
     "href",
     "/calendar?tab=availability",
   );
-  expect(writes).toEqual([{ level: "ask" }, { level: "ask" }]);
+  expect(writes).toEqual([{ autonomy: "ask" }, { autonomy: "ask" }]);
 });
 
 test("Actions keeps the owner's selection until the saved tools are confirmed", async ({
@@ -304,6 +313,7 @@ test("Playbook accepts normalized wording, reordered lines and a confirmed clear
                 ...emptyPlaybook,
                 exactLines: { hold: "One moment.", closing: "Thank you for calling." },
                 alwaysMention: ["Estimates are free."],
+                checkFirst: ["A customer asks for a refund"],
               }
             : emptyPlaybook,
       },
@@ -317,8 +327,15 @@ test("Playbook accepts normalized wording, reordered lines and a confirmed clear
   await playbook.getByRole("button", { name: "Checking something", exact: true }).click();
   await playbook.getByLabel("Checking something", { exact: true }).fill(" One moment. ");
   await playbook.getByLabel(/Always Mention/).fill("Estimates are free.\nEstimates are free.");
+  // The owner's own rules for when the Bot should check first.
+  await playbook
+    .getByLabel(/Check With Me First When/)
+    .fill(" A customer asks for a refund \nA customer asks for a refund");
   await playbook.getByRole("button", { name: "Save Playbook", exact: true }).click();
   await expect(playbook.getByText(/Playbook saved\./)).toBeVisible();
+  await expect(playbook.getByLabel(/Check With Me First When/)).toHaveValue(
+    "A customer asks for a refund",
+  );
   await expect(playbook.getByLabel("Ending the call", { exact: true })).toHaveValue(
     "Thank you for calling.",
   );
@@ -330,6 +347,7 @@ test("Playbook accepts normalized wording, reordered lines and a confirmed clear
     .getByRole("button", { name: "Remove the checking something line", exact: true })
     .click();
   await playbook.getByLabel(/Always Mention/).fill("");
+  await playbook.getByLabel(/Check With Me First When/).fill("");
   await playbook.getByRole("button", { name: "Save Playbook", exact: true }).click();
   await expect(playbook.getByText(/Playbook saved\./)).toBeVisible();
   await expect(playbook.getByLabel("Ending the call", { exact: true })).toHaveCount(0);

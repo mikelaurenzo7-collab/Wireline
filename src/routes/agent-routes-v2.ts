@@ -59,10 +59,13 @@ import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
 import { deleteBot, previewBotDeletion } from "../lib/bot-deletion";
 import {
+  autonomyFromLegacyPermissionLevel,
   autonomyFromPermissionLevel,
   DEFAULT_NEW_BOT_AUTONOMY,
   effectiveAutonomy,
   isBotPermissionLevel,
+  isLegacyPermissionLevel,
+  legacyPermissionLevelFromAutonomy,
   permissionLevelFromAutonomy,
 } from "../lib/bot-permission";
 import { normalizeManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
@@ -752,19 +755,32 @@ router.patch(
   authenticateUser,
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!isBotPermissionLevel(req.body?.level)) {
+    // Today's screen sends `autonomy`. A tab opened before Auto existed still
+    // sends `level` with the old names, two of which now mean something else,
+    // so each field is read with its own vocabulary and answered in kind.
+    const choice = isBotPermissionLevel(req.body?.autonomy)
+      ? {
+          stored: autonomyFromPermissionLevel(req.body.autonomy),
+          receipt: { autonomy: req.body.autonomy },
+        }
+      : req.body?.autonomy === undefined && isLegacyPermissionLevel(req.body?.level)
+        ? {
+            stored: autonomyFromLegacyPermissionLevel(req.body.level),
+            receipt: { permission: req.body.level },
+          }
+        : null;
+    if (!choice) {
       throw AppError.badRequest(
         "Choose whether this Bot works on its own or checks with you first.",
       );
     }
-    const autonomyLevel = autonomyFromPermissionLevel(req.body.level);
     const [saved] = await drizzle
       .update(schema.agents)
-      .set({ autonomyLevel })
+      .set({ autonomyLevel: choice.stored })
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
       .returning({ id: schema.agents.id });
     if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
-    res.json({ id: saved.id, permission: req.body.level });
+    res.json({ id: saved.id, ...choice.receipt });
   },
 );
 
@@ -901,7 +917,12 @@ router.get(
       : null;
     res.json({
       mark_key: record?.markKey || null,
-      permission: permissionLevelFromAutonomy(
+      // `autonomy` is today's level. `permission` is the same setting in the
+      // names an older open tab understands.
+      autonomy: permissionLevelFromAutonomy(
+        effectiveAutonomy(record?.autonomyLevel, tenantSettings[0]?.autonomyLevel),
+      ),
+      permission: legacyPermissionLevelFromAutonomy(
         effectiveAutonomy(record?.autonomyLevel, tenantSettings[0]?.autonomyLevel),
       ),
       capabilities: { image_uploads: isTrainingImageAvailable() },
@@ -1155,6 +1176,19 @@ router.patch(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
     const parsed = parseAgentPlaybook(req.body?.playbook);
     if (!parsed.ok) throw AppError.fromHttpStatus(400, parsed.error);
+    // The Playbook is saved whole. A tab opened before "Check With Me First
+    // When" existed sends a document without that list, and saving it as an
+    // empty list would erase the owner's rules. A document that does not name
+    // the list keeps the stored one.
+    const submitted = req.body?.playbook as Record<string, unknown> | null | undefined;
+    if (!submitted || typeof submitted !== "object" || !("checkFirst" in submitted)) {
+      const [stored] = await drizzle
+        .select({ playbook: schema.agents.playbook })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
+      parsed.value.checkFirst = [...readStoredAgentPlaybook(stored?.playbook).checkFirst];
+    }
     // An empty Playbook clears the column so the runtime adds no block at all.
     const value = isPlaybookEmpty(parsed.value) ? null : parsed.value;
     await drizzle
@@ -1167,6 +1201,7 @@ router.patch(
       situations: parsed.value.situations.length,
       alwaysMention: parsed.value.alwaysMention.length,
       neverSay: parsed.value.neverSay.length,
+      checkFirst: parsed.value.checkFirst.length,
     });
     res.json({ success: true, playbook: parsed.value });
   },

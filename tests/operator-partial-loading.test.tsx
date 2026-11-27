@@ -195,11 +195,11 @@ describe("approval message edits", () => {
       h.fetch.mockClear();
       h.fetch.mockImplementation(() => Promise.resolve(json({ success: true })));
       elements(renderCard()).find(
-        (node) => node.type === "button" && textOf(node.props.children).trim() === "Approve",
+        (node) => node.type === "button" && textOf(node.props.children).trim() === "Send",
       )!.props.onClick!();
       await flush();
       expect(h.fetch).not.toHaveBeenCalled();
-      expect(textOf(renderCard())).toContain("before approving");
+      expect(textOf(renderCard())).toContain("before sending");
     },
   );
 });
@@ -245,6 +245,47 @@ async function approvalCard(payload: Record<string, unknown>, taskType = "send_e
   };
 }
 
+describe("what a Needs You card tells the owner", () => {
+  const reason = "This promises a $240 refund. Confirm you want to give it.";
+
+  it("shows why the Bot left it, on the card and not behind the details", async () => {
+    const card = await approvalCard(
+      { to: "+17735550100", body: "We will refund the full $240 today.", reasoning: reason },
+      "send_text_message",
+    );
+    const shown = textOf(card.draw()).replace(/\s+/g, " ");
+    expect(shown).toContain(`From your Bot: ${reason}`);
+    expect(shown).toContain("We will refund the full $240 today.");
+    // Said once: the collapsed details do not repeat it.
+    expect(shown.split(reason)).toHaveLength(2);
+  });
+
+  it("shows no empty note on an item with nothing from the Bot", async () => {
+    const card = await approvalCard({ to: "a@example.test", subject: "Quote", body: "Hello" });
+    expect(textOf(card.draw())).not.toContain("From your Bot");
+  });
+
+  it.each([
+    ["send_email", { to: "a@example.test", subject: "Quote", body: "Hello" }, "Send", "Don't send"],
+    ["send_text_message", { to: "+17735550100", body: "Hello" }, "Send", "Don't send"],
+    [
+      "schedule_calendar",
+      { event_name: "Estimate", date: "2026-12-01", time: "10:00", customer_name: "Dana" },
+      "Book it",
+      "Dismiss",
+    ],
+    ["update_crm_lead", { status: "won" }, "Go ahead", "Dismiss"],
+  ])("names the buttons on a %s for what pressing them does", async (type, payload, go, stop) => {
+    const card = await approvalCard(payload, type);
+    const buttons = elements(card.draw())
+      .filter((node) => node.type === "button")
+      .map((node) => textOf(node.props.children).trim());
+    expect(buttons).toContain(go);
+    expect(buttons).toContain(stop);
+    for (const retired of ["Approve", "Reject"]) expect(buttons).not.toContain(retired);
+  });
+});
+
 describe("approval preview integrity", () => {
   it("locks the visible draft until the approval request finishes", async () => {
     const card = await approvalCard({ subject: "Original", body: "Original message" });
@@ -257,7 +298,7 @@ describe("approval preview integrity", () => {
           }),
     );
     card.click("Edit");
-    card.click("Approve");
+    card.click("Send");
     await flush();
     const fields = () =>
       elements(card.draw()).filter((node) => node.type === "input" || node.type === "textarea");
@@ -282,7 +323,7 @@ describe("approval preview integrity", () => {
         );
         card.click("Edit");
         card.change("Write a message…", "Locally saved message");
-        card.click("Approve");
+        card.click("Send");
         await flush();
         card.click("Cancel");
         expect(textOf(card.draw())).toContain("Locally saved message");
@@ -356,7 +397,7 @@ describe("approval preview integrity", () => {
       card.click("Edit");
       card.change("Subject", "Revised subject");
       card.change("Write a message…", "Revised message");
-      card.click("Approve");
+      card.click("Send");
       await flush();
       card.click("Cancel");
       expect(textOf(card.draw())).toContain(saved ? "Revised subject" : "Original");

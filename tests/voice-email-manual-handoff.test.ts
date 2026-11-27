@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
   approve: vi.fn(),
   environment: vi.fn(),
   entity: vi.fn(),
+  waiting: vi.fn(),
 }));
 vi.mock("../src/lib/action-engine", () => ({ executeAction: h.approve }));
 vi.mock("../src/lib/ai-supervisor", () => ({ superviseClientCommunication: h.supervise }));
@@ -59,7 +60,12 @@ const context = {
   drizzle: {
     insert: () => ({ values: h.saveTask }),
     select: () => ({
-      from: () => ({ leftJoin: () => ({ where: () => ({ limit: h.permission }) }) }),
+      from: () => ({
+        // The Bot's permission is read with its workspace's.
+        leftJoin: () => ({ where: () => ({ limit: h.permission }) }),
+        // What already waits for the owner from this call.
+        where: () => ({ limit: h.waiting }),
+      }),
     }),
   },
   log: { warn: vi.fn(), error: vi.fn() },
@@ -67,6 +73,7 @@ const context = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  h.waiting.mockResolvedValue([]);
   h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "draft" }]);
   h.environment.mockResolvedValue({ allowed: true });
   h.entity.mockResolvedValue({ allowed: true });
@@ -232,6 +239,121 @@ describe("live email delivery and manual handoff", () => {
       expect(h.saveTask).not.toHaveBeenCalled();
     },
   );
+
+  it("on Auto, asks the review to decide and holds the email the owner would want a say in", async () => {
+    const playbook = { checkFirst: ["A quote over $500"] };
+    const decision = "This quotes $1,200 for the job. Confirm the price.";
+    h.permission.mockResolvedValue([{ agentLevel: "inherit", tenantLevel: "auto", playbook }]);
+    h.sendEmail.mockResolvedValue(true);
+
+    // A routine email goes, and the review was asked with the owner's rules.
+    await handleCoreToolCall("send_email", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({ rules: ["A quote over $500"] });
+    expect(h.sendEmail).toHaveBeenCalledOnce();
+    expect(h.approve).not.toHaveBeenCalled();
+
+    // One the Bot decides its owner should see waits as the Bot wrote it.
+    h.sendEmail.mockClear();
+    h.supervise.mockResolvedValue({
+      approved: false,
+      subject: args.subject,
+      body: args.body,
+      ownerDecision: decision,
+    });
+    h.approve.mockResolvedValue({ success: true, queued: true });
+    const held = await handleCoreToolCall("send_email", args, context);
+    expect(h.sendEmail).not.toHaveBeenCalled();
+    expect(h.saveTask).not.toHaveBeenCalled();
+    expect(h.approve).toHaveBeenCalledExactlyOnceWith(
+      "tenant-owned",
+      {
+        type: "send_email",
+        agentId: "agent-owned",
+        priority: "medium",
+        payload: { to: args.to_email, subject: args.subject, body: args.body, reasoning: decision },
+      },
+      { sourceType: "phone_call", sourceId: "call-owned" },
+      "draft",
+    );
+    expect(held?.result).toContain("DRAFT_SAVED: confirmed@example.test");
+    expect(held?.result).toContain("checking one thing with the team before it goes out");
+    expect(held?.result).toContain("do not promise what the answer will be");
+    expect(enforceAgentToolResultTruth("send_email", held!)).toEqual(held);
+
+    // If it cannot be saved, nothing is claimed.
+    h.approve.mockResolvedValue({ success: false });
+    const unsaved = await handleCoreToolCall("send_email", args, context);
+    expect(unsaved?.result).toBe(
+      "The email request could not be saved for the team. No email was sent.",
+    );
+    expect(h.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("on a Bot set to never ask, asks the review only about the owner's own rules", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "full", tenantLevel: "auto", playbook: null }]);
+    h.sendEmail.mockResolvedValue(true);
+    await handleCoreToolCall("send_email", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toBeUndefined();
+    expect(h.sendEmail).toHaveBeenCalledOnce();
+    expect(h.approve).not.toHaveBeenCalled();
+
+    h.supervise.mockClear();
+    h.permission.mockResolvedValue([
+      { agentLevel: "full", tenantLevel: "auto", playbook: { checkFirst: ["Any quote"] } },
+    ]);
+    await handleCoreToolCall("send_email", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: ["Any quote"],
+      rulesOnly: true,
+    });
+  });
+
+  it("on Auto, shows the review what already waits from this call and never files the same email twice", async () => {
+    const decision = "This quotes $1,200 for the job. Confirm the price.";
+    h.permission.mockResolvedValue([{ agentLevel: "auto", tenantLevel: "auto", playbook: null }]);
+    h.waiting.mockResolvedValue([{ payload: { to: args.to_email, body: ` ${args.body}` } }]);
+    h.supervise.mockResolvedValue({
+      approved: false,
+      subject: args.subject,
+      body: args.body,
+      ownerDecision: decision,
+    });
+    h.approve.mockResolvedValue({ success: true, queued: true });
+    const again = await handleCoreToolCall("send_email", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({
+      rules: [],
+      alreadyWaiting: [` ${args.body}`],
+    });
+    // The same email is already with the owner: no second copy, nothing sent.
+    expect(h.approve).not.toHaveBeenCalled();
+    expect(h.sendEmail).not.toHaveBeenCalled();
+    expect(h.saveTask).not.toHaveBeenCalled();
+    expect(again?.result).toContain("DRAFT_SAVED: confirmed@example.test");
+    expect(again?.result).toContain("checking one thing with the team before it goes out");
+
+    // Different words the review also holds are a new item for the owner.
+    const reworded = { ...args, body: "The job comes to $1,200, as discussed." };
+    h.supervise.mockResolvedValue({
+      approved: false,
+      subject: args.subject,
+      body: reworded.body,
+      ownerDecision: decision,
+    });
+    await handleCoreToolCall("send_email", reworded, context);
+    expect(h.approve).toHaveBeenCalledOnce();
+    expect(h.approve.mock.calls[0][1].payload).toEqual({
+      to: args.to_email,
+      subject: args.subject,
+      body: reworded.body,
+      reasoning: decision,
+    });
+
+    // A lookup that fails reads as nothing waiting; the review still runs.
+    h.supervise.mockClear();
+    h.waiting.mockRejectedValue(new Error("database unavailable"));
+    await handleCoreToolCall("send_email", args, context);
+    expect(h.supervise.mock.calls[0][0].ownerDecision).toEqual({ rules: [] });
+  });
 
   it("requires recipient readback and separates saved requests, submission and delivery in the shared prompt", () => {
     expect(RUNTIME_ACTION_SAFETY_BLOCK).toContain(

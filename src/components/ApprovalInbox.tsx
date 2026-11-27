@@ -92,7 +92,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   post_call_note: "Post-Call Note",
 };
 
-/** Say what actually happened, so an approved card never just vanishes. */
+/** Say what actually happened, so a finished card never just vanishes. */
 function approvalResultMessage(
   task: FollowUpTaskRow,
   recipient: string,
@@ -108,7 +108,42 @@ function approvalResultMessage(
   if (type.includes("crm")) return "CRM note logged.";
   if (type.includes("calendar") || type.includes("book") || type.includes("meeting"))
     return "Booking confirmed.";
-  return "Approved and done.";
+  return "Done.";
+}
+
+/** The two items whose button really does send a message to a customer. */
+function isMessageTask(task: FollowUpTaskRow): boolean {
+  const type = rawTaskType(task).toLowerCase();
+  return type === "send_email" || type === "send_text_message";
+}
+
+/**
+ * The main button says what pressing it does. A booking reads "Book it"
+ * rather than "Confirm": when Calendar itself is set to check first, pressing
+ * it files the request in Calendar, and the result message says so.
+ */
+function primaryActionLabel(task: FollowUpTaskRow, manualTask: boolean): string {
+  if (manualTask) return "I handled this";
+  if (isMessageTask(task)) return "Send";
+  if (rawTaskType(task).toLowerCase() === "schedule_calendar") return "Book it";
+  return "Go ahead";
+}
+
+function declineActionLabel(task: FollowUpTaskRow, manualHandoff: boolean): string {
+  return !manualHandoff && isMessageTask(task) ? "Don't send" : "Dismiss";
+}
+
+/**
+ * Why the Bot left this for the owner, or what it wants the owner to decide.
+ * Shown on the card itself: an owner should never have to open the details
+ * to find out why something is waiting.
+ */
+function botNote(task: FollowUpTaskRow): string {
+  const payload = (task.payload || task.customer_info || task.customerInfo || {}) as Record<
+    string,
+    unknown
+  >;
+  return typeof payload.reasoning === "string" ? payload.reasoning.replace(/\s+/g, " ").trim() : "";
 }
 
 function taskTypeLabel(task: FollowUpTaskRow): string {
@@ -144,7 +179,6 @@ function evidenceSnippet(
   if (typeof payload.body === "string") parts.push(payload.body);
   if (typeof payload.description === "string") parts.push(payload.description);
   if (typeof payload.summary === "string") parts.push(payload.summary);
-  if (typeof payload.reasoning === "string") parts.push(payload.reasoning);
   if (task.description) parts.push(task.description);
   const editableBody = typeof payload.body === "string" ? payload.body : payload.description;
   const editableParts = omitEditableFields
@@ -373,7 +407,7 @@ function reviewConflictMessage(editing: boolean, reason?: "changed" | "unconfirm
       : "Action status could not be confirmed. Check the actual result, then review the refreshed details before trying again.";
   return editing
     ? "This action changed. Your draft is kept. Cancel it, review the refreshed details, then edit again."
-    : "This action changed. Review the refreshed details before approving.";
+    : "This changed. Review the refreshed details before you go ahead.";
 }
 
 function ApprovalTaskCard({
@@ -445,6 +479,8 @@ function ApprovalTaskCard({
   const hasSubject = rawTaskType(task).includes("email") || "subject" in savedPayload;
   const evidence = evidenceSnippet(savedTask, editing && canEditMessage, true);
   const preview = approvalPreview(savedTask, manualTask);
+  // A card whose only text is the Bot's reasoning already shows it as the preview.
+  const note = botNote(savedTask) === preview.trim() ? "" : botNote(savedTask);
   const keepDetailsOpen =
     ["schedule_calendar", "update_crm_lead"].includes(rawTaskType(task)) ||
     Boolean(reviewConflict && !canEditMessage);
@@ -524,15 +560,15 @@ function ApprovalTaskCard({
       if (canEditMessage && editing) {
         if (recipient !== draftRef.current.expectedTo) {
           throw new Error(
-            "The recipient changed while you were editing. Cancel this draft and review the new recipient before approving.",
+            "The recipient changed while you were editing. Cancel this draft and review the new recipient before sending.",
           );
         }
         const type = rawTaskType(task);
         if ((type === "send_email" || type === "send_text_message") && !editBody.trim()) {
-          throw new Error("Add a message before approving.");
+          throw new Error("Add a message before sending.");
         }
         if (type === "send_email" && !editSubject.trim()) {
-          throw new Error("Add a subject before approving.");
+          throw new Error("Add a subject before sending.");
         }
         const basePayload = draftRef.current.expectedPayload;
         const nextPayload: Record<string, unknown> = { ...basePayload };
@@ -573,7 +609,7 @@ function ApprovalTaskCard({
             onConflict();
             throw new Error(reviewConflictMessage(editing));
           }
-          throw new Error(failure?.error || "Could not save edits before approval.");
+          throw new Error(failure?.error || "Could not save your edits. Nothing was sent.");
         }
         if (failure?.success !== true) throw new Error("Edit save was not confirmed.");
         awaitingReceipt = false;
@@ -625,7 +661,7 @@ function ApprovalTaskCard({
           throw new Error(reviewConflictMessage(editing));
         }
         throw new Error(
-          body?.error || (manualTask ? "Could not complete this task." : "Approval failed."),
+          body?.error || (manualTask ? "Could not complete this task." : "That could not be done."),
         );
       }
       if (
@@ -633,7 +669,7 @@ function ApprovalTaskCard({
         (body.calendar_status !== undefined &&
           !OCCUPIED_APPOINTMENT_STATUSES.includes(body.calendar_status))
       )
-        throw new Error("Approval was not confirmed.");
+        throw new Error("The result was not confirmed.");
       awaitingReceipt = false;
       if (!manualTask) {
         emitProductEventOnce({
@@ -654,7 +690,7 @@ function ApprovalTaskCard({
             ? reason.message
             : manualTask
               ? "Could not complete this task."
-              : "Approval failed.",
+              : "That could not be done.",
         );
     } finally {
       decisionPending.current = false;
@@ -676,7 +712,7 @@ function ApprovalTaskCard({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               status: "cancelled",
-              resolution_notes: "Rejected from Approval Inbox",
+              resolution_notes: "Dismissed in Needs You",
             }),
           });
       const failure = await response.json().catch(() => null);
@@ -684,7 +720,7 @@ function ApprovalTaskCard({
         if (response.status < 500 && response.status !== 408) awaitingReceipt = false;
         throw new Error(
           failure?.error ||
-            (manualHandoff ? "Could not dismiss this handoff." : "Could not reject this action."),
+            (manualHandoff ? "Could not dismiss this handoff." : "Could not dismiss this."),
         );
       }
       if (failure?.success !== true) throw new Error("Decision was not confirmed.");
@@ -700,7 +736,7 @@ function ApprovalTaskCard({
             ? reason.message
             : manualHandoff
               ? "Could not dismiss this handoff."
-              : "Reject failed.",
+              : "Could not dismiss this.",
         );
     } finally {
       decisionPending.current = false;
@@ -753,6 +789,15 @@ function ApprovalTaskCard({
         {recipient ? (
           <p className="mt-1 break-words text-xs text-muted-foreground">
             {subject && !editing ? `${taskTypeLabel(task)} · ` : ""}To: {recipient}
+          </p>
+        ) : null}
+        {note ? (
+          <p
+            data-bot-note
+            className="mt-2 break-words rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm leading-relaxed text-foreground"
+          >
+            <span className="font-medium">From your Bot: </span>
+            {note}
           </p>
         ) : null}
         {!editing && preview ? (
@@ -897,9 +942,7 @@ function ApprovalTaskCard({
               ? reviewConflict.reason === "unconfirmed"
                 ? "Review status"
                 : "Review changes"
-              : manualTask
-                ? "I handled this"
-                : "Approve"}
+              : primaryActionLabel(task, manualTask)}
           </ShadButton>
           {canEditMessage ? (
             <ShadButton
@@ -919,7 +962,7 @@ function ApprovalTaskCard({
             disabled={busy || reviewConflict?.reason === "unconfirmed"}
             onClick={() => void reject()}
           >
-            {manualHandoff ? "Dismiss" : "Reject"}
+            {declineActionLabel(task, manualHandoff)}
           </ShadButton>
         </div>
       </div>
@@ -987,7 +1030,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       setTriageUnavailable(!triageReady);
       setTasksUnavailable(!tasksReady);
       if (!triageReady && !tasksReady) {
-        setError("Could not load approval inbox.");
+        setError("Could not load Needs You.");
         return;
       }
       setError(null);
@@ -1012,7 +1055,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       }
     } catch {
       if (controller.signal.aborted) return;
-      setError("Could not load approval inbox.");
+      setError("Could not load Needs You.");
     } finally {
       if (loadAbortRef.current === controller && !controller.signal.aborted) {
         loadAbortRef.current = null;
@@ -1181,7 +1224,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         tabs={approvalTabs}
         activeId={bucket}
         onSelect={(id) => setBucket(id as ApprovalBucket)}
-        ariaLabel="Approval buckets"
+        ariaLabel="Needs You sections"
         density="compact"
         align="start"
         className="mb-0 border-b-0 pb-0"
@@ -1214,15 +1257,15 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
           }
         >
           {bucketLoaded
-            ? "Could not refresh approvals. Last loaded items are shown."
-            : "Nothing was changed. Try again to load approvals."}
+            ? "Could not refresh. Last loaded items are shown."
+            : "Nothing was changed. Try again to load the list."}
         </StatusNotice>
       ) : null}
 
       {loading && !bucketLoaded ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading approvals…
+          Loading…
         </div>
       ) : !bucketLoaded && (error || bucketUnavailable) ? null : bucket === "pending" ||
         bucket === "compliance" ? (

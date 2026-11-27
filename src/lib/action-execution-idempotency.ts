@@ -52,7 +52,7 @@ export async function assertTaskCanBeEdited(
     throw new AppError(
       409,
       "TASK_APPROVAL_STARTED",
-      "Approval has already started. Refresh to check its outcome.",
+      "This is already under way. Refresh to check its outcome.",
     );
 }
 
