@@ -47,6 +47,7 @@ export interface AgentRuntimeProfile {
 }
 
 import { buildVibeBlock } from "./personality-vibes";
+import { OUTBOUND_OPT_OUT_NOTICE, OUTBOUND_RECORDING_NOTICE } from "./voice/outbound-opening";
 
 const DAY_INDEX: Record<DayOfWeek, number> = {
   sun: 0,
@@ -274,10 +275,10 @@ export function complianceFirstMessagePrefix(
     sentences.push(`This call uses an automated AI assistant${onBehalf}.`);
   }
   if (shouldAnnounceOptOut) {
-    sentences.push("You can say stop calling at any time to be placed on the do not call list.");
+    sentences.push(OUTBOUND_OPT_OUT_NOTICE);
   }
   if (shouldDiscloseRecording) {
-    sentences.push("This call may be recorded for quality and compliance.");
+    sentences.push(OUTBOUND_RECORDING_NOTICE);
   }
   return `${sentences.join(" ")} `;
 }

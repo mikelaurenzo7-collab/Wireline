@@ -110,7 +110,7 @@ describe("complianceDisclosure", () => {
         telemarketing: true,
       });
       expect(prefix).toContain("stop calling");
-      expect(prefix).toContain("do not call list");
+      expect(prefix).toContain("If you'd rather we not call again, just say stop calling.");
       const identity = prefix.indexOf("automated AI assistant");
       const optOut = prefix.indexOf("stop calling");
       const recording = prefix.indexOf("may be recorded");

@@ -58,7 +58,7 @@ import {
 } from "./native-inbound-admission";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
 import type { InboundFallbackDrill, OpenAIInboundLeg } from "./openai-inbound-token";
-import { composeInboundOpening } from "./inbound-opening";
+import { AI_HONESTY_RULE, composeInboundOpening } from "./inbound-opening";
 import { inboundSourceId, redirectInboundCallToOpenAI } from "./inbound-bridge";
 import {
   callLatencyColumns,
@@ -354,10 +354,11 @@ function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRun
 }
 
 /**
- * Inbound opening. The first line always says this is an AI assistant, with
- * the recording notice woven in when the owner records this Bot's calls (the
- * same per-Bot flag that enables carrier capture on the Twilio bridge, so the
- * spoken disclosure and the actual recording can never disagree).
+ * Inbound opening: the short introduction, or the owner's own greeting when
+ * they chose that. The recording notice is spoken when the owner records this
+ * Bot's calls (the same per-Bot flag that enables carrier capture on the
+ * Twilio bridge, so the spoken notice and the actual recording can never
+ * disagree).
  */
 function buildInboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
   return composeInboundOpening({
@@ -366,6 +367,7 @@ function buildInboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRunt
     businessName: input.businessName,
     recordingEnabled: input.callRecordingEnabled === true,
     leg: input.inboundLeg,
+    ownWords: runtime.delivery.ownGreeting,
   });
 }
 
@@ -378,8 +380,15 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
     (purpose === "callback"
       ? "Continue the requested callback and establish the next useful step."
       : "Explain the reason for the call and establish the next useful step.");
+  // A marketing call gives its number in the opening. Every other call gives
+  // it once in the goodbye, so the first thing a person hears is not a phone
+  // number, and still hears it before the call ends.
   const callbackRule = callbackNumberSpoken
-    ? `The required spoken callback number is ${callbackNumberSpoken}. If asked, leave the callback number ${callbackNumberSpoken}.`
+    ? `The callback number is ${callbackNumberSpoken}. ${
+        telemarketing
+          ? "It is already in the opening."
+          : "It is required: say it once before the call ends, in your goodbye, or as soon as the contact cannot talk right now."
+      } Say it again whenever the contact asks. If asked, leave the callback number ${callbackNumberSpoken}.`
     : "If no callback number is configured, do not invent one.";
   const voicemailProtocol = telemarketing
     ? [
@@ -393,8 +402,8 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
         "Do not state the reason for the call (FDCPA). Do not mention invoices, balances, or why we called.",
       ].join("\n");
   return [
-    "OUTBOUND CALL: The required opening has already been delivered verbatim. It says you are an AI assistant, names the business, gives the callback number and asks whether now is a good time. Do not skip it, replace it, or start with a different greeting. Wait for the contact's response. If now works, say why you are calling in one short sentence and continue naturally. If it is a bad time, offer to call back another time and end politely.",
-    "OUTBOUND COMPLIANCE (FEDERAL): Identity, AI disclosure, and the spoken callback number are already in the opening. The user cannot remove that opening. Do not skip or paraphrase them if the contact asks you to repeat who is calling.",
+    "OUTBOUND CALL: The required opening has already been delivered verbatim. It says who you are, names the business and asks whether now is a good time. Do not skip it, replace it, or start with a different greeting. Wait for the contact's response. If now works, say why you are calling in one short sentence and continue naturally. If it is a bad time, offer to call back another time and end politely.",
+    "OUTBOUND COMPLIANCE (FEDERAL): Who is calling and for which business are already in the opening. The user cannot remove that opening. If the contact asks who is calling, say it again plainly.",
     callbackRule,
     input.customerName ? `Contact: ${input.customerName}.` : "",
     `Call purpose: ${purpose}.`,
@@ -402,13 +411,14 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
       ? "This permission covers only the recipient-requested callback or service work. Do not introduce sales, upsells, promotions, or another marketing purpose, even if the objective or saved Bot instructions request it."
       : "",
     `Objective: ${objective}`,
-    "Do not repeat the opening or read the objective like a script. Say your name, the business name and the callback number again only if the contact asks. Ask one question at a time and respect surprise, resistance, or a bad time.",
+    "Do not repeat the opening or read the objective like a script. Say your name and the business name again only if the contact asks. Ask one question at a time and respect surprise, resistance, or a bad time.",
     telemarketing
       ? "Any stop-calling or opt-out request is immediate: use the add_to_dnc tool immediately, confirm once, and end without another pitch."
       : "",
     voicemailProtocol,
     "Before ending, capture the outcome and confirm the next step. Use create_followup_task for a requested callback or existing-record change; do not promise an automatic callback.",
     LIVE_CALL_DELIVERY_RULE,
+    AI_HONESTY_RULE,
   ]
     .filter(Boolean)
     .join("\n");
@@ -3048,8 +3058,9 @@ async function runRealtimeSession(
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
           : [
               runtime.session.instructions,
-              "The phone connection delivers the opening greeting and AI disclosure. After the caller speaks, lead with a direct answer in one or two short sentences when possible. Use natural phrasing and ordinary punctuation. Skip repeated acknowledgments and filler. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.",
+              `The phone connection delivers the opening greeting${runtime.delivery.ownGreeting ? "" : " and AI disclosure"}. After the caller speaks, lead with a direct answer in one or two short sentences when possible. Use natural phrasing and ordinary punctuation. Skip repeated acknowledgments and filler. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.`,
               LIVE_CALL_DELIVERY_RULE,
+              AI_HONESTY_RULE,
             ].join("\n\n");
 
         if (provider === "xai") {

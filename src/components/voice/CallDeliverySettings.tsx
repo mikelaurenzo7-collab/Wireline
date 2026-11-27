@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ChevronDown, Loader2, Play, Plus, Square, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, Play, Plus, Square, X } from "lucide-react";
+import { Link } from "react-router";
 
 import { authFetch } from "../../lib/api";
 import {
@@ -20,7 +21,22 @@ export type CallDeliveryView = {
   speakingRate: number;
   pronunciations: Pronunciation[];
   recognizedNames: string[];
+  /** Incoming calls open with the owner's greeting exactly as written. */
+  ownGreeting?: boolean;
 };
+
+/** The first line an incoming caller hears under each greeting choice, as the server composes it. */
+export type GreetingPreview = {
+  standard: string;
+  ownWords: string;
+  /** False when the workspace has no business name for the Bot to say. */
+  businessNameSet: boolean;
+};
+
+const GREETING_CHOICES = [
+  { own: false, label: "Short Introduction" },
+  { own: true, label: "Your Greeting As Written" },
+] as const;
 
 type CallDeliverySettingsProps = {
   agentId: string;
@@ -32,17 +48,22 @@ type CallDeliverySettingsProps = {
   sample?: { playing: boolean; loading: boolean; toggle: () => void } | null;
   /** A library or cloned voice answers calls. Pace and pronunciations follow it; name recognition may not. */
   otherVoiceAnswers?: boolean;
+  /** Both greetings in full. Absent on a server that does not offer the choice. */
+  greeting?: GreetingPreview | null;
+  /** The panel was opened, or the owner came back to the greeting, so the picker can read it again. */
+  onOpen?: () => void;
 };
 
 /** One change, as the save route reads it. Lists change one entry at a time. */
 type Change =
   | { speakingRate: number }
+  | { ownGreeting: boolean }
   | { addPronunciation: Pronunciation }
   | { removePronunciation: string }
   | { addRecognizedName: string }
   | { removeRecognizedName: string };
 
-type Part = "pace" | "pronunciations" | "names";
+type Part = "greeting" | "pace" | "pronunciations" | "names";
 
 const SAVE_FAILED = "That change could not be saved. Try again.";
 const oneLine = (value: string) => value.replace(/\s+/g, " ").trim();
@@ -65,6 +86,8 @@ export default function CallDeliverySettings({
   onSaved,
   sample = null,
   otherVoiceAnswers = false,
+  greeting = null,
+  onOpen,
 }: CallDeliverySettingsProps) {
   const [delivery, setDelivery] = useState(initial);
   const [saving, setSaving] = useState<Part | null>(null);
@@ -73,6 +96,7 @@ export default function CallDeliverySettings({
   const [word, setWord] = useState("");
   const [say, setSay] = useState("");
   const [name, setName] = useState("");
+  const greetingLabelId = useId();
   const paceLabelId = useId();
   const pronunciationHelpId = useId();
   const nameHelpId = useId();
@@ -126,6 +150,33 @@ export default function CallDeliverySettings({
     } finally {
       if (alive.current) setSaving(null);
     }
+  }
+
+  const ownGreeting = delivery.ownGreeting === true;
+
+  function chooseGreeting(own: boolean) {
+    if (own === ownGreeting) return;
+    void save(
+      "greeting",
+      { ownGreeting: own },
+      own
+        ? "Saved. Callers hear your greeting as written from the next call."
+        : "Saved. Callers hear the short introduction from the next call.",
+    );
+  }
+
+  function moveGreeting(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    const forward = event.key === "ArrowDown" || event.key === "ArrowRight";
+    const back = event.key === "ArrowUp" || event.key === "ArrowLeft";
+    if (!forward && !back) return;
+    event.preventDefault();
+    const nextIndex = forward ? Math.min(1, index + 1) : Math.max(0, index - 1);
+    if (nextIndex === index || busy) return;
+    const group = event.currentTarget.parentElement;
+    chooseGreeting(GREETING_CHOICES[nextIndex].own);
+    requestAnimationFrame(() => {
+      group?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[nextIndex]?.focus();
+    });
   }
 
   function choosePace(next: SpeakingPace) {
@@ -209,6 +260,7 @@ export default function CallDeliverySettings({
   const pronunciationsFull = delivery.pronunciations.length >= PRONUNCIATION_LIMIT;
   const namesFull = delivery.recognizedNames.length >= RECOGNIZED_NAME_LIMIT;
   const summary = [
+    greeting && ownGreeting ? "Your Own Greeting" : "",
     `${pace.label} Pace`,
     delivery.pronunciations.length ? plural(delivery.pronunciations.length, "Pronunciation") : "",
     delivery.recognizedNames.length ? plural(delivery.recognizedNames.length, "Name") : "",
@@ -217,11 +269,16 @@ export default function CallDeliverySettings({
     .join(" · ");
 
   return (
-    <details className="group rounded-xl border border-border bg-background">
+    <details
+      className="group rounded-xl border border-border bg-background"
+      onToggle={(event) => {
+        if (event.currentTarget.open) onOpen?.();
+      }}
+    >
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-2.5 py-3 wl-focus-ring-halo sm:px-3">
         <span className="min-w-0 flex-1">
           <span className="block break-words text-sm font-semibold text-foreground">
-            Pace &amp; Pronunciation
+            {greeting ? "Greeting, Pace & Pronunciation" : "Pace & Pronunciation"}
           </span>
           <span className="mt-0.5 block break-words text-xs text-muted-foreground">{summary}</span>
         </span>
@@ -230,14 +287,90 @@ export default function CallDeliverySettings({
           aria-hidden="true"
         />
       </summary>
-      <div className="min-w-0 space-y-5 border-t border-border p-2.5 sm:p-3">
-        <div aria-live="polite">
+      <div className="flex min-w-0 flex-col gap-5 border-t border-border p-2.5 sm:p-3">
+        {/* Out of the layout until it has something to say, so it leaves no gap. */}
+        <div aria-live="polite" className={notice ? "" : "sr-only"}>
           {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
         </div>
         {error ? (
           <StatusNotice tone="destructive" title="Not Saved">
             {error}
           </StatusNotice>
+        ) : null}
+
+        {greeting ? (
+          <section className="min-w-0 space-y-2" onMouseEnter={onOpen} onFocus={onOpen}>
+            <p id={greetingLabelId} className="text-sm font-semibold text-foreground">
+              Greeting On Incoming Calls
+            </p>
+            <div role="radiogroup" aria-labelledby={greetingLabelId} className="grid gap-2">
+              {GREETING_CHOICES.map((choice, index) => {
+                const checked = choice.own === ownGreeting;
+                return (
+                  <button
+                    key={choice.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    aria-disabled={busy || undefined}
+                    tabIndex={checked ? 0 : -1}
+                    onClick={() => chooseGreeting(choice.own)}
+                    onKeyDown={(event) => moveGreeting(event, index)}
+                    className={`flex min-h-11 min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors wl-focus-ring-halo ${
+                      checked
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border bg-background hover:bg-muted/50"
+                    } ${busy ? "cursor-wait" : ""}`}
+                  >
+                    <span
+                      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border ${
+                        checked
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {checked && saving === "greeting" ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : checked ? (
+                        <Check className="size-3" />
+                      ) : null}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-foreground">
+                        {choice.label}
+                      </span>
+                      <span className="mt-0.5 block break-words text-xs leading-5 text-muted-foreground">
+                        {choice.own ? greeting.ownWords : greeting.standard}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Change the words under Opening Greeting in Set Up. Either way your Bot says it is an
+              AI whenever someone asks.
+            </p>
+            {ownGreeting ? (
+              <p className="text-xs leading-5 text-muted-foreground">
+                Some states require telling callers they have reached an AI. If your Bot texts
+                callers, your texting registration says it introduces itself as an AI when it
+                answers.
+              </p>
+            ) : null}
+            {greeting.businessNameSet ? null : (
+              <p className="text-xs leading-5 text-muted-foreground">
+                No business name is set, so the greeting cannot name your business.{" "}
+                <Link
+                  to="/settings/customization"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Set Business Name
+                </Link>
+              </p>
+            )}
+          </section>
         ) : null}
 
         <section className="min-w-0 space-y-2">

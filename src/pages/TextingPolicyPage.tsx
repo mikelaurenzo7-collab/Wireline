@@ -189,10 +189,10 @@ function TermsBody({ brand }: { brand: string }) {
     <>
       <Section id="program" heading={`${brand} Customer Care Texts`}>
         <p className="leading-7 text-muted-foreground">
-          During a call with the {brand} AI assistant, which says it is AI when it answers, you can
-          ask for information or an appointment confirmation by text. The assistant confirms your
-          number and asks permission first, and a text is sent only after you agree. If {brand}{" "}
-          misses your call, it may send you one text offering help.
+          During a call with the {brand} AI assistant, you can ask for information or an appointment
+          confirmation by text. The assistant confirms your number and asks permission first, and a
+          text is sent only after you agree. If {brand} misses your call, it may send you one text
+          offering help.
         </p>
       </Section>
       <Section id="frequency" heading="Frequency and Cost">

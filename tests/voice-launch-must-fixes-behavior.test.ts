@@ -170,27 +170,25 @@ describe("same-call failover", () => {
   });
 });
 
-describe("greeting discloses AI first", () => {
-  it("weaves the recording notice into the disclosure", () => {
+describe("greeting introduces the Bot as an AI assistant", () => {
+  it("gives the recording notice as its own short sentence", () => {
     const line = inboundDisclosureLine({
       agentName: "Ava",
       recordingEnabled: true,
     });
-    expect(line).toBe(
-      "Hi, I'm Ava, and I'm an AI assistant, and this call may be recorded for quality and compliance.",
-    );
+    expect(line).toBe("Hi, I'm Ava, an AI assistant. This call may be recorded.");
     expect(detectAiDisclosure(line).found).toBe(true);
     expect(detectRecordingDisclosure(line).found).toBe(true);
   });
 
-  it("leads with the disclosure and keeps the owner's greeting", () => {
+  it("leads with the introduction and keeps the owner's greeting", () => {
     const opening = composeInboundOpening({
       greeting: "Hi, I’m Nora, BotBound’s AI assistant. How can I help?",
       agentName: "Nora",
       businessName: "BotBound",
       recordingEnabled: false,
     });
-    expect(opening).toBe("Hi, I'm Nora, and I'm an AI assistant with BotBound. How can I help?");
+    expect(opening).toBe("Hi, I'm Nora, an AI assistant with BotBound. How can I help?");
     expect(detectAiDisclosure(opening).found).toBe(true);
   });
 
@@ -204,17 +202,20 @@ describe("greeting discloses AI first", () => {
     ).toBe("Hi, I'm an AI assistant with BOTBOUND.");
   });
 
-  it("a resumed leg discloses again without replaying the greeting", () => {
+  it("a resumed leg picks the call back up without replaying the greeting or the introduction", () => {
     const opening = composeInboundOpening({
       greeting: "Thanks for calling Joe's Plumbing!",
       agentName: "Ava",
       recordingEnabled: true,
       leg: "resume",
     });
-    expect(opening).toMatch(/^You're still speaking with an AI assistant/);
+    // The caller heard both on the leg that failed. Only the recording notice is said again.
+    expect(opening).toBe(
+      "This call may be recorded. Sorry, we got cut off for a moment. What can I help you with?",
+    );
     expect(opening).not.toContain("Thanks for calling");
     expect(opening).not.toContain("Ava");
-    expect(detectAiDisclosure(opening).found).toBe(true);
+    expect(detectAiDisclosure(opening).found).toBe(false);
     expect(detectRecordingDisclosure(opening).found).toBe(true);
   });
 });

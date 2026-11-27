@@ -72,7 +72,7 @@ describe("64.1200(b) runtime wiring", () => {
       telemarketing: true,
     });
     expect(spoken).toContain(
-      `Hi, this is Sam. I'm an AI assistant calling for Ridge Dental. ${OUTBOUND_OPT_OUT_NOTICE}`,
+      `Hi, this is Sam, an AI assistant with Ridge Dental. ${OUTBOUND_OPT_OUT_NOTICE}`,
     );
   });
 
@@ -84,6 +84,22 @@ describe("64.1200(b) runtime wiring", () => {
     // the called party cannot ask.
     expect(session).toMatch(/OUTBOUND COMPLIANCE \(FEDERAL/);
     expect(session).toMatch(/leave the callback number \$\{callbackNumberSpoken\}/);
+    // "During or after the message": a marketing call states the number in its
+    // opening, and every other call is told to state it once before it ends.
+    expect(session).toContain(
+      "It is required: say it once before the call ends, in your goodbye, or as soon as the contact cannot talk right now.",
+    );
+    const number = "three one two, five five five, zero one zero one";
+    const opening = (telemarketing: boolean) =>
+      composeOutboundOpening({
+        agentName: "Sam",
+        businessName: "Ridge Dental",
+        callbackNumberSpoken: number,
+        recordingEnabled: false,
+        telemarketing,
+      });
+    expect(opening(true)).toContain(`You can reach us at ${number}.`);
+    expect(opening(false)).not.toContain(number);
   });
 
   it("(b)(3) the opt-out mechanism records the number and the prompt orders immediate honor", () => {

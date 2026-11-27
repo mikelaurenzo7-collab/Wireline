@@ -12,11 +12,10 @@ import { markRealtimeProviderCallOutcome } from "../realtime-provider-outcome";
 import { drizzle, log, serialQueryBatch, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
-import { composeInboundOpening } from "./inbound-opening";
+import { AI_HONESTY_RULE, composeInboundOpening } from "./inbound-opening";
 import { runOpenAILiveVoiceTool } from "./openai-live-agent-service";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
 import { configuredPhoneVoiceProvider, XAI_REALTIME_WEBSOCKET_URL } from "./realtime-provider";
-import { spokenBusinessName } from "./spoken-business-name";
 import {
   resolveXAIGrokVoiceModel,
   resolveXAIReasoningEffort,
@@ -114,8 +113,9 @@ export class XAIRehearsalUnavailableError extends Error {
  * Same instruction the phone session adds after the connection speaks the
  * opening, so the Bot does not introduce itself a second time.
  */
-const AFTER_OPENING_INSTRUCTIONS =
-  "The connection delivers the opening greeting and AI disclosure. After the caller speaks, lead with a direct answer in one or two short sentences when possible. Use natural phrasing and ordinary punctuation. Skip repeated acknowledgments and filler. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.";
+/** As a call's instructions say it: the AI introduction is named only when the opening carries one. */
+const afterOpeningInstructions = (ownGreeting: boolean) =>
+  `The connection delivers the opening greeting${ownGreeting ? "" : " and AI disclosure"}. After the caller speaks, lead with a direct answer in one or two short sentences when possible. Use natural phrasing and ordinary punctuation. Skip repeated acknowledgments and filler. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.`;
 
 type EndReason =
   | "stopped"
@@ -229,29 +229,23 @@ function keyFingerprint(apiKey: string): string {
   return createHash("sha256").update(apiKey).digest("hex").slice(0, 24);
 }
 
+/**
+ * The business name an incoming call speaks, so a rehearsal opens the way a
+ * call does. A call the Bot places falls back to the workspace or the account
+ * holder's name; an incoming call does not, and names no business until one
+ * is set.
+ */
 async function rehearsalBusinessName(userId: string): Promise<string | null> {
-  const [settings, owners] = await drizzle.transaction((tx) =>
+  const [settings] = await drizzle.transaction((tx) =>
     serialQueryBatch([
       tx
-        .select({
-          businessName: schema.settings.businessName,
-          workspaceDisplayName: schema.settings.workspaceDisplayName,
-        })
+        .select({ businessName: schema.settings.businessName })
         .from(schema.settings)
         .where(eq(schema.settings.userId, userId))
         .limit(1),
-      tx
-        .select({ fullName: schema.users.fullName })
-        .from(schema.users)
-        .where(eq(schema.users.id, userId))
-        .limit(1),
     ]),
   );
-  return spokenBusinessName({
-    businessName: settings[0]?.businessName,
-    workspaceDisplayName: settings[0]?.workspaceDisplayName,
-    accountDisplayName: owners[0]?.fullName,
-  });
+  return settings[0]?.businessName?.trim() || null;
 }
 
 function median(values: number[]): number | null {
@@ -462,9 +456,10 @@ async function openRelaySession(input: RelayInput, env: NodeJS.ProcessEnv, apiKe
     businessName,
     // Rehearsals are not recorded, so the opening makes no recording claim.
     recordingEnabled: false,
+    ownWords: runtime.delivery.ownGreeting,
   });
   const xaiSession = toXAIRealtimeSession(runtime.session as Record<string, unknown>, {
-    instructions: `${runtime.session.instructions}\n\n${AFTER_OPENING_INSTRUCTIONS}`,
+    instructions: `${runtime.session.instructions}\n\n${afterOpeningInstructions(runtime.delivery.ownGreeting)}\n\n${AI_HONESTY_RULE}`,
     keyterms: [runtime.agentName, businessName ?? "", ...runtime.delivery.recognizedNames],
     customVoiceId: voice,
     // The same pace and pronunciations a caller hears, so a rehearsal sounds like the call.

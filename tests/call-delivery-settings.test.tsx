@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CallDeliverySettings, {
   type CallDeliveryView,
+  type GreetingPreview,
 } from "../src/components/voice/CallDeliverySettings";
 
 type Slot = { value?: unknown; dependencies?: readonly unknown[]; cleanup?: () => void };
@@ -67,6 +68,8 @@ const onSaved = vi.fn();
 let initial = nothing;
 let sample: { playing: boolean; loading: boolean; toggle: () => void } | null = null;
 let otherVoiceAnswers = false;
+let greeting: GreetingPreview | null = null;
+const onOpen = vi.fn();
 function render() {
   h.cursor = 0;
   const nodes = elements(
@@ -77,12 +80,18 @@ function render() {
       onSaved,
       sample,
       otherVoiceAnswers,
+      greeting,
+      onOpen,
     }),
   );
   h.effects.splice(0).forEach((effect) => effect());
   return nodes;
 }
-const radios = (nodes: Element[]) => nodes.filter((node) => node.props.role === "radio");
+/** The pace steps. The two greeting choices are radios too, and come first when shown. */
+const radios = (nodes: Element[]) =>
+  nodes.filter((node) => node.props.role === "radio").slice(greeting ? 2 : 0);
+const greetings = (nodes: Element[]) =>
+  greeting ? nodes.filter((node) => node.props.role === "radio").slice(0, 2) : [];
 const checkedPace = (nodes: Element[]) =>
   text(radios(nodes).find((node) => node.props["aria-checked"] === true)!);
 const inputs = (nodes: Element[]) => nodes.filter((node) => node.type === "input");
@@ -117,7 +126,107 @@ beforeEach(() => {
   initial = nothing;
   sample = null;
   otherVoiceAnswers = false;
+  greeting = null;
+  onOpen.mockReset();
   vi.stubGlobal("requestAnimationFrame", (callback: () => void) => callback());
+});
+
+describe("the greeting on incoming calls", () => {
+  const preview: GreetingPreview = {
+    standard: "Hi, I'm Sam, an AI assistant with Ridge Dental LLC. How can I help?",
+    ownWords: "Hey, I'm Sam with Ridge Dental LLC. How can I help you?",
+    businessNameSet: true,
+  };
+
+  it("shows both greetings word for word and saves the one that is picked", async () => {
+    greeting = preview;
+    let nodes = render();
+    expect(greetings(nodes).map((node) => text(node))).toEqual([
+      `Short Introduction${preview.standard}`,
+      `Your Greeting As Written${preview.ownWords}`,
+    ]);
+    expect(greetings(nodes).map((node) => node.props["aria-checked"])).toEqual([true, false]);
+    expect(text(nodes[0])).toContain("Greeting, Pace & Pronunciation");
+    expect(text(nodes[0])).toContain("Either way your Bot says it is an AI whenever someone asks.");
+    // What dropping the introduction means is said to the owner who drops it, not to everyone.
+    expect(text(nodes[0])).not.toContain("Some states require");
+
+    answers({ ownGreeting: true });
+    greetings(nodes)[1].props.onClick();
+    await settled();
+    expect(lastSave().body).toEqual({ ownGreeting: true });
+    nodes = render();
+    expect(greetings(nodes).map((node) => node.props["aria-checked"])).toEqual([false, true]);
+    expect(notices(nodes)).toEqual([
+      "Saved. Callers hear your greeting as written from the next call.",
+    ]);
+    expect(text(nodes[0])).toContain("Your Own Greeting · Natural Pace");
+    expect(text(nodes[0])).toContain(
+      "Some states require telling callers they have reached an AI. If your Bot texts callers, your texting registration says it introduces itself as an AI when it answers.",
+    );
+
+    // Picking the one already in effect saves nothing.
+    greetings(nodes)[1].props.onClick();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    answers({ ownGreeting: false });
+    greetings(nodes)[0].props.onClick();
+    await vi.waitFor(() =>
+      expect(notices(render())).toEqual([
+        "Saved. Callers hear the short introduction from the next call.",
+      ]),
+    );
+    expect(lastSave().body).toEqual({ ownGreeting: false });
+  });
+
+  it("moves between the two with the arrow keys", async () => {
+    greeting = preview;
+    const focused: number[] = [];
+    const group = {
+      querySelectorAll: () => [0, 1].map((index) => ({ focus: () => focused.push(index) })),
+    };
+    const key = (name: string, index: number) =>
+      greetings(render())[index].props.onKeyDown({
+        key: name,
+        preventDefault: vi.fn(),
+        currentTarget: { parentElement: group },
+      });
+    key("ArrowUp", 0);
+    key("Enter", 0);
+    expect(h.fetch).not.toHaveBeenCalled();
+    answers({ ownGreeting: true });
+    key("ArrowDown", 0);
+    await settled();
+    expect(lastSave().body).toEqual({ ownGreeting: true });
+    expect(focused).toEqual([1]);
+  });
+
+  it("says the greeting cannot name the business, and where to set it, when no business name is set", () => {
+    greeting = { ...preview, businessNameSet: false };
+    const nodes = render();
+    expect(text(nodes[0])).toContain(
+      "No business name is set, so the greeting cannot name your business.",
+    );
+    const link = nodes.find((node) => text(node) === "Set Business Name")!;
+    expect(link.props.to).toBe("/settings/customization");
+    greeting = preview;
+    expect(render().some((node) => text(node) === "Set Business Name")).toBe(false);
+  });
+
+  it("is left out, title and all, when the server does not offer the choice", () => {
+    const nodes = render();
+    expect(greetings(nodes)).toEqual([]);
+    expect(text(nodes[0])).toContain("Pace & Pronunciation");
+    expect(text(nodes[0])).not.toContain("Greeting");
+  });
+
+  it("tells the picker when it is opened, so the two greetings are read again", () => {
+    greeting = preview;
+    const details = render()[0];
+    details.props.onToggle({ currentTarget: { open: false } });
+    expect(onOpen).not.toHaveBeenCalled();
+    details.props.onToggle({ currentTarget: { open: true } });
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
 });
 
 describe("speaking pace", () => {
@@ -125,7 +234,7 @@ describe("speaking pace", () => {
     let nodes = render();
     expect(radios(nodes).map((node) => text(node))).toEqual([
       "Slow",
-      "Relaxed",
+      "Steady",
       "Natural",
       "Brisk",
       "Fast",
@@ -171,7 +280,7 @@ describe("speaking pace", () => {
 
     answers({ speakingRate: 1 });
     key("ArrowLeft", 2);
-    await vi.waitFor(() => expect(checkedPace(render())).toBe("Relaxed"));
+    await vi.waitFor(() => expect(checkedPace(render())).toBe("Steady"));
     expect(lastSave().body).toEqual({ speakingRate: 1 });
     answers({ speakingRate: 1.3 });
     key("End", 1);

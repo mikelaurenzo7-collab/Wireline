@@ -18,7 +18,10 @@ describe("launch artifact privacy and operations truth", () => {
     // capture on the Twilio bridges (see live-call-recording-contract).
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
     expect(read("src/lib/voice/inbound-opening.ts")).toContain(
-      "this call may be recorded for quality and compliance",
+      'input.recordingEnabled ? `${OUTBOUND_RECORDING_NOTICE} ` : ""',
+    );
+    expect(read("src/lib/voice/outbound-opening.ts")).toContain(
+      'OUTBOUND_RECORDING_NOTICE = "This call may be recorded."',
     );
     expect(session).not.toMatch(/recordingUrl|recording_url|videoRecording|pcap/i);
     expect(runtime).not.toMatch(/api\.x\.ai|api\.vapi\.ai|elevenlabs|11labs/i);
@@ -35,7 +38,9 @@ describe("launch artifact privacy and operations truth", () => {
     expect(route).toContain('"/api/public/demo-call"');
     expect(route).not.toMatch(/OpenAI|VAPI|createServerManagedOpenAIRealtimeCall|runInBackground/);
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|demo-session/);
-    expect(app).toContain('<Route path="/showcase" element={<PreservingRedirect to="/signup" />} />');
+    expect(app).toContain(
+      '<Route path="/showcase" element={<PreservingRedirect to="/signup" />} />',
+    );
   });
 
   it("keeps public retention and recording claims aligned with runtime defaults", () => {

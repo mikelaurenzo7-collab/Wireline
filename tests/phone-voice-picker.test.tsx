@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CallDeliverySettings, {
   type CallDeliveryView,
+  type GreetingPreview,
 } from "../src/components/voice/CallDeliverySettings";
 import SimpleVoicePicker from "../src/components/voice/SimpleVoicePicker";
 import { PHONE_VOICES } from "../src/lib/phone-voices";
@@ -97,6 +98,8 @@ const deliveryPanel = (nodes: Element[]) =>
         onSaved: (delivery: CallDeliveryView) => void;
         sample: { playing: boolean; loading: boolean; toggle: () => void } | null;
         otherVoiceAnswers: boolean;
+        greeting: GreetingPreview | null;
+        onOpen: () => void;
       }>
     | undefined;
 const requests = () =>
@@ -107,6 +110,11 @@ const requests = () =>
   }));
 
 const noDelivery: CallDeliveryView = { speakingRate: 1.1, pronunciations: [], recognizedNames: [] };
+const greeting: GreetingPreview = {
+  standard: "Hi, I'm Sam, and I'm an AI assistant with Ridge Dental LLC. How can I help?",
+  ownWords: "Hey, I'm Sam with Ridge Dental LLC. How can I help you?",
+  businessNameSet: true,
+};
 const saved = (voice: Record<string, unknown> = {}) => ({
   ok: true,
   json: async () => ({
@@ -118,6 +126,7 @@ const saved = (voice: Record<string, unknown> = {}) => ({
       phoneVoiceCatalog: true,
       phoneVoice: "castor",
       delivery: noDelivery,
+      greeting,
       rehearsalHearsPhoneVoice: true,
       ...voice,
     },
@@ -241,10 +250,25 @@ describe("built-in phone voices in the picker", () => {
     const panel = deliveryPanel(nodes)!;
     expect(panel.props.initial).toEqual(noDelivery);
     expect(panel.props.otherVoiceAnswers).toBe(false);
+    expect(panel.props.greeting).toEqual(greeting);
     expect(panel.props.sample).toMatchObject({ playing: false, loading: false });
     h.fetch.mockReturnValue(new Promise(() => {}));
     panel.props.sample!.toggle();
     expect(requests().at(-1)!.url).toContain("/voice/sample?voice=castor&provider=phone&pace=1.1");
+  });
+
+  it("reads the two greetings again when the panel is opened, since their words are edited elsewhere", async () => {
+    const nodes = await loaded(28);
+    const edited = { ...greeting, ownWords: "Ridge Dental, Sam speaking." };
+    h.fetch.mockResolvedValueOnce(saved({ greeting: edited }));
+    deliveryPanel(nodes)!.props.onOpen();
+    await vi.waitFor(() => expect(deliveryPanel(render())!.props.greeting).toEqual(edited));
+    expect(requests().at(-1)).toMatchObject({ url: "/api/agent-config/bot-a", method: "GET" });
+    // A failed read keeps what is shown.
+    h.fetch.mockRejectedValueOnce(new Error("offline"));
+    deliveryPanel(render())!.props.onOpen();
+    await Promise.resolve();
+    expect(deliveryPanel(render())!.props.greeting).toEqual(edited);
   });
 
   it("keeps pace and pronunciation but no built-in sample while a library voice answers", async () => {

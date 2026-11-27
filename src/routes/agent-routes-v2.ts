@@ -37,6 +37,7 @@ import {
   pronunciationTouchesRequiredWording,
 } from "../lib/voice/call-delivery";
 import { rehearsalVoiceProvider } from "../lib/voice/xai-rehearsal-relay";
+import { composeInboundOpening } from "../lib/voice/inbound-opening";
 import { LIVE_CUSTOM_VOICE_KEY, currentBotVariables } from "../lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
 import { phoneCatalogService, CARTESIA_SPEECH_MODEL } from "../lib/voice/phone-catalog-service";
@@ -232,6 +233,7 @@ function callDeliveryView(delivery: CallDelivery) {
     speakingRate: delivery.speakingRate ?? resolvePhoneSpeakingRate(),
     pronunciations: delivery.pronunciations,
     recognizedNames: delivery.recognizedNames,
+    ownGreeting: delivery.ownGreeting,
   };
 }
 
@@ -829,7 +831,10 @@ router.get(
           )
           .orderBy(desc(schema.knowledge.createdAt));
         const tenantSettings = await tx
-          .select({ autonomyLevel: schema.settings.autonomyLevel })
+          .select({
+            autonomyLevel: schema.settings.autonomyLevel,
+            businessName: schema.settings.businessName,
+          })
           .from(schema.settings)
           .where(eq(schema.settings.userId, req.user.id))
           .limit(1);
@@ -844,6 +849,19 @@ router.get(
       record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId;
     const builtInPhoneVoice = phoneCallVoiceFor(pickedByName?.id ?? savedVoiceId);
     const catalog = catalogVoiceInEffect(pickedByName?.id, savedVoiceId);
+    // The first line an incoming caller hears under each greeting choice,
+    // composed from what an incoming call uses: the saved greeting, the Bot's
+    // name, its recording setting, and the workspace's business name alone.
+    // An incoming call never falls back to the account holder's own name.
+    const businessName = tenantSettings[0]?.businessName?.trim() || null;
+    const incomingOpening = (ownWords: boolean) =>
+      composeInboundOpening({
+        greeting: resolveAgentGreeting(record || {}, directives),
+        agentName: record?.name ?? "",
+        businessName,
+        recordingEnabled: record?.callRecordingEnabled === true,
+        ownWords,
+      });
     const phoneCall = catalogVoice
       ? { provider: catalogVoice.provider, voice: catalogVoice.name }
       : builtInPhoneVoice;
@@ -909,6 +927,11 @@ router.get(
         phoneVoiceCatalog: catalog.available,
         phoneVoice: catalog.voice,
         delivery: callDeliveryView(callDeliveryFor(record?.businessVariables)),
+        greeting: {
+          standard: incomingOpening(false),
+          ownWords: incomingOpening(true),
+          businessNameSet: Boolean(businessName),
+        },
         // Studio rehearsal speaks this same stock phone voice (see xai-rehearsal-relay.ts).
         rehearsalHearsPhoneVoice:
           !catalogVoice && Boolean(phoneCall) && rehearsalVoiceProvider().provider === "xai",

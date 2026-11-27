@@ -39,11 +39,8 @@ vi.mock("../src/lib/server-context", async () => {
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     serialQueryBatch: vi.fn(),
     drizzle: {
-      // Settings, then the owner row.
-      transaction: async () => [
-        [{ businessName: "Acme Plumbing", workspaceDisplayName: null }],
-        [{ fullName: "Pat Owner" }],
-      ],
+      // The workspace's settings row: the one place an incoming call reads a business name.
+      transaction: vi.fn(async () => [[{ businessName: "Acme Plumbing" }]]),
     },
   };
 });
@@ -88,7 +85,7 @@ vi.mock("../src/lib/voice/realtime-provider", async (original) => ({
   },
 }));
 
-import { tenantStore } from "../src/lib/server-context";
+import { drizzle, tenantStore } from "../src/lib/server-context";
 import { buildOpenAIRealtimeAgentRuntime } from "../src/lib/voice/openai-phone-agent-runtime";
 import {
   activeRehearsalRelayCount,
@@ -254,6 +251,35 @@ describe("xAI rehearsal relay", () => {
     expect(session).not.toHaveProperty("replace");
   });
 
+  const openingOf = async (ownGreeting: boolean, businessName: string | null) => {
+    const runtime = await vi.mocked(buildOpenAIRealtimeAgentRuntime)({
+      userId: "user-1",
+      agentId: "bot-a",
+      surface: "browser_test",
+    });
+    vi.mocked(buildOpenAIRealtimeAgentRuntime).mockResolvedValueOnce({
+      ...runtime,
+      delivery: { ...runtime.delivery, ownGreeting },
+    } as never);
+    vi.mocked(drizzle.transaction).mockResolvedValueOnce([[{ businessName }]] as never);
+    const relay = await tenantStore.run("tenant-1", () =>
+      createXAIRehearsalRelay({ userId: "user-1", agentId: "bot-a", env }),
+    );
+    const { events } = attach(relay.ticket);
+    await waitFor(() => events.some((event) => event.type === "bot_text"), "opening");
+    return events.find((event) => event.type === "bot_text")!.text;
+  };
+
+  it("opens with the owner's own words, exactly as saved, when they chose that", async () => {
+    expect(await openingOf(true, "Acme Plumbing")).toBe(
+      "Thanks for calling Acme Plumbing. How can I help?",
+    );
+  });
+
+  it("names no business when none is set, as an incoming call does, instead of the owner's name", async () => {
+    expect(await openingOf(false, null)).toBe("Hi, I'm Riley, an AI assistant. How can I help?");
+  });
+
   it("rehearses in the voice, pace and pronunciations the owner chose for calls", async () => {
     const runtime = await vi.mocked(buildOpenAIRealtimeAgentRuntime)({
       userId: "user-1",
@@ -297,7 +323,7 @@ describe("xAI rehearsal relay", () => {
     await waitFor(() => events.some((event) => event.type === "bot_text"), "opening");
 
     expect(events[0]).toMatchObject({ type: "ready", sampleRate: 24_000 });
-    const opening = "Hi, I'm Riley, and I'm an AI assistant with Acme Plumbing. How can I help?";
+    const opening = "Hi, I'm Riley, an AI assistant with Acme Plumbing. How can I help?";
     expect(events[1]).toEqual({ type: "bot_text", id: "opening", text: opening, final: true });
     await waitFor(
       () => xaiReceived.some((event) => event.type === "conversation.item.create"),

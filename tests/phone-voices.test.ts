@@ -107,7 +107,12 @@ describe("speaking pace", () => {
 
 describe("call delivery", () => {
   it("defaults to nothing chosen", () => {
-    const nothing = { speakingRate: null, pronunciations: [], recognizedNames: [] };
+    const nothing = {
+      speakingRate: null,
+      pronunciations: [],
+      recognizedNames: [],
+      ownGreeting: false,
+    };
     expect(callDeliverySelection(null)).toEqual(nothing);
     expect(callDeliverySelection({ [CALL_DELIVERY_KEY]: "fast" })).toEqual(nothing);
     expect(callDeliverySelection({ [CALL_DELIVERY_KEY]: [1.2] })).toEqual(nothing);
@@ -144,7 +149,17 @@ describe("call delivery", () => {
         { word: "Nguyen", say: "Win" },
       ],
       recognizedNames: ["Siobhan", "Acme Plumbing"],
+      ownGreeting: false,
     });
+    // Only an explicit choice opens calls in the owner's own words.
+    for (const ownGreeting of ["true", 1, null, {}]) {
+      expect(callDeliverySelection({ [CALL_DELIVERY_KEY]: { ownGreeting } }).ownGreeting).toBe(
+        false,
+      );
+    }
+    expect(callDeliverySelection({ [CALL_DELIVERY_KEY]: { ownGreeting: true } }).ownGreeting).toBe(
+      true,
+    );
   });
 
   it("never keeps more than one Bot's worth", () => {
@@ -239,7 +254,12 @@ describe("reading a save request", () => {
 });
 
 describe("applying one change to what is stored", () => {
-  const nothing: CallDelivery = { speakingRate: null, pronunciations: [], recognizedNames: [] };
+  const nothing: CallDelivery = {
+    speakingRate: null,
+    pronunciations: [],
+    recognizedNames: [],
+    ownGreeting: false,
+  };
   const apply = (current: CallDelivery, body: unknown) => {
     const parsed = parseCallDeliveryChange(body);
     if (!parsed.ok) throw new Error(parsed.error);
@@ -310,6 +330,29 @@ describe("applying one change to what is stored", () => {
     expect(apply(full, { addRecognizedName: "Extra" }).ok).toBe(false);
     // Respelling a listed word adds nothing, so it is still allowed.
     expect(apply(full, { addPronunciation: { word: "Word0", say: "First" } }).ok).toBe(true);
+  });
+
+  it("turns the owner's own greeting on and off, storing it only while it is on", () => {
+    expect(parseCallDeliveryChange({ ownGreeting: true })).toEqual({
+      ok: true,
+      change: { kind: "greeting", own: true },
+    });
+    for (const ownGreeting of ["yes", 1, null]) {
+      expect(parseCallDeliveryChange({ ownGreeting })).toEqual({
+        ok: false,
+        error: "Choose how your Bot greets callers.",
+      });
+    }
+    const on = kept(nothing, { ownGreeting: true });
+    expect(on.ownGreeting).toBe(true);
+    expect(storedCallDelivery(on)).toEqual({
+      pronunciations: [],
+      recognizedNames: [],
+      ownGreeting: true,
+    });
+    const off = kept(on, { ownGreeting: false });
+    expect(off).toEqual(nothing);
+    expect(storedCallDelivery(off)).not.toHaveProperty("ownGreeting");
   });
 
   it("stores a pace only once one was chosen", () => {

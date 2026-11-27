@@ -296,6 +296,7 @@ describe("saving call delivery", () => {
           { word: "Siobhan", say: "Shi-vawn" },
         ],
         recognizedNames: [],
+        ownGreeting: false,
       },
     });
     // Read and written under one row lock, and only this key is written.
@@ -320,7 +321,42 @@ describe("saving call delivery", () => {
     });
     expect(json).toHaveBeenCalledWith({
       success: true,
-      delivery: { speakingRate: 1.2, pronunciations: [], recognizedNames: ["Siobhan"] },
+      delivery: {
+        speakingRate: 1.2,
+        pronunciations: [],
+        recognizedNames: ["Siobhan"],
+        ownGreeting: false,
+      },
+    });
+  });
+
+  it("turns the owner's own greeting on and off without touching the rest", async () => {
+    h.variables = { [DELIVERY_KEY]: { speakingRate: 0.9, recognizedNames: ["Siobhan"] } };
+    const on = saveDelivery({ ownGreeting: true });
+    await on.result;
+    expect(stored()).toEqual({
+      speakingRate: 0.9,
+      pronunciations: [],
+      recognizedNames: ["Siobhan"],
+      ownGreeting: true,
+    });
+    expect(on.json).toHaveBeenCalledWith({
+      success: true,
+      delivery: {
+        speakingRate: 0.9,
+        pronunciations: [],
+        recognizedNames: ["Siobhan"],
+        ownGreeting: true,
+      },
+    });
+    await saveDelivery({ ownGreeting: false }).result;
+    expect(stored()).toEqual({
+      speakingRate: 0.9,
+      pronunciations: [],
+      recognizedNames: ["Siobhan"],
+    });
+    await expect(saveDelivery({ ownGreeting: "yes" }).result).rejects.toMatchObject({
+      status: 400,
     });
   });
 

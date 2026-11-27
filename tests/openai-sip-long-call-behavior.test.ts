@@ -307,6 +307,8 @@ const runtime = {
   agentName: "Service Bot",
   greeting: "How can I help?",
   session: { type: "realtime", instructions: "Help the customer", tools: [] },
+  // What every runtime carries for a Bot whose owner has chosen nothing.
+  delivery: { speakingRate: null, pronunciations: [], recognizedNames: [], ownGreeting: false },
 };
 const claim = {
   callLogId: 1n,
@@ -428,7 +430,7 @@ describe("native SIP opening delivery", () => {
       const opening = h.sent.find((event) => event.type === "response.create")?.response;
       expect(opening?.instructions).toContain("warm, natural speaking style");
       expect(opening?.instructions).toContain(
-        `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, I'm Nora, and I'm an AI assistant with BOTBOUND LLC. How can I help you?" : "Hi, this is Nora. I'm an AI assistant calling for BOTBOUND LLC. You can call us back at the business. Is now a good time?"}`,
+        `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, I'm Nora, an AI assistant with BOTBOUND LLC. How can I help you?" : "Hi, this is Nora, an AI assistant with BOTBOUND LLC. Is now a good time?"}`,
       );
       if (direction === "inbound") {
         const instructions = h.sent.find((event) => event.type === "session.update")?.session
@@ -437,7 +439,7 @@ describe("native SIP opening delivery", () => {
         expect(instructions).toContain(
           "Addressing you by name is not a request for an introduction.",
         );
-        // Inbound discloses AI first; the owner's identity line is not repeated.
+        // Inbound introduces the Bot once; the owner's identity line is not repeated.
         expect(opening?.instructions).not.toContain("this is Nora with BotBound");
       }
       expect(opening?.output_modalities).toEqual(["audio"]);
@@ -445,6 +447,65 @@ describe("native SIP opening delivery", () => {
       await session;
     },
   );
+});
+
+describe("the greeting an owner chose for incoming calls", () => {
+  const openingAndInstructions = async (ownGreeting: boolean, greeting: string) => {
+    const session = runOpenAISipCallSession(
+      { ...call, direction: "inbound", businessName: "Ridge Dental LLC" },
+      {
+        ...runtime,
+        agentName: "Sam",
+        greeting,
+        delivery: { ...runtime.delivery, ownGreeting },
+      } as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    const opening = String(
+      h.sent.find((event) => event.type === "response.create")?.response?.instructions,
+    );
+    const instructions = String(
+      h.sent.find((event) => event.type === "session.update")?.session.instructions,
+    );
+    h.sockets[0].close();
+    await session;
+    return { opening, instructions };
+  };
+
+  it("opens with the owner's words exactly, and still tells the Bot to say what it is when asked", async () => {
+    const written = "Hey, I'm Sam with Ridge Dental LLC, how can I help you?";
+    const { opening, instructions } = await openingAndInstructions(true, written);
+    expect(opening).toContain(`Say exactly these words and nothing else: ${written}`);
+    expect(opening).not.toContain("AI assistant");
+    // The Bot is no longer told an AI disclosure was already given.
+    expect(instructions).toContain("The phone connection delivers the opening greeting. After");
+    expect(instructions).toContain("say plainly that you are an AI assistant");
+    expect(instructions).toContain("Never say or imply that you are a person");
+  });
+
+  it("names the Bot and the business when the owner chose their own words but wrote none", async () => {
+    const { opening } = await openingAndInstructions(true, "Hi, this is Sam. How can I help?");
+    expect(opening).toContain(
+      "Say exactly these words and nothing else: Hey, I'm Sam with Ridge Dental LLC. How can I help you?",
+    );
+  });
+
+  it("keeps the short introduction for an owner who has not chosen", async () => {
+    const { opening, instructions } = await openingAndInstructions(
+      false,
+      "Hi, this is Sam. How can I help?",
+    );
+    expect(opening).toContain(
+      "Say exactly these words and nothing else: Hi, I'm Sam, an AI assistant with Ridge Dental LLC. How can I help?",
+    );
+    expect(instructions).toContain(
+      "The phone connection delivers the opening greeting and AI disclosure. After",
+    );
+    expect(instructions).toContain("say plainly that you are an AI assistant");
+  });
 });
 
 describe("phone engine call delivery", () => {

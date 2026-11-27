@@ -87,7 +87,10 @@ describe("round-4 audit fix contracts", () => {
     expect(session).toContain("response.output_audio_transcript.delta");
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
     expect(read("src/lib/voice/inbound-opening.ts")).toContain(
-      "this call may be recorded for quality and compliance",
+      'input.recordingEnabled ? `${OUTBOUND_RECORDING_NOTICE} ` : ""',
+    );
+    expect(read("src/lib/voice/outbound-opening.ts")).toContain(
+      'OUTBOUND_RECORDING_NOTICE = "This call may be recorded."',
     );
     expect(schemaBase).toContain(
       'callRecordingEnabled: boolean("call_recording_enabled").default(false).notNull()',
@@ -100,7 +103,7 @@ describe("round-4 audit fix contracts", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     expect(session).toContain("composeOutboundOpening({");
     expect(read("src/lib/voice/outbound-opening.ts")).toContain(
-      "I'm an AI assistant${callingFor}.",
+      "this is ${agent}, an AI assistant${withBusiness}.",
     );
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
     expect(session).toContain("formatCallbackNumberForSpeech");

@@ -63,7 +63,7 @@ export const PHONE_VOICES: readonly PhoneVoice[] = [
   {
     id: "celeste",
     name: "Celeste",
-    tone: "Compassionate & Assured",
+    tone: "Caring & Assured",
     gender: "female",
     fallbackVoiceId: "sage",
   },
@@ -164,7 +164,7 @@ export const PHONE_VOICES: readonly PhoneVoice[] = [
   {
     id: "rigel",
     name: "Rigel",
-    tone: "Precise & Professional",
+    tone: "Precise & Polished",
     gender: "male",
     accent: "Australian",
     fallbackVoiceId: "ballad",
@@ -191,7 +191,7 @@ export const PHONE_VOICES: readonly PhoneVoice[] = [
   {
     id: "leo",
     name: "Leo",
-    tone: "Authoritative & Strong",
+    tone: "Strong & Assertive",
     gender: "male",
     accent: "British",
     fallbackVoiceId: "ash",
@@ -234,7 +234,7 @@ export function phoneVoiceSelection(variables: unknown): PhoneVoice | null {
  */
 export const SPEAKING_PACES = [
   { id: "slow", label: "Slow", rate: 0.9 },
-  { id: "relaxed", label: "Relaxed", rate: 1 },
+  { id: "steady", label: "Steady", rate: 1 },
   { id: "natural", label: "Natural", rate: 1.1 },
   { id: "brisk", label: "Brisk", rate: 1.2 },
   { id: "fast", label: "Fast", rate: 1.3 },
@@ -270,6 +270,11 @@ export type CallDelivery = {
   pronunciations: Pronunciation[];
   /** Names and terms the Bot should recognize when a caller says them. */
   recognizedNames: string[];
+  /**
+   * Incoming calls open with the owner's greeting exactly as written, instead
+   * of the standard line that says the caller has reached an AI assistant.
+   */
+  ownGreeting: boolean;
 };
 
 // The phone engine takes far more of each; these are what one Bot plausibly needs.
@@ -341,21 +346,24 @@ export function callDeliverySelection(variables: unknown): CallDelivery {
     speakingRate: normalizeSpeakingRate(stored.speakingRate),
     pronunciations: normalizePronunciations(stored.pronunciations),
     recognizedNames: normalizeRecognizedNames(stored.recognizedNames),
+    ownGreeting: stored.ownGreeting === true,
   };
 }
 
-/** What is stored for a Bot: a pace only once one was chosen. */
+/** What is stored for a Bot: a pace only once one was chosen, the greeting choice only when made. */
 export function storedCallDelivery(delivery: CallDelivery): Record<string, unknown> {
   return {
     ...(delivery.speakingRate === null ? {} : { speakingRate: delivery.speakingRate }),
     pronunciations: delivery.pronunciations,
     recognizedNames: delivery.recognizedNames,
+    ...(delivery.ownGreeting ? { ownGreeting: true } : {}),
   };
 }
 
 /** One change an owner makes. A list changes one entry at a time, never as a whole. */
 export type CallDeliveryChange =
   | { kind: "pace"; speakingRate: number }
+  | { kind: "greeting"; own: boolean }
   | { kind: "addPronunciation"; entry: Pronunciation }
   | { kind: "removePronunciation"; word: string }
   | { kind: "addName"; name: string }
@@ -366,6 +374,7 @@ const refuse = (error: string): Refusal => ({ ok: false, error });
 
 const CHANGE_KEYS = [
   "speakingRate",
+  "ownGreeting",
   "addPronunciation",
   "removePronunciation",
   "addRecognizedName",
@@ -390,6 +399,10 @@ export function parseCallDeliveryChange(
         ? { ok: true, change: { kind: "pace", speakingRate: pace.rate } }
         : refuse("Choose a speaking pace from the list.");
     }
+    case "ownGreeting":
+      return typeof input.ownGreeting === "boolean"
+        ? { ok: true, change: { kind: "greeting", own: input.ownGreeting } }
+        : refuse("Choose how your Bot greets callers.");
     case "addPronunciation": {
       const [entry] = normalizePronunciations([input.addPronunciation]);
       return entry
@@ -436,6 +449,8 @@ export function applyCallDeliveryChange(
   switch (change.kind) {
     case "pace":
       return { ok: true, delivery: { ...current, speakingRate: change.speakingRate } };
+    case "greeting":
+      return { ok: true, delivery: { ...current, ownGreeting: change.own } };
     case "addPronunciation": {
       const listed = current.pronunciations.some((entry) =>
         sameWord(entry.word, change.entry.word),

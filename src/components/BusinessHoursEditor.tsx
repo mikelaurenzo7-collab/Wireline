@@ -485,9 +485,10 @@ export default function BusinessHoursEditor({
                     className="min-h-11"
                   />
                   <p className="text-xs leading-5 text-muted-foreground">
-                    Callers hear the AI disclosure first. This text follows it. A hello-style
-                    first sentence is folded into that disclosure. Leave it blank for a
-                    standard closed greeting.
+                    Your Bot introduces itself first and this text follows. A hello-style first
+                    sentence is folded into that introduction. With your own greeting chosen under
+                    Phone Voice, this is said exactly as written. Leave it blank for a standard
+                    closed greeting.
                   </p>
                 </div>
               </>

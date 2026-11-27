@@ -11,7 +11,10 @@ import { StatusNotice } from "../molecules";
 import LiveVoiceCloneStudio, { LIVE_VOICE_ANCHOR_ID } from "./LiveVoiceCloneStudio";
 import VoiceClonePanel from "./VoiceClonePanel";
 import PhoneVoiceCatalog from "./PhoneVoiceCatalog";
-import CallDeliverySettings, { type CallDeliveryView } from "./CallDeliverySettings";
+import CallDeliverySettings, {
+  type CallDeliveryView,
+  type GreetingPreview,
+} from "./CallDeliverySettings";
 import type { CatalogPhoneVoice } from "../../lib/phone-voice-catalog";
 
 type SimpleVoicePickerProps = {
@@ -85,6 +88,7 @@ type AgentVoiceResponse = {
     /** The catalog voice in effect; absent when the saved voice has no certain match. */
     phoneVoice?: string | null;
     delivery?: CallDeliveryView | null;
+    greeting?: GreetingPreview | null;
     /** Rehearsal speaks the same stock phone voice callers hear. */
     rehearsalHearsPhoneVoice?: boolean;
   };
@@ -108,6 +112,7 @@ export default function SimpleVoicePicker({
   const [phoneCatalog, setPhoneCatalog] = useState(false);
   const [voiceFilter, setVoiceFilter] = useState<VoiceFilter>("all");
   const [delivery, setDelivery] = useState<CallDeliveryView | null>(null);
+  const [greeting, setGreeting] = useState<GreetingPreview | null>(null);
   const builtInVoices = phoneCatalog ? PHONE_CATALOG_VOICES : SAVED_VOICES;
   const visibleVoices = useMemo(
     () =>
@@ -117,6 +122,7 @@ export default function SimpleVoicePicker({
     [builtInVoices, voiceFilter],
   );
   const voiceListRef = useRef<HTMLDivElement | null>(null);
+  const greetingReadAt = useRef(0);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,6 +172,7 @@ export default function SimpleVoicePicker({
     setPhoneCatalog(false);
     setVoiceFilter("all");
     setDelivery(null);
+    setGreeting(null);
     if (!agentId || !ownerId) {
       setLoading(false);
       return;
@@ -199,6 +206,7 @@ export default function SimpleVoicePicker({
         );
         setPhoneCatalog(agentData.voice?.phoneVoiceCatalog === true);
         setDelivery(agentData.voice?.delivery ?? null);
+        setGreeting(agentData.voice?.greeting ?? null);
         setSelectedVoiceId(phoneVoice?.id ?? managedVoice?.id ?? storedVoiceId);
         setPhoneCall(agentData.voice?.phoneCall ?? null);
         setRehearsalHearsPhoneVoice(agentData.voice?.rehearsalHearsPhoneVoice === true);
@@ -399,6 +407,24 @@ export default function SimpleVoicePicker({
     } finally {
       if (isCurrentSave()) setSavingVoiceId(null);
     }
+  }
+
+  // The greeting's words and the recording setting are edited elsewhere on
+  // this page, so the two openings are read again whenever the owner opens the
+  // panel or comes back to them, at most once every few seconds.
+  function refreshGreeting() {
+    if (Date.now() - greetingReadAt.current < 3_000) return;
+    greetingReadAt.current = Date.now();
+    const requestedAgentId = agentId;
+    authFetch(`/api/agent-config/${encodeURIComponent(requestedAgentId)}`)
+      .then(async (response) =>
+        response.ok ? ((await response.json()) as AgentVoiceResponse) : null,
+      )
+      .then((agentData) => {
+        if (agentData?.voice?.greeting && activeAgentIdRef.current === requestedAgentId)
+          setGreeting(agentData.voice.greeting);
+      })
+      .catch(() => undefined);
   }
 
   function scrollToClone() {
@@ -638,6 +664,8 @@ export default function SimpleVoicePicker({
             setDelivery(saved);
           }}
           otherVoiceAnswers={Boolean(catalogVoice || clonedVoiceName)}
+          greeting={greeting}
+          onOpen={refreshGreeting}
           sample={
             selectedVoice && phoneCall && !clonedVoiceName && !catalogVoice
               ? {

@@ -505,8 +505,16 @@ export default function StudioAgentWorkspacePanel({
                   onChange={(event) => setupDrafts.edit(agentId, "greeting", event.target.value)}
                   placeholder={defaultGreeting}
                   rows={2}
+                  aria-describedby="setup-greeting-help"
                   className="min-h-11 w-full resize-y rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50"
                 />
+                <span
+                  id="setup-greeting-help"
+                  className="text-xs font-normal leading-5 text-muted-foreground"
+                >
+                  Your Bot introduces itself first, then says this. To have callers hear it exactly
+                  as written, choose Your Greeting As Written under Phone Voice.
+                </span>
               </label>
 
               <div className="grid gap-2">

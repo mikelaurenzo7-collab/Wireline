@@ -16,7 +16,11 @@ type ChecklistItem = {
 // Only what the business owner controls or relies on. Platform engineering
 // controls (database isolation, audit logging) belong on /security, not here.
 const BASE_ITEMS: ChecklistItem[] = [
-  { id: "ai_disclosure", label: "Every call opens with an AI disclosure", done: true },
+  {
+    id: "ai_disclosure",
+    label: "Your Bot introduces itself as an AI assistant, unless you chose your own greeting",
+    done: true,
+  },
   { id: "opt_outs", label: "Opt-out requests are blocked automatically", done: true },
   {
     id: "dnc_registry",

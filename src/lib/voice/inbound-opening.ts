@@ -1,15 +1,21 @@
 import { detectAiDisclosure } from "../tcpa-consent";
-import { agentNameAddsToBusiness } from "./outbound-opening";
+import { OUTBOUND_RECORDING_NOTICE, agentNameAddsToBusiness } from "./outbound-opening";
 
 /**
- * The first spoken line of every inbound call says the caller is talking to
- * an AI assistant, with the recording notice (when the owner records this
- * Bot's calls) woven into that same line. This covers the saved greeting,
- * the after-hours and take-message greetings, and the default greeting.
+ * The first spoken line of a call the Bot answers.
  *
- * The phrasing matches the declarative patterns in `detectAiDisclosure` and
- * `detectRecordingDisclosure`, so the compliance ledger can prove delivery
- * from the transcript.
+ * By default it is a short introduction: the Bot's name, that it is an AI
+ * assistant, and the business, said once and in passing. The owner's saved
+ * greeting follows it, with a hello-style first sentence folded into that
+ * introduction. This covers the saved greeting, the after-hours and
+ * take-message greetings, and the default greeting.
+ *
+ * An owner can instead have the Bot open with their greeting exactly as
+ * written. Either way the recording notice is spoken when, and only when,
+ * this Bot's calls are recorded.
+ *
+ * The introduction matches the declarative patterns in `detectAiDisclosure`,
+ * and the notice those in `detectRecordingDisclosure`.
  */
 const IDENTITY_SENTENCE =
   /^(?:hi|hello|hey|welcome|thanks for calling|thank you for calling|good (?:morning|afternoon|evening)|you've reached|you have reached|this is)\b/i;
@@ -27,6 +33,7 @@ function clean(value: string | null | undefined): string {
     .slice(0, 120);
 }
 
+/** "Hi, I'm Sam, an AI assistant with Ridge Dental.", then the recording notice when calls are recorded. */
 export function inboundDisclosureLine(input: {
   agentName: string;
   businessName?: string | null;
@@ -34,14 +41,42 @@ export function inboundDisclosureLine(input: {
 }): string {
   const business = clean(input.businessName);
   const agent = clean(input.agentName);
-  const namedAgent = agentNameAddsToBusiness(agent, business);
-  const introduction = namedAgent ? `Hi, I'm ${agent}, and I'm` : "Hi, I'm";
-  const affiliation = business ? ` with ${business}` : "";
-  return `${introduction} an AI assistant${affiliation}${disclosureEnding(input.recordingEnabled)}`;
+  const withBusiness = business ? ` with ${business}` : "";
+  const introduction = agentNameAddsToBusiness(agent, business)
+    ? `Hi, I'm ${agent}, an AI assistant${withBusiness}.`
+    : `Hi, I'm an AI assistant${withBusiness}.`;
+  return input.recordingEnabled ? `${introduction} ${OUTBOUND_RECORDING_NOTICE}` : introduction;
 }
 
-function disclosureEnding(recordingEnabled: boolean): string {
-  return recordingEnabled ? ", and this call may be recorded for quality and compliance." : ".";
+/**
+ * Holds on every call, however the owner chose to greet: asked directly, the
+ * Bot says what it is.
+ */
+export const AI_HONESTY_RULE =
+  "IF ASKED WHAT YOU ARE: When someone asks whether they are speaking with a person, a recording or an AI, say plainly that you are an AI assistant. Never say or imply that you are a person. Do not bring it up otherwise.";
+
+/**
+ * What a Bot says in its owner's own words when they have not written a
+ * greeting: its name, the business it works for, and an offer to help.
+ */
+export function defaultOwnGreeting(input: {
+  agentName: string;
+  businessName?: string | null;
+}): string {
+  const business = clean(input.businessName);
+  const agent = clean(input.agentName);
+  const introduction = agentNameAddsToBusiness(agent, business)
+    ? `Hey, I'm ${agent}${business ? ` with ${business}` : ""}.`
+    : `Hey, thanks for calling${business ? ` ${business}` : ""}.`;
+  return `${introduction} How can I help you?`;
+}
+
+/** The greeting every Bot is created with, which no owner chose. */
+function isGeneratedGreeting(greeting: string, agentName: string): boolean {
+  return (
+    greeting.toLowerCase() ===
+    `hi, this is ${(agentName || "your Bot").toLowerCase()}. how can i help?`
+  );
 }
 
 export function composeInboundOpening(input: {
@@ -51,20 +86,30 @@ export function composeInboundOpening(input: {
   recordingEnabled: boolean;
   /** "resume" when this leg replaces one that failed mid-call. */
   leg?: "failover" | "resume";
+  /** The owner chose to open with their greeting exactly as written. */
+  ownWords?: boolean;
 }): string {
-  const disclosure = inboundDisclosureLine(input);
+  // Spoken first wherever the Bot's own words follow, so it is never said over
+  // a caller's answer and never lands inside a sentence the owner wrote. It is
+  // added even when the greeting mentions recording: saying it twice is
+  // harmless, and leaving it out is not.
+  const recorded = input.recordingEnabled ? `${OUTBOUND_RECORDING_NOTICE} ` : "";
   if (input.leg === "resume") {
-    // The caller already heard the greeting on the leg that failed. Repeat
-    // the disclosure first, then pick the conversation back up.
-    const business = clean(input.businessName);
-    const affiliation = business ? ` with ${business}` : "";
-    return `You're still speaking with an AI assistant${affiliation}${disclosureEnding(input.recordingEnabled)} Sorry, we got cut off for a moment. What can I help you with?`;
+    // The caller already heard the greeting on the leg that failed, so it is
+    // not repeated, and neither is the introduction.
+    return `${recorded}Sorry, we got cut off for a moment. What can I help you with?`;
   }
-  const greeting = input.greeting.replace(/\s+/g, " ").trim();
-  const { first, rest } = firstSentence(greeting);
-  // A greeting that already opens with a declarative AI disclosure is kept
-  // as written when there is no recording notice to add.
-  if (!input.recordingEnabled && first && detectAiDisclosure(first).found) return greeting;
-  const remainder = IDENTITY_SENTENCE.test(first) ? rest : greeting;
-  return `${disclosure} ${remainder || "How can I help?"}`.trim();
+  const written = input.greeting.replace(/\s+/g, " ").trim();
+  if (input.ownWords) {
+    const own =
+      written && !isGeneratedGreeting(written, clean(input.agentName))
+        ? written
+        : defaultOwnGreeting(input);
+    return `${recorded}${own}`;
+  }
+  const { first, rest } = firstSentence(written);
+  // A greeting that already opens by saying it is an AI assistant is kept as written.
+  if (first && detectAiDisclosure(first).found) return `${recorded}${written}`;
+  const remainder = IDENTITY_SENTENCE.test(first) ? rest : written;
+  return `${inboundDisclosureLine(input)} ${remainder || "How can I help you?"}`.trim();
 }

@@ -1,20 +1,25 @@
 /**
- * The first spoken line of an outbound call. It says this is an AI assistant
- * and who it is calling for, naming the business once, then the notices the
- * call requires, the callback number, and a question that hands the turn to
- * the person who answered.
+ * The first spoken line of a call the Bot places. It is one breath: who is
+ * calling and for which business, then only the notices this call needs, then
+ * a question that hands the turn to the person who answered.
  *
- * 47 CFR 64.1200(b) asks for the responsible business at the start of an
- * artificial-voice call and its number during or after it. Both stay in this
- * line, which the phone connection speaks word for word. A marketing call's
- * opt-out notice follows the identification directly, as (b)(3) requires.
+ * What stays is what a rule asks for. 47 CFR 64.1200(b)(1) asks for the
+ * responsible business at the start of an artificial-voice call, so the
+ * business is named in the first sentence. A marketing call's spoken opt-out
+ * follows the identification directly, as (b)(3) requires, and is the one
+ * kind of call that also gives its number here: (b)(2) and (d)(4) ask for a
+ * number the person can call, and a marketing call may end before a goodbye.
+ * Every other call gives the number in its goodbye or when asked, which the
+ * call's instructions require. The recording notice is spoken only when the
+ * call is recorded.
  *
- * The phrasing matches the declarative patterns in `detectAiDisclosure`, so
- * the compliance ledger can prove delivery from the transcript.
+ * "An AI assistant" is said once, inside the introduction, not as a sentence
+ * of its own. Several states require it on calls a business places, and it
+ * matches the declarative patterns in `detectAiDisclosure`, so the compliance
+ * ledger can prove it from the transcript.
  */
-export const OUTBOUND_OPT_OUT_NOTICE =
-  "You can say stop calling at any time to be placed on the do not call list.";
-export const OUTBOUND_RECORDING_NOTICE = "This call may be recorded for quality and compliance.";
+export const OUTBOUND_OPT_OUT_NOTICE = "If you'd rather we not call again, just say stop calling.";
+export const OUTBOUND_RECORDING_NOTICE = "This call may be recorded.";
 export const OUTBOUND_OPENING_QUESTION = "Is now a good time?";
 
 function clean(value: string | null | undefined): string {
@@ -56,16 +61,16 @@ export function composeOutboundOpening(input: {
   const business = clean(input.businessName);
   const contact = clean(input.contactName);
   const hello = contact ? `Hi ${contact},` : "Hi,";
-  const callingFor = business ? ` calling for ${business}` : "";
+  const withBusiness = business ? ` with ${business}` : "";
   const identity = agentNameAddsToBusiness(agent, business)
-    ? `${hello} this is ${agent}. I'm an AI assistant${callingFor}.`
-    : `${hello} I'm an AI assistant${callingFor}.`;
+    ? `${hello} this is ${agent}, an AI assistant${withBusiness}.`
+    : `${hello} I'm an AI assistant${withBusiness}.`;
   const callback = clean(input.callbackNumberSpoken);
   return [
     identity,
     input.telemarketing ? OUTBOUND_OPT_OUT_NOTICE : "",
     input.recordingEnabled ? OUTBOUND_RECORDING_NOTICE : "",
-    callback ? `You can call us back at ${callback}.` : "",
+    input.telemarketing && callback ? `You can reach us at ${callback}.` : "",
     OUTBOUND_OPENING_QUESTION,
   ]
     .filter(Boolean)

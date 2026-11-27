@@ -36,9 +36,11 @@ describe("pronunciations and the wording every call must speak", () => {
       "do not call",
       "seven",
       "I'm",
+      "rather",
+      "good time",
       // Reaches from the required words into the owner's own name.
-      "assistant calling for Ridge",
-      "Ridge Dental and Sons",
+      "assistant with Ridge",
+      "Sam, an AI",
     ]) {
       expect(pronunciationTouchesRequiredWording(word), word).toBe(true);
     }
@@ -53,6 +55,8 @@ describe("pronunciations and the wording every call must speak", () => {
       "Siobhan",
       "BotBound",
       "C++",
+      // A joining word no opening uses.
+      "Ridge Dental and Sons",
     ]) {
       expect(pronunciationTouchesRequiredWording(word), word).toBe(false);
     }
@@ -68,8 +72,8 @@ describe("pronunciations and the wording every call must speak", () => {
     const blank = (text: string) => text.replace(/\b(?:Dana|Dental|Ridge|Sam)\b/g, "XX");
     expect(say(outbound)).toBe(blank(outbound));
     expect(say(inbound)).toBe(blank(inbound));
-    expect(say(outbound)).toContain("I'm an AI assistant calling for XX XX.");
-    expect(say(outbound)).toContain("This call may be recorded for quality and compliance.");
+    expect(say(outbound)).toContain("Hi XX, this is XX, an AI assistant with XX XX.");
+    expect(say(outbound)).toContain("just say stop calling. This call may be recorded.");
     expect(say(outbound)).toContain("seven seven three, five five five, zero one zero zero");
   });
 
@@ -88,11 +92,13 @@ describe("pronunciations and the wording every call must speak", () => {
       speakingRate: 1.2,
       pronunciations: [{ word: "Nguyen", say: "Win" }],
       recognizedNames: ["Siobhan"],
+      ownGreeting: false,
     });
     expect(callDeliveryFor(null)).toEqual({
       speakingRate: null,
       pronunciations: [],
       recognizedNames: [],
+      ownGreeting: false,
     });
   });
 });
