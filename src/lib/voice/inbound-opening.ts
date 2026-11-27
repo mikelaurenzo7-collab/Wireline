@@ -1,4 +1,4 @@
-import { isGeneratedBotGreeting } from "../bot-name";
+import { isUnchosenBotGreeting } from "../bot-name";
 import { detectAiDisclosure } from "../tcpa-consent";
 import {
   OUTBOUND_RECORDING_NOTICE,
@@ -26,11 +26,15 @@ const IDENTITY_SENTENCE =
   /^(?:hi|hello|hey|welcome|thanks for calling|thank you for calling|good (?:morning|afternoon|evening)|you've reached|you have reached|this is)\b/i;
 
 /**
- * A period after a title ("Dr. Chen's office", "St. Mary's"), an initial
- * ("U.S. Bank") or a time ("9 a.m. to 5") does not end the sentence, unless
- * the word after it plainly starts a new one ("Main St. How can I help?").
+ * A period after a title ("Dr. Chen's office", "St. Mary's"), a business or
+ * street abbreviation ("Smith Bros. Plumbing", "Smith & Co. Roofing", "Elm
+ * Ave. Dental"), an initial ("U.S. Bank") or a time ("9 a.m. to 5") does not
+ * end the sentence, unless the word after it plainly starts a new one ("Main
+ * St. How can I help?"). Business names reach the opening on their own, so
+ * one cut there would repeat part of the name to the caller.
  */
-const TITLE = /(?:^|[\s(])(?:dr|mr|mrs|ms|mx|prof|st|mt|ft)$/i;
+const TITLE =
+  /(?:^|[\s(&])(?:dr|mr|mrs|ms|mx|prof|st|mt|ft|bros|co|cos|inc|corp|ltd|llc|llp|pllc|pc|assn|assoc|intl|mfg|svcs|ave|blvd|rd|hwy|ste)$/i;
 const INITIAL = /(?:^|[\s(.])\p{Lu}$/u;
 const TIME_OF_DAY = /\b[ap]\.m$/i;
 const STARTS_A_SENTENCE =
@@ -123,7 +127,7 @@ export function composeInboundOpening(input: {
   if (input.ownWords) {
     const own =
       // The greeting every Bot is created with is one no owner chose.
-      written && !isGeneratedBotGreeting(written, clean(input.agentName))
+      written && !isUnchosenBotGreeting(written, clean(input.agentName))
         ? written
         : defaultOwnGreeting(input);
     return `${recorded}${own}`;

@@ -50,6 +50,35 @@ export function isGeneratedBotGreeting(
   return key(greeting) === key(generatedBotGreeting(name));
 }
 
+/**
+ * Names BotBound itself gives a Bot: Bo, the role names Bots were given before
+ * Bo, and the "<role> Bot" names the create dialog uses. A greeting in the
+ * created shape with one of them in it was written by BotBound, not an owner,
+ * even when the Bot has since been renamed some other way (a rename in chat
+ * before this release left such greetings behind).
+ */
+function isBotBoundGivenName(name: string): boolean {
+  const named = key(name);
+  return (
+    ["bo", "front desk", "my bot", "personal assistant", "your bot"].includes(named) ||
+    /^[a-z][a-z &'-]{0,40} bot$/.test(named)
+  );
+}
+
+/**
+ * Whether no owner chose this greeting: it is the one created for this Bot's
+ * name, or for a name BotBound gave it. Such a greeting follows a rename, and
+ * "Your Greeting As Written" does not speak it.
+ */
+export function isUnchosenBotGreeting(
+  greeting: string | null | undefined,
+  name: string | null | undefined,
+): boolean {
+  if (isGeneratedBotGreeting(greeting, name)) return true;
+  const match = /^hi, this is (.+)\. how can i help\?$/.exec(key(greeting));
+  return Boolean(match && isBotBoundGivenName(match[1]));
+}
+
 export interface BotNameState {
   name: string | null;
   firstMessage: string | null;
@@ -67,6 +96,6 @@ export function planBotRename(
   name: string,
 ): { name: string; greeting?: string } {
   const spoken = current.greetingRule?.trim() || current.firstMessage?.trim() || "";
-  const follows = !spoken || isGeneratedBotGreeting(spoken, current.name);
+  const follows = !spoken || isUnchosenBotGreeting(spoken, current.name);
   return follows ? { name, greeting: generatedBotGreeting(name) } : { name };
 }

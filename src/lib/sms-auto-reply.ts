@@ -167,29 +167,12 @@ export async function processSmsAutoReplyJob(job: JobRow): Promise<AutoReplyOutc
     })),
   });
   const salesWarning = draft.requiresHuman ? null : salesContentWarning(draft.reply);
-  if (draft.requiresHuman || salesWarning) {
-    log.info("SMS auto-reply needs owner review", {
-      userId,
-      threadId,
-      reason: draft.reason || "non_sales_content",
-    });
-    // The suggestion and why it waits go to the owner, who replies from Texts.
-    await handSmsReplyToOwner({
-      userId,
-      agentId: thread.agentId,
-      threadId,
-      inboundMessageId,
-      customerNumber: thread.customerNumber,
-      suggestedReply: draft.reply,
-      reason:
-        draft.reason ||
-        "The suggested reply reads as a sales message, which an automatic reply may not send.",
-    });
-    return "review_required";
-  }
+  const needsOwner = draft.requiresHuman || Boolean(salesWarning);
 
   // Recheck after model latency: a human may have replied, a later customer
   // text may have arrived, or the owner may have switched automation off.
+  // Done before the owner is handed anything too, so a text already dealt
+  // with is not filed in Needs You.
   const [[currentPreference], [currentSettings], [currentLine], [currentLatest]] =
     await Promise.all([
       drizzle
@@ -240,6 +223,27 @@ export async function processSmsAutoReplyJob(job: JobRow): Promise<AutoReplyOutc
     })
   )
     return "superseded";
+
+  if (needsOwner) {
+    log.info("SMS auto-reply needs owner review", {
+      userId,
+      threadId,
+      reason: draft.reason || "non_sales_content",
+    });
+    // The suggestion and why it waits go to the owner, who replies from Texts.
+    await handSmsReplyToOwner({
+      userId,
+      agentId: thread.agentId,
+      threadId,
+      inboundMessageId,
+      customerNumber: thread.customerNumber,
+      suggestedReply: draft.reply,
+      reason:
+        draft.reason ||
+        "The suggested reply reads as a sales message, which an automatic reply may not send.",
+    });
+    return "review_required";
+  }
 
   await assertExternalEntityActionAllowed(userId, "sms_auto_reply", {
     phone: thread.customerNumber,

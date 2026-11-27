@@ -10,6 +10,7 @@ import {
   handoffTaskStatusForOutcome,
 } from "../lib/conversation-outcome";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
+import { closeSmsReplyReview } from "../lib/sms-reply-review";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import * as schema from "../db/schema";
@@ -144,7 +145,14 @@ router.patch(
                 ),
               )
               .returning({ id: schema.followUpTasks.id });
-            nextTaskStateChanged = reconciled.length > 0;
+            // A text the Bot handed the owner closes with the conversation.
+            const reviewClosed = await closeSmsReplyReview(tx, {
+              userId: req.user.id,
+              threadId: thread.id,
+              status: handoffStatus,
+              note: handoffResolutionNote("sms", status),
+            });
+            nextTaskStateChanged = reconciled.length > 0 || reviewClosed;
           }
         }
 

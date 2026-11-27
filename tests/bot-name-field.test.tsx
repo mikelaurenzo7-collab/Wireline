@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -61,7 +63,14 @@ function text(node: ReactNode): string {
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
 
-let bot = { agentId: "bot a", agentName: "Michael" };
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8").split("\r\n").join("\n");
+
+let bot: {
+  agentId: string;
+  agentName: string;
+  onPendingSave?: (save: (() => Promise<boolean>) | null) => void;
+} = { agentId: "bot a", agentName: "Michael" };
 const dispatched: string[] = [];
 function render() {
   h.cursor = 0;
@@ -167,6 +176,7 @@ describe("the name field in Set Up", () => {
     type("Bo");
     h.fetch.mockResolvedValueOnce({
       ok: false,
+      status: 400,
       json: async () => ({ error: "Give your Bot a name." }),
     });
     await submit();
@@ -185,6 +195,49 @@ describe("the name field in Set Up", () => {
     nodes = render();
     expect(notices(nodes)).toEqual(["offline"]);
     expect(saveButton(nodes).props.disabled).toBe(false);
+    // A dropped connection says nothing is wrong with the name itself.
+    expect(field(nodes).props["aria-invalid"]).toBeUndefined();
+  });
+
+  it("lets Set Up's Save Changes save a typed name, and says when there is none to save", async () => {
+    const pending: Array<(() => Promise<boolean>) | null> = [];
+    bot = { ...bot, onPendingSave: (save) => pending.push(save) };
+    render();
+    expect(pending.at(-1)).toBeNull();
+    type("Nora");
+    render();
+    const saveTyped = pending.at(-1);
+    expect(saveTyped).toEqual(expect.any(Function));
+    h.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ name: "Nora" }) });
+    await expect(saveTyped!()).resolves.toBe(true);
+    expect(lastSave()).toEqual({
+      url: "/api/agents/bot%20a/name",
+      method: "PATCH",
+      body: { name: "Nora" },
+    });
+    render();
+    expect(pending.at(-1)).toBeNull();
+    // A save started from Save Changes leaves keyboard focus where it was.
+    expect(focus).not.toHaveBeenCalled();
+    // Nothing typed: nothing to save, and no request.
+    await expect(saveTyped!()).resolves.toBe(false);
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("is saved by Set Up's Save Changes and counted as an unsaved change there", () => {
+    const panel = read("src/components/StudioAgentWorkspacePanel.tsx");
+    expect(panel).toContain("onPendingSave={(save) => {");
+    expect(panel).toContain("const nameSave = pendingNameSave.current;");
+    expect(panel).toContain("snapshot.dirty || namePending");
+    expect(panel).toContain("!(snapshot.dirty || namePending)");
+  });
+
+  it("announces a saved name once", async () => {
+    type("Bo");
+    h.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ name: "Bo" }) });
+    await submit();
+    // The live region speaks; the notice inside it is not a second status.
+    expect(noticeNodes(render())[0].props.role).toBe("none");
   });
 
   it("keeps keyboard focus through a save", async () => {

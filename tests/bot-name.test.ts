@@ -157,6 +157,32 @@ describe("renaming a Bot", () => {
     ).toEqual({ name: "Bo" });
   });
 
+  it("treats a greeting BotBound wrote for one of its own names as not the owner's", () => {
+    // Renamed in chat before this release: the name moved on, the greeting did not.
+    const stale = { name: "Nora", firstMessage: "Hi, this is Front Desk. How can I help?" };
+    expect(planBotRename(stale, "Max")).toEqual({
+      name: "Max",
+      greeting: "Hi, this is Max. How can I help?",
+    });
+    for (const firstMessage of [
+      "Hi, this is My Bot. How can I help?",
+      "Hi, this is Sales Rep Bot. How can I help?",
+      "Hi, this is Bo. How can I help?",
+    ]) {
+      expect(planBotRename({ name: "Nora", firstMessage }, "Max")).toHaveProperty("greeting");
+    }
+    // Nor is it spoken word for word when the owner chose their own words.
+    expect(
+      composeInboundOpening({
+        greeting: stale.firstMessage,
+        agentName: "Nora",
+        businessName: "Ridge Dental",
+        recordingEnabled: false,
+        ownWords: true,
+      }),
+    ).toBe("Hey, I'm Nora with Ridge Dental. How can I help you?");
+  });
+
   it("leaves a greeting the owner wrote exactly as it is", () => {
     for (const firstMessage of [
       "Thanks for calling BotBound. Are you looking into a Bot for your business?",

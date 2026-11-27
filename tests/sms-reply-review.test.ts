@@ -18,6 +18,7 @@ const h = vi.hoisted(() => ({
   fail: false,
   notices: [] as string[],
   touched: [] as string[],
+  closable: [] as Array<{ id: string }>,
 }));
 const tx = {
   execute: async () => {
@@ -38,9 +39,12 @@ const tx = {
   }),
   update: (table: unknown) => ({
     set: (values: Record<string, unknown>) => ({
-      where: async () => {
+      where: () => {
         expect(table).toBe(schema.followUpTasks);
         h.updated.push(values);
+        return Object.assign(Promise.resolve(undefined), {
+          returning: async () => h.closable,
+        });
       },
     }),
   }),
@@ -58,7 +62,11 @@ vi.mock("../src/lib/needs-you-notice", async (original) => ({
 vi.mock("../src/lib/nav-counts-invalidate", () => ({
   touchNavCounts: (userId: string) => h.touched.push(userId),
 }));
-import { SMS_REPLY_REVIEW_KIND, handSmsReplyToOwner } from "../src/lib/sms-reply-review";
+import {
+  SMS_REPLY_REVIEW_KIND,
+  closeSmsReplyReview,
+  handSmsReplyToOwner,
+} from "../src/lib/sms-reply-review";
 import { NEEDS_YOU_TASK_TYPES } from "../src/lib/needs-you-notice";
 
 const text = {
@@ -79,7 +87,11 @@ beforeEach(() => {
   h.fail = false;
   h.notices = [];
   h.touched = [];
+  h.closable = [];
 });
+
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8").split("\r\n").join("\n");
 
 describe("a text reply that needs the owner", () => {
   it("is filed in Needs You with the suggestion and the reason, and the owner is told", async () => {
@@ -129,6 +141,8 @@ describe("a text reply that needs the owner", () => {
           inbound_message_id: "41",
           reasoning: "The reply needs your judgement before it goes out.",
         }),
+        // The latest text brings the item back to the top of Needs You.
+        createdAt: expect.any(Date),
       },
     ]);
     expect(h.notices).toEqual([]);
@@ -149,11 +163,62 @@ describe("a text reply that needs the owner", () => {
     expect(h.notices).toEqual([]);
   });
 
-  it("is what the automatic reply job does with a reply it may not send", () => {
-    const job = readFileSync(resolve(process.cwd(), "src/lib/sms-auto-reply.ts"), "utf8");
-    const branch = job.slice(job.indexOf("if (draft.requiresHuman || salesWarning)"));
+  it("is filed by the automatic reply job only after it rechecks the text is still unanswered", () => {
+    const job = read("src/lib/sms-auto-reply.ts");
+    const recheck = job.indexOf("// Recheck after model latency");
+    const superseded = job.indexOf('return "superseded";', recheck);
+    const filed = job.indexOf("if (needsOwner) {");
+    expect(recheck).toBeGreaterThan(-1);
+    expect(superseded).toBeGreaterThan(recheck);
+    // After the last recheck exit, and before anything is sent.
+    expect(filed).toBeGreaterThan(superseded);
+    expect(filed).toBeLessThan(job.indexOf("await sendTenantMessage("));
+    const branch = job.slice(filed);
     expect(branch.slice(0, branch.indexOf('return "review_required"'))).toContain(
       "await handSmsReplyToOwner(",
     );
+  });
+});
+
+describe("closing a text the owner was handed", () => {
+  it("closes only that conversation's open hand-off, and says whether it did", async () => {
+    h.closable = [{ id: "task-1" }];
+    const db = { update: tx.update } as never;
+    await expect(
+      closeSmsReplyReview(db, {
+        userId: "tenant-a",
+        threadId: text.threadId,
+        status: "completed",
+        note: "Answered from Texts by the Account Holder.",
+      }),
+    ).resolves.toBe(true);
+    expect(h.updated).toEqual([
+      { status: "completed", resolutionNotes: "Answered from Texts by the Account Holder." },
+    ]);
+    h.closable = [];
+    await expect(
+      closeSmsReplyReview(db, {
+        userId: "tenant-a",
+        threadId: text.threadId,
+        status: "cancelled",
+        note: "x",
+      }),
+    ).resolves.toBe(false);
+  });
+
+  it("happens when the owner replies from Texts, after the carrier accepts the reply", () => {
+    const routes = read("src/routes/sms-routes.ts");
+    const handler = routes.slice(routes.indexOf('"/api/sms/threads/:id/reply"'));
+    const accepted = handler.indexOf("if (!result.ok) {");
+    const closed = handler.indexOf("await closeSmsReplyReview(drizzle, {");
+    expect(closed).toBeGreaterThan(accepted);
+    expect(handler.slice(closed, closed + 200)).toContain("userId: req.user.id");
+    expect(handler.slice(closed, closed + 200)).toContain('status: "completed"');
+  });
+
+  it("happens when the owner gives the conversation an outcome", () => {
+    const routes = read("src/routes/sms-outcome-routes.ts");
+    expect(routes).toContain("const reviewClosed = await closeSmsReplyReview(tx, {");
+    expect(routes).toContain("nextTaskStateChanged = reconciled.length > 0 || reviewClosed;");
   });
 });

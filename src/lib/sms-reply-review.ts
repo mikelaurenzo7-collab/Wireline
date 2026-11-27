@@ -17,6 +17,34 @@ const clean = (value: string, max: number) => {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 };
 
+type ReviewTx = Pick<Parameters<Parameters<typeof drizzle.transaction>[0]>[0], "update">;
+
+/**
+ * Closes the conversation's open hand-off once the owner has dealt with it:
+ * they replied from Texts, or gave the conversation an outcome. Returns
+ * whether an item was closed.
+ */
+export async function closeSmsReplyReview(
+  db: ReviewTx,
+  input: { userId: string; threadId: string; status: "completed" | "cancelled"; note: string },
+): Promise<boolean> {
+  const closed = await db
+    .update(schema.followUpTasks)
+    .set({ status: input.status, resolutionNotes: input.note })
+    .where(
+      and(
+        eq(schema.followUpTasks.userId, input.userId),
+        eq(schema.followUpTasks.sourceType, "sms_thread"),
+        eq(schema.followUpTasks.sourceId, input.threadId),
+        eq(schema.followUpTasks.taskType, "follow_up"),
+        inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
+        sql`${schema.followUpTasks.payload}->>'kind' = ${SMS_REPLY_REVIEW_KIND}`,
+      ),
+    )
+    .returning({ id: schema.followUpTasks.id });
+  return closed.length > 0;
+}
+
 /**
  * A customer texted and the Bot's answer needs its owner: a refund, an
  * unverified fact, something that reads as sales. The Bot's suggested reply
@@ -25,8 +53,10 @@ const clean = (value: string, max: number) => {
  * and the owner is told by email as for anything else a Bot leaves them.
  *
  * One item per conversation: a later text that also needs the owner brings
- * the item up to date instead of adding another. Nothing is sent to the
- * customer here; the owner replies from the conversation.
+ * the item up to date and to the top of the list, instead of adding another.
+ * Nothing is sent to the customer here; the owner replies from the
+ * conversation, which closes the item (closeSmsReplyReview), as does giving
+ * the conversation an outcome.
  *
  * Never throws. The text stays unread in Texts whatever happens here.
  */
@@ -82,7 +112,8 @@ export async function handSmsReplyToOwner(input: {
         if (filedFor === input.inboundMessageId) return "already_filed" as const;
         await tx
           .update(schema.followUpTasks)
-          .set({ description, payload })
+          // The latest text decides where it sits in Needs You.
+          .set({ description, payload, createdAt: new Date() })
           .where(
             and(
               eq(schema.followUpTasks.id, open.id),

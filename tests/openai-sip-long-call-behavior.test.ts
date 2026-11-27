@@ -295,6 +295,7 @@ import {
   runOpenAISipCallSession,
   settleOpenAISipPreSessionFailure,
 } from "../src/lib/voice/openai-sip-session";
+import { composeInboundOpening } from "../src/lib/voice/inbound-opening";
 
 const call = {
   callId: "rtc_test",
@@ -375,6 +376,29 @@ describe("funded inbound runtime construction", () => {
     expect(unnamed.greeting).toBe(
       "Hi, you've reached Bo. We're currently closed, but I can take a message for the team.",
     );
+    // A business name with an abbreviation reaches the caller once, whole.
+    for (const businessName of ["Smith Bros. Plumbing", "Smith & Co. Roofing", "Elm Ave. Dental"]) {
+      const greeting = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
+        ...call,
+        businessName,
+        admission: afterHours,
+      }).greeting;
+      for (const ownWords of [false, true]) {
+        expect(
+          composeInboundOpening({
+            greeting,
+            agentName: "Bo",
+            businessName,
+            recordingEnabled: false,
+            ownWords,
+          }),
+        ).toBe(
+          ownWords
+            ? `Hi, you've reached ${businessName}. We're currently closed, but I can take a message for the team.`
+            : `Hi, I'm Bo, an AI assistant with ${businessName}. We're currently closed, but I can take a message for the team.`,
+        );
+      }
+    }
     // An owner's own after-hours message is said as they wrote it.
     const own = applyInboundAdmission({ ...runtime, agentName: "Bo" } as any, {
       ...call,
