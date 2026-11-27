@@ -111,7 +111,7 @@ const requests = () =>
 
 const noDelivery: CallDeliveryView = { speakingRate: 1.1, pronunciations: [], recognizedNames: [] };
 const greeting: GreetingPreview = {
-  standard: "Hi, I'm Sam, and I'm an AI assistant with Ridge Dental LLC. How can I help?",
+  standard: "Hi, I'm Sam, an AI assistant with Ridge Dental LLC. How can I help?",
   ownWords: "Hey, I'm Sam with Ridge Dental LLC. How can I help you?",
   businessNameSet: true,
 };
@@ -264,11 +264,19 @@ describe("built-in phone voices in the picker", () => {
     deliveryPanel(nodes)!.props.onOpen();
     await vi.waitFor(() => expect(deliveryPanel(render())!.props.greeting).toEqual(edited));
     expect(requests().at(-1)).toMatchObject({ url: "/api/agent-config/bot-a", method: "GET" });
-    // A failed read keeps what is shown.
+    // Opening it again straight away does not read again.
+    const reads = requests().length;
+    deliveryPanel(render())!.props.onOpen();
+    expect(requests()).toHaveLength(reads);
+    // A few seconds later it does, and a failed read keeps what is shown.
+    const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 3_001);
     h.fetch.mockRejectedValueOnce(new Error("offline"));
     deliveryPanel(render())!.props.onOpen();
+    expect(requests()).toHaveLength(reads + 1);
+    await Promise.resolve();
     await Promise.resolve();
     expect(deliveryPanel(render())!.props.greeting).toEqual(edited);
+    clock.mockRestore();
   });
 
   it("keeps pace and pronunciation but no built-in sample while a library voice answers", async () => {

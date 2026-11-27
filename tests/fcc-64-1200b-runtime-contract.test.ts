@@ -79,9 +79,13 @@ describe("64.1200(b) runtime wiring", () => {
   it("(b)(2) the outbound prompt carries the business callback number when a line is mapped", () => {
     expect(session).toContain("formatCallbackNumberForSpeech");
     expect(session).toContain("input.calledNumber");
-    // The number appears in both the standing compliance block and the
-    // voicemail protocol — voicemail is where (b)(2) bites hardest, because
-    // the called party cannot ask.
+    // The callback rule names the number and the voicemail protocol tells the
+    // Bot to leave it: voicemail is where (b)(2) bites hardest, because the
+    // called party cannot ask.
+    expect(session).toContain("identify yourself and leave the callback number only");
+    // When a placed call goes quiet before the number was said, the connection
+    // says it with its check-in instead of leaving it to the model.
+    expect(session).toContain("If we got cut off, you can reach us at ${number}.");
     expect(session).toMatch(/OUTBOUND COMPLIANCE \(FEDERAL/);
     expect(session).toMatch(/leave the callback number \$\{callbackNumberSpoken\}/);
     // "During or after the message": a marketing call states the number in its

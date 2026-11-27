@@ -696,14 +696,14 @@ test("a relayed rehearsal speaks the opening, shows replies and ends through its
       JSON.stringify({
         type: "bot_text",
         id: "opening",
-        text: "Hi, I'm Front Desk, and I'm an AI assistant.",
+        text: "Hi, I'm Front Desk, an AI assistant.",
         final: true,
       }),
     );
   });
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
   await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
-  await expect(page.getByText("Hi, I'm Front Desk, and I'm an AI assistant.")).toBeVisible();
+  await expect(page.getByText("Hi, I'm Front Desk, an AI assistant.")).toBeVisible();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
   expect(relayRequests).toEqual([["botbound-rehearsal.v1", "ticket.relay-ticket"]]);
   // No WebRTC offer is made when the relay answers.

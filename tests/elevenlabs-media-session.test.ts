@@ -94,7 +94,7 @@ describe("cloned phone media", () => {
       spoken.push(text);
       yield new Uint8Array([255]);
     });
-    const opening = "Hi, I'm Nora, and I'm an AI assistant with BotBound. How can I help?";
+    const opening = "Hi, I'm Nora, an AI assistant with BotBound. How can I help?";
     s.session.playOpening(opening);
     s.carrier.receive({ event: "media", media: { track: "inbound", payload: "eA==" } });
     await tick();

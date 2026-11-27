@@ -240,6 +240,11 @@ describe("xAI rehearsal relay", () => {
     expect(session.voice).toBe("carina");
     expect(session.instructions).toContain("PRIVATE TEST");
     expect(session.instructions).toContain("Do not restart the introduction");
+    // As on a call: the Bot knows the opening introduced it, and what to say when asked.
+    expect(session.instructions).toContain(
+      "The connection delivers the opening greeting and AI disclosure.",
+    );
+    expect(session.instructions).toContain("say plainly that you are an AI assistant");
     expect(session.tools.map((tool: { name: string }) => tool.name)).toEqual([
       "search_agent_knowledge",
     ]);

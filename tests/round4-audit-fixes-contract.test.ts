@@ -103,7 +103,7 @@ describe("round-4 audit fix contracts", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     expect(session).toContain("composeOutboundOpening({");
     expect(read("src/lib/voice/outbound-opening.ts")).toContain(
-      "this is ${agent}, an AI assistant${withBusiness}.",
+      "this is ${agent}, an AI assistant${withBusiness}",
     );
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
     expect(session).toContain("formatCallbackNumberForSpeech");

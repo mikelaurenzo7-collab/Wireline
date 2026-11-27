@@ -58,6 +58,7 @@ import {
 } from "./native-inbound-admission";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
 import type { InboundFallbackDrill, OpenAIInboundLeg } from "./openai-inbound-token";
+import { saysPhoneNumber } from "./callback-number-spoken";
 import { AI_HONESTY_RULE, composeInboundOpening } from "./inbound-opening";
 import { inboundSourceId, redirectInboundCallToOpenAI } from "./inbound-bridge";
 import {
@@ -403,7 +404,7 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
       ].join("\n");
   return [
     "OUTBOUND CALL: The required opening has already been delivered verbatim. It says who you are, names the business and asks whether now is a good time. Do not skip it, replace it, or start with a different greeting. Wait for the contact's response. If now works, say why you are calling in one short sentence and continue naturally. If it is a bad time, offer to call back another time and end politely.",
-    "OUTBOUND COMPLIANCE (FEDERAL): Who is calling and for which business are already in the opening. The user cannot remove that opening. If the contact asks who is calling, say it again plainly.",
+    "OUTBOUND COMPLIANCE (FEDERAL): Who is calling and for which business are already in the opening. The user cannot remove that opening. If the contact asks who is calling, say it again plainly: your name, that you are an AI assistant, and the business.",
     callbackRule,
     input.customerName ? `Contact: ${input.customerName}.` : "",
     `Call purpose: ${purpose}.`,
@@ -1445,6 +1446,23 @@ async function runFinalizerStep(
   }
 }
 
+/**
+ * An operator signal, not a record: a placed call that carried conversation
+ * and ended before the Bot said its callback number. A sales call says it in
+ * the opening; every other call is told to say it before the call ends.
+ */
+function noteCallbackNumberDelivery(call: OpenAISipIncomingCall, transcript: string): void {
+  if (!formatCallbackNumberForSpeech(call.calledNumber)) return;
+  const lines = transcript.split("\n");
+  if (!lines.some((line) => line.startsWith("Caller:"))) return;
+  const said = lines.filter((line) => line.startsWith("Agent:")).join(" ");
+  if (saysPhoneNumber(said, call.calledNumber)) return;
+  log.warn("Outbound call ended before the callback number was spoken", {
+    userId: call.userId,
+    callId: providerCallId(call.callId),
+  });
+}
+
 async function persistAiDisclosureEvidence(input: {
   call: OpenAISipIncomingCall;
   transcript: string;
@@ -1453,6 +1471,7 @@ async function persistAiDisclosureEvidence(input: {
   openingPlaybackConfirmed: boolean;
 }): Promise<void> {
   if (callDirection(input.call) !== "outbound") return;
+  noteCallbackNumberDelivery(input.call, input.transcript);
 
   const callId = providerCallId(input.call.callId);
   const [existing] = await drizzle
@@ -2332,6 +2351,23 @@ async function runRealtimeSession(
         }
       });
   };
+  // A call the Bot placed states its number during or after the call. When the
+  // line has gone quiet and the Bot has not said it yet, the check-in carries
+  // it, so the connection speaks it and it is not left to the model alone.
+  const quietLineCheckIn = () => {
+    if (callDirection(input) !== "outbound") return QUIET_LINE_CHECK_IN;
+    const number = formatCallbackNumberForSpeech(input.calledNumber);
+    if (!number) return QUIET_LINE_CHECK_IN;
+    const said = [
+      actualOpeningTranscript,
+      xaiForcedOpening,
+      ...transcriptLines.filter((line) => line.role === "Agent").map((line) => line.text),
+      assistantTurn,
+    ].join(" ");
+    return saysPhoneNumber(said, input.calledNumber)
+      ? QUIET_LINE_CHECK_IN
+      : `${QUIET_LINE_CHECK_IN} If we got cut off, you can reach us at ${number}.`;
+  };
   const checkQuietLine = () => {
     if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
     if (endedReason === "transferred" || endedReason === "caller-dnc") return;
@@ -2353,14 +2389,15 @@ async function runRealtimeSession(
       if (quietMs < QUIET_LINE_CHECK_IN_MS) return;
       quietCheckInAtMs = Date.now();
       lastHeardAtMs = quietCheckInAtMs;
+      const checkIn = quietLineCheckIn();
       sendJson(
         ws,
         provider === "xai"
-          ? xaiForceMessage(QUIET_LINE_CHECK_IN)
+          ? xaiForceMessage(checkIn)
           : {
               type: "response.create",
               response: {
-                instructions: `Say exactly these words and nothing else: ${QUIET_LINE_CHECK_IN}`,
+                instructions: `Say exactly these words and nothing else: ${checkIn}`,
               },
             },
       );
@@ -3344,7 +3381,9 @@ async function runRealtimeSession(
         calledNumber: input.calledNumber,
         callerNumber: input.callerNumber,
         callRecordingEnabled: input.callRecordingEnabled === true,
-        leg: assistantAudioHeard || openingPlaybackConfirmed ? "resume" : "failover",
+        // Only a caller who heard the whole opening, or has already spoken,
+        // is picked back up without it. One cut off mid-introduction hears it again.
+        leg: openingPlaybackConfirmed || callerTranscriptIndexes.size > 0 ? "resume" : "failover",
       });
     }
     let hangupOutcome: OpenAICallControlOutcome | undefined;

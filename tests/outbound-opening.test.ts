@@ -7,6 +7,7 @@ import {
   composeInboundOpening,
   defaultOwnGreeting,
   inboundDisclosureLine,
+  inboundGreetingPreview,
 } from "../src/lib/voice/inbound-opening";
 import {
   agentNameAddsToBusiness,
@@ -105,7 +106,21 @@ describe("the first line of an outbound call", () => {
   it("is evidence the ledger can find: an AI disclosure always, a recording notice only when recording", () => {
     // A name is the owner's own, punctuation and length included.
     const longName = "Samantha ".repeat(14).trim();
-    for (const agentName of ["Sam", "Ridge Dental", "", "Dr. Sam", "Sam, Jr.", "J.D.", longName]) {
+    const names = [
+      "Sam",
+      "Ridge Dental",
+      "",
+      "Dr. Sam",
+      "Sam, Jr.",
+      "J.D.",
+      // Names that begin with a word a denial would use.
+      "Noé",
+      "No Sweat Assistant",
+      "Not Just Pizza Bot",
+      "NO LIMIT",
+      longName,
+    ];
+    for (const agentName of names) {
       for (const businessName of ["Ridge Dental", ""]) {
         const quiet = composeOutboundOpening({
           agentName,
@@ -123,6 +138,19 @@ describe("the first line of an outbound call", () => {
         });
         expect(detectRecordingDisclosure(recorded).found, recorded).toBe(true);
       }
+    }
+  });
+
+  it("is found whatever the contact's own name carries", () => {
+    for (const contactName of ["Dana", "Dr. Lee", "Mary-Kate O'Neil, Jr.", "Noëlle"]) {
+      const opening = composeOutboundOpening({
+        agentName: "Sam",
+        businessName: "Ridge Dental",
+        contactName,
+        recordingEnabled: false,
+        telemarketing: false,
+      });
+      expect(detectAiDisclosure(opening).found, opening).toBe(true);
     }
   });
 
@@ -227,6 +255,74 @@ describe("the first line of an inbound call", () => {
     );
   });
 
+  it("does not mistake a title, an initial or a time for the end of a sentence", () => {
+    const introduction = "Hi, I'm Sam, an AI assistant with Ridge Dental LLC.";
+    const opened = (greeting: string) => composeInboundOpening({ greeting, ...bot });
+    expect(opened("Thanks for calling Dr. Smith's office. How can I help?")).toBe(
+      `${introduction} How can I help?`,
+    );
+    expect(opened("Welcome to St. Mary's Clinic.")).toBe(`${introduction} How can I help you?`);
+    expect(opened("Thank you for calling U.S. Bank. How may I direct your call?")).toBe(
+      `${introduction} How may I direct your call?`,
+    );
+    expect(opened("Thanks for calling. We're open 9 a.m. to 5 p.m. How can I help?")).toBe(
+      `${introduction} We're open 9 a.m. to 5 p.m. How can I help?`,
+    );
+    // Where the next word plainly starts a sentence, the period still ends one.
+    expect(opened("Thanks for calling our office on Main St. How can I help?")).toBe(
+      `${introduction} How can I help?`,
+    );
+    expect(opened("Thanks for calling Acme Inc. We're open nine to five.")).toBe(
+      `${introduction} We're open nine to five.`,
+    );
+    // A greeting that says what it is, behind a title, is still kept as written,
+    // and is still recognised when the recording notice comes before it.
+    const written = "Hi, I'm Dr. Sam, an AI assistant for Ridge Dental. How can I help?";
+    expect(opened(written)).toBe(written);
+    const recorded = composeInboundOpening({ greeting: written, ...bot, recordingEnabled: true });
+    expect(recorded).toBe(`This call may be recorded. ${written}`);
+    expect(detectAiDisclosure(recorded).found).toBe(true);
+  });
+
+  it("does not double the period of a business name that ends in one", () => {
+    const acme = { agentName: "Sam", businessName: "Acme Inc." };
+    expect(composeInboundOpening({ greeting: "", ...acme, recordingEnabled: true })).toBe(
+      "Hi, I'm Sam, an AI assistant with Acme Inc. This call may be recorded. How can I help you?",
+    );
+    expect(defaultOwnGreeting(acme)).toBe("Hey, I'm Sam with Acme Inc. How can I help you?");
+    expect(composeOutboundOpening({ ...acme, recordingEnabled: false, telemarketing: false })).toBe(
+      "Hi, this is Sam, an AI assistant with Acme Inc. Is now a good time?",
+    );
+  });
+
+  it("previews both openings for the settings panel exactly as a call would speak them", () => {
+    const saved = {
+      greeting: "Thanks for calling! We open at nine.",
+      agentName: "Sam",
+      businessName: "  Ridge Dental LLC ",
+      recordingEnabled: true,
+    };
+    expect(inboundGreetingPreview(saved)).toEqual({
+      standard:
+        "Hi, I'm Sam, an AI assistant with Ridge Dental LLC. This call may be recorded. We open at nine.",
+      ownWords: "This call may be recorded. Thanks for calling! We open at nine.",
+      businessNameSet: true,
+    });
+    // No business name: neither opening names one, and the panel is told so.
+    expect(
+      inboundGreetingPreview({
+        ...saved,
+        businessName: " ",
+        greeting: "",
+        recordingEnabled: false,
+      }),
+    ).toEqual({
+      standard: "Hi, I'm Sam, an AI assistant. How can I help you?",
+      ownWords: "Hey, I'm Sam. How can I help you?",
+      businessNameSet: false,
+    });
+  });
+
   it("is an introduction the compliance record recognises", () => {
     for (const agentName of ["Sam", "Ridge Dental LLC", ""]) {
       const opening = composeInboundOpening({ greeting: "", ...bot, agentName });
@@ -239,9 +335,26 @@ describe("the first line of an inbound call", () => {
       );
       expect(detectAiDisclosure(opening).found, opening).toBe(true);
     }
-    // A caller asking is not the Bot saying, and neither is a denial.
-    expect(detectAiDisclosure("Is this Sam, an AI assistant?").found).toBe(false);
-    expect(detectAiDisclosure("I'm not, strictly speaking, an AI assistant.").found).toBe(false);
+    // A caller asking is not the Bot saying, and neither is a denial or a passing mention.
+    for (const said of [
+      "Is this Sam, an AI assistant?",
+      "Wait, this is Sam, an AI assistant?",
+      "I'm not, strictly speaking, an AI assistant.",
+      "I am definitely not, strictly speaking, an AI assistant.",
+      "I'm a real person, not, like, an AI assistant.",
+      "This is a real person, not a recording, an AI agent, or a robot.",
+      "I'm sorry, an AI assistant can't help with that.",
+      "If this is urgent, an AI assistant can take a message.",
+      "I'm transferring you to Sam, an AI assistant.",
+    ]) {
+      expect(detectAiDisclosure(said).found, said).toBe(false);
+    }
+    // So a greeting that only mentions one still gets the introduction.
+    expect(
+      composeInboundOpening({ greeting: "I'm sorry, an AI assistant is unavailable.", ...bot }),
+    ).toBe(
+      "Hi, I'm Sam, an AI assistant with Ridge Dental LLC. I'm sorry, an AI assistant is unavailable.",
+    );
   });
 });
 
@@ -324,6 +437,8 @@ describe("an inbound call that opens in the owner's own words", () => {
   it("has the Bot say what it is whenever it is asked, and not otherwise", () => {
     expect(AI_HONESTY_RULE).toContain("say plainly that you are an AI assistant");
     expect(AI_HONESTY_RULE).toContain("Never say or imply that you are a person");
-    expect(AI_HONESTY_RULE).toContain("Do not bring it up otherwise");
+    expect(AI_HONESTY_RULE).toContain("asks who is calling or speaking");
+    expect(AI_HONESTY_RULE).toContain("which business you are with");
+    expect(AI_HONESTY_RULE).toContain("There is no need to bring it up at other times");
   });
 });

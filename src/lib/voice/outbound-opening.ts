@@ -29,6 +29,11 @@ function clean(value: string | null | undefined): string {
     .slice(0, 120);
 }
 
+/** Ends a sentence without doubling the period of a name such as "Acme Inc.". */
+export function endSentence(text: string): string {
+  return /[.!?]$/.test(text) ? text : `${text}.`;
+}
+
 /**
  * Whether saying the Bot's own name adds anything beside the business name.
  * A Bot named for its owner ("Michael" at "Michael Laurenzo") or for the
@@ -62,9 +67,11 @@ export function composeOutboundOpening(input: {
   const contact = clean(input.contactName);
   const hello = contact ? `Hi ${contact},` : "Hi,";
   const withBusiness = business ? ` with ${business}` : "";
-  const identity = agentNameAddsToBusiness(agent, business)
-    ? `${hello} this is ${agent}, an AI assistant${withBusiness}.`
-    : `${hello} I'm an AI assistant${withBusiness}.`;
+  const identity = endSentence(
+    agentNameAddsToBusiness(agent, business)
+      ? `${hello} this is ${agent}, an AI assistant${withBusiness}`
+      : `${hello} I'm an AI assistant${withBusiness}`,
+  );
   const callback = clean(input.callbackNumberSpoken);
   return [
     identity,

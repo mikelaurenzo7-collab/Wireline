@@ -442,6 +442,21 @@ describe("native SIP opening delivery", () => {
         // Inbound introduces the Bot once; the owner's identity line is not repeated.
         expect(opening?.instructions).not.toContain("this is Nora with BotBound");
       }
+      if (direction === "outbound") {
+        const instructions = String(
+          h.sent.find((event) => event.type === "session.update")?.session.instructions,
+        );
+        // A call that is not a sales call gives its number before it ends, not in the opening.
+        expect(instructions).toContain(
+          "The callback number is the business. It is required: say it once before the call ends",
+        );
+        expect(instructions).not.toContain("It is already in the opening.");
+        expect(instructions).toContain(
+          "say it again plainly: your name, that you are an AI assistant, and the business",
+        );
+        expect(instructions).toContain("say plainly that you are an AI assistant");
+        expect(instructions).toContain("Never say or imply that you are a person");
+      }
       expect(opening?.output_modalities).toEqual(["audio"]);
       h.sockets[0].close();
       await session;
@@ -1575,6 +1590,10 @@ describe("long business-call lifecycle", () => {
     expect(quietCheckIns()).toHaveLength(0);
     await vi.advanceTimersByTimeAsync(6_000);
     expect(quietCheckIns()).toHaveLength(1);
+    // A call the Bot answered asks only that.
+    expect(quietCheckIns()[0].response.instructions).toBe(
+      "Say exactly these words and nothing else: Are you still there?",
+    );
 
     // The Bot's own question is not the caller being heard.
     await emit({ type: "response.created", response: { id: "check-in" } });
@@ -1594,6 +1613,30 @@ describe("long business-call lifecycle", () => {
     );
     // Roughly a minute and a half, not the hour the session allows.
     expect(h.usage).toHaveBeenCalledWith(expect.objectContaining({ durationSeconds: 80 }));
+  });
+
+  it("gives a placed call's number with the check-in when the Bot has not said it yet", async () => {
+    const session = runOpenAISipCallSession(
+      { ...call, direction: "outbound" } as any,
+      runtime as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await emit({
+      type: "conversation.item.input_audio_transcription.completed",
+      item_id: "turn-1",
+      transcript: "Hold on a second.",
+    });
+    await vi.advanceTimersByTimeAsync(35_000);
+    expect(quietCheckIns()).toHaveLength(1);
+    expect(quietCheckIns()[0].response.instructions).toBe(
+      "Say exactly these words and nothing else: Are you still there? If we got cut off, you can reach us at the business.",
+    );
+    h.sockets[0].close();
+    await session;
   });
 
   it("keeps the line when the caller answers, and asks again only after a new silence", async () => {

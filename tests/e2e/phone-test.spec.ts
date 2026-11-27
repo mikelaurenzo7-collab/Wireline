@@ -111,12 +111,12 @@ test("a connected phone test shows the call's transcript and keeps it after the 
   await expect(dialog.getByRole("log", { name: "Call transcript" })).toHaveCount(0);
 
   state.connect([
-    { speaker: "bot", text: "Hi, I'm Front Desk, and I'm an AI assistant." },
+    { speaker: "bot", text: "Hi, I'm Front Desk, an AI assistant." },
     { speaker: "caller", text: "When are you open?" },
   ]);
   await dialog.getByRole("button", { name: "Check call", exact: true }).click();
   const log = dialog.getByRole("log", { name: "Call transcript" });
-  await expect(log).toContainText("Front Desk: Hi, I'm Front Desk, and I'm an AI assistant.");
+  await expect(log).toContainText("Front Desk: Hi, I'm Front Desk, an AI assistant.");
   await expect(log).toContainText("You: When are you open?");
   // The verification code is gone once the call is connected.
   await expect(page.getByLabel("Phone verification code", { exact: true })).toHaveCount(0);

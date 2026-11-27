@@ -33,12 +33,12 @@ afterEach(() => vi.useRealTimers());
 describe("phone test transcript lines", () => {
   it("reads the stored call transcript turn by turn", () => {
     const stored = compactOpenAITranscript([
-      { role: "Agent", text: "Hi, I'm Riley, and I'm an AI assistant with Acme Plumbing." },
+      { role: "Agent", text: "Hi, I'm Riley, an AI assistant with Acme Plumbing." },
       { role: "Caller", text: "When are you open?\nI mean on Saturday." },
       { role: "Agent", text: "We open at eight." },
     ]);
     expect(phoneTestTranscriptLines(stored)).toEqual([
-      { speaker: "bot", text: "Hi, I'm Riley, and I'm an AI assistant with Acme Plumbing." },
+      { speaker: "bot", text: "Hi, I'm Riley, an AI assistant with Acme Plumbing." },
       { speaker: "caller", text: "When are you open? I mean on Saturday." },
       { speaker: "bot", text: "We open at eight." },
     ]);

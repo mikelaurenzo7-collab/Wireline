@@ -225,8 +225,9 @@ shares the supervisor socket's deployment gate and requires a same-site Origin.
 Over the relay the browser sends 24 kHz PCM16 microphone frames and typed lines
 and receives the Bot's PCM16 audio plus a transcript in a small BotBound
 protocol that never names the provider. The server speaks the inbound opening
-with its AI disclosure verbatim and non-interruptible, as on a call (without a
-recording notice, because rehearsals are not recorded), runs knowledge lookups
+verbatim and non-interruptible, as on a call: the short AI assistant
+introduction, or the owner's greeting as written when they chose that (without
+a recording notice, because rehearsals are not recorded), runs knowledge lookups
 in the owner's tenant scope, tells xAI how much of an interrupted reply was
 heard, and ends the session at its time limit, when the browser leaves, on the
 owner's stop ticket, or when the API restarts (the owner is told to start

@@ -1,5 +1,9 @@
 import { detectAiDisclosure } from "../tcpa-consent";
-import { OUTBOUND_RECORDING_NOTICE, agentNameAddsToBusiness } from "./outbound-opening";
+import {
+  OUTBOUND_RECORDING_NOTICE,
+  agentNameAddsToBusiness,
+  endSentence,
+} from "./outbound-opening";
 
 /**
  * The first spoken line of a call the Bot answers.
@@ -20,10 +24,29 @@ import { OUTBOUND_RECORDING_NOTICE, agentNameAddsToBusiness } from "./outbound-o
 const IDENTITY_SENTENCE =
   /^(?:hi|hello|hey|welcome|thanks for calling|thank you for calling|good (?:morning|afternoon|evening)|you've reached|you have reached|this is)\b/i;
 
+/**
+ * A period after a title ("Dr. Chen's office", "St. Mary's"), an initial
+ * ("U.S. Bank") or a time ("9 a.m. to 5") does not end the sentence, unless
+ * the word after it plainly starts a new one ("Main St. How can I help?").
+ */
+const TITLE = /(?:^|[\s(])(?:dr|mr|mrs|ms|mx|prof|st|mt|ft)$/i;
+const INITIAL = /(?:^|[\s(.])\p{Lu}$/u;
+const TIME_OF_DAY = /\b[ap]\.m$/i;
+const STARTS_A_SENTENCE =
+  /^(?:we|we're|we'll|we've|our|i|i'm|i'll|you|you're|you've|your|how|what|who|where|when|can|may|please|press|if|the|this|it|it's|thanks|thank|hi|hello|let|leave|stay)\b/i;
+
 function firstSentence(text: string): { first: string; rest: string } {
-  const match = text.match(/^(.+?[.!?])(\s+|$)/s);
-  if (!match) return { first: text, rest: "" };
-  return { first: match[1], rest: text.slice(match[0].length).trim() };
+  const boundary = /[.!?](?=\s|$)/g;
+  for (let match = boundary.exec(text); match; match = boundary.exec(text)) {
+    if (match.index === 0) continue;
+    const before = text.slice(0, match.index);
+    const rest = text.slice(match.index + 1).trim();
+    const abbreviated =
+      match[0] === "." && (TITLE.test(before) || INITIAL.test(before) || TIME_OF_DAY.test(before));
+    if (abbreviated && rest && !STARTS_A_SENTENCE.test(rest)) continue;
+    return { first: text.slice(0, match.index + 1), rest };
+  }
+  return { first: text, rest: "" };
 }
 
 function clean(value: string | null | undefined): string {
@@ -42,18 +65,20 @@ export function inboundDisclosureLine(input: {
   const business = clean(input.businessName);
   const agent = clean(input.agentName);
   const withBusiness = business ? ` with ${business}` : "";
-  const introduction = agentNameAddsToBusiness(agent, business)
-    ? `Hi, I'm ${agent}, an AI assistant${withBusiness}.`
-    : `Hi, I'm an AI assistant${withBusiness}.`;
+  const introduction = endSentence(
+    agentNameAddsToBusiness(agent, business)
+      ? `Hi, I'm ${agent}, an AI assistant${withBusiness}`
+      : `Hi, I'm an AI assistant${withBusiness}`,
+  );
   return input.recordingEnabled ? `${introduction} ${OUTBOUND_RECORDING_NOTICE}` : introduction;
 }
 
 /**
- * Holds on every call, however the owner chose to greet: asked directly, the
- * Bot says what it is.
+ * Holds on every call, however the owner chose to greet: asked who or what it
+ * is, the Bot says so.
  */
 export const AI_HONESTY_RULE =
-  "IF ASKED WHAT YOU ARE: When someone asks whether they are speaking with a person, a recording or an AI, say plainly that you are an AI assistant. Never say or imply that you are a person. Do not bring it up otherwise.";
+  "IF ASKED WHO OR WHAT YOU ARE: When someone asks who is calling or speaking, or whether they are talking to a person, a recording or an AI, say plainly that you are an AI assistant and which business you are with. Never say or imply that you are a person. There is no need to bring it up at other times.";
 
 /**
  * What a Bot says in its owner's own words when they have not written a
@@ -65,9 +90,11 @@ export function defaultOwnGreeting(input: {
 }): string {
   const business = clean(input.businessName);
   const agent = clean(input.agentName);
-  const introduction = agentNameAddsToBusiness(agent, business)
-    ? `Hey, I'm ${agent}${business ? ` with ${business}` : ""}.`
-    : `Hey, thanks for calling${business ? ` ${business}` : ""}.`;
+  const introduction = endSentence(
+    agentNameAddsToBusiness(agent, business)
+      ? `Hey, I'm ${agent}${business ? ` with ${business}` : ""}`
+      : `Hey, thanks for calling${business ? ` ${business}` : ""}`,
+  );
   return `${introduction} How can I help you?`;
 }
 
@@ -112,4 +139,31 @@ export function composeInboundOpening(input: {
   if (first && detectAiDisclosure(first).found) return `${recorded}${written}`;
   const remainder = IDENTITY_SENTENCE.test(first) ? rest : written;
   return `${inboundDisclosureLine(input)} ${remainder || "How can I help you?"}`.trim();
+}
+
+/**
+ * Both ways an incoming call can open, word for word, for the settings panel.
+ * It names the business only from the workspace's own business name, as an
+ * incoming call does.
+ */
+export function inboundGreetingPreview(input: {
+  greeting: string;
+  agentName: string;
+  businessName?: string | null;
+  recordingEnabled: boolean;
+}): { standard: string; ownWords: string; businessNameSet: boolean } {
+  const businessName = input.businessName?.trim() || null;
+  const opening = (ownWords: boolean) =>
+    composeInboundOpening({
+      greeting: input.greeting,
+      agentName: input.agentName,
+      businessName,
+      recordingEnabled: input.recordingEnabled,
+      ownWords,
+    });
+  return {
+    standard: opening(false),
+    ownWords: opening(true),
+    businessNameSet: Boolean(businessName),
+  };
 }

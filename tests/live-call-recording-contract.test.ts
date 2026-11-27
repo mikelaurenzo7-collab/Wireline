@@ -149,7 +149,7 @@ describe("live call recording (owner choice) contract", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     // Outbound: the compliance composer receives the flag itself.
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
-    const greeting = "Hi, I'm Nora, and I'm an AI assistant with BotBound. How can I help?";
+    const greeting = "Hi, I'm Nora, an AI assistant with BotBound. How can I help?";
     const inbound = { greeting, agentName: "Nora", businessName: "BotBound" };
     const unrecordedOpening = composeInboundOpening({ ...inbound, recordingEnabled: false });
     const recordedOpening = composeInboundOpening({ ...inbound, recordingEnabled: true });

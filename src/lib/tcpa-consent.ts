@@ -753,10 +753,13 @@ const AI_DISCLOSURE_PATTERNS: RegExp[] = [
   /\b(?:i'm|i am)\s+an\s+(?:a\.?i\.?|artificial intelligence)\b/i,
   /\b(?:i'm|i am)\s+an?\s+ai\s+(?:assistant|agent|voice)\b/i,
   /\b(?:i'm|i am)\s+not\s+a\s+(?:real\s+)?human\b/i,
-  // The introduction as a call speaks it: "this is Sam, an AI assistant with ...".
-  // The name is the owner's, so it may carry its own punctuation ("Dr. Sam",
-  // "Sam, Jr.") and run to the 120 characters a name is cut to.
-  /\b(?:i'm|i am|this is)\s+(?!not\b|no\b)[^\n]{1,130}?,\s+an?\s+(?:a\.?i\.?|automated|virtual|digital)\s+(?:assistant|agent)\b/i,
+  // The introduction as a call speaks it: "Hi Dana, this is Sam, an AI
+  // assistant with ...". It is matched only in a sentence that opens with the
+  // hello (the first one, or the one after a recording notice), so a sentence
+  // that merely mentions an AI assistant is not one. The names are the
+  // owner's: they may carry their own punctuation ("Dr. Sam", "Sam, Jr.",
+  // "No. 1 Plumbing") and run to the 120 characters a name is cut to.
+  /(?:^|[.!?]\s)\s*(?:hi|hello|hey)\b[^\n]{0,130}?\b(?:i'm|i am|this is)\s+[^\n]{1,130}?,\s+an?\s+(?:a\.?i\.?|automated|virtual|digital)\s+(?:assistant|agent)\b/i,
   // Third-person agent framing ("you're speaking with an AI assistant").
   /\byou(?:'re| are)\s+(?:still\s+)?(?:speaking|talking)\s+(?:with|to)\s+an?\s+(?:ai|automated|virtual)\b/i,
 ];
