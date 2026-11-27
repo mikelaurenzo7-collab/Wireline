@@ -145,11 +145,19 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     /\{language\.setupPrompt\}/,
     "create flow must lead with the customer's job",
   );
+  // One Bot, called Bo: the create flow says so and offers nothing to pick.
+  // The row of starter chips went the way of the template gallery.
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
     createDialog,
-    /role="group" aria-label="Starting briefs"[\s\S]*STARTER_KEYS\.map\([\s\S]*templateForKey\(key\)/,
-    "create flow must expose shared starting briefs",
+    /Your Bot is called \{botName\}\. You can rename it any time\./,
+    "create flow must say what the Bot is called",
+  );
+  mustExclude(
+    "src/components/CreateAgentDialog.tsx",
+    createDialog,
+    /aria-label="Starting briefs"|\bSTARTER_KEYS\b/,
+    "create flow must not offer starters to pick from",
   );
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
