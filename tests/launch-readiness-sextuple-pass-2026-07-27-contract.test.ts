@@ -30,9 +30,15 @@ describe("launch readiness cross-surface contract", () => {
       "Image uploads are unavailable. Upload TXT, MD, CSV, PDF, DOCX, or XLSX files.",
     );
     expect(kb).toContain("document type that does not match its extension");
+    // National screening is said only for the calls it runs on: sales calls,
+    // which are held when it is unavailable.
     expect(security).toMatch(
-      /BotBound screens the national do-not-call list, the account block list, and calling hours before an outgoing call\./i,
+      /Before an outgoing call BotBound checks the account's block list and the calling hours where the recipient is\./i,
     );
+    expect(security).toMatch(
+      /Sales calls are also screened against the national do-not-call list, and are held when that screening is unavailable\./i,
+    );
+    expect(security).not.toMatch(/screens the national do-not-call list, the account block list/i);
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
   });
@@ -42,7 +48,9 @@ describe("launch readiness cross-surface contract", () => {
     const changelog = read("src/components/PublicChangelog.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const aiErrors = read("src/lib/ai-stream-errors.ts");
-    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
     expect(changelog).not.toContain("Wireline");
     expect(pricing).toMatch(/Bot/i);
     expect(pricing).not.toContain("AI conversation workforce");

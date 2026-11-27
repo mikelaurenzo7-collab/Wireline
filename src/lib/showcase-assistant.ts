@@ -370,7 +370,7 @@ function buildCompactPricingSummary(): string {
         const plan = usageTier(id);
         return `${plan.name} $${plan.monthlyUsd}/month, $${plan.includedWorkUsd} shared work, ${plan.includedNumbers} local number(s) and ${plan.includedEmailAddresses} email address(es)`;
       }).join("; ") +
-      ". Calls $0.25/minute, sent replies $0.02, Computer $0.20/minute; use any mix from one monthly pool. Additional numbers $3/month, email addresses $4/month. Extra work is spend-capped. No annual offer or unlimited usage"
+      ". Calls $0.25/minute, US texts $0.04/sent segment, sent replies $0.02, Computer $0.20/minute; use any mix from one monthly pool. Additional numbers $3/month, email addresses $4/month. Extra work is spend-capped. No annual offer or unlimited usage"
     );
   return WIRELINE_PLANS.map((plan) => `${plan.name} ${plan.price}`).join(", ");
 }

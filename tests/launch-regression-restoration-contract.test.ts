@@ -201,9 +201,15 @@ describe("restored launch regression guards", () => {
     // platform engineering controls.
     expect(checklist).toContain('registryState === "active" || registryState === "pending_link"');
     expect(checklist).not.toMatch(/Row-level security|audit log enabled|SOC 2/i);
+    // National screening is said only for the calls it runs on: sales calls,
+    // which are held when it is unavailable.
     expect(security).toMatch(
-      /BotBound screens the national do-not-call list, the account block list, and calling hours before an outgoing call\./i,
+      /Before an outgoing call BotBound checks the account's block list and the calling hours where the recipient is\./i,
     );
+    expect(security).toMatch(
+      /Sales calls are also screened against the national do-not-call list, and are held when that screening is unavailable\./i,
+    );
+    expect(security).not.toMatch(/screens the national do-not-call list, the account block list/i);
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("DNCScrub");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
