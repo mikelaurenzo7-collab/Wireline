@@ -52,6 +52,8 @@ describe("touch targets are not capped by an unlayered rule", () => {
     const coarse = refinement.slice(refinement.indexOf("@media (any-pointer: coarse)"));
     expect(coarse).toContain("--wireline-interaction-target-comfortable");
     expect(coarse).toContain('[data-slot="button"],');
+    const phoneWidth = refinement.slice(refinement.indexOf("@media (max-width: 767px)"));
+    expect(phoneWidth).toContain("--wireline-interaction-target-comfortable");
   });
 
   it("does not let a stylesheet quietly undercut the public footer targets", () => {
