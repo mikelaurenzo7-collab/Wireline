@@ -4,6 +4,7 @@ type Handler = (req: unknown, res: unknown) => Promise<unknown>;
 const h = vi.hoisted(() => ({
   routes: new Map<string, Handler>(),
   rules: [] as string[],
+  facts: [] as string[],
   firstMessage: "Original greeting",
   personality: "Protect private information.",
   owns: true,
@@ -96,9 +97,13 @@ vi.mock("../src/lib/server-context", async () => {
                         ]
                       : name === "wireline_phone_numbers"
                         ? h.phones.map((phone) => ({ phone }))
-                        : h.rules.includes(String(query.params.at(-1)))
-                          ? [{ id: 1n }]
-                          : [];
+                        : name === "wireline_knowledge"
+                          ? h.facts.includes(String(query.params.at(-1)))
+                            ? [{ id: 1n }]
+                            : []
+                          : h.rules.includes(String(query.params.at(-1)))
+                            ? [{ id: 1n }]
+                            : [];
                 const result = () =>
                   Object.assign(Promise.resolve(rows), {
                     for: async (mode: string) => {
@@ -138,7 +143,8 @@ vi.mock("../src/lib/server-context", async () => {
                     h.personality = value.content;
                   },
                 };
-              h.rules.push(value.content);
+              if (getTableName(table) === "wireline_knowledge") h.facts.push(value.content);
+              else h.rules.push(value.content);
               return Promise.resolve();
             },
           }),
@@ -177,6 +183,7 @@ async function apply(field: string, value: string) {
 
 beforeEach(() => {
   h.rules = ["Keep the caller's information private.", "Opening greeting: Old Studio greeting"];
+  h.facts = ["We serve Austin and Round Rock."];
   h.firstMessage = "Original greeting";
   h.personality = "Protect private information.";
   h.owns = true;
@@ -205,6 +212,20 @@ describe("explicit Studio proposal application", () => {
       "Opening greeting: Old Studio greeting",
       "Confirm callback numbers.",
     ]);
+  });
+
+  it("saves a fact the owner told the chat to Knowledge once, not as a rule", async () => {
+    await Promise.all([
+      apply("business_fact", "Service calls are $89."),
+      apply("business_fact", "Service calls are $89."),
+    ]);
+    expect(h.facts).toEqual(["We serve Austin and Round Rock.", "Service calls are $89."]);
+    expect(h.rules).not.toContain("Service calls are $89.");
+    expect(await apply("business_fact", "We serve Austin and Round Rock.")).toMatchObject({
+      success: true,
+      field: "business_fact",
+    });
+    expect(h.facts).toEqual(["We serve Austin and Round Rock.", "Service calls are $89."]);
   });
 
   it("removes a stale Studio override when approving a new Build greeting", async () => {

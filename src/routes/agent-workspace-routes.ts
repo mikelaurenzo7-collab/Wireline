@@ -836,7 +836,25 @@ router.post(
           value: rawValue.trim(),
         });
         if (review.metadata.savedProposalKeys.includes(review.ref.key)) return;
-        if (spec.kind === "directive") {
+        if (spec.kind === "knowledge") {
+          // A fact the owner told the chat joins Knowledge once, like a fact
+          // typed anywhere else; the index sweep picks it up from there.
+          const [existing] = await tx
+            .select({ id: schema.knowledge.id })
+            .from(schema.knowledge)
+            .where(
+              and(
+                eq(schema.knowledge.agentId, agentId),
+                eq(schema.knowledge.userId, req.user.id),
+                eq(schema.knowledge.content, String(value)),
+              ),
+            )
+            .limit(1);
+          if (!existing)
+            await tx
+              .insert(schema.knowledge)
+              .values({ agentId, userId: req.user.id, content: String(value) });
+        } else if (spec.kind === "directive") {
           const [existing] = await tx
             .select({ id: schema.directives.id })
             .from(schema.directives)

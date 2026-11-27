@@ -93,6 +93,55 @@ describe("reviewable Studio Build plans", () => {
     ).toHaveLength(2000);
   });
 
+  it("turns what the owner says about the business into Knowledge facts to save", () => {
+    const { system, tool } = buildWorkspaceStreamContext({
+      userMessage: "Service calls are $89 and we don't serve Oakland.",
+      history: [],
+      agent: { knowledge: ["We open at 8."] },
+      recentCalls: [],
+    });
+    expect(system).toContain("add one business_fact per distinct fact");
+    expect(system).toContain("tell them to edit the saved fact in Knowledge");
+    expect(tool.input_schema).toMatchObject({
+      properties: {
+        config_changes: {
+          items: { properties: { field: { enum: expect.arrayContaining(["business_fact"]) } } },
+        },
+      },
+    });
+
+    const plan = normalizePlan({
+      reply: "I've drafted these for Knowledge. Approve them when ready.",
+      config_changes: [
+        { field: "business_fact", value: "Service calls are $89.", summary: "Price" },
+        { field: "business_fact", value: " Service calls are $89. " },
+        { field: "business_fact", value: "We don't serve Oakland." },
+        // A rule with the same words is still a separate proposal.
+        { field: "operating_rule", value: "We don't serve Oakland." },
+      ],
+    });
+    expect(plan.changes).toEqual([
+      {
+        field: "business_fact",
+        label: "Knowledge fact",
+        value: "Service calls are $89.",
+        summary: "Price",
+      },
+      {
+        field: "business_fact",
+        label: "Knowledge fact",
+        value: "We don't serve Oakland.",
+        summary: "Update knowledge fact",
+      },
+      {
+        field: "operating_rule",
+        label: "Operating rule",
+        value: "We don't serve Oakland.",
+        summary: "Update operating rule",
+      },
+    ]);
+  });
+
   it("drops malformed capabilities and settings rather than showing unusable proposals", () => {
     expect(
       normalizePlan({
