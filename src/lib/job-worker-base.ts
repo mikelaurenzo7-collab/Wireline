@@ -1,16 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { log, drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, lt } from "drizzle-orm";
+import { eq, and, or, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
+import type { ExtractedBusinessAction } from "./ai-brains";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
-import { executeAction } from "./action-engine";
+import { executeAction, recordOwnerNote } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import {
-  postCallFollowUpAction,
+  addressedToCaller,
+  completedOnCall,
   liveEmailAlreadyHandled,
+  liveTextOutcome,
+  planPostCallFollowUp,
+  postCallFollowUpAction,
+  postCallFollowUpHandBack,
   toolAuditResultText,
+  withReasonForOwner,
+  type LiveToolAttempt,
 } from "./post-call-follow-up";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import {
@@ -31,8 +39,11 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
 }
 
 /**
- * Queue one follow-up extraction per enrichment job. `enqueue` reports a
- * failure instead of throwing, so it is raised here for the queue to retry.
+ * Queue one follow-up extraction per call. A retry of the enrichment job
+ * finds the one it queued; so does a second enrichment job for the same
+ * call, which would otherwise have the transcript read, and its follow-ups
+ * worded, a second time. `enqueue` reports a failure instead of throwing, so
+ * it is raised here for the queue to retry.
  */
 async function enqueueActionExtractionOnce(
   enrichmentJob: JobRow,
@@ -52,7 +63,12 @@ async function enqueueActionExtractionOnce(
       and(
         eq(schema.jobs.userId, p.userId),
         eq(schema.jobs.type, "v2a_action_extraction"),
-        sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`,
+        p.callId
+          ? or(
+              sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`,
+              sql`${schema.jobs.payload}->>'callId' = ${p.callId}`,
+            )
+          : sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`,
       ),
     )
     .limit(1);
@@ -74,7 +90,11 @@ async function enqueueActionExtractionOnce(
 }
 
 /** Completed live send_email results for this provider call, if the audit recorded them. */
-async function completedSendEmailResults(userId: string, callId: string): Promise<string[]> {
+async function completedLiveToolResults(
+  userId: string,
+  callId: string,
+  tool: "send_email" | "send_text_message",
+): Promise<string[]> {
   if (!userId || !callId) return [];
   const rows = await drizzle
     .select({ metadata: schema.auditLog.metadata })
@@ -82,13 +102,72 @@ async function completedSendEmailResults(userId: string, callId: string): Promis
     .where(
       and(
         eq(schema.auditLog.userId, userId),
-        eq(schema.auditLog.action, "agent_tool.send_email"),
+        eq(schema.auditLog.action, `agent_tool.${tool}`),
         eq(schema.auditLog.eventType, "voice.tool_call"),
         sql`${schema.auditLog.metadata}->>'callId' = ${callId}`,
         sql`${schema.auditLog.metadata}->>'status' = 'completed'`,
       ),
     );
   return rows.map((row) => toolAuditResultText(row.metadata)).filter(Boolean);
+}
+
+const completedSendEmailResults = (userId: string, callId: string) =>
+  completedLiveToolResults(userId, callId, "send_email");
+
+/**
+ * Every use of the live text tool on a call, finished or not. A use that
+ * never finished, or finished without a clean receipt, matters as much as one
+ * that sent: it means a text may have reached the caller.
+ */
+async function liveTextAttempts(userId: string, callId: string): Promise<LiveToolAttempt[]> {
+  if (!userId || !callId) return [];
+  const rows = await drizzle
+    .select({ metadata: schema.auditLog.metadata })
+    .from(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.userId, userId),
+        eq(schema.auditLog.action, "agent_tool.send_text_message"),
+        eq(schema.auditLog.eventType, "voice.tool_call"),
+        sql`${schema.auditLog.metadata}->>'callId' = ${callId}`,
+      ),
+    );
+  return rows.map((row) => {
+    const metadata =
+      row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as Record<string, unknown>)
+        : {};
+    return {
+      status: typeof metadata.status === "string" ? metadata.status : null,
+      result: toolAuditResultText(row.metadata),
+    };
+  });
+}
+
+/** One follow-up as it is queued: the action, the call it came from, and who finishes it. */
+type PlannedFollowUp = {
+  userId: string;
+  action: ExtractedBusinessAction & { agentId?: string };
+  context: { sourceId: string; sourceType: string };
+  autonomy?: "draft";
+};
+
+/** The follow-ups an earlier attempt of this job already decided on. */
+function savedFollowUps(result: unknown): PlannedFollowUp[] | null {
+  if (!result || typeof result !== "object" || Array.isArray(result)) return null;
+  const saved = (result as Record<string, unknown>).followUps;
+  if (!Array.isArray(saved)) return null;
+  return saved.filter(
+    (followUp): followUp is PlannedFollowUp =>
+      !!followUp &&
+      typeof followUp === "object" &&
+      typeof (followUp as PlannedFollowUp).userId === "string" &&
+      !!(followUp as PlannedFollowUp).action &&
+      typeof (followUp as PlannedFollowUp).action === "object" &&
+      typeof (followUp as PlannedFollowUp).action.type === "string" &&
+      !!(followUp as PlannedFollowUp).context &&
+      typeof (followUp as PlannedFollowUp).context.sourceId === "string",
+  );
 }
 
 /**
@@ -168,36 +247,69 @@ export async function handleJob(job: JobRow): Promise<void> {
       customerNumber?: string;
     };
 
-    const actions = await claudeBrain.extractActions({
-      transcript: p.transcript,
-      summary: p.summary,
-      customerNumber: p.customerNumber,
-    });
-
-    const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
+    // The model words the same follow-up differently each time it is asked,
+    // and to the ledger a differently worded text is a different text. What
+    // the Bot did during the call can also still be settling while this runs.
+    // So the follow-ups are decided once: the plan is saved on the job before
+    // anything is queued, and a retry of this job queues exactly that again.
+    let followUps =
+      savedFollowUps((job as { result?: unknown }).result)?.filter(
+        (followUp) => followUp.userId === p.userId,
+      ) ?? null;
+    const reusedSavedPlan = Boolean(followUps);
+    let extracted = 0;
     let skippedDuplicateEmails = 0;
-    for (const action of actions.map(postCallFollowUpAction)) {
-      if (liveEmailAlreadyHandled(action, completedEmailSends)) {
-        skippedDuplicateEmails += 1;
-        continue;
-      }
-      await enqueue(drizzle, {
-        userId: p.userId,
-        type: "execute_action",
-        payload: {
-          userId: p.userId,
-          action: p.agentId ? { ...action, agentId: p.agentId } : action,
-          context: { sourceId: p.callId, sourceType: "phone_call" },
-          // Read from a transcript after the call: the owner approves every one.
-          autonomy: "draft",
-        },
+    if (!followUps) {
+      const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
+      const textAttempts = await liveTextAttempts(p.userId, p.callId);
+      const actions = await claudeBrain.extractActions({
+        transcript: p.transcript,
+        summary: p.summary,
+        customerNumber: p.customerNumber,
+        completedOnCall: completedOnCall({ emailResults: completedEmailSends, textAttempts }),
       });
+      extracted = actions.length;
+      followUps = [];
+      // One text of the Bot's own per call. Decided here, in order, so two
+      // texts from one call cannot each wait on the other and neither leave.
+      let botIsTexting = false;
+      for (const read of actions.map(postCallFollowUpAction)) {
+        const action = addressedToCaller(read, p.customerNumber);
+        if (liveEmailAlreadyHandled(action, completedEmailSends)) {
+          skippedDuplicateEmails += 1;
+          continue;
+        }
+        // The Bot finishes what is not a guess, at its own permission. The
+        // rest waits for the owner whatever the permission says, with the reason.
+        const plan = planPostCallFollowUp(action, {
+          callerNumber: p.customerNumber,
+          liveText: liveTextOutcome(action.payload?.to, textAttempts),
+          botIsTexting,
+        });
+        if (plan.finisher === "bot" && action.type === "send_text_message") botIsTexting = true;
+        const followUp = plan.finisher === "owner" ? withReasonForOwner(action, plan.why) : action;
+        followUps.push({
+          userId: p.userId,
+          action: p.agentId ? { ...followUp, agentId: p.agentId } : followUp,
+          context: { sourceId: p.callId, sourceType: "phone_call" },
+          ...(plan.finisher === "owner" ? { autonomy: "draft" as const } : {}),
+        });
+      }
+      await persistJobResult(job.id, { followUps });
+    }
+
+    // `enqueue` throws when it cannot queue this job type, which fails this
+    // job; the retry finds the saved plan above.
+    for (const payload of followUps) {
+      await enqueue(drizzle, { userId: p.userId, type: "execute_action", payload });
     }
     log.info("V2A extraction complete", {
       userId: p.userId,
       callId: p.callId,
-      actionsCount: actions.length,
+      actionsCount: reusedSavedPlan ? followUps.length : extracted,
       skippedDuplicateEmails,
+      leftForOwner: followUps.filter((followUp) => followUp.autonomy === "draft").length,
+      reusedSavedPlan,
     });
   }
 
@@ -215,12 +327,32 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    await executeAction(
+    const forOwner = p.autonomy === "draft";
+    const result = await executeAction(
       p.userId,
       parsed.data,
       p.context,
-      p.autonomy === "draft" ? "draft" : undefined,
+      forOwner ? "draft" : undefined,
     );
+    // Whoever was meant to finish it, a follow-up that was neither done nor
+    // left waiting goes to the owner. A text nothing sent waits for the owner
+    // as written; anything else, including a message that could not even be
+    // saved, becomes a note. The note is written directly and throws when it
+    // cannot be, so the queue retries it and nothing is dropped.
+    let handBack = postCallFollowUpHandBack(parsed.data, result, forOwner ? "draft" : "auto");
+    if (handBack?.kind === "draft") {
+      const waiting = await executeAction(p.userId, handBack.action, p.context, "draft");
+      handBack = postCallFollowUpHandBack(handBack.action, waiting, "draft");
+    }
+    if (handBack?.kind === "note") {
+      await recordOwnerNote(p.userId, {
+        description: handBack.description,
+        priority: handBack.priority,
+        agentId: handBack.agentId,
+        sourceId: p.context.sourceId,
+        sourceType: p.context.sourceType,
+      });
+    }
   }
 
   if (job.type === "adaptive_optimization") {

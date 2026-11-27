@@ -23,6 +23,8 @@ import {
   buildWorkspaceStreamContext,
   normalizePlan,
   WORKSPACE_FIELDS,
+  WORKSPACE_AUTONOMY_GUIDE,
+  WORKSPACE_AUTONOMY_OPTIONS,
   WORKSPACE_VIBE_OPTIONS,
   type ProposedAction,
   type ProposedChange,
@@ -785,6 +787,16 @@ router.post(
         }
         value = value.toLowerCase() === "true";
       }
+      if (field === "autonomy_level") {
+        // An unreadable value makes the Bot wait for everything. Refuse it here.
+        value = String(value).toLowerCase();
+        if (!(WORKSPACE_AUTONOMY_OPTIONS as readonly string[]).includes(value)) {
+          return res.status(400).json({
+            code: "BAD_REQUEST",
+            error: `Autonomy must be one of: ${WORKSPACE_AUTONOMY_GUIDE}.`,
+          });
+        }
+      }
       if (spec.kind === "vibe") {
         value = String(value).toLowerCase();
         if (!(WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(value as string)) {
@@ -1012,7 +1024,9 @@ router.post(
 // POST /api/agents/:id/workspace/run-action — execute an approved
 // communication action (email/text) the agent drafted in chat. Routes
 // through the existing Action Engine, which enforces per-agent tool
-// authorization + supervisor review. Outbound CALLS are intentionally NOT
+// authorization, the compliance screening for a text, and message review
+// for an email. A text goes as the owner approved it in chat: the review of
+// texts is for ones nobody read. Outbound CALLS are intentionally NOT
 // handled here — the client routes those to /api/outbound/dial so the
 // DNC/TCPA/quota gates run unchanged.
 router.post(

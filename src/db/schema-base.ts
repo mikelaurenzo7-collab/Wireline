@@ -217,10 +217,11 @@ export const settings = pgTable("wireline_settings", {
   /**
    * Tenant-wide default autonomy. Per-agent autonomy in `agents.autonomyLevel`
    * overrides this when set to anything other than "inherit". Values:
-   * "auto" — execute actions immediately; "draft" — queue for human review;
-   * "supervised" — auto-execute high-confidence, draft the rest.
+   * "auto" — act on its own (the default, migration 0201); "supervised" —
+   * check with the owner before a customer-facing send; "draft" — check
+   * before everything.
    */
-  autonomyLevel: text("autonomy_level").default("draft"),
+  autonomyLevel: text("autonomy_level").default("auto"),
   /** Opt-in: send a 1-question CSAT SMS after completed calls. */
   csatSmsEnabled: boolean("csat_sms_enabled").default(false),
   /**

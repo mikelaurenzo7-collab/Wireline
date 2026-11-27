@@ -124,7 +124,7 @@ function approvalTitle(status: string | null | undefined): string {
   switch ((status || "").toLowerCase()) {
     case "pending":
     case "open":
-      return "Approval waiting";
+      return "Waiting for you";
     case "in_progress":
       return "Task in progress";
     case "completed":
@@ -456,9 +456,12 @@ export default function BotLivePanel({
       {waitingApprovals.length ? (
         <p className={`${compact ? "mt-2" : "mt-3"} text-sm leading-6 text-foreground`}>
           <span className="font-semibold">
-            {waitingApprovals.length} approval{waitingApprovals.length === 1 ? "" : "s"} waiting
+            {waitingApprovals.length} thing{waitingApprovals.length === 1 ? "" : "s"}
           </span>
-          <span className="text-muted-foreground"> for your review.</span>
+          <span className="text-muted-foreground">
+            {" "}
+            need{waitingApprovals.length === 1 ? "s" : ""} you.
+          </span>
         </p>
       ) : null}
       {waitingApprovals.length ? (
@@ -466,7 +469,7 @@ export default function BotLivePanel({
           to="/approvals"
           className="mt-2 inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-primary hover:underline wl-focus-ring-halo"
         >
-          Review approvals
+          Open Needs You
         </Link>
       ) : null}
 

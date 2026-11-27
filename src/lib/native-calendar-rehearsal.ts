@@ -21,7 +21,7 @@ export async function nativeCalendarRehearsalContext(
       settings.booking_mode === "approval"
         ? "The owner chose approval: live booking requests remain pending until the owner approves them. Never describe a pending request as confirmed."
         : settings.booking_mode === "inherit"
-          ? "Calendar confirmation follows this Bot's permission. Ask for approval leaves the appointment pending until the owner approves it. Never describe a pending request as confirmed."
+          ? "Calendar confirmation follows this Bot's permission. A Bot set to check with the owner before everything leaves the appointment pending until the owner confirms it. Never describe a pending request as confirmed."
           : "The owner chose automatic booking: in live calls, check availability and book after the customer confirms the exact time. Do not ask for separate owner confirmation.",
       "This rehearsal has no live calendar access and creates no appointments. Practice collecting the customer's name, requested service, and preferred date and time. Name the timezone only when asked or when it resolves ambiguity. Ask what other times work before discussing owner follow-up. Describe the next step conditionally instead of claiming availability or a completed booking.",
     ].join(" ");

@@ -23,6 +23,7 @@ import { clampAgentCapacity, clampExtraAgentAddons } from "../lib/agent-capacity
 import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
 import { openAISipConfigured } from "../lib/voice/openai-sip-config";
 import { browserPreferenceEnvelope } from "../lib/server-owned-preferences";
+import { STORED_AUTONOMY_VALUES } from "../lib/bot-permission";
 
 const router = Router();
 
@@ -98,6 +99,8 @@ function clampRetentionDays(value: unknown): number | undefined {
   return Math.min(RETENTION_DAYS_MAX, Math.max(RETENTION_DAYS_MIN, days));
 }
 
+const WORKSPACE_AUTONOMY_VALUES: ReadonlySet<string> = new Set(STORED_AUTONOMY_VALUES);
+
 export function pickWritableSettings(
   update: Record<string, unknown>,
   isAccountHolder: boolean,
@@ -113,6 +116,12 @@ export function pickWritableSettings(
       // A non-numeric retention is dropped, not stored: leaving the existing
       // value alone is safer than writing NaN into the purge window.
       if (clamped !== undefined) filtered[key] = clamped;
+      continue;
+    }
+    if (key === "autonomyLevel") {
+      // A value the runtime cannot read makes every Bot wait for the owner.
+      // It is dropped, not stored, so the saved choice stays in force.
+      if (typeof value === "string" && WORKSPACE_AUTONOMY_VALUES.has(value)) filtered[key] = value;
       continue;
     }
     if (key === "maxAgents") {

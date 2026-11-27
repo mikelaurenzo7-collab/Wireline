@@ -38,7 +38,7 @@ export function createStudioSetupDrafts(ownerId: string | null) {
         markKey: defaultBotMarkKey(agentId),
         greeting: "",
         knowledge: "",
-        permission: "auto",
+        permission: "full",
       };
       entry = {
         saved,

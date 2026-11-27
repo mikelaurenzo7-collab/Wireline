@@ -59,7 +59,7 @@ Status: research and source-code audit as of 27 October 2026, against main at 36
 
 Keep the product simple for very small businesses. BotBound owns the conversation, phone and text channels, customer record, interaction history, follow-up queue, approvals, basic appointment flow, and permission policy. Connect business email and the Google Workspace or Microsoft 365 tools owners already use. Do not turn Connections into a catalogue of software companies.
 
-Build provider adapters behind BotBound business actions. The owner connects an account and chooses Full access, Auto, or Ask for approval. BotBound decides whether an action is allowed; the provider adapter only performs the narrow, named operation. A future provider must not receive unrestricted agent instructions or an arbitrary MCP tool surface.
+Build provider adapters behind BotBound business actions. The owner connects an account. The Bot then works on its own, which is the default, unless the owner asks it to check first: before it emails or texts a customer, or before it does anything. BotBound decides whether an action is allowed; the provider adapter only performs the narrow, named operation. A future provider must not receive unrestricted agent instructions or an arbitrary MCP tool surface.
 
 Marketing may present calls, SMS, outbound calling, email, and Computer as available capabilities, as directed by the owner. A workspace may still need to connect or configure its service before an action can run. Explain that setup in the relevant control; do not call a sold capability beta, unavailable, or “coming soon,” and do not imply carrier approval has already happened for a specific account.
 
@@ -112,9 +112,9 @@ P1 foundation; ship incrementally as each action is required:
 1. Define stable BotBound actions such as find a customer, record an interaction, check availability, create or change an appointment, prepare a follow-up, send an approved message, and hand off to a person. The action name and result stay the same when a provider changes.
 2. Give each provider adapter only the OAuth scopes and named operations that action needs. Read and write capability are separate; broad write scopes are not implied by connection.
 3. Apply the owner's permission mode in the BotBound policy layer before calling an adapter:
-   - Full access allows the supported, configured actions, subject to consent, safety, carrier, account and law requirements.
-   - Auto handles only defined low-risk actions and pauses for approval when a rule says review is required.
-   - Ask for approval holds the action for the owner.
+   - On its own (the default) allows the supported, configured actions, subject to consent, safety, carrier, account and law requirements.
+   - Check before it emails or texts a customer holds those two for the owner and runs the rest.
+   - Check before it does anything holds every action for the owner.
 4. Record who or what requested the action, the permission decision, provider, idempotency key, result and any approval. Make retries safe. Normalize provider failures so an outage never looks like success.
 5. Make disconnect/revocation stop new work promptly. Keep audit and delivery receipts; do not expose API keys or raw model traces to customers.
 6. Treat provider content and webhooks as untrusted input. Never let connected data expand the tool allowlist or override BotBound's permission policy. No arbitrary code execution or unrestricted MCP tools.
@@ -125,7 +125,7 @@ P1 foundation; ship incrementally as each action is required:
 | --- | --- | --- |
 | P0 | Remove beta and retired provider choices from customer setup; disable their action dispatch without deleting existing records. Remove customer-visible “private beta” copy. | Route, catalog, OAuth, webhook, agent-tool and legacy-grant tests prove there is no new connect or action path and owners can still disconnect. Identify every removed provider in the ship note. |
 | P1 | Keep and simplify Gmail/Google Workspace, Outlook/Microsoft 365, business calendar and file connections; ensure BotBound-native People, activity and approvals replace redundant CRM/team features. | Read/write scopes and permission tiers tested per action; customer screens show one clear connection path; no Google/Microsoft credential or file content leaks into analytics. |
-| P1 | Use one adapter interface and action policy for all providers. | Contract tests cover Full access, Auto, Ask, denied/revoked grants, retries, idempotency and provider failure. |
+| P1 | Use one adapter interface and action policy for all providers. | Contract tests cover working on its own, both check-first choices, denied/revoked grants, retries, idempotency and provider failure. |
 | P2 | Add one vertical adapter only after customer interviews or pilot behavior establish recurring demand. | Named target segment, an owner-approved use case, working non-beta write API, explicit provider and plan requirements, fees, support cost, revoke path, accessibility and support plan. |
 | P2 | Consider an event/action bridge to an automation service. | Starts with a small allowlist, visible permission and audit log, verified retry semantics, and no arbitrary remote tool execution. |
 

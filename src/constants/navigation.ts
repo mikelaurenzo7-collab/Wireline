@@ -191,13 +191,13 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   },
   {
     href: "/approvals",
-    title: "Approvals",
-    label: "Approvals",
-    shortLabel: "Approve",
+    title: "Needs You",
+    label: "Needs You",
+    shortLabel: "Needs You",
     eyebrow: "Operate",
-    description: "Review actions that need a human decision.",
+    description: "What only you can do: people who asked for you and messages to check.",
     icon: "CheckSquare",
-    // Approvals is an Inbox tab; a second More entry would split one queue.
+    // Needs You is an Inbox tab; a second More entry would split one queue.
     parentHref: "/inbox",
   },
   {

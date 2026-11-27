@@ -117,15 +117,15 @@ test("Permission rejects another Bot's receipt and confirms a safe retry", async
     });
   });
   await openSetup(page);
-  const permission = page.getByLabel("Permission", { exact: true });
+  const permission = page.getByLabel("How Your Bot Works", { exact: true });
   await expect(permission).toHaveValue("auto");
   await permission.selectOption("ask");
-  await expect(page.getByText(/Permission could not be confirmed\./)).toBeVisible();
+  await expect(page.getByText(/That change could not be confirmed\./)).toBeVisible();
   await expect(permission).toHaveValue("auto");
   expect(writes).toEqual([{ level: "ask" }]);
   await permission.selectOption("ask");
   await expect(permission).toHaveValue("ask");
-  await expect(page.getByText(/Permission could not be confirmed\./)).toHaveCount(0);
+  await expect(page.getByText(/That change could not be confirmed\./)).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Calendar settings", exact: true })).toHaveAttribute(
     "href",
     "/calendar?tab=availability",

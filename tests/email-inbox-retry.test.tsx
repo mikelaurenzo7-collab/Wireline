@@ -296,7 +296,7 @@ describe("email inbox operation recovery", () => {
     expect(tabStrip?.props.tabs).toEqual([
       { id: "email", label: "Email" },
       { id: "sms", label: "Texts" },
-      { id: "approvals", label: "Approvals" },
+      { id: "approvals", label: "Needs You" },
     ]);
     const sms = elements(tree).find((node) => node.type === "sms-threads");
     expect(sms?.props).toMatchObject({

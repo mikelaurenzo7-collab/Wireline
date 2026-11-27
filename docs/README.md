@@ -45,7 +45,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 
 - Public pages explain. Authenticated pages execute.
 - Create stays short. Workspace owns instructions, rehearsal, and setup details; Knowledge owns saved sources and reports.
-- Calls owns Lines, Inbox owns Approvals, Settings owns Billing, and Connections owns mailbox connections and optional tools.
+- Calls owns Lines, Inbox owns Needs You (what only the owner can do), Settings owns Billing, and Connections owns mailbox connections and optional tools.
 - Workspace is home. Overview and older roster routes remain compatibility entrances rather than competing dashboards.
 - Navigation comes from `src/constants/navigation.ts`: a compact desktop rail, a mobile dock, and More for secondary destinations.
 - Use labels, tabs, icons, state, and clear next actions instead of explanatory paragraphs on active work surfaces.

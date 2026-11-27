@@ -114,8 +114,8 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "approvals",
-    label: "Approvals",
-    keywords: "review post-call actions",
+    label: "Needs You",
+    keywords: "approvals review post-call actions follow-ups waiting",
     icon: CheckSquare,
     href: "/approvals",
     category: "Workspace",

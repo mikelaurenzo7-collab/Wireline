@@ -79,7 +79,7 @@ export default function SmsOutcomePanel({
       onStatusChangeRef.current?.(updatedStatus);
       setNotice(
         event.result.handoff
-          ? "A human follow-up is now in Approvals."
+          ? "A human follow-up is now in Needs You."
           : `Conversation marked ${OUTCOME_META[updatedStatus].label.toLowerCase()}.`,
       );
     });
@@ -253,7 +253,7 @@ export default function SmsOutcomePanel({
           className="mt-3"
           state="active"
           title="Human Follow-Up Is Active"
-          detail="This conversation remains owned in Approvals until completed or dismissed."
+          detail="This conversation stays in Needs You until completed or dismissed."
         />
       ) : null}
       {notice ? <p className="mt-2 text-xs text-muted-foreground">{notice}</p> : null}

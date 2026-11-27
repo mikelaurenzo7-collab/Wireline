@@ -307,9 +307,9 @@ export default function CalendarAvailabilityPanel({
                   change({ booking_mode: event.target.value as CalendarSettings["booking_mode"] })
                 }
               >
-                <option value="inherit">Follow each Bot’s permission</option>
-                <option value="automatic">Book automatically</option>
-                <option value="approval">Ask for approval</option>
+                <option value="automatic">Book on its own</option>
+                <option value="inherit">Follow how each Bot works</option>
+                <option value="approval">Check with me first</option>
               </NativeSelect>
               <p className="text-xs text-muted-foreground">
                 This setting applies to every Bot that can book on this calendar.{" "}
@@ -317,7 +317,7 @@ export default function CalendarAvailabilityPanel({
                   ? "Requests hold their time until you confirm or cancel them."
                   : settings.booking_mode === "automatic"
                     ? "Once a caller confirms an available time, the Bot can book it."
-                    : "Ask waits for your approval. Auto and Full book the time the caller confirms."}
+                    : "A Bot that works on its own books the time the caller confirms. One set to check with you before everything holds the time until you confirm."}
               </p>
             </div>
           </section>

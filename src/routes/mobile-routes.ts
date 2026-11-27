@@ -14,6 +14,7 @@
  * protected with inline `authenticateUser` so the default-deny authz gate
  * (scripts/generate-authz-matrix.ts) sees it as protected.
  */
+import { DEFAULT_NEW_BOT_AUTONOMY } from "../lib/bot-permission";
 import { Router, Response } from "express";
 import { randomUUID } from "node:crypto";
 import { eq, and, or, ne, sql, desc } from "drizzle-orm";
@@ -242,7 +243,7 @@ router.post(
           archetype: DEFAULT_BOT_ARCHETYPE,
           voiceId,
           voiceProvider: "openai",
-          autonomyLevel: "supervised",
+          autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,
           ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
           enabledTools,
           firstMessage: `Hi, this is ${name}. How can I help?`,

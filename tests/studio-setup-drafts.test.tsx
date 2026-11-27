@@ -278,16 +278,18 @@ describe("Studio inspector draft lifecycle", () => {
       path.endsWith("/permission") ? pending.promise : usual(path, options),
     );
     await mount();
+    // A Bot starts out working on its own; the owner asks it to check first.
     const original = field("bot-permission")!;
-    original.props.onChange!({ target: { value: "full" } });
+    expect(original.props.value).toBe("full");
+    original.props.onChange!({ target: { value: "ask" } });
     const saving = field("bot-permission")!;
     expect(saving.props.disabled).toBe(true);
-    expect(saving.props.value).toBe("auto");
-    original.props.onChange!({ target: { value: "ask" } });
+    expect(saving.props.value).toBe("full");
+    original.props.onChange!({ target: { value: "auto" } });
     expect(h.fetch.mock.calls.filter(([path]) => path.endsWith("/permission"))).toHaveLength(1);
 
-    pending.resolve(json({ id: "bot-a", permission: "full" }));
-    await vi.waitFor(() => expect(field("bot-permission")?.props.value).toBe("full"));
+    pending.resolve(json({ id: "bot-a", permission: "ask" }));
+    await vi.waitFor(() => expect(field("bot-permission")?.props.value).toBe("ask"));
     expect(field("bot-permission")?.props.disabled).toBe(false);
   });
 
@@ -302,27 +304,28 @@ describe("Studio inspector draft lifecycle", () => {
         return Promise.resolve(
           json(
             writes.length > 1
-              ? { id: "bot-a", permission: "full" }
+              ? { id: "bot-a", permission: "ask" }
               : kind === "missing"
                 ? {}
                 : kind === "malformed"
                   ? null
                   : {
                       id: kind === "wrong Bot" ? "bot-b" : "bot-a",
-                      permission: kind === "wrong permission" ? "ask" : "full",
+                      permission: kind === "wrong permission" ? "auto" : "ask",
                     },
           ),
         );
       });
       await mount();
-      change("bot-permission", "full");
+      change("bot-permission", "ask");
       await vi.waitFor(() => expect(drafts.read("bot-a").saving).toBe(false));
-      expect(drafts.read("bot-a").values.permission).toBe("auto");
-      expect(text(render())).toContain("Permission could not be confirmed");
+      // An unconfirmed save leaves the Bot working on its own, as it was.
+      expect(drafts.read("bot-a").values.permission).toBe("full");
+      expect(text(render())).toContain("That change could not be confirmed");
       await vi.waitFor(() => expect(field("bot-permission")?.props.disabled).toBe(false));
-      change("bot-permission", "full");
-      await vi.waitFor(() => expect(field("bot-permission")?.props.value).toBe("full"));
-      expect(writes).toEqual([{ level: "full" }, { level: "full" }]);
+      change("bot-permission", "ask");
+      await vi.waitFor(() => expect(field("bot-permission")?.props.value).toBe("ask"));
+      expect(writes).toEqual([{ level: "ask" }, { level: "ask" }]);
     },
   );
 

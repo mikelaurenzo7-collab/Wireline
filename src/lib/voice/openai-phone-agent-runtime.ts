@@ -356,8 +356,8 @@ export function composeOpenAIRealtimeInstructions(input: {
             tenantLevel: input.tenant.autonomyLevel,
             actionType: "send_email",
           }) === "draft"
-            ? "Customer email requires team approval. Offer to submit the request. Confirm the address once and use the enabled email tool. Tell the caller it is awaiting the team only after a saved draft receipt."
-            : "When a caller asks for email, describe submission only after the send result confirms it.",
+            ? "The owner asked to see customer emails and texts before they go out. Offer to pass the request to the team. For email, confirm the address once and use the enabled email tool. For a text, use the enabled text tool. Tell the caller it is with the team only after a saved draft receipt, and never say it was sent."
+            : "When a caller asks for an email or a text, send it with the enabled tool and describe it as sent only after the send result confirms it.",
           "CLOUD COMPUTER BROWSER: When a caller asks you to check a live website, portal, schedule, or web form not covered by direct tools, call start_computer_task and immediately tell the caller you are checking it in your browser now. Use check_computer_task to read progress. If a browser task pauses with status=needs_input and a pending question, ask the caller that exact question and pass their answer using reply_computer_task. Use stop_computer_task if the caller cancels the browser lookup.\n",
         ].join("\n");
 

@@ -1206,7 +1206,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       {error && !loading ? (
         <StatusNotice
           tone="destructive"
-          title="Approvals Unavailable"
+          title="Needs You Is Unavailable"
           action={
             <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
               Try Again
@@ -1229,7 +1229,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         actionableTasks.length === 0 ? (
           !loading && !error && !bucketUnavailable ? (
             <ApprovalEmptyCard
-              title={bucket === "compliance" ? "No Reviews Waiting" : "No Approvals Waiting"}
+              title={bucket === "compliance" ? "No Reviews Waiting" : "Nothing Needs You"}
             />
           ) : null
         ) : (

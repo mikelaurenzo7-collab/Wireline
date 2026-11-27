@@ -103,6 +103,42 @@ function actionResourceId(input: {
     .slice(0, 500);
 }
 
+/**
+ * Whether the Bot has already sent this kind of message on its own for the
+ * same source, or tried to, under other wording.
+ *
+ * The ledger key includes the wording, so a follow-up read from a transcript
+ * twice and worded differently is two actions to it. One call gets at most
+ * one message the Bot chose to send. Only an attempt recorded as never
+ * having reached a carrier ("retryable") leaves room for another. One still
+ * running, or one that failed some other way, may have been delivered, and
+ * that is no reason to send a second.
+ */
+export async function hasOtherAutonomousExecution(input: {
+  userId: string;
+  action: ActionItem;
+  sourceId: string;
+  sourceType: string;
+}): Promise<boolean> {
+  const own = actionResourceId({ ...input, phase: "auto" });
+  const prefix = ["auto", input.sourceType, input.sourceId, input.action.type, ""].join(":");
+  const rows = await drizzle
+    .select({ resourceId: schema.auditLog.resourceId, metadata: schema.auditLog.metadata })
+    .from(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.userId, input.userId),
+        eq(schema.auditLog.eventType, ACTION_EVENT_TYPE),
+        eq(schema.auditLog.resourceType, ACTION_RESOURCE_TYPE),
+        sql`starts_with(${schema.auditLog.resourceId}, ${prefix})`,
+      ),
+    )
+    .limit(50);
+  return rows.some(
+    (row) => row.resourceId !== own && metadataRecord(row.metadata).status !== "retryable",
+  );
+}
+
 function metadataRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
