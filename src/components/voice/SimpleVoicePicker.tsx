@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, Mic, Play, RotateCcw, Square, Volume2 } from "lucide-react";
+import { Check, Loader2, Play, RotateCcw, Square, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -23,10 +23,6 @@ type SimpleVoicePickerProps = {
   markKey?: BotMarkKey | null;
   /** The Bot's phone number, so owners can place a test call after cloning. */
   botPhone?: string | null;
-  /** Setup and the workspace can be mounted together; focus the local clone flow. */
-  cloneAnchorId?: string;
-  /** Compact setup already shows the clone card without a second entry point. */
-  showCloneShortcut?: boolean;
 };
 
 /** The voice callers actually hear when phone calls run on another provider. */
@@ -104,8 +100,6 @@ export default function SimpleVoicePicker({
   agentName,
   markKey,
   botPhone,
-  cloneAnchorId = LIVE_VOICE_ANCHOR_ID,
-  showCloneShortcut = true,
 }: SimpleVoicePickerProps) {
   const { user } = useAuth();
   const ownerId = user?.id ?? null;
@@ -130,7 +124,6 @@ export default function SimpleVoicePicker({
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [choicesOpen, setChoicesOpen] = useState(false);
   const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
   const [phoneCallReady, setPhoneCallReady] = useState<boolean | null>(null);
   const [rehearsalHearsPhoneVoice, setRehearsalHearsPhoneVoice] = useState(false);
@@ -165,7 +158,6 @@ export default function SimpleVoicePicker({
     setSelectedProvider(null);
     setNotice(null);
     setUndoVoice(null);
-    setChoicesOpen(false);
     setPhoneCall(null);
     setRehearsalHearsPhoneVoice(false);
     setCatalogVoice(null);
@@ -427,13 +419,6 @@ export default function SimpleVoicePicker({
       .catch(() => undefined);
   }
 
-  function scrollToClone() {
-    const target = document.getElementById(cloneAnchorId);
-    if (!target) return;
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
-    target.focus({ preventScroll: true });
-  }
-
   function renderVoice(voice: PickerVoice) {
     const selected =
       !clonedVoiceName &&
@@ -505,29 +490,15 @@ export default function SimpleVoicePicker({
   );
   const selectedIsAvailable = Boolean(selectedVoice);
 
-  useEffect(() => {
-    if (!loading && !selectedIsAvailable) setChoicesOpen(true);
-  }, [loading, selectedIsAvailable]);
-
   // The long list opens on the voice in use, without moving the page around it.
   useEffect(() => {
     const list = voiceListRef.current;
-    const card = choicesOpen ? list?.querySelector<HTMLElement>("[data-selected]") : null;
+    const card = list?.querySelector<HTMLElement>("[data-selected]");
     if (list && card) list.scrollTop = Math.max(0, card.offsetTop - 8);
-  }, [choicesOpen, phoneCatalog]);
+  }, [loading, phoneCatalog]);
 
   return (
     <div className="min-w-0 space-y-3">
-      {showCloneShortcut && ownerId && !clonedVoiceName ? (
-        <button
-          type="button"
-          onClick={scrollToClone}
-          className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-foreground transition-colors hover:bg-primary/10 wl-focus-ring-halo"
-        >
-          <Mic className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="min-w-0 flex-1">Clone Voice</span>
-        </button>
-      ) : null}
       <div aria-live="polite">
         {notice ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -566,75 +537,68 @@ export default function SimpleVoicePicker({
           Loading…
         </div>
       ) : (
-        <details
-          className="group rounded-xl border border-border bg-background"
-          open={choicesOpen}
-          onToggle={(event) => setChoicesOpen(event.currentTarget.open)}
+        // Every built-in voice is listed in view: owners looking for "a voice"
+        // must find the catalog first, with cloning offered after it.
+        <section
+          aria-labelledby={`voice-choices-${agentId}`}
+          className="min-w-0 space-y-3 rounded-xl border border-border bg-background p-2 sm:p-3"
         >
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-2.5 py-3 wl-focus-ring-halo sm:px-3">
-            <span className="min-w-0 flex-1">
-              <span className="block break-words text-sm font-semibold text-foreground">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-0.5">
+            <div className="min-w-0 flex-1">
+              <h4
+                id={`voice-choices-${agentId}`}
+                className="break-words text-sm font-semibold text-foreground"
+              >
                 {clonedVoiceName || catalogVoice
                   ? `Built-In Voice · ${selectedVoice?.name.split("·")[0].trim() || "Choose"}`
                   : selectedVoice
-                    ? selectedVoice.name.split("·")[0].trim()
+                    ? `Voice · ${selectedVoice.name.split("·")[0].trim()}`
                     : selectedVoiceId
                       ? "Unavailable Voice"
-                      : "Choose Voice"}
-              </span>
+                      : "Choose a Voice"}
+              </h4>
               {selectedVoice ? (
-                <span className="mt-0.5 block break-words text-xs text-muted-foreground">
+                <p className="mt-0.5 break-words text-xs text-muted-foreground">
                   {selectedVoice.name.split("·").slice(1).join("·").trim()}
-                </span>
+                </p>
               ) : null}
-            </span>
-            <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
-              <span className="hidden sm:inline">Change Voice</span>
-              <ChevronDown
-                className="size-4 transition-transform group-open:rotate-180"
-                aria-hidden="true"
-              />
-            </span>
-          </summary>
-          <div className="min-w-0 space-y-3 border-t border-border p-2 sm:p-3">
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span>{builtInVoices.length} Built-In Voices</span>
-              <span>
-                {clonedVoiceName ? "Choosing one replaces your clone." : "Saves when you pick."}
-              </span>
             </div>
-            {phoneCatalog ? (
-              <div role="group" aria-label="Filter Voices" className="flex flex-wrap gap-1.5">
-                {VOICE_FILTERS.map((filter) => (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    aria-pressed={voiceFilter === filter.id}
-                    onClick={() => setVoiceFilter(filter.id)}
-                    className={`min-h-11 rounded-full border px-4 text-xs font-semibold transition-colors wl-focus-ring-halo ${
-                      voiceFilter === filter.id
-                        ? "border-primary/40 bg-primary/5 text-foreground"
-                        : "border-border bg-background text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <div
-              ref={voiceListRef}
-              className={`grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2 ${
-                // The padding keeps a card's focus ring from being cut off at the list's edge.
-                phoneCatalog
-                  ? "relative -mx-1 max-h-[26rem] overflow-y-auto overscroll-contain p-1"
-                  : ""
-              }`}
-            >
-              {visibleVoices.map(renderVoice)}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              {builtInVoices.length} Built-In Voices ·{" "}
+              {clonedVoiceName ? "Choosing one replaces your clone." : "Saves when you pick."}
+            </p>
           </div>
-        </details>
+          {phoneCatalog ? (
+            <div role="group" aria-label="Filter Voices" className="flex flex-wrap gap-1.5">
+              {VOICE_FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  aria-pressed={voiceFilter === filter.id}
+                  onClick={() => setVoiceFilter(filter.id)}
+                  className={`min-h-11 rounded-full border px-4 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+                    voiceFilter === filter.id
+                      ? "border-primary/40 bg-primary/5 text-foreground"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div
+            ref={voiceListRef}
+            className={`grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2 ${
+              // The padding keeps a card's focus ring from being cut off at the list's edge.
+              phoneCatalog
+                ? "relative -mx-1 max-h-[26rem] overflow-y-auto overscroll-contain p-1"
+                : ""
+            }`}
+          >
+            {visibleVoices.map(renderVoice)}
+          </div>
+        </section>
       )}
 
       {!loading && ownerId ? (
@@ -721,7 +685,7 @@ export default function SimpleVoicePicker({
           agentName={agentName}
           stockVoiceId={phoneCall?.voice ?? selectedVoiceId}
           botPhone={botPhone}
-          anchorId={cloneAnchorId}
+          anchorId={LIVE_VOICE_ANCHOR_ID}
           onActiveVoiceChange={handleActiveClone}
         />
       ) : null}

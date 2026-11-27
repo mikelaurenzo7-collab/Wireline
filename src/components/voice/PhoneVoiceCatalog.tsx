@@ -194,8 +194,13 @@ export default function PhoneVoiceCatalog({
         if (!expanded) stop();
       }}
     >
-      <summary className="min-h-12 cursor-pointer rounded-xl px-3 py-3 text-sm font-semibold wl-focus-ring-halo">
-        {selected ? `Phone Voice · ${selected.name}` : "Browse More Phone Voices"}
+      <summary className="min-h-12 cursor-pointer rounded-xl px-3 py-3 wl-focus-ring-halo">
+        <span className="block text-sm font-semibold text-foreground">
+          {selected ? `Voice Library · ${selected.name}` : "Voice Library"}
+        </span>
+        <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+          Search thousands more voices by name, language, or accent.
+        </span>
       </summary>
       <div className="space-y-3 border-t border-border p-3">
         <div className="flex flex-wrap gap-2">

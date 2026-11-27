@@ -239,7 +239,7 @@ async function openVoice(page: Page) {
   await page.goto("/studio?agent=voice-pilot-bot&section=setup");
   const voice = page.getByRole("region", { name: "Phone Voice", exact: true });
   await expect(voice).toBeVisible();
-  await expect(voice.locator("summary").filter({ hasText: "Change Voice" })).toContainText("Marin");
+  await expect(voice.getByRole("heading", { name: /^Voice · / })).toContainText("Marin");
   return voice;
 }
 
@@ -337,7 +337,7 @@ test("owners can search, page and select a public ElevenLabs phone voice from Se
     await route.fulfill({ json: { success: true, catalogVoice: sample } });
   });
   const voice = await openVoice(page);
-  await voice.locator("summary").filter({ hasText: "Browse More Phone Voices" }).click();
+  await voice.locator("summary").filter({ hasText: "Voice Library" }).click();
   await expect(voice.getByLabel("Voice Collection")).toHaveValue("library");
   await voice.getByLabel("Search Phone Voices").fill("warm");
   // Each voice has a select button named for the voice and a play button
@@ -358,8 +358,7 @@ test("closed custom-voice pilot stays hidden while all ten OpenAI calling voices
   const state = await mockPilot(page, { available: false });
   const voice = await openVoice(page);
   await expect(voice.getByRole("region", { name: "Private custom voice previews" })).toHaveCount(0);
-  await voice.locator("summary").filter({ hasText: "Change Voice" }).click();
-  await expect(voice.getByText("10 Built-In Voices", { exact: true })).toBeVisible();
+  await expect(voice.getByText(/^10 Built-In Voices/)).toBeVisible();
   await expect(voice.locator("button[aria-pressed]")).toHaveCount(10);
   await expect(voice.getByRole("button", { name: "Marin Selected", exact: true })).toHaveAttribute(
     "aria-pressed",
@@ -398,7 +397,6 @@ test("a blocked stock sample can play on another tap without fetching it again",
     return route.fulfill({ contentType: "audio/wav", body: syntheticWav() });
   });
   const voice = await openVoice(page);
-  await voice.locator("summary").filter({ hasText: "Change Voice" }).click();
   const play = voice.getByRole("button", { name: "Play Marin sample", exact: true });
   await play.click();
   await expect(voice.getByText("The sample is ready. Select Play again to listen.")).toBeVisible();
@@ -471,7 +469,7 @@ test("native voice pilot uploads, reviews, previews, and deletes without changin
   }).toEqual({ creates: 1, reviews: 1, previews: 1, deletes: 1 });
   expect(state.callingVoiceChanges).toBe(0);
   expect(await microphones(page)).toBe(0);
-  await expect(voice.locator("summary").filter({ hasText: "Change Voice" })).toContainText("Marin");
+  await expect(voice.getByRole("heading", { name: /^Voice · / })).toContainText("Marin");
 });
 
 for (const enlarged of [false, true]) {
