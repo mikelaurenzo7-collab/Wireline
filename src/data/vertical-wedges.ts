@@ -335,11 +335,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What Can Its Computer Do?",
-        a: "Give it a task such as comparing services, finding opening hours, or summarizing a webpage. Your Bot can research online and return a useful result. Tasks use your plan's AI allowance, and actions that need approval wait for your review.",
+        a: "Give it a task such as comparing services, finding opening hours, or summarizing a webpage. Your Bot can research online and return a useful result. Computer time comes out of your plan's shared work allowance, and actions that need approval wait for your review.",
       },
       {
         q: "Can I Start with Calls and Add Email Later?",
-        a: "Yes. Start with Calls, then contact us for an email setup and plan review. Activate your Bot's managed mailbox after that review is complete.",
+        a: "Yes. Every plan includes an email address for your Bot, so you can start with calls and turn email on when you are ready.",
       },
       {
         q: "What Can't It Do?",

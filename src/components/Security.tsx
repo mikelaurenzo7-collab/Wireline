@@ -169,7 +169,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     title: "Call Permissions and Disclosures",
     items: [
       "Your configured disclosures and recording choices apply to calls. Enable recording only with the permissions your use requires.",
-      "Before an outgoing call BotBound checks the account's block list and the calling hours where the recipient is. Sales calls are also screened against the national do-not-call list, and are held when that screening is unavailable. The Bot says it is an AI assistant, and a sales call says how to stop further calls.",
+      "Before an outgoing call BotBound checks the account's block list and the calling hours where the recipient is. Campaigns, imported lists, and automated sales sequences wait until screening against the national do-not-call list is connected. One-at-a-time sales calls and texts go out after you confirm you are responsible for permission and Do Not Call rules, and are checked against that list once you connect your registry account. The Bot says it is an AI assistant, and a sales call says how to stop further calls.",
     ],
   },
   {

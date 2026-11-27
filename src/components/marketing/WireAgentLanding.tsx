@@ -66,7 +66,7 @@ const WORKSPACE_STEPS = [
     step: "03",
     title: "Supervise every call, email, and browser task",
     detail:
-      "Review transcripts, sources, and browser steps in one calm workspace. Step in live with one click.",
+      "Review transcripts, sources, and browser steps in one calm workspace. Take control of a browser task with one click.",
     Icon: ShieldCheck,
   },
 ] as const;

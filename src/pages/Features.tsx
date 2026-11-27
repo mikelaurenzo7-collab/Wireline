@@ -42,7 +42,7 @@ const PILLARS: readonly Pillar[] = [
     points: [
       "BotBound address or custom domain",
       "Gmail and Outlook connection support",
-      "Rule-based auto-reply or draft review",
+      "One inbox for every thread and reply",
     ],
     Icon: Mail,
   },
