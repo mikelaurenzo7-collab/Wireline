@@ -101,7 +101,7 @@ describe("product documentation and compatibility contract", () => {
     expect(roadmap).toContain("Material-style dark SaaS");
     expect(vendors).toContain("LiveAvatar");
     expect(vendors).toContain("Customer surfaces must never name vendors");
-    expect(theme).toContain("wireline-theme");
+    expect(theme).toContain("botbound-theme");
     expect(themeLight).toContain(":root.light");
   });
 

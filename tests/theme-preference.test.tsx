@@ -42,7 +42,11 @@ vi.mock("react", async (original) => ({
 
 const preload = readFileSync("index.html", "utf8").match(/<script>\s*([\s\S]*?)<\/script>/)![1];
 const colors = { dark: "#0A0A0E", light: "#FFFFFF" };
+const THEME_KEY = "botbound-theme";
+const RETIRED_KEY = "wireline-theme";
 let stored: string | null;
+/** A choice saved under the key used while dark was the starting appearance. */
+let retired: string | null;
 let storageFailure: "getter" | "read" | "write" | null;
 let systemDark: boolean;
 let mediaChanged: (() => void) | undefined;
@@ -51,13 +55,17 @@ let meta: Record<string, { content: string }>;
 let rootStyle: { colorScheme?: string };
 let browser: object;
 const storage = {
-  getItem: vi.fn(() => {
+  getItem: vi.fn((key: string) => {
     if (storageFailure === "read") throw new Error("Storage blocked");
-    return stored;
+    return key === THEME_KEY ? stored : key === RETIRED_KEY ? retired : null;
   }),
-  setItem: vi.fn((_key: string, value: string) => {
+  setItem: vi.fn((key: string, value: string) => {
     if (storageFailure === "write") throw new Error("Storage blocked");
-    stored = value;
+    if (key === THEME_KEY) stored = value;
+  }),
+  removeItem: vi.fn((key: string) => {
+    if (storageFailure === "write") throw new Error("Storage blocked");
+    if (key === RETIRED_KEY) retired = null;
   }),
 };
 
@@ -77,6 +85,7 @@ beforeEach(() => {
   h.effects = [];
   h.cleanups = [];
   stored = null;
+  retired = null;
   storageFailure = null;
   systemDark = false;
   mediaChanged = undefined;
@@ -184,8 +193,32 @@ describe("canonical theme preference", () => {
     systemDark = true;
     mediaChanged!();
     expect(render().resolvedTheme).toBe("light");
-    expect(storage.setItem).toHaveBeenCalledExactlyOnceWith("wireline-theme", "light");
+    expect(storage.setItem).toHaveBeenCalledExactlyOnceWith(THEME_KEY, "light");
   });
+
+  it.each(["dark", "system"])(
+    "starts on light once in a browser that saved %s before light was the starting appearance",
+    (saved) => {
+      retired = saved;
+      systemDark = true;
+      let preloadLight = false;
+      runInNewContext(preload, {
+        window: browser,
+        localStorage: storage,
+        document: { documentElement: { classList: { add: () => (preloadLight = true) } } },
+      });
+      const value = render();
+      expect(preloadLight).toBe(true);
+      expect(value.theme).toBe("light");
+      expect(value.resolvedTheme).toBe("light");
+      // The old choice is cleared, and what the owner picks now is kept.
+      expect(storage.removeItem).toHaveBeenCalledWith(RETIRED_KEY);
+      expect(retired).toBeNull();
+      value.setTheme("dark");
+      expect(storage.setItem).toHaveBeenCalledExactlyOnceWith(THEME_KEY, "dark");
+      expect(render().resolvedTheme).toBe("dark");
+    },
+  );
 
   it("keeps a new selection usable when storage writes are blocked", () => {
     storageFailure = "write";

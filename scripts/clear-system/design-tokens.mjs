@@ -72,8 +72,8 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   mustInclude(
     "public/static-legal.css",
     legalCss,
-    /--wireline-color-action-primary-default: #A78BFA/,
-    "static legal pages must use canonical tokens",
+    /--wireline-color-action-primary-default: #7040d7/i,
+    "static legal pages must use the canonical light tokens",
   );
   mustInclude(
     "public/site.webmanifest",

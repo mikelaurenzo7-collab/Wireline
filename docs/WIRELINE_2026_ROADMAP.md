@@ -118,7 +118,7 @@ Wireline **does not** use generic Material-style dark SaaS palettes (pure black 
 
 - **Ink (default):** Generated tokens — product default.
 - **Paper (optional):** `src/styles/theme-light.css` — a cool near-white surface with a deeper, more saturated violet action color for high-glare environments.
-- Toggle: **Settings → Customization → Appearance** (`ThemeProvider`, `localStorage: wireline-theme`).
+- Toggle: **Settings → Customization → Appearance** (`ThemeProvider`, `localStorage: botbound-theme`).
 
 **Accessibility:** WCAG AA contrast on Ink and Paper; 44px touch targets; visible focus; icon + text status labels.
 

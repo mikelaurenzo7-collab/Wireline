@@ -122,7 +122,7 @@ router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, 
       ? `<strong>${escapeHtml(target.email)}</strong> will stop receiving marketing email from this sender.`
       : `<strong>${escapeHtml(target.email)}</strong> will stop receiving BotBound product &amp; billing reminders. You'll still get essential account email such as security notices and billing receipts.`;
   const confirm = `
-    <p style="margin:0;line-height:1.65;color:#B6B1C6;font-size:14px;">${body}</p>
+    <p style="margin:0;line-height:1.65;color:#50545C;font-size:14px;">${body}</p>
     <form method="post" action="/api/email/unsubscribe?token=${encodeURIComponent(token)}" style="margin:18px 0 0;">
       <button type="submit" style="display:inline-block;background:#7040D7;color:#FFFFFF;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;">Unsubscribe</button>
     </form>`;
@@ -134,13 +134,13 @@ function renderPage(title: string, body: string): string {
 <html lang="en"><head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<meta name="color-scheme" content="dark" />
+<meta name="color-scheme" content="light" />
 <title>${escapeHtml(title)} · BotBound</title></head>
-<body style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#0A0A0E;color:#F5F4F8;">
-  <div style="max-width:480px;margin:80px auto;padding:32px;background:#141319;border-radius:16px;border:1px solid #262430;box-shadow:0 18px 60px rgba(0,0,0,.28);">
-    <div style="margin-bottom:22px;font-size:15px;font-weight:700;letter-spacing:-.02em;">Bot<span style="color:#C4B5FD;">Bound</span></div>
+<body style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#F8F9FA;color:#171717;">
+  <div style="max-width:480px;margin:80px auto;padding:32px;background:#FFFFFF;border-radius:16px;border:1px solid #D9DDE3;box-shadow:0 18px 60px rgba(23,23,23,.08);">
+    <div style="margin-bottom:22px;font-size:15px;font-weight:700;letter-spacing:-.02em;">Bot<span style="color:#7040D7;">Bound</span></div>
     <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;letter-spacing:-.025em;">${escapeHtml(title)}</h1>
-    <p style="margin:0;line-height:1.65;color:#B6B1C6;font-size:14px;">${body}</p>
+    <p style="margin:0;line-height:1.65;color:#50545C;font-size:14px;">${body}</p>
   </div>
 </body></html>`;
 }
