@@ -289,8 +289,9 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       const knowledgePage = read("src/pages/KnowledgePage.tsx");
       const knowledgeEditor = read("src/components/KnowledgeBaseClaude.tsx");
 
-      expect(knowledgePage).toContain("<KnowledgeQuickAdd");
+      expect(knowledgePage).not.toContain("<KnowledgeQuickAdd");
       expect(knowledgePage).toContain("<WebsiteKnowledgeImport");
+      expect(knowledgePage).toContain("<AboutYouMemories");
       expect(knowledgePage).toContain("<KnowledgeBaseClaude");
       expect(knowledgePage).toContain("Choose a Bot");
       expect(knowledgePage).toContain('<WorkspacePageIntro title="Knowledge" size="compact"');

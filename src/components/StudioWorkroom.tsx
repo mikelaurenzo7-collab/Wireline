@@ -853,7 +853,16 @@ const StudioWorkroom = forwardRef<
                     </div>
                   ) : null}
                 </div>
-              ) : null}
+              ) : (
+                // A new conversation says what this chat is for. Nothing is sent.
+                <div className="flex items-start gap-3 pt-2" data-studio-chat-empty>
+                  <BotMark seed={agentId} name={agentName} markKey={markKey} size={28} decorative />
+                  <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+                    Tell me about your business, change how I work, or give me a task. What you
+                    teach me is saved to Knowledge.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 

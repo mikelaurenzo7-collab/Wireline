@@ -142,6 +142,28 @@ describe("reviewable Studio Build plans", () => {
     ]);
   });
 
+  it("offers a private About You note only for something about the owner", () => {
+    const { system } = buildWorkspaceStreamContext({
+      userMessage: "Remember that I like short updates.",
+      history: [],
+      agent: { memories: ["I work in Central time."] },
+      recentCalls: [],
+    });
+    expect(system).toContain("An owner_memory is something private about the Account Holder");
+    expect(system).toContain("in Knowledge under About You");
+    const plan = normalizePlan({
+      config_changes: [
+        { field: "owner_memory", value: "I like short updates." },
+        { field: "owner_memory", value: "I like short updates." },
+        { field: "owner_memory", value: "x".repeat(900) },
+      ],
+    });
+    expect(plan.changes.map((change) => [change.label, change.value.length])).toEqual([
+      ["About you", 21],
+      ["About you", 500],
+    ]);
+  });
+
   it("drops malformed capabilities and settings rather than showing unusable proposals", () => {
     expect(
       normalizePlan({

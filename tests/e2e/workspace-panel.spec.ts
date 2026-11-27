@@ -247,8 +247,8 @@ test("the desktop roster opens each Bot's own work and its identity details", as
     "href",
     `/knowledge?agent=${bots[0].id}`,
   );
-  await panel.getByText("Memory", { exact: true }).click();
-  await expect(panel.getByRole("textbox", { name: "Remember this" })).toBeVisible();
+  // Notes about the owner live in Knowledge under About You, not in Details.
+  await expect(panel.getByText("Memory", { exact: true })).toHaveCount(0);
   await expect(panel.getByText("Automations", { exact: true })).toHaveCount(0);
   await expect(panel.getByRole("link", { name: /Reports/ })).toHaveAttribute(
     "href",

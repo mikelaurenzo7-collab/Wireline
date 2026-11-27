@@ -6,7 +6,6 @@ export type StudioSetupValues = {
   tone: string;
   markKey: BotMarkKey;
   greeting: string;
-  knowledge: string;
   permission: BotPermissionLevel;
 };
 type EditableValues = Omit<StudioSetupValues, "permission">;
@@ -37,7 +36,6 @@ export function createStudioSetupDrafts(ownerId: string | null) {
         tone: "Clear",
         markKey: defaultBotMarkKey(agentId),
         greeting: "",
-        knowledge: "",
         permission: "auto",
       };
       entry = {
@@ -97,13 +95,6 @@ export function createStudioSetupDrafts(ownerId: string | null) {
       if (value === entry.saved[field]) delete entry.edits[field];
       else entry.edits[field] = value;
       publish(agentId, entry);
-    },
-    seedKnowledge(agentId: string, knowledge: string) {
-      const entry = entryFor(agentId);
-      if (knowledge && entry.edits.knowledge === undefined && !entry.snapshot.saving) {
-        entry.edits.knowledge = knowledge;
-        publish(agentId, entry);
-      }
     },
     load(agentId: string, values: StudioSetupValues, startedRevision: number) {
       const entry = entryFor(agentId);

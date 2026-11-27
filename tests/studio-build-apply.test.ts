@@ -5,6 +5,7 @@ const h = vi.hoisted(() => ({
   routes: new Map<string, Handler>(),
   rules: [] as string[],
   facts: [] as string[],
+  memories: [] as Array<{ user: string; agent: string; content: string }>,
   firstMessage: "Original greeting",
   personality: "Protect private information.",
   owns: true,
@@ -53,6 +54,16 @@ vi.mock("../src/lib/agent-ownership", () => ({
   }),
 }));
 vi.mock("../src/lib/action-engine", () => ({ executeAction: h.executeAction }));
+vi.mock("../src/lib/owner-memory-store", () => ({
+  loadOwnerMemories: vi.fn(async () => []),
+  changeOwnerMemory: vi.fn(),
+  addOwnerMemoryInTransaction: vi.fn(
+    async (tx: unknown, user: string, agent: string, content: string) => {
+      expect(tx).toBeTruthy();
+      h.memories.push({ user, agent, content });
+    },
+  ),
+}));
 vi.mock("../src/lib/server-context", async () => {
   const { getTableName } = await import("drizzle-orm");
   const { PgDialect } = await import("drizzle-orm/pg-core");
@@ -184,6 +195,7 @@ async function apply(field: string, value: string) {
 beforeEach(() => {
   h.rules = ["Keep the caller's information private.", "Opening greeting: Old Studio greeting"];
   h.facts = ["We serve Austin and Round Rock."];
+  h.memories = [];
   h.firstMessage = "Original greeting";
   h.personality = "Protect private information.";
   h.owns = true;
@@ -226,6 +238,18 @@ describe("explicit Studio proposal application", () => {
       field: "business_fact",
     });
     expect(h.facts).toEqual(["We serve Austin and Round Rock.", "Service calls are $89."]);
+  });
+
+  it("keeps a note about the owner private, in the Bot's locked transaction", async () => {
+    expect(await apply("owner_memory", "I like short updates.")).toMatchObject({
+      success: true,
+      field: "owner_memory",
+    });
+    expect(h.memories).toEqual([
+      { user: "tenant", agent: "bot", content: "I like short updates." },
+    ]);
+    expect(h.facts).not.toContain("I like short updates.");
+    expect(h.rules).not.toContain("I like short updates.");
   });
 
   it("removes a stale Studio override when approving a new Build greeting", async () => {

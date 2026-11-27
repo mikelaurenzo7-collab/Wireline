@@ -53,7 +53,11 @@ import {
   storedStudioMessageMetadata,
 } from "../lib/studio-proposal-state";
 
-import { loadOwnerMemories, changeOwnerMemory } from "../lib/owner-memory-store";
+import {
+  addOwnerMemoryInTransaction,
+  changeOwnerMemory,
+  loadOwnerMemories,
+} from "../lib/owner-memory-store";
 import { ownerMemorySchema, ownerMemoryIdSchema } from "../lib/owner-memory";
 import { humanHandoffProblem, normalizeHandoffPhone } from "../lib/human-handoff-settings";
 import { withoutCarrierVendorName } from "../lib/sms-customer-errors";
@@ -836,7 +840,11 @@ router.post(
           value: rawValue.trim(),
         });
         if (review.metadata.savedProposalKeys.includes(review.ref.key)) return;
-        if (spec.kind === "knowledge") {
+        if (spec.kind === "memory") {
+          // The same private list hands-free "remember" and Knowledge > About
+          // You read; this transaction already holds the Bot's row lock.
+          await addOwnerMemoryInTransaction(tx, req.user.id, agentId, String(value));
+        } else if (spec.kind === "knowledge") {
           // A fact the owner told the chat joins Knowledge once, like a fact
           // typed anywhere else; the index sweep picks it up from there.
           const [existing] = await tx

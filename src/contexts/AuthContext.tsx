@@ -12,14 +12,11 @@ import { AUTH_SESSION_EXPIRED_EVENT, refreshSessionIfNeeded } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";
 import { clearStudioLastAgentId } from "../lib/studio-agent-preference";
-import {
-  setCreateBriefRecoveryOwner,
-  suspendCreateBriefRecovery,
-} from "../lib/create-brief-recovery";
+import { setSignedInOwner, suspendSignedInOwner } from "../lib/signed-in-owner";
 import { setTypedRehearsalOwner } from "../lib/typed-rehearsal-history";
 
 function setPrivateStudioOwner(userId: string | null): void {
-  setCreateBriefRecoveryOwner(userId);
+  setSignedInOwner(userId);
   setTypedRehearsalOwner(userId);
 }
 
@@ -191,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!sessionOptional && !cancelled) setLoading(true);
-      suspendCreateBriefRecovery();
+      suspendSignedInOwner();
       try {
         if (!migratedRef.current) {
           migratedRef.current = true;

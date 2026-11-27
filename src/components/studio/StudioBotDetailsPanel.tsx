@@ -1,6 +1,4 @@
-import { useState } from "react";
-import StudioMemoryEditor from "./StudioMemoryEditor";
-import { BookOpen, Brain, CalendarClock, ChevronRight, Mail, Phone } from "lucide-react";
+import { BookOpen, CalendarClock, ChevronRight, Mail, Phone } from "lucide-react";
 import { Link } from "react-router";
 
 import BotMark from "../BotMark";
@@ -16,7 +14,6 @@ type Props = {
 };
 
 export default function StudioBotDetailsPanel({ agent, phoneLookupDegraded, onEmail }: Props) {
-  const [memoryOpen, setMemoryOpen] = useState(false);
   const lineStatus = agentLineStatus(agent, phoneLookupDegraded);
   const phoneDescription =
     lineStatus === "live"
@@ -60,28 +57,10 @@ export default function StudioBotDetailsPanel({ agent, phoneLookupDegraded, onEm
             <BookOpen size={18} aria-hidden="true" />
             <span>
               <strong>Knowledge</strong>
-              <small>Sources, facts, and answers</small>
+              <small>What {agent.name} knows, and about you</small>
             </span>
             <ChevronRight size={16} aria-hidden="true" />
           </Link>
-          <details
-            className="wl-bot-details-disclosure"
-            onToggle={(event) => {
-              if (event.currentTarget.open) setMemoryOpen(true);
-            }}
-          >
-            <summary className="wl-bot-details-row wl-focus-ring-halo">
-              <Brain size={18} aria-hidden="true" />
-              <span>
-                <strong>Memory</strong>
-                <small>Notes for chat and computer tasks</small>
-              </span>
-              <ChevronRight size={16} aria-hidden="true" />
-            </summary>
-            {memoryOpen ? (
-              <StudioMemoryEditor key={agent.id} agentId={agent.id} agentName={agent.name} />
-            ) : null}
-          </details>
           {/* A row for what exists. It was an "Automations" disclosure whose
               only content was this link and a note that the feature it named
               was not available. */}

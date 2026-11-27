@@ -63,7 +63,8 @@ export type WorkspaceFieldKey =
   | "auto_zoom_link"
   | "autonomy_level"
   | "operating_rule"
-  | "business_fact";
+  | "business_fact"
+  | "owner_memory";
 
 interface FieldSpec {
   /** Drizzle column on `schema.agents`; null for an additive rule or fact. */
@@ -82,7 +83,8 @@ interface FieldSpec {
     | "autonomyLevel"
     | null;
   label: string;
-  kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url" | "directive" | "knowledge";
+  kind:
+    "text" | "vibe" | "phone" | "email" | "boolean" | "url" | "directive" | "knowledge" | "memory";
   maxLen: number;
 }
 
@@ -91,6 +93,9 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
   // What the owner tells the chat about the business is saved to Knowledge,
   // so talking to the Bot is the one way to teach it.
   business_fact: { column: null, label: "Knowledge fact", kind: "knowledge", maxLen: 2000 },
+  // A private note about the owner themselves, used in this chat and computer
+  // tasks and never with customers.
+  owner_memory: { column: null, label: "About you", kind: "memory", maxLen: 500 },
   first_message: {
     column: "firstMessage",
     label: "Greeting (first message)",
@@ -442,6 +447,7 @@ Rules:
 - For personality_vibe, value MUST be one of: warm, playful, authoritative.
 - For autonomy_level, value MUST be one of: ${WORKSPACE_AUTONOMY_GUIDE}. A Bot starts on auto: it works on its own and decides when to check with the Account Holder. Propose full only when they ask for it never to check, and supervised or draft only when they ask it to check first.
 - For explicit new operating rules, include one operating_rule proposal per distinct instruction. This appends rules without replacing existing rules. Describe only the changes included in the proposal cards. If the Account Holder asks to replace or edit an existing rule, explain that this chat cannot do that; direct them to Knowledge → Rules to edit the current rule. Do not propose an additive operating_rule as a replacement.
+- An owner_memory is something private about the Account Holder themselves (how they like updates, their time zone, who they are). It is used only in this chat and computer tasks, never with customers. Propose one only when they ask you to remember something about them.
 - A business_fact is what you know (e.g. "Service calls are $89."); an operating_rule is how you must behave (e.g. "Never quote a repair price."). Write each business_fact as one short standalone sentence in the Account Holder's terms. Skip facts already in Saved business facts. If a new fact contradicts a saved one (a new price, new hours), do not propose it; tell them to edit the saved fact in Knowledge so you never hold two answers. Saving adds it to Knowledge, where they can review, edit, or remove anything you know.
 - Approving transfer_phone turns on live transfer: callers who ask for a person are transferred to that number. Say so in that change's summary.
 - Never claim a proposal has been saved or an external action has happened. Saving and dispatch require separate approval.
@@ -560,7 +566,7 @@ export function normalizePlan(
       const key = field as WorkspaceFieldKey;
       const value = validateFieldValue(key, (c as Record<string, unknown>).value);
       if (value === null) continue;
-      if (key === "operating_rule" || key === "business_fact") {
+      if (key === "operating_rule" || key === "business_fact" || key === "owner_memory") {
         // Rules and facts are additive: keep each distinct one reviewable.
         const additiveKey = `${key}:${value}`;
         if (seenRules.has(additiveKey)) continue;
