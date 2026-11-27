@@ -363,7 +363,7 @@ export default function CallDeliverySettings({
               <p className="text-xs leading-5 text-muted-foreground">
                 No business name is set, so the greeting cannot name your business.{" "}
                 <Link
-                  to="/settings/customization"
+                  to="/phone?tab=setup#company-identity"
                   className="font-medium text-primary hover:underline"
                 >
                   Set Business Name

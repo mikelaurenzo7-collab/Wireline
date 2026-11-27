@@ -207,7 +207,7 @@ describe("the greeting on incoming calls", () => {
       "No business name is set, so the greeting cannot name your business.",
     );
     const link = nodes.find((node) => text(node) === "Set Business Name")!;
-    expect(link.props.to).toBe("/settings/customization");
+    expect(link.props.to).toBe("/phone?tab=setup#company-identity");
     greeting = preview;
     expect(render().some((node) => text(node) === "Set Business Name")).toBe(false);
   });
