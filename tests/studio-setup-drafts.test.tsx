@@ -321,7 +321,7 @@ describe("Studio inspector draft lifecycle", () => {
       await vi.waitFor(() => expect(drafts.read("bot-a").saving).toBe(false));
       // An unconfirmed save leaves the Bot working on its own, as it was.
       expect(drafts.read("bot-a").values.permission).toBe("full");
-      expect(text(render())).toContain("Permission could not be confirmed");
+      expect(text(render())).toContain("That change could not be confirmed");
       await vi.waitFor(() => expect(field("bot-permission")?.props.disabled).toBe(false));
       change("bot-permission", "ask");
       await vi.waitFor(() => expect(field("bot-permission")?.props.value).toBe("ask"));

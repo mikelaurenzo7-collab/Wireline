@@ -5,6 +5,7 @@ import * as schema from "../db/schema";
 import { runIdempotentActionExecution } from "./action-execution-idempotency";
 import {
   NO_TENANT_INTEGRATIONS,
+  isSystemRuntimeTool,
   resolveAuthorizedAgentTools,
   sanitizePersistedAgentToolSelection,
 } from "./agent-tool-authorization";
@@ -181,7 +182,10 @@ async function resolveActionPolicy(
       },
       connections,
     );
-    if (!allowedTools.includes(requiredTool)) {
+    // A note for the owner reaches no customer system. It stays available
+    // whatever the Bot's selected tools, as it does during a live call;
+    // otherwise a Bot with a narrow selection loses the caller's request.
+    if (!isSystemRuntimeTool(requiredTool) && !allowedTools.includes(requiredTool)) {
       log.warn("Action blocked, agent tool or connection is unavailable", {
         userId,
         agentId: scopedAction.agentId,
@@ -272,7 +276,15 @@ export async function executeAction(
       approvalTask: context.approvalTaskId ? { id: context.approvalTaskId, action } : undefined,
       execute: () =>
         policy.autonomy === "auto"
-          ? executeAutonomousAction(userId, policy.action, context, policy.agentTimeZone)
+          ? executeAutonomousAction(
+              userId,
+              policy.action,
+              context,
+              policy.agentTimeZone,
+              // Nobody chose this send: no owner approved the item and no
+              // caller of this function asked for it to run now.
+              !autonomyOverride && !context.approvalTaskId,
+            )
           : queueDraftAction(userId, policy.action, context),
     });
   } catch (error) {
@@ -290,6 +302,7 @@ async function executeAutonomousAction(
   action: ActionItem,
   context: ActionExecutionContext,
   agentTimeZone: string | null,
+  unattended = false,
 ): Promise<ActionResult> {
   if (AUTONOMOUS_LIVE_EXTERNAL_ACTIONS.has(action.type)) {
     const environmentPolicy = await liveExternalActionPolicyForUser(userId);
@@ -309,6 +322,12 @@ async function executeAutonomousAction(
   const service = new IntegrationService(userId);
   switch (action.type) {
     case "send_email": {
+      // An email nobody chose to send waits for the owner. Its address was
+      // not confirmed with anyone, and mail to a misheard address carries a
+      // customer's details to a stranger. During a call the Bot reads the
+      // address back and sends with the live tool; an owner's approval or
+      // chat request is the owner's own choice.
+      if (unattended) return handleSendEmail(userId, action, context);
       const entityPolicy = await externalEntityActionPolicyForUser(userId, {
         email: action.payload.to,
       });
@@ -358,7 +377,7 @@ async function executeAutonomousAction(
       return { success: emailOk };
     }
     case "send_text_message":
-      return handleSendTextMessage(userId, action, context);
+      return handleSendTextMessage(userId, action, context, unattended);
     case "schedule_calendar": {
       const nativeCalendar = await getNativeCalendarConfiguration(userId);
       if (nativeCalendar.configured) {
@@ -496,18 +515,40 @@ async function liveCallTextCounterpart(
   userId: string,
   phone: string,
   context: { sourceId: string; sourceType: string },
-): Promise<boolean> {
-  if (context.sourceType !== "phone_call" || !context.sourceId) return false;
+): Promise<{ requestedOnThisCall: boolean; callEndedAt: Date | null }> {
+  const none = { requestedOnThisCall: false, callEndedAt: null };
+  if (context.sourceType !== "phone_call" || !context.sourceId) return none;
   const ids = recordedCallIds(context.sourceId);
-  if (!ids.length) return false;
+  if (!ids.length) return none;
   const calls = await drizzle
-    .select({ customerNumber: schema.callLogs.customerNumber })
+    .select({
+      customerNumber: schema.callLogs.customerNumber,
+      createdAt: schema.callLogs.createdAt,
+      durationSeconds: schema.callLogs.durationSeconds,
+    })
     .from(schema.callLogs)
     .where(and(eq(schema.callLogs.userId, userId), inArray(schema.callLogs.vapiCallId, ids)))
     .limit(1);
   const caller = cleanOutboundSmsPhone(calls[0]?.customerNumber);
-  return Boolean(caller) && caller === phone;
+  if (!caller || caller !== phone) return none;
+  // The record is written when the call starts; its length is added at the end.
+  const startedAt = calls[0]?.createdAt;
+  const callEndedAt =
+    startedAt instanceof Date
+      ? new Date(startedAt.getTime() + Math.max(0, Number(calls[0]?.durationSeconds) || 0) * 1000)
+      : null;
+  return { requestedOnThisCall: true, callEndedAt };
 }
+
+/**
+ * How long after a call the Bot may text the caller back on its own. The
+ * rule that lets a reply skip calling hours covers a text "during a live call
+ * or within an hour of an inbound text". A follow-up job can run long after
+ * that: jobs are deferred while spend is paused, retried with backoff of up
+ * to an hour, and recovered after a stall. A call at 8:50pm must not become a
+ * text at 2am, so past this window the text waits for the owner.
+ */
+export const UNATTENDED_TEXT_WINDOW_MS = 15 * 60_000;
 
 export async function screenApprovedText(input: {
   userId: string;
@@ -519,7 +560,8 @@ export async function screenApprovedText(input: {
   lastCalledAt?: Date | null;
   metadata?: Record<string, unknown> | null;
 }): Promise<
-  { ok: true; sales: boolean } | { ok: false; error: string; errorCode?: string; sales: boolean }
+  | { ok: true; sales: boolean; contentWarning?: string | null }
+  | { ok: false; error: string; errorCode?: string; sales: boolean }
 > {
   // A model purpose cannot choose this. The stored caller is the only
   // non-sales exemption. Every other single recipient is one-off sales.
@@ -566,13 +608,18 @@ export async function screenApprovedText(input: {
       sales: manual.screening.isMarketingCall,
     };
   }
-  return { ok: true, sales: manual.screening.isMarketingCall };
+  return {
+    ok: true,
+    sales: manual.screening.isMarketingCall,
+    contentWarning: manual.contentWarning ?? null,
+  };
 }
 
 async function handleSendTextMessage(
   userId: string,
   action: ActionItem,
   context: ActionExecutionContext,
+  unattended = false,
 ): Promise<ActionResult> {
   const phone = cleanOutboundSmsPhone(action.payload.to);
   if (!phone) {
@@ -582,7 +629,32 @@ async function handleSendTextMessage(
   if (!entityPolicy.allowed)
     return { success: false, error: entityPolicy.message, retryable: true };
 
-  const requestedOnThisCall = await liveCallTextCounterpart(userId, phone, context);
+  const { requestedOnThisCall, callEndedAt } = await liveCallTextCounterpart(
+    userId,
+    phone,
+    context,
+  );
+  // With nobody choosing this send, the Bot may only answer the person who
+  // just called, and only while the call is recent. Either refusal sends
+  // nothing and lets the same text wait for the owner.
+  if (unattended) {
+    if (!requestedOnThisCall) {
+      return {
+        success: false,
+        retryable: true,
+        errorCode: "UNATTENDED_TEXT_NOT_TO_CALLER",
+        error: "Your Bot only texts the person who called on its own.",
+      };
+    }
+    if (!callEndedAt || Date.now() - callEndedAt.getTime() > UNATTENDED_TEXT_WINDOW_MS) {
+      return {
+        success: false,
+        retryable: true,
+        errorCode: "UNATTENDED_TEXT_TOO_LATE",
+        error: "Too long had passed since the call for your Bot to text on its own.",
+      };
+    }
+  }
   const [lead] = await drizzle
     .select({
       id: schema.outboundLeads.id,
@@ -625,12 +697,21 @@ async function handleSendTextMessage(
     };
   }
 
-  // A text the owner approved has been read by the owner. A text the Bot sends
-  // on its own has been read by nobody, so it gets the same review a live text
-  // and an email get. A refusal, or a review that could not run, sends nothing
-  // and says so, which lets the follow-up wait for the owner.
+  // A text an owner approved or asked for has been read by the owner. A text
+  // the Bot sends on its own has been read by nobody, so it gets the same
+  // review a live text and an email get, and it is never a sales message: a
+  // sales text needs the owner's own confirmation. A refusal, or a review that
+  // could not run, sends nothing and says so, which lets it wait for the owner.
   let body = action.payload.body;
-  if (!context.approvalTaskId) {
+  if (unattended) {
+    if (screened.contentWarning) {
+      return {
+        success: false,
+        retryable: true,
+        errorCode: "UNATTENDED_TEXT_READS_AS_SALES",
+        error: "This reads like a sales message, which needs your own confirmation to send.",
+      };
+    }
     try {
       const sender = await resolveClientSenderIdentity(userId, action.agentId);
       const reviewed = await superviseClientCommunication({
@@ -780,6 +861,54 @@ async function queueSideEffectAction(
   });
   await touchNavCounts(userId);
   return { success: true, queued: true };
+}
+
+/**
+ * A note for the owner, written directly: no tool check, no approval ledger.
+ *
+ * This is the last resort when a follow-up could not be finished or saved any
+ * other way, so nothing may stand between it and the owner's list. The ledger
+ * would remember a failed write as final and hand that failure back on every
+ * retry; here a failure throws, the queue retries, and a repeat finds the
+ * note it already wrote.
+ */
+export async function recordOwnerNote(
+  userId: string,
+  note: {
+    description: string;
+    priority?: ActionItem["priority"];
+    agentId?: string;
+    sourceId: string;
+    sourceType: string;
+  },
+): Promise<void> {
+  const description = note.description.trim().slice(0, 2000) || "Your Bot left you a follow-up.";
+  const [existing] = await drizzle
+    .select({ id: schema.followUpTasks.id })
+    .from(schema.followUpTasks)
+    .where(
+      and(
+        eq(schema.followUpTasks.userId, userId),
+        eq(schema.followUpTasks.sourceType, note.sourceType),
+        eq(schema.followUpTasks.sourceId, note.sourceId),
+        eq(schema.followUpTasks.taskType, "internal_task"),
+        eq(schema.followUpTasks.description, description),
+      ),
+    )
+    .limit(1);
+  if (existing) return;
+  await insertFollowUpTask({
+    userId,
+    agentId: note.agentId,
+    taskType: "internal_task",
+    description,
+    priority: note.priority || "medium",
+    status: "pending",
+    sourceType: note.sourceType,
+    sourceId: note.sourceId,
+    targetChannel: "manual",
+  });
+  await touchNavCounts(userId);
 }
 
 async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {

@@ -81,7 +81,7 @@ describe("classifyCallHappened email states", () => {
     });
     expect(happened).toBe("email_pending");
     expect(callHappenedLabel(happened)).toBe("Email pending");
-    expect(callHappenedDetail(happened)).toContain("waiting for approval");
+    expect(callHappenedDetail(happened)).toContain("waiting for you to send");
     expect(callHappenedDetail(happened)).toContain("has not been sent");
   });
 

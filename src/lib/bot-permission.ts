@@ -16,8 +16,12 @@
 
 export const BOT_PERMISSION_LEVELS = ["full", "auto", "ask"] as const;
 export type BotPermissionLevel = (typeof BOT_PERMISSION_LEVELS)[number];
-/** A new Bot, and a workspace nobody has changed, act on their own. */
-export const DEFAULT_NEW_BOT_AUTONOMY = "auto" as const;
+/**
+ * A workspace nobody has changed acts on its own, and a new Bot follows its
+ * workspace. Stamping "auto" on each new Bot would make it ignore a workspace
+ * whose owner asked every Bot to check first.
+ */
+export const DEFAULT_NEW_BOT_AUTONOMY = "inherit" as const;
 export const DEFAULT_WORKSPACE_AUTONOMY = "auto" as const;
 
 /**
@@ -39,7 +43,7 @@ export const BOT_PERMISSION_LABELS: Readonly<Record<BotPermissionLevel, string>>
 
 /** One sentence on what the owner should expect at each level. */
 export const BOT_PERMISSION_SUMMARIES: Readonly<Record<BotPermissionLevel, string>> = {
-  full: "Your Bot handles the work without waiting for you, and tells you what it did.",
+  full: "Your Bot handles the work without waiting for you. You get a summary after every call.",
   auto: "Your Bot waits for you before it emails or texts a customer, and handles everything else on its own.",
   ask: "Your Bot waits for you before it acts. Callers hear that someone will follow up.",
 };

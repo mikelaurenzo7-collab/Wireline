@@ -302,7 +302,7 @@ export async function handleCoreToolCall(
               approval.success && approval.queued
                 ? `DRAFT_SAVED: ${to_email}
 The email is written and waiting for the team to send it. Tell the caller in plain words, for example: "I've written that up and passed it to the team to send." Do not say it was sent, do not mention approval or a queue, and do not promise a delivery time.`
-                : "The email request could not be saved for approval. No email was sent.",
+                : "The email request could not be saved for the team. No email was sent.",
           };
         }
       }
@@ -509,6 +509,26 @@ The email is written and waiting for the team to send it. Tell the caller in pla
           .limit(1);
         if (!permissions) return notConfirmed("Text permission could not be verified.");
         if (actionExecutionMode({ ...permissions, actionType: "send_text_message" }) === "draft") {
+          // A held WhatsApp request must stay WhatsApp. The owner's send
+          // button for a held text sends SMS, so this one waits as a note
+          // that says which channel the caller asked for.
+          if (requestedChannel === "whatsapp") {
+            const noted = await recordCommsFollowUpTask(drizzle, {
+              userId: agent.user_id,
+              agentId: agent.id,
+              channel: "whatsapp",
+              recipient: targetNumber,
+              payload: { to: targetNumber, body: message_body },
+              deliveryStatus: "not_sent",
+            });
+            return noted
+              ? {
+                  toolCallId,
+                  result: `DRAFT_SAVED: ${targetNumber}
+The WhatsApp message is written and waiting for the team to send it. Tell the caller in plain words, for example: "I've written that up and passed it to the team to send." Do not say it was sent.`,
+                }
+              : notConfirmed("The request could not be saved for the team. No message was sent.");
+          }
           const { executeAction } = await import("../action-engine");
           const waiting = await executeAction(
             agent.user_id,

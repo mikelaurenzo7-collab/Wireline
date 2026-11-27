@@ -43,6 +43,8 @@ vi.mock("../src/lib/action-execution-idempotency", () => ({
 }));
 vi.mock("../src/lib/agent-tool-authorization", () => ({
   NO_TENANT_INTEGRATIONS: {},
+  // As in the real module: only a note for the owner and an opt-out are always on.
+  isSystemRuntimeTool: (name: string) => name === "create_followup_task" || name === "add_to_dnc",
   sanitizePersistedAgentToolSelection: (value: unknown) => value,
   resolveAuthorizedAgentTools: h.allowedTools,
 }));

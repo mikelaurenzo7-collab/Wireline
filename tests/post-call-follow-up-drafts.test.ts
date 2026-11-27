@@ -5,12 +5,15 @@ import { describe, expect, it } from "vitest";
 import { shouldEnrichPostCall } from "../src/lib/post-call-digest";
 import {
   addressedToCaller,
+  completedOnCall,
   emailResultAcceptedForRecipient,
-  postCallFollowUpAction,
-  postCallFollowUpFinisher,
-  postCallFollowUpHandBack,
   liveEmailAlreadyHandled,
-  liveTextAlreadyHandled,
+  liveTextOutcome,
+  planPostCallFollowUp,
+  postCallFollowUpAction,
+  postCallFollowUpHandBack,
+  samePhoneNumber,
+  withReasonForOwner,
 } from "../src/lib/post-call-follow-up";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -145,12 +148,9 @@ describe("post-call follow-up drafts", () => {
     // Only a follow-up the owner has to finish is forced to wait. Everything
     // else runs at the Bot's own permission.
     expect(worker).toContain(
-      `...(postCallFollowUpFinisher(action, p.customerNumber) === "owner"
-            ? { autonomy: "draft" as const }
-            : {}),`,
+      '...(plan.finisher === "owner" ? { autonomy: "draft" as const } : {}),',
     );
     expect(worker).not.toContain("the owner approves every one");
-    expect(worker).toContain('p.autonomy === "draft" ? "draft" : undefined');
     // The digest logs the call to the CRM. Enrichment does not score it again.
     expect(worker).not.toContain("crm.logCall(");
     expect(worker).not.toContain("claudeBrain.postCallAnalysis(");
@@ -162,29 +162,38 @@ describe("post-call follow-up drafts", () => {
     reasoning: "Caller asked for the address by text.",
     payload: { to, body: "We are at 12 Main St." },
   });
+  const email = {
+    type: "send_email" as const,
+    priority: "medium" as const,
+    reasoning: "Promised a quote.",
+    payload: { to: "dana@example.com", subject: "Your quote", body: "Hi" },
+  };
+  const untouched = { callerNumber: "+17735550100", liveText: "none" as const };
 
   it("lets the Bot finish a text back to the number that was on the call", () => {
-    expect(postCallFollowUpFinisher(text("+17735550100"), "+17735550100")).toBe("bot");
+    expect(planPostCallFollowUp(text("+17735550100"), untouched)).toEqual({ finisher: "bot" });
     // The same number written two ways is still the caller.
-    expect(postCallFollowUpFinisher(text("+1 (773) 555-0100"), "+17735550100")).toBe("bot");
+    expect(planPostCallFollowUp(text("+1 (773) 555-0100"), untouched)).toEqual({
+      finisher: "bot",
+    });
     // A note for the owner is the Bot's to write.
     expect(
-      postCallFollowUpFinisher(
+      planPostCallFollowUp(
         {
           type: "create_internal_task",
           priority: "medium",
           reasoning: "Take a message.",
           payload: { description: "Call Dana back about the quote." },
         },
-        "+17735550100",
+        untouched,
       ),
-    ).toBe("bot");
+    ).toEqual({ finisher: "bot" });
   });
 
   it("texts the caller at the number the carrier supplied, not the transcript's spelling", () => {
     // The model read the number back the way it was spoken.
     const spoken = text("773-555-0100");
-    expect(postCallFollowUpFinisher(spoken, "+17735550100")).toBe("bot");
+    expect(planPostCallFollowUp(spoken, untouched)).toEqual({ finisher: "bot" });
     expect(addressedToCaller(spoken, "+17735550100").payload.to).toBe("+17735550100");
     expect(addressedToCaller(text("1 (773) 555-0100"), "+17735550100").payload.to).toBe(
       "+17735550100",
@@ -192,95 +201,170 @@ describe("post-call follow-up drafts", () => {
     // A different number is left exactly as written, for the owner to see.
     expect(addressedToCaller(text("773-555-0199"), "+17735550100").payload.to).toBe("773-555-0199");
     expect(addressedToCaller(spoken, null)).toBe(spoken);
-    // Outside the US the two must match digit for digit.
-    expect(postCallFollowUpFinisher(text("7735550100"), "+447735550100")).toBe("owner");
-    expect(postCallFollowUpFinisher(text("+44 7735 550100"), "+447735550100")).toBe("bot");
-    // Too short to be a number is never the caller.
-    expect(postCallFollowUpFinisher(text("0100"), "0100")).toBe("owner");
-    // The same spelling difference does not text the caller twice.
-    expect(liveTextAlreadyHandled(spoken, ["SMS sent to +17735550100."])).toBe(true);
-    const email = {
-      type: "send_email" as const,
-      priority: "medium" as const,
-      reasoning: "Promised a quote.",
-      payload: { to: "dana@example.com", subject: "Your quote", body: "Hi" },
-    };
     expect(addressedToCaller(email, "+17735550100")).toBe(email);
   });
 
-  it("leaves the owner an email nobody read back and a text to a different number", () => {
-    // New outreach: the owner has to confirm they have permission to make it.
-    expect(postCallFollowUpFinisher(text("+17735550199"), "+17735550100")).toBe("owner");
+  it("never takes two different people for the same number", () => {
+    // A number written with a country code is taken at its word. Norway's
+    // +47 912 34 567 has the same ten digits as a US number and is not it.
+    expect(samePhoneNumber("+4791234567", "+14791234567")).toBe(false);
+    expect(samePhoneNumber("+3612345678", "+13612345678")).toBe(false);
+    expect(samePhoneNumber("+447735550100", "+17735550100")).toBe(false);
+    // Only a form with no country code is read as a US number.
+    expect(samePhoneNumber("479-123-4567", "+14791234567")).toBe(true);
+    expect(samePhoneNumber("479-123-4567", "+4791234567")).toBe(false);
+    expect(samePhoneNumber("+44 7735 550100", "+447735550100")).toBe(true);
+    // Too short, or missing, is nobody.
+    expect(samePhoneNumber("0100", "0100")).toBe(false);
+    expect(samePhoneNumber("", "")).toBe(false);
+    expect(samePhoneNumber(null, "+17735550100")).toBe(false);
+    expect(samePhoneNumber(undefined, undefined)).toBe(false);
+  });
+
+  it("leaves the owner an email and a text to a different number, and says why", () => {
+    const other = planPostCallFollowUp(text("+17735550199"), untouched);
+    expect(other).toEqual({
+      finisher: "owner",
+      why: "This is not the number that called. Send it only if you have permission to text it.",
+    });
     // No caller number on record means no number the carrier vouched for.
-    expect(postCallFollowUpFinisher(text("+17735550100"), null)).toBe("owner");
-    expect(postCallFollowUpFinisher(text("+17735550100"), "")).toBe("owner");
-    expect(postCallFollowUpFinisher(text(""), "+17735550100")).toBe("owner");
-    // The address was heard on the call, never confirmed with the caller.
     expect(
-      postCallFollowUpFinisher(
-        {
-          type: "send_email",
-          priority: "medium",
-          reasoning: "Promised a quote.",
-          payload: { to: "dana@example.com", subject: "Your quote", body: "Hi" },
-        },
-        "+17735550100",
-      ),
+      planPostCallFollowUp(text("+17735550100"), { callerNumber: null, liveText: "none" }).finisher,
     ).toBe("owner");
+    expect(
+      planPostCallFollowUp(text("+17735550100"), { callerNumber: "", liveText: "none" }).finisher,
+    ).toBe("owner");
+    expect(planPostCallFollowUp(text(""), untouched).finisher).toBe("owner");
+    // The address was heard on the call, never confirmed with the caller.
+    expect(planPostCallFollowUp(email, untouched)).toEqual({
+      finisher: "owner",
+      why: "The address was heard on the call and not read back to the caller. Check it before you send.",
+    });
+    // The reason travels with the message to the owner's list.
+    expect(withReasonForOwner(email, "Check the address.").payload).toEqual({
+      ...email.payload,
+      reasoning: "Check the address.",
+    });
   });
 
-  it("does not text the caller again when the Bot already texted during the call", () => {
-    const followUp = text("+17735550100");
-    expect(liveTextAlreadyHandled(followUp, ["SMS sent to +17735550100."])).toBe(true);
-    expect(liveTextAlreadyHandled(followUp, ["WhatsApp sent to +17735550100."])).toBe(true);
-    // An owner who asked to see texts first already has this one waiting.
+  it("reads what the live text tool did on the call", () => {
+    const caller = "+17735550100";
+    expect(liveTextOutcome(caller, [])).toBe("none");
     expect(
-      liveTextAlreadyHandled(followUp, ["DRAFT_SAVED: +17735550100\nThe text is written."]),
-    ).toBe(true);
-    expect(liveTextAlreadyHandled(followUp, ["SMS sent to +17735550199."])).toBe(false);
-    expect(liveTextAlreadyHandled(followUp, ["The message was not confirmed. Try later."])).toBe(
-      false,
-    );
-    expect(liveTextAlreadyHandled(followUp, [])).toBe(false);
+      liveTextOutcome(caller, [{ status: "completed", result: "SMS sent to +17735550100." }]),
+    ).toBe("sent");
     expect(
-      liveTextAlreadyHandled(followUp, [null, 7, { result: "SMS sent to +17735550100." }]),
-    ).toBe(false);
-    // An email is not covered by a text receipt.
+      liveTextOutcome(caller, [{ status: "completed", result: "WhatsApp sent to +17735550100." }]),
+    ).toBe("sent");
     expect(
-      liveTextAlreadyHandled(
+      liveTextOutcome(caller, [
+        { status: "completed", result: "DRAFT_SAVED: +17735550100\nThe text is written." },
+      ]),
+    ).toBe("held");
+    // A clean text to someone else says nothing about this caller.
+    expect(
+      liveTextOutcome(caller, [{ status: "completed", result: "SMS sent to +17735550199." }]),
+    ).toBe("none");
+    // The carrier never answered: a text may or may not have arrived.
+    expect(
+      liveTextOutcome(caller, [
         {
-          type: "send_email",
-          priority: "medium",
-          reasoning: "Promised a quote.",
-          payload: { to: "+17735550100", subject: "Quote", body: "Hi" },
+          status: "completed",
+          result:
+            "The message was not confirmed. Delivery status is unknown. The message may have been accepted. Do not resend it.",
         },
-        ["SMS sent to +17735550100."],
-      ),
-    ).toBe(false);
+      ]),
+    ).toBe("unsettled");
+    // A record that never finished is no receipt either.
+    expect(liveTextOutcome(caller, [{ status: "processing", result: "" }])).toBe("unsettled");
+    expect(liveTextOutcome(caller, [{ status: "failed", result: "" }])).toBe("unsettled");
+    expect(liveTextOutcome(caller, [{ status: null, result: "SMS sent to +17735550100." }])).toBe(
+      "unsettled",
+    );
+    // One unsettled attempt outweighs a clean one.
+    expect(
+      liveTextOutcome(caller, [
+        { status: "completed", result: "SMS sent to +17735550100." },
+        { status: "processing", result: "" },
+      ]),
+    ).toBe("unsettled");
+  });
+
+  it("does not let the Bot text again when it texted, or tried to, during the call", () => {
+    const followUp = text("+17735550100");
+    const during = (liveText: "sent" | "held" | "unsettled") =>
+      planPostCallFollowUp(followUp, { callerNumber: "+17735550100", liveText });
+    expect(during("sent")).toEqual({
+      finisher: "owner",
+      why: "Your Bot already texted this number during the call. Send this only if it says something new.",
+    });
+    expect(during("held")).toEqual({
+      finisher: "owner",
+      why: "A text to this number is already waiting from the call. Send this only if it says something new.",
+    });
+    expect(during("unsettled")).toEqual({
+      finisher: "owner",
+      why: "Your Bot tried to text during the call and the result is not known. Check Texts before you send, so the caller is not texted twice.",
+    });
+  });
+
+  it("tells the extraction what the Bot already did, so it is not read out again", () => {
+    expect(
+      completedOnCall({
+        emailResults: [
+          "SUBMISSION_OK: Email accepted by the sending service for dana@example.com. Confirm briefly.",
+          "DRAFT_SAVED: sam@example.com\nPending review.",
+          "The email send was not confirmed.",
+          7,
+        ],
+        textAttempts: [
+          { status: "completed", result: "SMS sent to +17735550100." },
+          { status: "completed", result: "DRAFT_SAVED: +17735550199\nThe text is written." },
+          { status: "processing", result: "" },
+          { status: "completed", result: "The message was not confirmed." },
+        ],
+      }),
+    ).toEqual([
+      "Sent an email to dana@example.com.",
+      "Wrote an email to sam@example.com for the owner to send.",
+      "Sent a text to +17735550100.",
+      "Wrote a text to +17735550199 for the owner to send.",
+    ]);
+    expect(completedOnCall({ emailResults: [], textAttempts: [] })).toEqual([]);
+    const brains = read("src/lib/ai-brains.ts");
+    expect(brains).toContain("Already done during the call:");
+    expect(brains).toContain(
+      "Emit send_text_message only when the caller asked for a text or agreed to receive one",
+    );
     const worker = read("src/lib/job-worker-base.ts");
-    const extraction = worker.slice(worker.indexOf('if (job.type === "v2a_action_extraction")'));
-    expect(extraction).toContain("completedSendTextResults(p.userId, p.callId)");
-    expect(extraction.indexOf("liveTextAlreadyHandled(action, completedTextSends)")).toBeLessThan(
-      extraction.indexOf('type: "execute_action"'),
+    expect(worker).toContain(
+      "completedOnCall: completedOnCall({ emailResults: completedEmailSends, textAttempts }),",
     );
   });
 
-  it("hands the owner a follow-up the Bot could not finish, and never drops it", () => {
+  it("hands the owner a follow-up that could not be finished, whoever was to finish it", () => {
     const followUp = { ...text("+17735550100"), agentId: "bot-1" };
     // Done, or already waiting for the owner: nothing more to do.
-    expect(postCallFollowUpHandBack(followUp, { success: true })).toBeNull();
-    expect(postCallFollowUpHandBack(followUp, { success: true, queued: true })).toBeNull();
-    expect(postCallFollowUpHandBack(followUp, { success: false, queued: true })).toBeNull();
+    expect(postCallFollowUpHandBack(followUp, { success: true }, "auto")).toBeNull();
+    expect(postCallFollowUpHandBack(followUp, { success: true, queued: true }, "auto")).toBeNull();
+    expect(
+      postCallFollowUpHandBack(followUp, { success: false, queued: true }, "draft"),
+    ).toBeNull();
 
-    // Nothing left the building and the owner can clear the cause: the same
-    // message waits for the owner, with the reason beside it.
-    const waiting = postCallFollowUpHandBack(followUp, {
-      success: false,
-      retryable: true,
-      error: "Outside the hours this person can be contacted.",
-    });
-    expect(waiting).toEqual({
-      autonomy: "draft",
+    // The Bot tried, nothing left the building and the owner can clear the
+    // cause: the same message waits for the owner, with the reason beside it.
+    expect(
+      postCallFollowUpHandBack(
+        followUp,
+        {
+          success: false,
+          retryable: true,
+          error: "Outside the hours this person can be contacted.",
+        },
+        "auto",
+      ),
+    ).toEqual({
+      kind: "draft",
       action: {
         ...followUp,
         payload: {
@@ -291,39 +375,50 @@ describe("post-call follow-up drafts", () => {
     });
 
     // The outcome is unknown: a note, never a second copy to send.
-    const note = postCallFollowUpHandBack(followUp, {
-      success: false,
-      error: "The carrier did not confirm the text.",
-    });
-    expect(note?.autonomy).toBeUndefined();
-    expect(note?.action.type).toBe("create_internal_task");
-    expect(note?.action.agentId).toBe("bot-1");
-    expect(note?.action.payload.description).toBe(
-      "Your Bot could not confirm a text to +17735550100 was sent. " +
+    expect(
+      postCallFollowUpHandBack(
+        followUp,
+        { success: false, error: "The carrier did not confirm the text." },
+        "auto",
+      ),
+    ).toEqual({
+      kind: "note",
+      priority: "medium",
+      agentId: "bot-1",
+      description:
+        "Your Bot could not confirm a text to +17735550100 was sent. " +
         "The carrier did not confirm the text. Check before sending it again. " +
         "The message was: We are at 12 Main St.",
-    );
-    expect(note?.action.payload).not.toHaveProperty("to");
+    });
 
-    // A note the Bot failed to write is not turned into another note.
+    // It could not even be saved for the owner. That is a note too, never a
+    // second attempt to save the same thing, whether or not it could be retried.
+    for (const result of [
+      { success: false, error: "No mailbox is connected." },
+      { success: false, retryable: true, error: "No mailbox is connected." },
+    ]) {
+      expect(postCallFollowUpHandBack({ ...email, agentId: "bot-1" }, result, "draft")).toEqual({
+        kind: "note",
+        priority: "medium",
+        agentId: "bot-1",
+        description:
+          "A caller asked for an email to dana@example.com and your Bot could not prepare it for you. " +
+          "No mailbox is connected. The message was: Hi",
+      });
+    }
+
+    // A note the Bot could not write is written again, as it was.
     expect(
       postCallFollowUpHandBack(
         {
           type: "create_internal_task",
-          priority: "medium",
+          priority: "high",
           payload: { description: "Call Dana back." },
         },
         { success: false, error: "Database unavailable." },
+        "auto",
       ),
-    ).toBeNull();
-
-    const worker = read("src/lib/job-worker-base.ts");
-    const execute = worker.slice(worker.indexOf('if (job.type === "execute_action")'));
-    expect(execute).toContain(
-      'p.autonomy === "draft" ? null : postCallFollowUpHandBack(parsed.data, result);',
-    );
-    // A hand-back that cannot be saved fails the job so the queue retries it.
-    expect(execute).toContain("A follow-up the Bot could not finish was not saved for the owner:");
+    ).toEqual({ kind: "note", priority: "high", description: "Call Dana back." });
   });
 
   it("queues follow-up extraction once, before scoring, and retries a failed enqueue", () => {

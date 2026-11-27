@@ -300,7 +300,7 @@ export default function StudioAgentWorkspacePanel({
     } catch {
       if (isCurrentAgent(permissionAgentId, permissionUserId)) {
         setPermissionError(
-          "Permission could not be confirmed. Check the current setting and try again.",
+          "That change could not be confirmed. Check the current setting and try again.",
         );
         setReloadKey((current) => current + 1);
       }

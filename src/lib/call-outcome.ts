@@ -248,7 +248,7 @@ export function callOutcomeDetail(outcome: CallOutcome): string {
     case "email_sent":
       return "An email from this call was sent.";
     case "email_pending":
-      return "An email from this call is waiting for approval. It has not been sent yet.";
+      return "An email from this call is waiting for you to send. It has not been sent yet.";
     case "email_failed":
       return "The email from this call could not be sent.";
     case "booked":

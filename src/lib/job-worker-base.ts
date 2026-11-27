@@ -3,18 +3,22 @@ import { log, drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
+import type { ExtractedBusinessAction } from "./ai-brains";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
-import { executeAction } from "./action-engine";
+import { executeAction, recordOwnerNote } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import {
   addressedToCaller,
-  postCallFollowUpAction,
-  postCallFollowUpFinisher,
-  postCallFollowUpHandBack,
+  completedOnCall,
   liveEmailAlreadyHandled,
-  liveTextAlreadyHandled,
+  liveTextOutcome,
+  planPostCallFollowUp,
+  postCallFollowUpAction,
+  postCallFollowUpHandBack,
   toolAuditResultText,
+  withReasonForOwner,
+  type LiveToolAttempt,
 } from "./post-call-follow-up";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import {
@@ -101,8 +105,51 @@ async function completedLiveToolResults(
 
 const completedSendEmailResults = (userId: string, callId: string) =>
   completedLiveToolResults(userId, callId, "send_email");
-const completedSendTextResults = (userId: string, callId: string) =>
-  completedLiveToolResults(userId, callId, "send_text_message");
+
+/**
+ * Every use of the live text tool on a call, finished or not. A use that
+ * never finished, or finished without a clean receipt, matters as much as one
+ * that sent: it means a text may have reached the caller.
+ */
+async function liveTextAttempts(userId: string, callId: string): Promise<LiveToolAttempt[]> {
+  if (!userId || !callId) return [];
+  const rows = await drizzle
+    .select({ metadata: schema.auditLog.metadata })
+    .from(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.userId, userId),
+        eq(schema.auditLog.action, "agent_tool.send_text_message"),
+        eq(schema.auditLog.eventType, "voice.tool_call"),
+        sql`${schema.auditLog.metadata}->>'callId' = ${callId}`,
+      ),
+    );
+  return rows.map((row) => {
+    const metadata =
+      row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as Record<string, unknown>)
+        : {};
+    return {
+      status: typeof metadata.status === "string" ? metadata.status : null,
+      result: toolAuditResultText(row.metadata),
+    };
+  });
+}
+
+/** Follow-ups an earlier attempt of this job already read from the transcript. */
+function savedExtractedActions(result: unknown): ExtractedBusinessAction[] | null {
+  if (!result || typeof result !== "object" || Array.isArray(result)) return null;
+  const saved = (result as Record<string, unknown>).extractedActions;
+  if (!Array.isArray(saved)) return null;
+  return saved.filter(
+    (action): action is ExtractedBusinessAction =>
+      !!action &&
+      typeof action === "object" &&
+      typeof (action as ExtractedBusinessAction).type === "string" &&
+      !!(action as ExtractedBusinessAction).payload &&
+      typeof (action as ExtractedBusinessAction).payload === "object",
+  );
+}
 
 /**
  * Global job handler.
@@ -181,48 +228,61 @@ export async function handleJob(job: JobRow): Promise<void> {
       customerNumber?: string;
     };
 
-    const actions = await claudeBrain.extractActions({
-      transcript: p.transcript,
-      summary: p.summary,
-      customerNumber: p.customerNumber,
-    });
-
     const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
-    const completedTextSends = await completedSendTextResults(p.userId, p.callId);
+    const textAttempts = await liveTextAttempts(p.userId, p.callId);
+
+    // The model words the same follow-up differently each time it is asked,
+    // and to the ledger a differently worded text is a different text. So the
+    // model is asked once: its answer is saved on the job before anything is
+    // queued, and a retry of this job reuses it.
+    const saved = savedExtractedActions((job as { result?: unknown }).result);
+    const actions =
+      saved ??
+      (await claudeBrain.extractActions({
+        transcript: p.transcript,
+        summary: p.summary,
+        customerNumber: p.customerNumber,
+        completedOnCall: completedOnCall({ emailResults: completedEmailSends, textAttempts }),
+      }));
+    if (!saved) await persistJobResult(job.id, { extractedActions: actions });
+
     let skippedDuplicateEmails = 0;
-    let skippedDuplicateTexts = 0;
+    let leftForOwner = 0;
     for (const extracted of actions.map(postCallFollowUpAction)) {
       const action = addressedToCaller(extracted, p.customerNumber);
       if (liveEmailAlreadyHandled(action, completedEmailSends)) {
         skippedDuplicateEmails += 1;
         continue;
       }
-      if (liveTextAlreadyHandled(action, completedTextSends)) {
-        skippedDuplicateTexts += 1;
-        continue;
-      }
-      await enqueue(drizzle, {
+      // The Bot finishes what is not a guess, at its own permission. The rest
+      // waits for the owner whatever the permission says, with the reason.
+      const plan = planPostCallFollowUp(action, {
+        callerNumber: p.customerNumber,
+        liveText: liveTextOutcome(action.payload?.to, textAttempts),
+      });
+      const followUp = plan.finisher === "owner" ? withReasonForOwner(action, plan.why) : action;
+      if (plan.finisher === "owner") leftForOwner += 1;
+      const queued = await enqueue(drizzle, {
         userId: p.userId,
         type: "execute_action",
         payload: {
           userId: p.userId,
-          action: p.agentId ? { ...action, agentId: p.agentId } : action,
+          action: p.agentId ? { ...followUp, agentId: p.agentId } : followUp,
           context: { sourceId: p.callId, sourceType: "phone_call" },
-          // The Bot finishes what is not a guess, at its own permission. An
-          // email address nobody read back, or a text to another number,
-          // waits for the owner whatever the permission says.
-          ...(postCallFollowUpFinisher(action, p.customerNumber) === "owner"
-            ? { autonomy: "draft" as const }
-            : {}),
+          ...(plan.finisher === "owner" ? { autonomy: "draft" as const } : {}),
         },
       });
+      // `enqueue` reports failure instead of throwing. Raised so the queue
+      // retries; the saved answer above keeps that retry from rewording.
+      if (!queued.ok) throw new Error(`Failed to enqueue a call follow-up: ${queued.error}`);
     }
     log.info("V2A extraction complete", {
       userId: p.userId,
       callId: p.callId,
       actionsCount: actions.length,
       skippedDuplicateEmails,
-      skippedDuplicateTexts,
+      leftForOwner,
+      reusedSavedActions: Boolean(saved),
     });
   }
 
@@ -240,26 +300,31 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
+    const forOwner = p.autonomy === "draft";
     const result = await executeAction(
       p.userId,
       parsed.data,
       p.context,
-      p.autonomy === "draft" ? "draft" : undefined,
+      forOwner ? "draft" : undefined,
     );
-    // A follow-up the Bot could not finish on its own goes to the owner. It
-    // is never dropped.
-    const handBack = p.autonomy === "draft" ? null : postCallFollowUpHandBack(parsed.data, result);
-    if (handBack) {
-      const handedBack = await executeAction(
-        p.userId,
-        handBack.action,
-        p.context,
-        handBack.autonomy,
-      );
-      if (!handedBack.success)
-        throw new Error(
-          `A follow-up the Bot could not finish was not saved for the owner: ${handedBack.error || "unknown error"}`,
-        );
+    // Whoever was meant to finish it, a follow-up that was neither done nor
+    // left waiting goes to the owner. A text nothing sent waits for the owner
+    // as written; anything else, including a message that could not even be
+    // saved, becomes a note. The note is written directly and throws when it
+    // cannot be, so the queue retries it and nothing is dropped.
+    let handBack = postCallFollowUpHandBack(parsed.data, result, forOwner ? "draft" : "auto");
+    if (handBack?.kind === "draft") {
+      const waiting = await executeAction(p.userId, handBack.action, p.context, "draft");
+      handBack = postCallFollowUpHandBack(handBack.action, waiting, "draft");
+    }
+    if (handBack?.kind === "note") {
+      await recordOwnerNote(p.userId, {
+        description: handBack.description,
+        priority: handBack.priority,
+        agentId: handBack.agentId,
+        sourceId: p.context.sourceId,
+        sourceType: p.context.sourceType,
+      });
     }
   }
 

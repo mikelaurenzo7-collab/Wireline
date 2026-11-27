@@ -34,7 +34,8 @@ describe("Bot Live activity source and action contracts", () => {
     expect(panel).toContain("Reply to task");
     expect(panel).toContain("Watch live work");
     expect(panel).toContain('to="/approvals"');
-    expect(panel).toContain("Review approvals");
+    expect(panel).toContain("Open Needs You");
+    expect(panel).not.toMatch(/approvals? waiting|Review approvals|Approval waiting/);
     expect(panel).toContain("setSourcesUnavailable(successfulSources !== 3)");
     expect(panel).toContain("Checking recent activity…");
     expect(panel).toContain("Activity unavailable");

@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * A text the owner approved has been read by the owner. A text the Bot sends
- * on its own has been read by nobody, so it passes the same review a live text
- * and an email pass. A refusal sends nothing and reports "nothing was sent",
- * which is what lets the follow-up wait for the owner instead of being lost.
+ * A text an owner approved or asked for has been read by the owner. A text
+ * the Bot sends on its own has been read by nobody. So it goes only to the
+ * person who just called, only while the call is recent, never as a sales
+ * message, and only after the same review a live text and an email pass. Any
+ * refusal sends nothing and reports "nothing was sent", which is what lets
+ * the same text wait for the owner instead of being lost.
  */
 const h = vi.hoisted(() => ({
   supervise: vi.fn(),
@@ -61,11 +63,15 @@ vi.mock("../src/lib/tenant-integration-connections", () => ({
   filterToolsByTenantConnections: (tools: string[]) => tools,
 }));
 vi.mock("../src/lib/channel-entitlements", () => ({
-  getTenantChannelEntitlements: async () => ({ channels: ["voice", "sms"] }),
+  getTenantChannelEntitlements: async () => ({ channels: ["voice", "sms", "email"] }),
 }));
 vi.mock("../src/lib/twilio-service", () => ({ sendTenantMessage: h.send }));
 
-import { executeAction } from "../src/lib/action-engine";
+import {
+  executeAction,
+  recordOwnerNote,
+  UNATTENDED_TEXT_WINDOW_MS,
+} from "../src/lib/action-engine";
 import { ClientCommunicationBlockedError } from "../src/lib/ai-supervisor";
 import type { ActionItem } from "../src/lib/action-types";
 import { postCallFollowUpHandBack } from "../src/lib/post-call-follow-up";
@@ -80,21 +86,34 @@ const action: ActionItem = {
 };
 const context = { sourceId: "call-1", sourceType: "phone_call" };
 
+const botRow = (autonomyLevel: string, tenantAutonomyLevel: string | null, tools: string[]) => ({
+  enabledTools: tools,
+  timeZone: "America/Chicago",
+  autonomyLevel,
+  tenantAutonomyLevel,
+  aiTier: "pro",
+  twilioMessagingEnabled: true,
+  twilioLookupEnabled: false,
+});
+
 /** The Bot's row, the call that names the caller, then no saved lead. */
-function botWorking(autonomyLevel: string, tenantAutonomyLevel: string | null = "auto") {
+function botWorking(
+  autonomyLevel: string,
+  tenantAutonomyLevel: string | null = "auto",
+  call: { customerNumber?: string; endedMsAgo?: number } = {},
+) {
+  const lengthSeconds = 120;
+  const endedMsAgo = call.endedMsAgo ?? 60_000;
   h.rows = [
+    [botRow(autonomyLevel, tenantAutonomyLevel, ["send_text_message"])],
     [
       {
-        enabledTools: ["send_text_message"],
-        timeZone: "America/Chicago",
-        autonomyLevel,
-        tenantAutonomyLevel,
-        aiTier: "pro",
-        twilioMessagingEnabled: true,
-        twilioLookupEnabled: false,
+        customerNumber: call.customerNumber ?? CALLER,
+        // The record is written when the call starts.
+        createdAt: new Date(Date.now() - endedMsAgo - lengthSeconds * 1000),
+        durationSeconds: lengthSeconds,
       },
     ],
-    [{ customerNumber: CALLER }],
     [],
   ];
 }
@@ -105,6 +124,7 @@ beforeEach(() => {
   h.screen.mockResolvedValue({
     ok: true,
     screening: { isMarketingCall: false, requireFederalDncScreening: false },
+    contentWarning: null,
     audit: {},
   });
   h.gate.mockResolvedValue({ allowed: true });
@@ -151,6 +171,66 @@ describe("a text the Bot sends on its own after a call", () => {
     );
   });
 
+  it("does not text long after the call, when the job ran late", async () => {
+    // A call at 8:50pm must not become a text at 2am because a job was deferred.
+    botWorking("auto", "auto", { endedMsAgo: UNATTENDED_TEXT_WINDOW_MS + 60_000 });
+    const result = await executeAction("tenant", action, context);
+    expect(result).toEqual({
+      success: false,
+      retryable: true,
+      errorCode: "UNATTENDED_TEXT_TOO_LATE",
+      error: "Too long had passed since the call for your Bot to text on its own.",
+    });
+    expect(h.screen).not.toHaveBeenCalled();
+    expect(h.supervise).not.toHaveBeenCalled();
+    expect(h.send).not.toHaveBeenCalled();
+    // The same text waits for the owner, who decides.
+    expect(postCallFollowUpHandBack(action, result, "auto")?.kind).toBe("draft");
+
+    botWorking("auto", "auto", { endedMsAgo: UNATTENDED_TEXT_WINDOW_MS - 60_000 });
+    expect(await executeAction("tenant", action, context)).toEqual({ success: true });
+  });
+
+  it("texts nobody but the person who called", async () => {
+    botWorking("auto", "auto", { customerNumber: "+17735550199" });
+    const result = await executeAction("tenant", action, context);
+    expect(result).toMatchObject({
+      success: false,
+      retryable: true,
+      errorCode: "UNATTENDED_TEXT_NOT_TO_CALLER",
+    });
+    expect(h.send).not.toHaveBeenCalled();
+
+    // Outside a phone call there is no caller to answer.
+    h.rows = [[botRow("auto", "auto", ["send_text_message"])], []];
+    expect(
+      await executeAction("tenant", action, { sourceId: "thread-1", sourceType: "sms_thread" }),
+    ).toMatchObject({
+      success: false,
+      retryable: true,
+      errorCode: "UNATTENDED_TEXT_NOT_TO_CALLER",
+    });
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("never sends what reads like a sales message on its own", async () => {
+    botWorking("auto");
+    h.screen.mockResolvedValue({
+      ok: true,
+      screening: { isMarketingCall: false, requireFederalDncScreening: false },
+      contentWarning: "This reads like a promotion.",
+      audit: {},
+    });
+    const result = await executeAction("tenant", action, context);
+    expect(result).toMatchObject({
+      success: false,
+      retryable: true,
+      errorCode: "UNATTENDED_TEXT_READS_AS_SALES",
+    });
+    expect(h.supervise).not.toHaveBeenCalled();
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
   it("sends nothing when the review holds the text, and the owner gets it with the reason", async () => {
     botWorking("auto");
     h.supervise.mockRejectedValue(new ClientCommunicationBlockedError("It quotes a price."));
@@ -162,8 +242,8 @@ describe("a text the Bot sends on its own after a call", () => {
       error: "The message review held this text: It quotes a price.",
     });
     expect(h.send).not.toHaveBeenCalled();
-    expect(postCallFollowUpHandBack(action, result)).toEqual({
-      autonomy: "draft",
+    expect(postCallFollowUpHandBack(action, result, "auto")).toEqual({
+      kind: "draft",
       action: {
         ...action,
         payload: {
@@ -200,20 +280,7 @@ describe("a text the Bot sends on its own after a call", () => {
     expect(h.supervise).not.toHaveBeenCalled();
     expect(h.send).not.toHaveBeenCalled();
     // The same message waits for the owner, who can tick the permission box.
-    expect(postCallFollowUpHandBack(action, result)?.autonomy).toBe("draft");
-  });
-
-  it("leaves a text the owner already read as the owner wrote it", async () => {
-    botWorking("draft");
-    expect(
-      await executeAction("tenant", action, { ...context, approvalTaskId: "task-1" }, "auto"),
-    ).toEqual({ success: true });
-    expect(h.supervise).not.toHaveBeenCalled();
-    expect(h.send).toHaveBeenCalledExactlyOnceWith("tenant", {
-      to: CALLER,
-      body: "We are at 12 Main St.",
-      agentId: "bot-1",
-    });
+    expect(postCallFollowUpHandBack(action, result, "auto")?.kind).toBe("draft");
   });
 
   it("reports nothing sent when a test workspace is not allowed to text", async () => {
@@ -232,5 +299,141 @@ describe("a text the Bot sends on its own after a call", () => {
     });
     expect(h.send).not.toHaveBeenCalled();
     expect(h.supervise).not.toHaveBeenCalled();
+  });
+});
+
+describe("a text an owner chose to send", () => {
+  it("leaves a text the owner approved as the owner wrote it, whenever they approve it", async () => {
+    // Approved the next morning: the owner's decision is the new decision.
+    botWorking("draft", "auto", { endedMsAgo: 12 * 60 * 60_000 });
+    expect(
+      await executeAction("tenant", action, { ...context, approvalTaskId: "task-1" }, "auto"),
+    ).toEqual({ success: true });
+    expect(h.supervise).not.toHaveBeenCalled();
+    expect(h.send).toHaveBeenCalledExactlyOnceWith("tenant", {
+      to: CALLER,
+      body: "We are at 12 Main St.",
+      agentId: "bot-1",
+    });
+  });
+
+  it("leaves a text the owner asked for in chat as written, to whoever they named", async () => {
+    // No approval item exists for a chat request, and it is still the owner's send.
+    h.rows = [[botRow("draft", "draft", ["send_text_message"])], []];
+    expect(
+      await executeAction(
+        "tenant",
+        { ...action, payload: { to: "+17735550199", body: "Running ten minutes late." } },
+        { sourceId: "bot-1", sourceType: "workspace_chat" },
+        "auto",
+      ),
+    ).toEqual({ success: true });
+    expect(h.supervise).not.toHaveBeenCalled();
+    expect(h.send).toHaveBeenCalledExactlyOnceWith("tenant", {
+      to: "+17735550199",
+      body: "Running ten minutes late.",
+      agentId: "bot-1",
+    });
+  });
+});
+
+describe("a note for the owner", () => {
+  const note: ActionItem = {
+    type: "create_internal_task",
+    priority: "medium",
+    agentId: "bot-1",
+    payload: { description: "Call Dana back about the quote." },
+  };
+
+  it("is written whatever tools the Bot has selected, as it is during a live call", async () => {
+    // A Bot made from a draft starts with no tools selected at all.
+    for (const tools of [[], ["send_email"]]) {
+      h.insert.mockClear();
+      h.rows = [[botRow("auto", "auto", tools)]];
+      expect(await executeAction("tenant", note, context)).toEqual({ success: true });
+      expect(h.insert).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          taskType: "internal_task",
+          description: "Call Dana back about the quote.",
+        }),
+      );
+    }
+    // A tool that reaches a customer still has to be selected.
+    h.rows = [[botRow("auto", "auto", [])]];
+    expect(await executeAction("tenant", action, context)).toMatchObject({ success: false });
+    expect(h.send).not.toHaveBeenCalled();
+  });
+
+  it("can be written directly as a last resort, once, and fails loudly so it is retried", async () => {
+    h.rows = [[]];
+    await recordOwnerNote("tenant", {
+      description: "  Your Bot could not confirm a text was sent.  ",
+      priority: "high",
+      agentId: "bot-1",
+      sourceId: "call-1",
+      sourceType: "phone_call",
+    });
+    expect(h.insert).toHaveBeenCalledExactlyOnceWith({
+      userId: "tenant",
+      agentId: "bot-1",
+      taskType: "internal_task",
+      description: "Your Bot could not confirm a text was sent.",
+      priority: "high",
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: "call-1",
+      targetChannel: "manual",
+    });
+
+    // A retry finds the note it already wrote.
+    h.insert.mockClear();
+    h.rows = [[{ id: "existing-note" }]];
+    await recordOwnerNote("tenant", {
+      description: "Your Bot could not confirm a text was sent.",
+      sourceId: "call-1",
+      sourceType: "phone_call",
+    });
+    expect(h.insert).not.toHaveBeenCalled();
+
+    // A write that fails is not swallowed: the queue has to try again.
+    h.rows = [[]];
+    h.insert.mockImplementationOnce(() => {
+      throw new Error("Database unavailable");
+    });
+    await expect(
+      recordOwnerNote("tenant", {
+        description: "Call Dana back.",
+        sourceId: "call-1",
+        sourceType: "phone_call",
+      }),
+    ).rejects.toThrow("Database unavailable");
+  });
+});
+
+describe("an email nobody chose to send", () => {
+  it("waits for the owner even when the Bot works on its own", async () => {
+    // The follow-up job already leaves every after-call email to the owner.
+    // The engine holds the same line, so no later caller can send mail to an
+    // address nobody confirmed just by forgetting to say "draft".
+    h.rows = [[botRow("auto", "auto", ["send_email"])]];
+    const result = await executeAction(
+      "tenant",
+      {
+        type: "send_email",
+        priority: "medium",
+        agentId: "bot-1",
+        payload: { to: "dana@example.com", subject: "Your quote", body: "Hi Dana" },
+      },
+      context,
+    );
+    expect(result).toEqual({ success: true, queued: true });
+    expect(h.supervise).not.toHaveBeenCalled();
+    expect(h.insert).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        taskType: "send_email",
+        status: "pending",
+        targetChannel: "email",
+      }),
+    );
   });
 });

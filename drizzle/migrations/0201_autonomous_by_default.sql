@@ -7,18 +7,26 @@
 -- a choice an owner can make in Set Up.
 --
 -- 1. New workspaces start on "auto".
--- 2. Every existing workspace moves to "auto", and every existing Bot follows
---    its workspace. Verified in the live catalog on 2026-11-27: all 149
+-- 2. Every existing workspace moves to "auto", and existing Bots follow their
+--    workspace. Verified in the live catalog on 2026-11-27: all 149
 --    workspaces held the column default "draft", which no screen ever let an
 --    owner choose. Bots held "inherit" (87), "supervised" (6, the value Bot
 --    creation wrote, not an owner's choice) and two retired values ("high",
 --    "suggest") that the runtime read as "wait for everything". There were no
 --    customer accounts: every account was the founder's or a test account.
 --
+--    A Bot stored as "draft" is left alone. Only an owner choosing "check
+--    with me before it does anything" writes that value on a Bot, and none
+--    had. If one does before this runs, that choice stands.
+--
 -- Step 2 is a one-time correction made before launch, not a rule. The column
 -- default is its marker: once the default reads "auto" this migration has run,
 -- and a replay changes nothing. That keeps a later owner's choice to check
 -- first safe from a second run.
+--
+-- The default is changed first, under a short lock timeout, so this fails fast
+-- instead of queueing behind, or deadlocking with, a request that is updating
+-- its own settings row.
 --
 -- This changes what a Bot may do without waiting. It waives nothing the law or
 -- the carrier requires: consent, do-not-call, calling hours, carrier approval
@@ -42,6 +50,10 @@ BEGIN
     RETURN;
   END IF;
 
+  PERFORM set_config('lock_timeout', '5s', true);
+
+  ALTER TABLE public."wireline_settings" ALTER COLUMN "autonomy_level" SET DEFAULT 'auto';
+
   UPDATE public."wireline_settings"
      SET "autonomy_level" = 'auto'
    WHERE "autonomy_level" IS DISTINCT FROM 'auto';
@@ -49,8 +61,7 @@ BEGIN
   UPDATE public."wireline_agents"
      SET "autonomy_level" = 'inherit'
    WHERE "autonomy_level" IS DISTINCT FROM 'inherit'
-     AND "autonomy_level" IS DISTINCT FROM 'auto';
-
-  ALTER TABLE public."wireline_settings" ALTER COLUMN "autonomy_level" SET DEFAULT 'auto';
+     AND "autonomy_level" IS DISTINCT FROM 'auto'
+     AND "autonomy_level" IS DISTINCT FROM 'draft';
 END
 $$;

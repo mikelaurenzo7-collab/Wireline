@@ -29,8 +29,12 @@ describe("per-bot permission", () => {
   });
 
   it("acts on its own when nobody asked it to check first", () => {
-    expect(DEFAULT_NEW_BOT_AUTONOMY).toBe("auto");
+    // A new Bot follows its workspace, and a workspace nobody changed acts.
+    expect(DEFAULT_NEW_BOT_AUTONOMY).toBe("inherit");
     expect(DEFAULT_WORKSPACE_AUTONOMY).toBe("auto");
+    expect(effectiveAutonomy(DEFAULT_NEW_BOT_AUTONOMY, DEFAULT_WORKSPACE_AUTONOMY)).toBe("auto");
+    // So a workspace whose owner asked every Bot to check first covers new Bots too.
+    expect(effectiveAutonomy(DEFAULT_NEW_BOT_AUTONOMY, "draft")).toBe("draft");
     expect(effectiveAutonomy(null, null)).toBe("auto");
     expect(effectiveAutonomy("inherit", null)).toBe("auto");
     expect(effectiveAutonomy("inherit", undefined)).toBe("auto");
@@ -208,7 +212,7 @@ describe("per-bot permission", () => {
     expect(route).not.toContain("permission: permissionLevelFromAutonomy(record?.autonomyLevel)");
   });
 
-  it("starts a new Bot working on its own, from one shared default", () => {
+  it("starts a new Bot following its workspace, from one shared default", () => {
     for (const file of [
       "src/routes/agent-routes-v2.ts",
       "src/lib/agent-draft-service.ts",
@@ -216,7 +220,7 @@ describe("per-bot permission", () => {
     ]) {
       const source = readFileSync(file, "utf8");
       expect(source, file).toContain("autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,");
-      expect(source, file).not.toMatch(/autonomyLevel: "(?:supervised|draft)"/);
+      expect(source, file).not.toMatch(/autonomyLevel: "(?:supervised|draft|auto)"/);
     }
   });
 
@@ -231,23 +235,28 @@ describe("per-bot permission", () => {
       `ALTER TABLE public."wireline_settings" ALTER COLUMN "autonomy_level" SET DEFAULT 'auto';`,
     );
     // The reset of existing rows may run once. The column default is the
-    // marker, and the guard returns before either UPDATE on a replay, so an
-    // owner who later chooses to check first is never switched back.
+    // marker, and the guard returns before anything is changed on a replay,
+    // so an owner who later chooses to check first is never switched back.
     const guard = migration.indexOf(
       "IF current_default IS NOT NULL AND position('''auto''' IN current_default) > 0 THEN",
     );
     expect(guard).toBeGreaterThan(-1);
     expect(migration.slice(guard)).toMatch(/^IF[^\n]*\n\s*RETURN;\n\s*END IF;/);
-    for (const statement of [
+    // The default changes first, under a short lock timeout, so the migration
+    // fails fast instead of queueing behind a request updating its own row.
+    const order = [
+      "PERFORM set_config('lock_timeout', '5s', true);",
+      `ALTER TABLE public."wireline_settings" ALTER COLUMN "autonomy_level" SET DEFAULT 'auto';`,
       'UPDATE public."wireline_settings"',
       'UPDATE public."wireline_agents"',
-      "SET DEFAULT 'auto'",
-    ]) {
-      expect(migration.indexOf(statement), statement).toBeGreaterThan(guard);
-    }
-    // Bots follow the workspace; a Bot already working on its own is left alone.
+    ].map((statement) => migration.indexOf(statement));
+    expect(order[0]).toBeGreaterThan(guard);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    // Bots follow the workspace. A Bot already working on its own is left
+    // alone, and so is one its owner set to check before everything.
     expect(migration).toContain(`SET "autonomy_level" = 'inherit'`);
-    expect(migration).toContain(`AND "autonomy_level" IS DISTINCT FROM 'auto';`);
+    expect(migration).toContain(`AND "autonomy_level" IS DISTINCT FROM 'auto'`);
+    expect(migration).toContain(`AND "autonomy_level" IS DISTINCT FROM 'draft';`);
     const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8")) as {
       entries: Array<{ idx: number; tag: string }>;
     };

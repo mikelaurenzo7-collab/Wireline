@@ -13,6 +13,7 @@ const h = vi.hoisted(() => ({
   environment: vi.fn(),
   entity: vi.fn(),
   gate: vi.fn(),
+  note: vi.fn(),
 }));
 vi.mock("../src/lib/action-engine", () => ({ executeAction: h.queue }));
 vi.mock("../src/lib/ai-supervisor", () => ({ superviseClientCommunication: h.supervise }));
@@ -41,7 +42,7 @@ vi.mock("../src/lib/agent-link-tool-handlers", () => ({
 vi.mock("../src/lib/outbound-dial-gate", () => ({ evaluateOutboundDialGate: h.gate }));
 
 import { handleCoreToolCall } from "../src/lib/bot-tools/core";
-import { liveTextAlreadyHandled } from "../src/lib/post-call-follow-up";
+import { liveTextOutcome } from "../src/lib/post-call-follow-up";
 
 const CALLER = "+17735550100";
 const args = { to_number: CALLER, channel: "sms", message_body: "We are at 12 Main St." };
@@ -52,7 +53,7 @@ const context = {
   agent: { id: "agent-owned", user_id: "tenant-owned" },
   webhookAgentId: "agent-owned",
   drizzle: {
-    insert: () => ({ values: vi.fn() }),
+    insert: () => ({ values: h.note }),
     select: () => ({
       from: () => ({ leftJoin: () => ({ where: () => ({ limit: h.permission }) }) }),
     }),
@@ -113,13 +114,40 @@ describe("live text and the owner's choice to check first", () => {
     );
     expect(result?.result).toContain(`DRAFT_SAVED: ${CALLER}`);
     expect(result?.result).toContain("Do not say it was sent.");
-    // The after-call pass reads that receipt and does not draft the same text again.
-    expect(
-      liveTextAlreadyHandled(
-        { type: "send_text_message", priority: "medium", reasoning: "", payload: { to: CALLER } },
-        [result?.result],
-      ),
-    ).toBe(true);
+    // The after-call pass reads that receipt as a text already waiting, so the
+    // Bot does not write the same one again on its own.
+    expect(liveTextOutcome(CALLER, [{ status: "completed", result: result!.result }])).toBe("held");
+  });
+
+  it("keeps a held WhatsApp request on WhatsApp instead of turning it into a text", async () => {
+    h.permission.mockResolvedValue([{ agentLevel: "supervised", tenantLevel: "auto" }]);
+    h.note.mockResolvedValue(undefined);
+    const result = await handleCoreToolCall(
+      "send_text_message",
+      { ...args, channel: "whatsapp" },
+      context,
+    );
+    expect(h.sendMessage).not.toHaveBeenCalled();
+    // The owner's send button for a held text sends SMS, so this is a note.
+    expect(h.queue).not.toHaveBeenCalled();
+    expect(h.note).toHaveBeenCalledOnce();
+    expect(h.note.mock.calls[0][0]).toMatchObject({
+      taskType: "follow_up",
+      targetChannel: "manual",
+      status: "pending",
+    });
+    expect(h.note.mock.calls[0][0].description).toContain("Use WhatsApp, not SMS.");
+    expect(result?.result).toContain(`DRAFT_SAVED: ${CALLER}`);
+    expect(result?.result).toContain("Do not say it was sent.");
+
+    h.note.mockRejectedValue(new Error("Task storage unavailable"));
+    const unsaved = await handleCoreToolCall(
+      "send_text_message",
+      { ...args, channel: "whatsapp" },
+      context,
+    );
+    expect(unsaved?.result).toContain("The message was not confirmed.");
+    expect(unsaved?.result).not.toContain("DRAFT_SAVED");
   });
 
   it("tells the caller the truth when the held text could not be saved", async () => {
