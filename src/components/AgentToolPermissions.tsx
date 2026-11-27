@@ -103,7 +103,7 @@ export default function AgentToolPermissions({
     const load = async () => {
       try {
         const configResponse = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`);
-        if (!configResponse.ok) throw new Error("Agent actions could not be loaded.");
+        if (!configResponse.ok) throw new Error("Your Bot's actions could not be loaded.");
         const config = (await configResponse.json()) as { enabledTools?: unknown };
         if (cancelled) return;
         /*
@@ -159,7 +159,7 @@ export default function AgentToolPermissions({
       } catch (reason) {
         if (!cancelled) {
           setLoadError(
-            reason instanceof Error ? reason.message : "Agent actions could not be loaded.",
+            reason instanceof Error ? reason.message : "Your Bot's actions could not be loaded.",
           );
         }
       } finally {

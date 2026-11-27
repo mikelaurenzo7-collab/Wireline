@@ -253,10 +253,11 @@ export async function handleWorkflowToolCall(
       // the durable source of truth if every provider is unavailable.
       const notifier = new NotificationService(agent.user_id, agent.id);
       await notifier.sendUrgentAlert({
-        title: warmTransferPhone ? "Live Transfer Incoming" : "Agent Escalate to Human",
+        // Read by the owner on their phone: what is happening, and why.
+        title: warmTransferPhone ? "A call is being transferred to you" : "A caller needs a person",
         message: warmTransferPhone
-          ? `Caller is being warm-transferred to ${warmTransferPhone} now. Agent: ${agentVoiceName || "unknown"}. Reason: ${reason}`
-          : `Agent ${agentVoiceName || "unknown"}, Reason: ${reason}`,
+          ? `${agentVoiceName || "Your Bot"} is transferring a caller to ${warmTransferPhone} now. Reason: ${reason}`
+          : `From ${agentVoiceName || "your Bot"}. Reason: ${reason}`,
         callId: callId || "unknown",
       });
 

@@ -12,7 +12,7 @@ import {
   resolveAuthorizedAgentTools,
   sanitizePersistedAgentToolSelection,
 } from "./agent-tool-authorization";
-import { type AgentToolName } from "./agent-capabilities";
+import { AGENT_TOOL_CATALOG, type AgentToolName } from "./agent-capabilities";
 import { OWNER_DECISION_NEEDED, type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { IntegrationService } from "./integrations";
@@ -209,9 +209,12 @@ async function resolveActionPolicy(
         actionType: scopedAction.type,
         requiredTool,
       });
+      // Said to the owner, in the name the action has on their screen.
+      const actionLabel =
+        AGENT_TOOL_CATALOG.find((tool) => tool.name === requiredTool)?.label ?? "this action";
       return {
         success: false,
-        error: `This agent is not authorized or connected for "${requiredTool}". Review the agent's active tools and Connections.`,
+        error: `Your Bot does not have "${actionLabel}" turned on, or the connection it needs is missing. Check its Actions in Set Up, and Connections.`,
       };
     }
 

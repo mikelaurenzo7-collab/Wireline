@@ -99,3 +99,21 @@ describe("what the chat can change", () => {
     expect(labels.join(" ")).not.toMatch(/\bagent\b/i);
   });
 });
+
+describe("messages an owner reads", () => {
+  it("call their Bot a Bot, and an action by the name on their screen", async () => {
+    const { readFileSync } = await import("node:fs");
+    const read = (path: string) => readFileSync(path, "utf8");
+    const engine = read("src/lib/action-engine.ts");
+    expect(engine).not.toContain("This agent is not authorized");
+    expect(engine).toContain(
+      'AGENT_TOOL_CATALOG.find((tool) => tool.name === requiredTool)?.label ?? "this action";',
+    );
+    expect(engine).toContain("Check its Actions in Set Up, and Connections.");
+    const alert = read("src/lib/bot-tools/workflow.ts");
+    expect(alert).not.toContain("Agent Escalate to Human");
+    expect(alert).toContain('"A caller needs a person"');
+    expect(read("src/components/AgentToolPermissions.tsx")).not.toContain("Agent actions");
+    expect(read("src/components/OpenAILiveVoiceSandbox.tsx")).not.toContain("for this agent");
+  });
+});
