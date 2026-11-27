@@ -439,3 +439,38 @@ export async function resolveSmsSenderRegistration(
   }
   return verdict;
 }
+
+/**
+ * The same verdict for a screen that only shows it. A screen cannot hold the
+ * page for a fresh account read the way a send does, and an aging answer is
+ * better there than "could not be checked": any snapshot younger than
+ * `STALE_SNAPSHOT_MAX_MS` is answered at once, and one past its lifetime is
+ * read again in the background for the next visit. Only a process with no
+ * snapshot at all waits on the read. Sends keep `resolveSmsSenderRegistration`.
+ */
+export async function readSmsSenderRegistrationForDisplay(
+  e164: string,
+  options: { client?: unknown; nowMs?: number } = {},
+): Promise<SmsSenderRegistration> {
+  const kind = smsSenderKind(e164);
+  if (!kind) {
+    return { status: "unknown", kind: null, reason: "US carrier registration does not apply." };
+  }
+  const client = options.client ?? getTwilioClient();
+  if (!isRegistrationClient(client)) {
+    return { status: "unknown", kind, reason: "Carrier registration could not be read." };
+  }
+  const nowMs = options.nowMs ?? Date.now();
+  if (cachedSnapshot && nowMs - cachedSnapshot.readAtMs < STALE_SNAPSHOT_MAX_MS) {
+    if (nowMs - cachedSnapshot.readAtMs >= SNAPSHOT_TTL_MS) {
+      if (inflight && Date.now() - inflight.startedAtMs >= SNAPSHOT_ABANDON_MS) inflight = null;
+      if (!inflight) inflight = startSnapshotRead(client, nowMs);
+    }
+    return classifySmsSender(e164, cachedSnapshot);
+  }
+  const snapshot = await currentSnapshot(client, nowMs);
+  if (!snapshot) {
+    return { status: "unknown", kind, reason: "Carrier registration could not be read." };
+  }
+  return classifySmsSender(e164, snapshot);
+}

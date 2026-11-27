@@ -29,7 +29,7 @@ import { releaseNativeTenantNumber } from "../lib/voice/native-phone-release";
 import { phoneNumberRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
-import { resolveSmsSenderRegistration } from "../lib/twilio-sms-registration";
+import { readSmsSenderRegistrationForDisplay } from "../lib/twilio-sms-registration";
 
 const router = Router();
 const MAX_POSTGRES_BIGINT = 9_223_372_036_854_775_807n;
@@ -105,9 +105,12 @@ async function lineTexting(phoneNumber: string): Promise<LineTexting> {
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<LineTexting>((resolveTimer) => {
-    timer = setTimeout(() => resolveTimer(unknown), 1500);
+    // A process with no snapshot yet reads the carrier account once, which
+    // takes a few seconds. At 1.5 seconds that first read lost every time and
+    // the line showed "could not be checked" until the next visit.
+    timer = setTimeout(() => resolveTimer(unknown), 4500);
   });
-  const read = resolveSmsSenderRegistration(phoneNumber)
+  const read = readSmsSenderRegistrationForDisplay(phoneNumber)
     .then((registration): LineTexting => {
       if (registration.status === "registered")
         return {

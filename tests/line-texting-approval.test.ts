@@ -41,13 +41,13 @@ describe("line texting approval", () => {
       resolve(process.cwd(), "src/routes/native-phone-routing-routes.ts"),
       "utf8",
     );
-    expect(route).toContain("resolveSmsSenderRegistration(phoneNumber)");
+    expect(route).toContain("readSmsSenderRegistrationForDisplay(phoneNumber)");
     expect(route).toContain(
       'texting_approval: textingApproval.get(row.phoneNumber)?.approval ?? "unknown"',
     );
     expect(route).toContain("missed_call_texts_covered:");
     expect(route).toContain("missedCallsCovered: registration.coversMissedCalls === true");
-    expect(route).toMatch(/setTimeout\(\(\) => resolveTimer\(unknown\), 1500\)/);
+    expect(route).toMatch(/setTimeout\(\(\) => resolveTimer\(unknown\), 4500\)/);
   });
 
   it("says plainly when missed-call texts are on but the campaign does not cover them", () => {
