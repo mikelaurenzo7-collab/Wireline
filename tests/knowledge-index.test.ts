@@ -20,6 +20,7 @@ import {
 } from "../src/lib/knowledge-index";
 import {
   KNOWLEDGE_SEARCH_URL,
+  canSearchKnowledgeIndex,
   isKnowledgeIndexConfigured,
   parseKnowledgeIndexState,
   searchKnowledgeIndex,
@@ -48,7 +49,47 @@ afterEach(() => {
 });
 
 describe("knowledge index", () => {
-  it("stays inert until both keys exist", () => {
+  // The service that answers calls is given the API key and not the key that
+  // builds the index. A check for both kept the index off on every live call.
+  it("searches with the one key the calling service is given", async () => {
+    expect(canSearchKnowledgeIndex({ XAI_API_KEY: "k" })).toBe(true);
+    expect(canSearchKnowledgeIndex({ XAI_API_KEY: " " })).toBe(false);
+    expect(canSearchKnowledgeIndex({ XAI_MANAGEMENT_API_KEY: "m" })).toBe(false);
+
+    vi.stubEnv("XAI_API_KEY", "test-key");
+    vi.stubEnv("XAI_MANAGEMENT_API_KEY", "");
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        matches: [{ chunk_content: "Fact: Closed on Sundays.", collection_ids: [COLLECTION] }],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const db = { select: () => queryChain([{ index: { collectionId: COLLECTION, fileId: "f" } }]) };
+    expect(
+      await semanticKnowledgeMatches(db as never, {
+        userId: "u",
+        agentId: "a",
+        query: "are you open sundays",
+        limit: 3,
+      }),
+    ).toEqual(["Closed on Sundays."]);
+    expect(fetchMock).toHaveBeenCalledOnce();
+
+    // A Bot whose index was never built is not searched.
+    fetchMock.mockClear();
+    const unbuilt = { select: () => queryChain([{ index: { collectionId: COLLECTION } }]) };
+    expect(
+      await semanticKnowledgeMatches(unbuilt as never, {
+        userId: "u",
+        agentId: "a",
+        query: "are you open sundays",
+        limit: 3,
+      }),
+    ).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("builds only when both keys exist", () => {
     expect(isKnowledgeIndexConfigured({ XAI_API_KEY: "k" })).toBe(false);
     expect(isKnowledgeIndexConfigured({ XAI_MANAGEMENT_API_KEY: "m" })).toBe(false);
     expect(isKnowledgeIndexConfigured({ XAI_API_KEY: " ", XAI_MANAGEMENT_API_KEY: "m" })).toBe(

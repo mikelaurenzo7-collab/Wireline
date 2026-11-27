@@ -13,7 +13,6 @@ export function sanitizePhone(phone: string | undefined | null): string {
   return (phone || "").replace(/[^0-9+]/g, "").slice(0, 20);
 }
 
-export const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
 export const MAX_RUNTIME_LESSONS = 5;
 export const MAX_RUNTIME_DIRECTIVES = 24;
 export const MAX_RUNTIME_KNOWLEDGE = 18;
@@ -51,12 +50,21 @@ const RUNTIME_GUARDRAIL_MARKERS = [
   "\n\n## COMPLIANCE",
   "\n\n## DO-NOT-DISCUSS TOPICS",
   "\n\n## IMMEDIATE-ESCALATION TRIGGERS",
+  // OWNER_LIMITS_HEADING in agent-playbook.ts: what the owner ruled out.
+  "\n\n## LIMITS SET BY THE ACCOUNT HOLDER",
   "\n\n## ACTION AND RESULT SAFETY",
   "\n\n## VOICE AND DELIVERY CONSISTENCY",
 ] as const;
 
 const RUNTIME_TRIM_NOTICE =
   "\n\n[Context trimmed for voice latency, use tools for account-specific detail.]";
+/** How far back a cut looks for the end of a line: a little over one rule or fact. */
+const RUNTIME_TRIM_LINE_REACH = 800;
+
+/** Whether an assembled prompt was cut to fit, so the runtime can say so in its log. */
+export function wasRuntimePromptTrimmed(prompt: string): boolean {
+  return prompt.includes(RUNTIME_TRIM_NOTICE);
+}
 
 /**
  * Clamp an assembled runtime prompt without dropping the compliance /
@@ -90,7 +98,14 @@ export function clampRuntimePromptPreservingTail(
     const tail = text.slice(idx);
     const headBudget = max - tail.length - RUNTIME_TRIM_NOTICE.length;
     if (headBudget < 500) continue;
-    return `${text.slice(0, headBudget)}${RUNTIME_TRIM_NOTICE}${tail}`;
+    // Whole lines where a line ends close by. Rules and facts are one line
+    // each, at most 700 characters, so the cut drops complete items from the
+    // end instead of leaving half a sentence for the Bot to guess at. A longer
+    // unbroken passage is still cut where the budget ends, not thrown away.
+    const head = text.slice(0, headBudget);
+    const lineEnd = head.lastIndexOf("\n");
+    const kept = lineEnd >= headBudget - RUNTIME_TRIM_LINE_REACH ? head.slice(0, lineEnd) : head;
+    return `${kept}${RUNTIME_TRIM_NOTICE}${tail}`;
   }
 
   return clampRuntimePrompt(text, max);
@@ -910,6 +925,10 @@ export function buildAgentToolDefs(enabledTools?: unknown): object[] {
   if (isLegacyFounderShowcaseToolSelection(enabledTools)) {
     tools.push(AGENT_TOOL_DEFS.create_followup_task);
   }
+  // The Bot can always look up its own saved knowledge.
+  if (!toolNames.includes("search_knowledge_base")) {
+    tools.push(AGENT_TOOL_DEFS.search_knowledge_base);
+  }
   return tools;
 }
 
@@ -966,6 +985,14 @@ export async function buildAgentToolDefsForTenant(
       isAgentToolChannelAllowed("create_followup_task", entitlements.channels)
     ) {
       allowed.push(AGENT_TOOL_DEFS.create_followup_task);
+    }
+    // The Bot can always look up its own saved knowledge. A call opens with
+    // only a handful of its facts; without the search the rest is out of reach.
+    if (
+      !allowed.some((tool) => (tool as { name?: unknown }).name === "search_knowledge_base") &&
+      isAgentToolChannelAllowed("search_knowledge_base", entitlements.channels)
+    ) {
+      allowed.push(AGENT_TOOL_DEFS.search_knowledge_base);
     }
     // Reconcile stale schemas without expanding an explicit action selection.
     for (const computerTool of selectedComputerTools) {

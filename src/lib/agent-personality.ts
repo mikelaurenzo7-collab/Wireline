@@ -2,9 +2,9 @@
  * Composes the Bot's saved personality.
  *
  * BotBound runs one Bot, so there is no role personality to pick and no
- * template overlay to stack. Composition is now just the shared baseline, the
- * personal-posture addendum when the account is not a business, and whatever
- * the Account Holder wrote, with business tokens substituted.
+ * template overlay to stack. Composition is now just the short shared brief,
+ * the personal-posture addendum when the account is not a business, and
+ * whatever the Account Holder wrote, with business tokens substituted.
  *
  * Substitution tokens:
  *   {{businessName}}        — settings.businessName, fallback "your business"

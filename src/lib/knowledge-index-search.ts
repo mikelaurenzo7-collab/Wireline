@@ -29,9 +29,18 @@ export type KnowledgeIndexState = {
 
 type IndexDb = Pick<typeof serverDrizzle, "select">;
 
-/** The index needs both keys: one builds it, the other searches it. */
+/** Building the index needs both keys: one creates it, the other uploads to it. */
 export function isKnowledgeIndexConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(env.XAI_API_KEY?.trim() && env.XAI_MANAGEMENT_API_KEY?.trim());
+}
+
+/**
+ * Searching needs only the API key. The service that answers calls is given
+ * that key and not the one that builds the index, so a check for both kept
+ * the index switched off on every live call.
+ */
+export function canSearchKnowledgeIndex(env: NodeJS.ProcessEnv = process.env): boolean {
+  return Boolean(env.XAI_API_KEY?.trim());
 }
 
 export function parseKnowledgeIndexState(value: unknown): KnowledgeIndexState | null {
@@ -107,7 +116,7 @@ export async function loadKnowledgeIndex(
   db: IndexDb,
   scope: { userId: string; agentId: string },
 ): Promise<KnowledgeIndexState | null> {
-  if (!isKnowledgeIndexConfigured()) return null;
+  if (!canSearchKnowledgeIndex()) return null;
   try {
     const rows = await db
       .select({ index: schema.agents.knowledgeIndex })
@@ -125,7 +134,7 @@ export async function semanticKnowledgeMatches(
   db: IndexDb,
   scope: { userId: string; agentId: string; query: string; limit: number },
 ): Promise<string[]> {
-  if (!isKnowledgeIndexConfigured() || !scope.userId || !scope.agentId) return [];
+  if (!canSearchKnowledgeIndex() || !scope.userId || !scope.agentId) return [];
   const index = await loadKnowledgeIndex(db, scope);
   if (!index?.fileId) return [];
   return searchKnowledgeIndex(index.collectionId, scope.query, scope.limit);

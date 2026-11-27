@@ -1,5 +1,6 @@
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { playbookPromptBlock } from "../lib/agent-playbook";
+import { businessHoursContext } from "../lib/agent-runtime";
 import { nativeCalendarRehearsalContext } from "../lib/native-calendar-rehearsal";
 import { Router, type Response } from "express";
 import { and, eq } from "drizzle-orm";
@@ -73,7 +74,6 @@ router.post(
               firstMessage: schema.agents.firstMessage,
               businessHours: schema.agents.businessHours,
               timezone: schema.agents.timezone,
-              businessVariables: schema.agents.businessVariables,
               outOfHoursMessage: schema.agents.outOfHoursMessage,
               complianceMode: schema.agents.complianceMode,
               disallowedTopics: schema.agents.disallowedTopics,
@@ -147,9 +147,6 @@ router.post(
         }),
         50,
       );
-      const businessProfile = agent.businessVariables
-        ? JSON.stringify(agent.businessVariables).slice(0, 6000)
-        : "";
       const calendarContext = await nativeCalendarRehearsalContext(req.user.id, agent.enabledTools);
 
       const system = [
@@ -164,11 +161,11 @@ router.post(
         playbookPromptBlock(agent.playbook),
         directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
         knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
-        businessProfile ? `Workspace profile: ${businessProfile}` : "",
-        agent.businessHours ? `Operating hours: ${JSON.stringify(agent.businessHours)}` : "",
+        businessHoursContext(agent),
         agent.timezone ? `Timezone: ${agent.timezone}` : "",
         agent.outOfHoursMessage ? `After-hours response: ${agent.outOfHoursMessage}` : "",
-        agent.complianceMode && agent.complianceMode !== "none"
+        // "standard" is the stored default and tells the Bot nothing.
+        agent.complianceMode && !["none", "standard"].includes(agent.complianceMode)
           ? `Compliance mode: ${agent.complianceMode}.`
           : "",
         agent.disallowedTopics?.length
@@ -177,8 +174,10 @@ router.post(
         agent.escalationKeywords?.length
           ? `Escalate or take a message when the caller raises: ${agent.escalationKeywords.join(", ")}.`
           : "",
+        // The Bot knows a person can take over. It is not given the number
+        // or address to read out.
         agent.escalationPhone || agent.escalationEmail
-          ? `Human handoff contact: ${[agent.escalationPhone, agent.escalationEmail].filter(Boolean).join(" · ")}`
+          ? "A person can take over when needed. Offer a follow-up from the team, and never give out internal contact details."
           : "",
       ]
         .filter(Boolean)

@@ -997,6 +997,36 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const loadAbortRef = useRef<AbortController | null>(null);
   const loadGenerationRef = useRef(0);
   const lastLoadAtRef = useRef(0);
+  const [dismissingGap, setDismissingGap] = useState<string | null>(null);
+  const [gapError, setGapError] = useState<string | null>(null);
+
+  // An owner who has read a question, or already added its answer, clears it.
+  // A dismissed question stays dismissed if a caller asks it again.
+  const dismissGap = useCallback(async (id: string) => {
+    setDismissingGap(id);
+    setGapError(null);
+    try {
+      const response = await authFetch("/api/agents/lessons/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lesson_id: id, action: "reject" }),
+      });
+      const body = (await response.json().catch(() => null)) as { ok?: unknown } | null;
+      if (!response.ok || body?.ok !== true) throw new Error("Not dismissed");
+      setTriage((current) =>
+        current
+          ? {
+              ...current,
+              knowledge_gaps: (current.knowledge_gaps || []).filter((gap) => String(gap.id) !== id),
+            }
+          : current,
+      );
+    } catch {
+      setGapError("That could not be dismissed. Try again.");
+    } finally {
+      setDismissingGap(null);
+    }
+  }, []);
 
   const load = useCallback(async (background = false, replaceInFlight = false) => {
     if (background && !replaceInFlight && loadAbortRef.current) return;
@@ -1332,6 +1362,11 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         ) : null
       ) : (
         <div className="grid gap-3">
+          {bucket === "knowledge_gaps" && gapError ? (
+            <p role="alert" className="text-xs text-destructive">
+              {gapError}
+            </p>
+          ) : null}
           {bucketItems.slice(0, visibleCount).map((item) => {
             const gap = item.task_type === "knowledge_gap";
             const agentId = textField(item.payload, "agent_id");
@@ -1353,6 +1388,15 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                       >
                         Add to Knowledge
                       </Link>
+                      <ShadButton
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={dismissingGap === item.id}
+                        onClick={() => void dismissGap(item.id)}
+                      >
+                        Dismiss
+                      </ShadButton>
                     </div>
                   </>
                 ) : (

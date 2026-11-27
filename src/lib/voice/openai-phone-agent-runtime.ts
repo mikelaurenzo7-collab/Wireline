@@ -1,19 +1,22 @@
 import { actionExecutionMode } from "../bot-permission";
-import { resolveAgentGreeting } from "../agent-greeting";
-import { playbookPromptBlock } from "../agent-playbook";
-import { DIRECTIVE_PROMPT_ORDER } from "../agent-knowledge-search";
-import { and, desc, eq } from "drizzle-orm";
+import { OPENING_GREETING_PREFIX, resolveAgentGreeting } from "../agent-greeting";
+import { ownerLimitsBlock, playbookPromptBlock } from "../agent-playbook";
+import { DIRECTIVE_PROMPT_ORDER, OPENING_FACTS_ORDER } from "../agent-knowledge-search";
+import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { spokenBusinessName } from "./spoken-business-name";
 import { AppError } from "../api-error";
 import {
+  businessHoursContext,
   RUNTIME_ACTION_SAFETY_BLOCK,
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
+import { personalityForPrompt } from "../compose-setup-personality";
 import {
   buildAgentToolDefsForTenant,
   clampRuntimePromptPreservingTail,
+  wasRuntimePromptTrimmed,
 } from "../agent-runtime-helpers";
 import {
   founderInternalRuntimeAuthorityBoundary,
@@ -28,7 +31,7 @@ import {
   resolveRuntimeTemplatePersonality,
   runtimeTemplateGuidanceBlock,
 } from "../runtime-template-personality";
-import { drizzle, serialQueryBatch } from "../server-context";
+import { drizzle, log, serialQueryBatch } from "../server-context";
 import { validateNativeCalendarSettings } from "../native-calendar-policy";
 import {
   botSellsBotBound,
@@ -50,7 +53,14 @@ import { phoneVoiceSelection } from "../phone-voices";
 import { callDeliveryFor } from "./call-delivery";
 
 const MAX_PROMPT_LINE_LENGTH = 700;
-const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
+/**
+ * Opening facts. A call used to start with the eight newest, whatever they
+ * were, and half of all Bots held more than twenty-five. Up to this many are
+ * loaded and as many as fit the character budget are shown, the facts callers
+ * ask about most first; the search tool reaches the rest.
+ */
+const MAX_INITIAL_KNOWLEDGE_ITEMS = 24;
+const MAX_INITIAL_KNOWLEDGE_CHARS = 3_000;
 
 export type WirelineVoiceProfile = "bright" | "warm" | "clear" | "balanced" | "direct";
 
@@ -148,6 +158,8 @@ export type OpenAIRealtimeInstructionAgent = {
   autonomyLevel?: string | null;
   enabledTools: unknown;
   timezone: string | null;
+  /** The owner's saved weekly hours; optional for older callers. */
+  businessHours?: unknown;
   kpiFocus: string | null;
   voiceProvider: string | null;
   voiceId: string | null;
@@ -176,18 +188,36 @@ function trimLine(value: unknown, max = MAX_PROMPT_LINE_LENGTH): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+/** The Playbook without its two limit lists, which are printed with the safety text. */
 function playbookBlock(playbook: unknown): string {
-  const block = playbookPromptBlock(playbook);
+  const block = playbookPromptBlock(playbook, { withoutLimits: true });
   return block ? `\n${block}` : "";
 }
 
-function listBlock(title: string, values: Array<{ content?: string | null }>, maxItems: number) {
-  const lines = values
-    .map((item) => trimLine(item.content))
-    .filter(Boolean)
-    .slice(0, maxItems)
-    .map((item) => `- ${item}`);
+function listBlock(
+  title: string,
+  values: Array<{ content?: string | null }>,
+  maxItems: number,
+  maxChars = Number.POSITIVE_INFINITY,
+) {
+  const lines: string[] = [];
+  let used = 0;
+  for (const item of values) {
+    const line = trimLine(item.content);
+    if (!line) continue;
+    // Whole items only: a fact cut in half is worse than one left to search.
+    if (lines.length >= maxItems || used + line.length > maxChars) break;
+    lines.push(`- ${line}`);
+    used += line.length;
+  }
   return lines.length ? `\n${title}:\n${lines.join("\n")}` : "";
+}
+
+/** The connection speaks the greeting; listing it again as a rule only invites a second one. */
+function withoutGreetingRule<T extends { content?: string | null }>(directives: T[]): T[] {
+  return directives.filter(
+    (directive) => !(directive.content ?? "").trimStart().startsWith(OPENING_GREETING_PREFIX),
+  );
 }
 
 function toStringArray(value: unknown): string[] {
@@ -202,28 +232,34 @@ function toStringArray(value: unknown): string[] {
 function runtimeTimeContext(timeZoneValue: string | null, now = new Date()): string {
   const requested = String(timeZoneValue || "UTC").trim() || "UTC";
   let timeZone = requested;
+  const dateParts = (zone: string) =>
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now);
   let parts: Intl.DateTimeFormatPart[];
   try {
-    parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(now);
+    parts = dateParts(timeZone);
   } catch {
     timeZone = "UTC";
-    parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(now);
+    parts = dateParts(timeZone);
   }
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   const date = `${values.year}-${values.month}-${values.day}`;
+  // The weekday and the clock, so "are you open now?" and "see you Thursday"
+  // can be answered. The date alone could not tell the Bot either.
+  const clock = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "long",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(now);
   return [
     "TIME CONTEXT:",
     `Today is ${date}. The Bot's configured IANA timezone is ${timeZone}. Use that timezone for local dates and times unless the caller confirms a different one or the native Calendar time context below applies.`,
+    `It is ${clock} there as this conversation starts.`,
     "When scheduling a local appointment, say the day, date and time naturally in the business's local time. Name the timezone only when the caller asks or the location or timing could make the appointment ambiguous.",
   ].join("\n");
 }
@@ -291,8 +327,17 @@ export function composeOpenAIRealtimeInstructions(input: {
   directives: Array<{ content: string | null }>;
   knowledge: Array<{ content: string | null }>;
   surface: OpenAIRealtimeSurface;
+  /**
+   * The tools this conversation is actually given. Instructions about a tool
+   * are left out when the Bot does not have it. Omitted by older callers,
+   * which keeps every such instruction.
+   */
+  toolNames?: readonly string[];
 }) {
   const now = new Date();
+  const hasTool = (name: string) => !input.toolNames || input.toolNames.includes(name);
+  const sellsBotBound = (internalPersona: boolean) =>
+    botSellsBotBound({ agentId: input.agent.id, internalPersona });
   const internalPolicy = resolveFounderInternalRuntimePolicy({
     agentId: input.agent.id,
     userId: input.agent.userId,
@@ -322,14 +367,9 @@ export function composeOpenAIRealtimeInstructions(input: {
         .filter(Boolean)
         .join("\n");
   const compliance = [
-    input.agent.complianceMode && input.agent.complianceMode !== "none"
+    // "standard" is the stored default and tells the Bot nothing.
+    input.agent.complianceMode && !["none", "standard"].includes(input.agent.complianceMode)
       ? `Compliance mode: ${input.agent.complianceMode}.`
-      : "",
-    toStringArray(input.agent.disallowedTopics).length
-      ? `Do not discuss: ${toStringArray(input.agent.disallowedTopics).join(", ")}.`
-      : "",
-    toStringArray(input.agent.escalationKeywords).length
-      ? `Escalate or take a message when the caller raises: ${toStringArray(input.agent.escalationKeywords).join(", ")}.`
       : "",
     input.agent.escalationPhone || input.agent.escalationEmail || input.agent.transferPhone
       ? "A human escalation route exists; offer a callback or handoff only when policy permits."
@@ -337,13 +377,26 @@ export function composeOpenAIRealtimeInstructions(input: {
   ]
     .filter(Boolean)
     .join("\n");
+  // What the owner ruled out is printed beside the fixed safety text, which a
+  // prompt cut to fit keeps. It used to be the first thing a long prompt lost.
+  const ownerLimits = runtimeReviewRequired
+    ? ""
+    : ownerLimitsBlock({
+        disallowedTopics: toStringArray(input.agent.disallowedTopics),
+        escalationKeywords: toStringArray(input.agent.escalationKeywords),
+        playbook: input.agent.playbook,
+      });
   const tone = internalPolicy
     ? input.agent.personalityVibe
       ? `Tone: ${input.agent.personalityVibe}.`
       : ""
     : runtimeReviewRequired
       ? ""
-      : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : input.personality, 1_500) ||
+      : (runtimeTemplate
+          ? trimLine(runtimeTemplate.rolePersonality, 1_500)
+          : // The tone the owner chose in Set Up is written at the end of the
+            // saved text. It goes first here so the cut cannot drop it.
+            personalityForPrompt(input.personality, 1_500)) ||
         (input.agent.personalityVibe ? `Tone: ${input.agent.personalityVibe}.` : "");
   const surface = runtimeReviewRequired
     ? ""
@@ -358,14 +411,21 @@ export function composeOpenAIRealtimeInstructions(input: {
           }) === "draft"
             ? "The owner asked to see customer emails and texts before they go out. Offer to pass the request to the team. For email, confirm the address once and use the enabled email tool. For a text, use the enabled text tool. Tell the caller it is with the team only after a saved draft receipt, and never say it was sent."
             : "When a caller asks for an email or a text, send it with the enabled tool and describe it as sent only after the send result confirms it.",
-          "CLOUD COMPUTER BROWSER: When a caller asks you to check a live website, portal, schedule, or web form not covered by direct tools, call start_computer_task and immediately tell the caller you are checking it in your browser now. Use check_computer_task to read progress. If a browser task pauses with status=needs_input and a pending question, ask the caller that exact question and pass their answer using reply_computer_task. Use stop_computer_task if the caller cancels the browser lookup.\n",
-        ].join("\n");
+          hasTool("start_computer_task")
+            ? "CLOUD COMPUTER BROWSER: When a caller asks you to check a live website, portal, schedule, or web form not covered by direct tools, call start_computer_task and tell the caller once, in a few words, that you are looking it up. Use check_computer_task to read progress. If a browser task pauses with status=needs_input and a pending question, ask the caller that exact question and pass their answer using reply_computer_task. Use stop_computer_task if the caller cancels the browser lookup.\n"
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
 
   return clampRuntimePromptPreservingTail(
     [
       identity,
       surface,
       runtimeReviewRequired ? "" : `\n${runtimeTimeContext(input.agent.timezone, now)}`,
+      runtimeReviewRequired || !businessHoursContext(input.agent, now)
+        ? ""
+        : `\n${businessHoursContext(input.agent, now)}`,
       runtimeReviewRequired ? "" : nativeCalendarTimeContext(input.tenant.nativeCalendar, now),
       customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
       internalPolicy && !runtimeReviewRequired
@@ -378,22 +438,29 @@ export function composeOpenAIRealtimeInstructions(input: {
         : "",
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
       runtimeReviewRequired ? "" : playbookBlock(input.agent.playbook),
-      runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
+      runtimeReviewRequired
+        ? ""
+        : listBlock("OPERATING RULES", withoutGreetingRule(input.directives), 24),
       runtimeReviewRequired
         ? ""
         : listBlock(
             "INITIAL APPROVED KNOWLEDGE",
-            input.knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            // BotBound's retired prices are dropped from the Bots that sell
+            // BotBound. Applied to every Bot, this removed a customer's own
+            // "$19/month" from what its Bot knew.
+            sellsBotBound(Boolean(internalPolicy))
+              ? input.knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? ""))
+              : input.knowledge,
             MAX_INITIAL_KNOWLEDGE_ITEMS,
+            MAX_INITIAL_KNOWLEDGE_CHARS,
           ),
+      ownerLimits ? `\n${ownerLimits}` : "",
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
       `\n${RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK}`,
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
         : "",
-      botSellsBotBound({ agentId: input.agent.id, internalPersona: Boolean(internalPolicy) })
-        ? `\n${currentPricingPromptBlock()}`
-        : "",
+      sellsBotBound(Boolean(internalPolicy)) ? `\n${currentPricingPromptBlock()}` : "",
     ]
       .filter(Boolean)
       .join("\n"),
@@ -423,6 +490,7 @@ async function loadRuntime(agentId: string, userId: string) {
             autonomyLevel: schema.agents.autonomyLevel,
             enabledTools: schema.agents.enabledTools,
             timezone: schema.agents.timezone,
+            businessHours: schema.agents.businessHours,
             kpiFocus: schema.agents.kpiFocus,
             voiceProvider: schema.agents.voiceProvider,
             voiceId: schema.agents.voiceId,
@@ -462,7 +530,7 @@ async function loadRuntime(agentId: string, userId: string) {
           .select({ content: schema.knowledge.content })
           .from(schema.knowledge)
           .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
-          .orderBy(desc(schema.knowledge.createdAt))
+          .orderBy(...OPENING_FACTS_ORDER)
           // Only the prompt's opening facts; the search tool reaches the rest.
           .limit(MAX_INITIAL_KNOWLEDGE_ITEMS),
         tx
@@ -567,7 +635,17 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
   const instructions = composeOpenAIRealtimeInstructions({
     ...runtime,
     surface: input.surface,
+    toolNames: tools.map((tool) => tool.name),
   });
+  // What was cut is the end of the owner's own content, and nothing used to
+  // record that it happened.
+  if (wasRuntimePromptTrimmed(instructions)) {
+    log.warn("Bot instructions were trimmed to fit a call", {
+      userId: runtime.agent.userId,
+      agentId: runtime.agent.id,
+      surface: input.surface,
+    });
+  }
 
   const commonSession = {
     type: "realtime" as const,
@@ -625,6 +703,12 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     greeting: reviewRequired
       ? RUNTIME_REVIEW_REQUIRED_GREETING
       : resolveAgentGreeting(runtime.agent, runtime.directives),
+    /**
+     * The saved opening hours in plain words, or "". After hours the full
+     * instructions are replaced by a message-taker, which still needs these to
+     * say when the business opens.
+     */
+    businessHours: reviewRequired ? "" : businessHoursContext(runtime.agent),
     session: commonSession,
     toolNames: tools.map((tool) => tool.name),
   };

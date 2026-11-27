@@ -3,6 +3,8 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { DIRECTIVE_PROMPT_ORDER, loadPromptKnowledge } from "./agent-knowledge-search";
 import { playbookCheckFirstRules, playbookPromptBlock } from "./agent-playbook";
+import { businessHoursContext } from "./agent-runtime";
+import { personalityForPrompt } from "./compose-setup-personality";
 import { runStructured } from "./ai-structured";
 import { drizzle, serialQueryBatch } from "./server-context";
 import { STRUCTURED_RUNTIME_MODELS } from "./structured-runtime-models";
@@ -153,7 +155,6 @@ export async function generateAgentTextReply(input: {
           firstMessage: schema.agents.firstMessage,
           businessHours: schema.agents.businessHours,
           timezone: schema.agents.timezone,
-          businessVariables: schema.agents.businessVariables,
           outOfHoursMessage: schema.agents.outOfHoursMessage,
           complianceMode: schema.agents.complianceMode,
           disallowedTopics: schema.agents.disallowedTopics,
@@ -202,16 +203,19 @@ export async function generateAgentTextReply(input: {
   );
   const disallowedTopics = compactStringList(agent.disallowedTopics);
   const escalationKeywords = compactStringList(agent.escalationKeywords);
-  const recentInboundText = input.messages
+  const recentInbound = input.messages
     .slice(-MAX_TEXT_MESSAGES)
     .filter((message) => message.direction === "in")
-    .map((message) => message.body)
-    .join("\n");
+    .map((message) => message.body);
+  const recentInboundText = recentInbound.join("\n");
   const knowledgeLines = compactLines(
     await loadPromptKnowledge(drizzle, {
       userId: input.userId,
       agentId: input.agentId,
-      text: recentInboundText,
+      // The newest message first. The search keeps a limited number of words,
+      // and read oldest first, a long thread used them up before it reached
+      // the question being answered.
+      text: [...recentInbound].reverse().join("\n"),
       relevant: MAX_TEXT_RELEVANT_KNOWLEDGE,
       total: MAX_TEXT_KNOWLEDGE_ITEMS,
     }),
@@ -225,9 +229,6 @@ export async function generateAgentTextReply(input: {
         ? "Customer explicitly requested a person."
         : "";
   const hasHumanEscalationRoute = Boolean(agent.escalationPhone || agent.escalationEmail);
-  const businessProfile = agent.businessVariables
-    ? JSON.stringify(agent.businessVariables).slice(0, 4_000)
-    : "";
   const recentMessages = input.messages
     .slice(-MAX_TEXT_MESSAGES)
     .map(
@@ -239,8 +240,10 @@ export async function generateAgentTextReply(input: {
   const context = [
     `You are ${agent.name || "the Bot"}, the text-message Bot for this business. Your configured role is ${agent.role || "customer support"}.`,
     "Write only the next SMS reply. Stay under 320 characters and prefer one or two short sentences.",
+    // The tone the owner chose in Set Up is written at the end of the saved
+    // text, past where this used to cut it. It goes first, as on a call.
     savedPersonality
-      ? `Tone: ${savedPersonality.replace(/\s+/g, " ").trim().slice(0, 1_500)}`
+      ? `Tone: ${personalityForPrompt(savedPersonality, 1_500).replace(/\s+/g, " ").trim()}`
       : "Tone: clear, warm, and professional.",
     agent.firstMessage
       ? `Preferred opening: ${agent.firstMessage.replace(/\s+/g, " ").trim().slice(0, 500)}`
@@ -249,10 +252,10 @@ export async function generateAgentTextReply(input: {
     playbookPromptBlock(agent.playbook),
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Approved knowledge:\n- ${knowledgeLines.join("\n- ")}` : "",
-    businessProfile ? `Workspace profile: ${businessProfile}` : "",
-    agent.businessHours
-      ? `Operating hours: ${JSON.stringify(agent.businessHours).slice(0, 1_000)}`
-      : "",
+    // The hours in plain words, and whether the business is open now. This
+    // used to be the saved JSON, beside a "workspace profile" that held only
+    // internal flags and voice settings.
+    businessHoursContext(agent),
     agent.timezone ? `Timezone: ${agent.timezone.trim().slice(0, 100)}` : "",
     agent.outOfHoursMessage
       ? `After-hours response: ${agent.outOfHoursMessage.replace(/\s+/g, " ").trim().slice(0, 500)}`
@@ -263,7 +266,8 @@ export async function generateAgentTextReply(input: {
 
   const policy = [
     "## COMPLIANCE AND HUMAN REVIEW",
-    agent.complianceMode && agent.complianceMode !== "none"
+    // "standard" is the stored default and tells the Bot nothing.
+    agent.complianceMode && !["none", "standard"].includes(agent.complianceMode)
       ? `Compliance mode: ${agent.complianceMode.trim().slice(0, 80)}.`
       : "",
     disallowedTopics.length

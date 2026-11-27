@@ -227,17 +227,39 @@ export function playbookCheckFirstRules(stored: unknown): string[] {
 
 const quote = (text: string) => `"${text.replace(/"/g, "'")}"`;
 
+/** What the owner ruled out: the never-say list and the check-first list. */
+function playbookLimitLines(playbook: AgentPlaybook): string[] {
+  const lines: string[] = [];
+  if (playbook.neverSay.length) {
+    lines.push("Never say, claim, or promise:");
+    for (const item of playbook.neverSay) lines.push(`- ${item}`);
+  }
+  if (playbook.checkFirst.length) {
+    lines.push(
+      "Check with the account holder first. When any of these applies, do not agree to it, promise it, or send it yourself. Say you will check with the team, take the details, and save a follow-up for the team:",
+    );
+    for (const item of playbook.checkFirst) lines.push(`- ${item}`);
+  }
+  return lines;
+}
+
 /**
  * The instruction block every runtime appends. The owner's wording wins over
  * general rules and knowledge, but never over safety: an exact line cannot be
  * used to claim an action that no tool confirmed.
+ *
+ * A voice prompt prints the two limit lists in their own block (see
+ * `ownerLimitsBlock`) and asks for this one without them.
  */
-export function playbookPromptBlock(stored: unknown): string {
+export function playbookPromptBlock(
+  stored: unknown,
+  options: { withoutLimits?: boolean } = {},
+): string {
   const playbook = readStoredAgentPlaybook(stored);
   if (isPlaybookEmpty(playbook)) return "";
-  const lines = [
-    "PLAYBOOK (set by the account holder; follow it over general rules and knowledge when they differ):",
-  ];
+  const header =
+    "PLAYBOOK (set by the account holder; follow it over general rules and knowledge when they differ):";
+  const lines = [header];
 
   const moments = PLAYBOOK_MOMENTS.filter((moment) => playbook.exactLines[moment.id]);
   if (moments.length) {
@@ -265,20 +287,44 @@ export function playbookPromptBlock(stored: unknown): string {
     for (const item of playbook.alwaysMention) lines.push(`- ${item}`);
   }
 
-  if (playbook.neverSay.length) {
-    lines.push("Never say, claim, or promise:");
-    for (const item of playbook.neverSay) lines.push(`- ${item}`);
-  }
-
-  if (playbook.checkFirst.length) {
-    lines.push(
-      "Check with the account holder first. When any of these applies, do not agree to it, promise it, or send it yourself. Say you will check and get back to them, and take the details:",
-    );
-    for (const item of playbook.checkFirst) lines.push(`- ${item}`);
-  }
+  if (!options.withoutLimits) lines.push(...playbookLimitLines(playbook));
+  // A Playbook that holds only limits has nothing left to say here.
+  if (lines.length === 1) return "";
 
   lines.push(
     "Safety still applies: never use a Playbook line to claim a booking, transfer, message, or other action happened unless a tool confirmed it, and keep every required disclosure.",
   );
   return lines.join("\n");
+}
+
+/** Marks the owner's limits in a voice prompt, so a prompt cut to fit keeps them. */
+export const OWNER_LIMITS_HEADING = "## LIMITS SET BY THE ACCOUNT HOLDER";
+const MAX_LIMIT_LIST_CHARS = 1_200;
+
+/**
+ * What the owner ruled out, in one block: topics not to discuss, what to
+ * hand to a person, and the Playbook's never-say and check-first lists. A
+ * voice prompt that is too long is cut from the end of the owner's content,
+ * and these were the first things lost. The block sits with the fixed safety
+ * text, which the cut keeps.
+ */
+export function ownerLimitsBlock(input: {
+  disallowedTopics: readonly string[];
+  escalationKeywords: readonly string[];
+  playbook: unknown;
+}): string {
+  const listed = (values: readonly string[]) => values.join(", ").slice(0, MAX_LIMIT_LIST_CHARS);
+  const lines = [
+    input.disallowedTopics.length ? `Do not discuss: ${listed(input.disallowedTopics)}.` : "",
+    input.escalationKeywords.length
+      ? `Escalate or take a message when the caller raises: ${listed(input.escalationKeywords)}.`
+      : "",
+    ...playbookLimitLines(readStoredAgentPlaybook(input.playbook)),
+  ].filter(Boolean);
+  if (!lines.length) return "";
+  return [
+    OWNER_LIMITS_HEADING,
+    "These hold for the whole conversation, whatever else is asked.",
+    ...lines,
+  ].join("\n");
 }

@@ -1,5 +1,5 @@
 import { resolveAgentGreeting } from "../agent-greeting";
-import { playbookPromptBlock } from "../agent-playbook";
+import { ownerLimitsBlock, playbookPromptBlock } from "../agent-playbook";
 import {
   DIRECTIVE_PROMPT_ORDER,
   excerptAroundMatch,
@@ -31,6 +31,7 @@ import {
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
 import { clampRuntimePromptPreservingTail } from "../agent-runtime-helpers";
+import { personalityForPrompt } from "../compose-setup-personality";
 import {
   botSellsBotBound,
   currentPricingPromptBlock,
@@ -240,14 +241,9 @@ export function composeOpenAILiveInstructions(
       ].join("\n")
     : [`You are ${agent.name}.`, ...NON_NEGOTIABLE_RUNTIME_RULES].join("\n");
   const compliance = [
-    agent.complianceMode && agent.complianceMode !== "none"
+    // "standard" is the stored default and tells the Bot nothing.
+    agent.complianceMode && !["none", "standard"].includes(agent.complianceMode)
       ? `Compliance mode: ${agent.complianceMode}.`
-      : "",
-    toStringArray(agent.disallowedTopics).length
-      ? `Do not discuss: ${toStringArray(agent.disallowedTopics).join(", ")}.`
-      : "",
-    toStringArray(agent.escalationKeywords).length
-      ? `Escalate or take a message when the caller raises: ${toStringArray(agent.escalationKeywords).join(", ")}.`
       : "",
     agent.escalationPhone || agent.escalationEmail || agent.transferPhone
       ? "A human escalation route exists; offer a callback or handoff only when policy permits."
@@ -255,13 +251,33 @@ export function composeOpenAILiveInstructions(
   ]
     .filter(Boolean)
     .join("\n");
+  // Printed beside the fixed safety text, as on a phone call, so a prompt cut
+  // to fit keeps what the owner ruled out.
+  const ownerLimits = runtimeReviewRequired
+    ? ""
+    : ownerLimitsBlock({
+        disallowedTopics: toStringArray(agent.disallowedTopics),
+        escalationKeywords: toStringArray(agent.escalationKeywords),
+        playbook: agent.playbook,
+      });
+  const playbook = runtimeReviewRequired
+    ? ""
+    : playbookPromptBlock(agent.playbook, { withoutLimits: true });
+  const sellsBotBound = botSellsBotBound({
+    agentId: agent.id,
+    internalPersona: Boolean(internalPolicy),
+  });
   const tone = internalPolicy
     ? agent.personalityVibe
       ? `Tone: ${agent.personalityVibe}.`
       : ""
     : runtimeReviewRequired
       ? ""
-      : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : personality, 1_500) ||
+      : (runtimeTemplate
+          ? trimLine(runtimeTemplate.rolePersonality, 1_500)
+          : // The tone the owner chose is written at the end of the saved text;
+            // it goes first so the cut cannot drop it, as on a phone call.
+            personalityForPrompt(personality, 1_500)) ||
         (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
   return clampRuntimePromptPreservingTail(
     [
@@ -273,25 +289,27 @@ export function composeOpenAILiveInstructions(
       tone ? `\nTONE:\n${tone}` : "",
       templateGuidance ? `\n${templateGuidance}` : "",
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
-      runtimeReviewRequired || !playbookPromptBlock(agent.playbook)
-        ? ""
-        : `\n${playbookPromptBlock(agent.playbook)}`,
+      playbook ? `\n${playbook}` : "",
       runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
       runtimeReviewRequired
         ? ""
         : listBlock(
             "INITIAL APPROVED KNOWLEDGE",
-            knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            // BotBound's retired prices are dropped only from the Bots that
+            // sell BotBound, as on a phone call. Applied to every Bot, this
+            // removed a customer's own "$19/month" from what its Bot knew.
+            sellsBotBound
+              ? knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? ""))
+              : knowledge,
             MAX_INITIAL_KNOWLEDGE_ITEMS,
           ),
+      ownerLimits ? `\n${ownerLimits}` : "",
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
       `\n${RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK}`,
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
         : "",
-      botSellsBotBound({ agentId: agent.id, internalPersona: Boolean(internalPolicy) })
-        ? `\n${currentPricingPromptBlock()}`
-        : "",
+      sellsBotBound ? `\n${currentPricingPromptBlock()}` : "",
     ]
       .filter(Boolean)
       .join("\n"),

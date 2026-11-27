@@ -421,10 +421,36 @@ export function getDefaultAgentTools(): AgentToolName[] {
  * Resolve which tools an agent may use. An explicit enabled_tools array is the
  * authoritative active set. Legacy agents without a saved selection retain the
  * full catalog so this policy change does not silently remove existing behavior.
+ *
+ * A saved selection is read the way the execution check reads it: a name this
+ * code no longer knows is dropped, and a value that is not a list selects
+ * nothing. Either one used to switch the whole catalogue on here, so a Bot was
+ * offered every tool while the execution check refused all but its own.
  */
 export function resolveAgentTools(enabledTools?: unknown): AgentToolName[] {
-  const normalized = normalizeEnabledTools(enabledTools);
-  return normalized !== null ? normalized : getDefaultAgentTools();
+  return readStoredAgentTools(enabledTools) ?? getDefaultAgentTools();
+}
+
+/**
+ * A saved selection as every reader must see it: `null` when nobody chose (the
+ * full catalogue), otherwise the names in it that this code still knows. A
+ * retired name is dropped and a value that is not a list selects nothing.
+ *
+ * Reading a list with one retired name as "nobody chose" was the fault. Almost
+ * every Bot holds a retired name, so Set Up showed every action ticked, and
+ * saving that screen, or switching one action in chat, turned them all on.
+ */
+export function readStoredAgentTools(value: unknown): AgentToolName[] | null {
+  if (value == null) return null;
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<AgentToolName>();
+  const selected: AgentToolName[] = [];
+  for (const item of value) {
+    if (!isAgentToolName(item) || seen.has(item)) continue;
+    seen.add(item);
+    selected.push(item);
+  }
+  return selected;
 }
 
 /** Stable compatibility set for capabilities excluded from lightweight roles.

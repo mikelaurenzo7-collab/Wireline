@@ -49,8 +49,15 @@ describe("round-5 fine-tune verified fixes", () => {
     // The live-session exemptions (skip quiet hours/duplicates, supply
     // consent) only apply when the destination IS the live caller — a
     // model-supplied third-party to_number must clear the full gate.
+    // "The live caller" is the same phone, however the number was written,
+    // and a text to them goes to the number the carrier reported, never to
+    // the model's own spelling of it.
+    expect(handlers).toContain("const requestedKey = callerPhoneKey(requestedNumber);");
     expect(handlers).toContain(
-      "const isLiveCounterpart = Boolean(liveCallerNumber) && targetNumber === liveCallerNumber",
+      "(requestedKey !== null && requestedKey === callerPhoneKey(liveCallerNumber)));",
+    );
+    expect(handlers).toContain(
+      "const targetNumber = isLiveCounterpart ? liveCallerNumber : requestedNumber;",
     );
     expect(handlers).toContain("isMarketingCall: !isLiveCounterpart");
     expect(handlers).toContain("hasExpressWrittenConsent: isLiveCounterpart");
