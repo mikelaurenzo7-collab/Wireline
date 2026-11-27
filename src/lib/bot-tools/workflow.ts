@@ -80,13 +80,15 @@ export async function handleWorkflowToolCall(
       });
       return {
         toolCallId,
-        result: "Payment promise legally recorded in compliance ledger.",
+        // A note for the owner, and nothing more: it used to be described to
+        // the Bot as "legally recorded in compliance ledger".
+        result: "The payment commitment was noted for the team.",
       };
     } catch {
       return {
         toolCallId,
         result:
-          "I wasn't able to record that commitment right now. Let me note the details and have someone confirm.",
+          "The payment commitment was not recorded. Tell the caller it could not be noted, and do not promise that anyone will follow up.",
       };
     }
   }
@@ -149,7 +151,12 @@ export async function handleWorkflowToolCall(
         result: "Customer profile structured and saved.",
       };
     } catch {
-      return { toolCallId, result: "I've noted your information." };
+      // It used to answer "I've noted your information" when nothing was saved.
+      return {
+        toolCallId,
+        result:
+          "The details were not saved. Do not tell the caller they were noted. Take a message with create_followup_task if they need a follow-up.",
+      };
     }
   }
 
