@@ -18,7 +18,10 @@ function attestedRow() {
   };
 }
 
-async function loadApprovedText(selectRows: unknown[][]) {
+async function loadApprovedText(
+  selectRows: unknown[][],
+  options: { callingHoursAllowed?: boolean } = {},
+) {
   vi.resetModules();
   let calls = 0;
   const limit = async () => selectRows[calls++] ?? [];
@@ -36,7 +39,12 @@ async function loadApprovedText(selectRows: unknown[][]) {
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   }));
   vi.doMock("../src/lib/tcpa-calling-hours", () => ({
-    resolveCallingHoursForPhone: () => ({ allowed: true, timeZone: "America/Chicago" }),
+    resolveCallingHoursForPhone: () => ({
+      allowed: options.callingHoursAllowed ?? true,
+      timeZone: "America/Chicago",
+      inferred: false,
+      reason: "outside_calling_hours",
+    }),
   }));
   vi.doMock("../src/lib/federal-dnc-service", () => ({
     assertFederalDncForMarketing: () => ({
@@ -161,6 +169,33 @@ describe("approved text confirmations", () => {
     });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.sales).toBe(false);
+  });
+
+  // A held text pressed Send from Needs You hours after the call is not part
+  // of that conversation any more, and calling hours apply to it.
+  it("holds a text to the caller to calling hours once the call is over an hour old", async () => {
+    const { screenApprovedText } = await loadApprovedText([], { callingHoursAllowed: false });
+    const late = await screenApprovedText({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      requestedOnThisCall: true,
+      liveSession: false,
+      confirmations: { permissionConfirmed: true, nonsalesConfirmed: true },
+    });
+    expect(late.ok).toBe(false);
+    // Still a follow-up to the caller, not sales.
+    expect(late.sales).toBe(false);
+    const { screenApprovedText: screenDuringCall } = await loadApprovedText([], {
+      callingHoursAllowed: false,
+    });
+    const during = await screenDuringCall({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      requestedOnThisCall: true,
+      liveSession: true,
+      confirmations: { permissionConfirmed: true, nonsalesConfirmed: true },
+    });
+    expect(during.ok).toBe(true);
   });
 
   it("keeps an untagged bulk sales send fail-closed without a provider", async () => {

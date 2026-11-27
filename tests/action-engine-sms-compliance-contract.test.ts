@@ -20,7 +20,9 @@ describe("action-engine outbound SMS compliance gate", () => {
     expect(handler).toContain("await screenApprovedText({");
     expect(handler).toContain("leadId: lead?.id");
     expect(handler).toContain("lastCalledAt: lead?.lastCalledAt");
-    expect(handler.indexOf("screenApprovedText")).toBeLessThan(handler.indexOf("sendTenantMessage"));
+    expect(handler.indexOf("screenApprovedText")).toBeLessThan(
+      handler.indexOf("sendTenantMessage"),
+    );
     expect(handler).toContain("failing closed");
     expect(handler).toContain("success: false");
 
@@ -30,12 +32,16 @@ describe("action-engine outbound SMS compliance gate", () => {
     expect(screeningEnd).toBeGreaterThan(screeningStart);
     const gate = engine.slice(screeningStart, screeningEnd);
     expect(gate).toContain("await screenManualOutbound({");
-    expect(gate).toContain('requestedPurpose');
+    expect(gate).toContain("requestedPurpose");
     expect(gate).toContain('"sales"');
     expect(gate).toContain("await evaluateOutboundDialGate({");
-    expect(gate.indexOf("screenManualOutbound")).toBeLessThan(gate.indexOf("evaluateOutboundDialGate"));
+    expect(gate.indexOf("screenManualOutbound")).toBeLessThan(
+      gate.indexOf("evaluateOutboundDialGate"),
+    );
     expect(gate).toContain('salesScreening: "one_off"');
-    expect(gate).toContain("isLiveSessionFollowUp: input.requestedOnThisCall");
+    // Calling hours are skipped only while the call is live or just ended.
+    expect(gate).toContain("isLiveSessionFollowUp: input.liveSession ?? input.requestedOnThisCall");
+    expect(handler).toContain("Date.now() - callEndedAt.getTime() <= LIVE_SESSION_TEXT_WINDOW_MS");
     expect(gate).toContain("hasExpressWrittenConsent: false");
     expect(gate).toContain("gate.customerMessage");
     expect(gate).not.toContain("callPurpose");

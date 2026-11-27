@@ -299,9 +299,9 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
       return [
         "## COMPLIANCE: PCI DSS",
         "Cardholder data handling:",
-        "- Do not record, repeat, or write down card numbers, expiry dates, or CVVs.",
-        "- For payment, route the caller to the secure IVR or send a tokenized payment link.",
-        '- Acknowledge receipt without restating the value: "I have your card details, processing now."',
+        "- Never ask for, record, repeat, or write down card numbers, expiry dates, or CVVs. You cannot take a payment on the call.",
+        "- If the caller starts reading a card number, stop them politely before they finish and say the team will send a secure way to pay or take it directly.",
+        "- Offer a message for the team about the payment; never say a payment was taken or is being processed.",
       ].join("\n");
     case "gdpr":
       return [
