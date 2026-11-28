@@ -596,6 +596,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const name = cleanText(req.body?.name, 100);
     const isBusinessAgent = req.body?.is_business_agent === true;
+    // The Workspace creates Bo for an account that has no Bot. Two tabs can
+    // ask at once; under the per-account lock below, the second gets Bo back.
+    const onlyIfNone = req.body?.only_if_none === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
     const requestedMarkKey = cleanText(req.body?.mark_key, 32);
     if (requestedMarkKey && !isBotMarkKey(requestedMarkKey)) {
@@ -624,95 +627,135 @@ router.post(
     const enabledTools = resolveCreateEnabledTools(isBusinessAgent);
     const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
 
-    const markKey = await withBotMarkPersistenceErrors(() =>
-      drizzle.transaction(async (tx): Promise<BotMarkKey> => {
-        // Serialize creates per workspace so concurrent requests do not race on pictures.
-        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+    type ExistingBot = {
+      id: string;
+      name: string;
+      markKey: string | null;
+      channel: string | null;
+      enabledTools: unknown;
+      isBusinessAgent: boolean;
+    };
+    const outcome = await withBotMarkPersistenceErrors(() =>
+      drizzle.transaction(
+        async (
+          tx,
+        ): Promise<
+          { created: true; markKey: BotMarkKey } | { created: false; bot: ExistingBot }
+        > => {
+          // Serialize creates per workspace so concurrent requests do not race on pictures.
+          await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
-        const existingAgents = await tx
-          .select({
-            id: schema.agents.id,
-            markKey: schema.agents.markKey,
-            timezone: schema.agents.timezone,
-          })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, req.user.id));
-        const existing = existingAgents.length;
-        // No zone from the creator: start where the owner's other Bots are, not
-        // in the UTC column default.
-        const startingTimeZone =
-          timezone ?? mostUsedTimeZone(existingAgents.map((agent) => agent.timezone));
-
-        const usedMarkKeys = new Set<BotMarkKey>();
-        for (const existingAgent of existingAgents) {
-          const existingMark = isBotMarkKey(existingAgent.markKey)
-            ? existingAgent.markKey
-            : defaultBotMarkKey(existingAgent.id);
-          usedMarkKeys.add(existingMark);
-        }
-        const availableMarkKey = isBotMarkKey(requestedMarkKey)
-          ? requestedMarkKey
-          : firstAvailableBotMarkKey(id, usedMarkKeys);
-
-        const voiceId =
-          normalizeManagedOpenAIVoiceId(requestedVoiceId) || pickRotatedVoiceId(existing);
-        await tx.insert(schema.agents).values({
-          id,
-          userId: req.user.id,
-          name,
-          markKey: availableMarkKey,
-          channel,
-          archetype: DEFAULT_BOT_ARCHETYPE,
-          voiceId,
-          voiceProvider: "openai",
-          autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,
-          ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
-          enabledTools,
-          firstMessage,
-          isBusinessAgent,
-          ...videoPresenter,
-        });
-
-        if (seededPersonality) {
-          await tx
-            .insert(schema.personality)
-            .values({
-              agentId: id,
-              userId: req.user.id,
-              content: seededPersonality,
+          const existingAgents = await tx
+            .select({
+              id: schema.agents.id,
+              name: schema.agents.name,
+              markKey: schema.agents.markKey,
+              channel: schema.agents.channel,
+              enabledTools: schema.agents.enabledTools,
+              isBusinessAgent: schema.agents.isBusinessAgent,
+              timezone: schema.agents.timezone,
+              createdAt: schema.agents.createdAt,
             })
-            .onConflictDoUpdate({
-              target: schema.personality.agentId,
-              set: { userId: req.user.id, content: seededPersonality },
-            });
-        }
-        // Commit the Bot and its first durable identity attempt together. Free
-        // plans complete this job without provider allocation; a later paid
-        // subscription event queues a fresh attempt for every current Bot.
-        await tx.insert(schema.jobs).values({
-          userId: req.user.id,
-          type: PAID_BOT_IDENTITY_JOB_TYPE,
-          payload: { userId: req.user.id, agentId: id },
-          runAt: new Date(Date.now() + 30_000),
-        });
-        return availableMarkKey;
-      }),
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, req.user.id));
+          const existing = existingAgents.length;
+          if (onlyIfNone && existing > 0) {
+            const [bot] = [...existingAgents].sort(
+              (a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0),
+            );
+            return { created: false, bot: bot! };
+          }
+          // No zone from the creator: start where the owner's other Bots are, not
+          // in the UTC column default.
+          const startingTimeZone =
+            timezone ?? mostUsedTimeZone(existingAgents.map((agent) => agent.timezone));
+
+          const usedMarkKeys = new Set<BotMarkKey>();
+          for (const existingAgent of existingAgents) {
+            const existingMark = isBotMarkKey(existingAgent.markKey)
+              ? existingAgent.markKey
+              : defaultBotMarkKey(existingAgent.id);
+            usedMarkKeys.add(existingMark);
+          }
+          const availableMarkKey = isBotMarkKey(requestedMarkKey)
+            ? requestedMarkKey
+            : firstAvailableBotMarkKey(id, usedMarkKeys);
+
+          const voiceId =
+            normalizeManagedOpenAIVoiceId(requestedVoiceId) || pickRotatedVoiceId(existing);
+          await tx.insert(schema.agents).values({
+            id,
+            userId: req.user.id,
+            name,
+            markKey: availableMarkKey,
+            channel,
+            archetype: DEFAULT_BOT_ARCHETYPE,
+            voiceId,
+            voiceProvider: "openai",
+            autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,
+            ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
+            enabledTools,
+            firstMessage,
+            isBusinessAgent,
+            ...videoPresenter,
+          });
+
+          if (seededPersonality) {
+            await tx
+              .insert(schema.personality)
+              .values({
+                agentId: id,
+                userId: req.user.id,
+                content: seededPersonality,
+              })
+              .onConflictDoUpdate({
+                target: schema.personality.agentId,
+                set: { userId: req.user.id, content: seededPersonality },
+              });
+          }
+          // Commit the Bot and its first durable identity attempt together. Free
+          // plans complete this job without provider allocation; a later paid
+          // subscription event queues a fresh attempt for every current Bot.
+          await tx.insert(schema.jobs).values({
+            userId: req.user.id,
+            type: PAID_BOT_IDENTITY_JOB_TYPE,
+            payload: { userId: req.user.id, agentId: id },
+            runAt: new Date(Date.now() + 30_000),
+          });
+          return { created: true, markKey: availableMarkKey };
+        },
+      ),
     );
+
+    if (!outcome.created) {
+      const { bot } = outcome;
+      res.status(200).json({
+        id: bot.id,
+        name: bot.name,
+        mark_key: isBotMarkKey(bot.markKey) ? bot.markKey : defaultBotMarkKey(bot.id),
+        channel: bot.channel === "email" ? "email" : "voice",
+        enabledTools: bot.enabledTools,
+        is_business_agent: bot.isBusinessAgent,
+        created: false,
+      });
+      return;
+    }
 
     emitServerProductEventOnce({
       event: "agent_draft_created",
       userId: req.user.id,
       agentId: id,
-      metadata: { source: "web_fast_start" },
+      metadata: { source: onlyIfNone ? "bo_onboarding" : "web_fast_start" },
     });
 
     res.status(201).json({
       id,
       name,
-      mark_key: markKey,
+      mark_key: outcome.markKey,
       channel,
       enabledTools,
       is_business_agent: isBusinessAgent,
+      created: true,
     });
   },
 );

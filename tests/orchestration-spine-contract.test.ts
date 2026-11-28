@@ -41,14 +41,16 @@ describe("orchestration spine contract", () => {
     expect(canvas).toContain("StudioAgentReviewPanel");
   });
 
-  it("preserves activation handoff from Fast Start through post-create wizard", () => {
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
-    const flow = read("src/lib/wireline-create-flow.ts");
+  it("preserves the activation handoff from Bo's creation through Bo's onboarding", () => {
+    const studioHome = read("src/pages/AgentStudioHome.tsx");
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    const state = read("src/lib/bo-onboarding.ts");
 
-    expect(createDialog).toContain("stashPostCreateWizard");
-    expect(flow).toContain("wireline:post-create-wizard");
-    expect(wizard).toContain("channels");
+    expect(bo).toContain('writeBoOnboarding(userId, { agentId: id, step: "about" });');
+    expect(state).toContain('"wireline:bo-onboarding:v1:"');
+    expect(studioHome).toContain("readBoOnboarding(user?.id)");
+    expect(bo).toContain("useChannelEntitlements()");
+    expect(bo).toContain('access.includes("voice")');
   });
 
   it("exposes mobile and extension handoff entrypoints", () => {

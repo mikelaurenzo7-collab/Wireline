@@ -62,11 +62,12 @@ describe("unified Bot workspace compatibility", () => {
   });
 
   it("keeps creation and Studio free of posture routing", () => {
-    const dialog = read("src/components/CreateAgentDialog.tsx");
+    // Bo's first conversation is the only place a Bot is created.
+    const creation = read("src/components/onboarding/BoOnboarding.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     expect(existsSync("src/pages/OverviewPage.tsx")).toBe(false);
-    expect(dialog).toContain('workspace_model: "one_workspace"');
-    expect(dialog).not.toMatch(/setPosture|rolesForPosture/);
+    expect(creation).toContain('workspace_model: "one_workspace"');
+    expect(creation).not.toMatch(/setPosture|rolesForPosture/);
     expect(studio).not.toContain("posture=");
   });
 

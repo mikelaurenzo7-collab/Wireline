@@ -3,6 +3,8 @@ import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import type { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import { planIncludesChannel, type CommunicationChannel } from "../lib/plan-catalog";
+import { choosePlanHref } from "../lib/signup-intent";
+import { GO_LIVE_PLAN_COPY } from "../lib/wireline-onboarding-copy";
 
 export default function ChannelAccessNotice({
   access,
@@ -115,13 +117,15 @@ export default function ChannelAccessNotice({
       className="my-3"
       action={
         <Button asChild size="sm" variant="secondary">
-          <Link to="/settings/billing">{hasPlan ? "View Billing" : "Choose Plan"}</Link>
+          <Link to={hasPlan ? "/settings/billing" : choosePlanHref()}>
+            {hasPlan ? "View Billing" : GO_LIVE_PLAN_COPY.cta}
+          </Link>
         </Button>
       }
     >
       {hasPlan
         ? "Your plan covers your selected channels. Saved conversations remain available."
-        : "Choose a plan to connect this channel. Voice rehearsal stays available."}
+        : GO_LIVE_PLAN_COPY.detail}
     </StatusNotice>
   );
 }

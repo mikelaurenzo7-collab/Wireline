@@ -32,8 +32,6 @@ const marketingRoutes = [...PRODUCTION_VISUAL_MARKETING_ROUTES];
 
 const authenticatedRoutes = [
   "/studio",
-  "/studio?create=1",
-  "/templates",
   "/knowledge",
   "/knowledge?tab=reports",
   "/connections",

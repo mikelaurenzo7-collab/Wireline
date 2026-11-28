@@ -13,7 +13,6 @@ import {
   isBotMarkKey,
 } from "../src/lib/bot-mark";
 import { nextAvailableRadioIndex } from "../src/components/BotMarkPicker";
-import { parsePostCreateWizardPayload } from "../src/lib/wireline-create-flow";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -59,9 +58,9 @@ describe("customer-selectable Bot identity marks", () => {
     );
   });
 
-  it("lets customers choose at creation and change the mark in Studio", () => {
+  it("assigns a mark when Bo is created and lets customers change it in Studio", () => {
     const picker = read("src/components/BotMarkPicker.tsx");
-    const create = read("src/components/CreateAgentDialog.tsx");
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
     const setup = read("src/components/StudioAgentWorkspacePanel.tsx");
 
     expect(picker).toContain("BOT_MARK_CHOICES.find");
@@ -71,8 +70,13 @@ describe("customer-selectable Bot identity marks", () => {
     expect(picker).toContain('role="radio"');
     expect(picker).toContain("aria-checked={selectedMotif}");
     expect(picker).toContain("aria-checked={selectedPalette}");
-    expect(create).toContain("<BotMarkPicker");
-    expect(create).toContain("mark_key: markKey");
+    // Bo's onboarding asks about the business, not a picture: the server picks
+    // the first free mark, and the owner changes it in Set Up.
+    expect(bo).not.toContain("<BotMarkPicker");
+    expect(bo).not.toContain("mark_key: markKey");
+    expect(read("src/routes/agent-routes-v2.ts")).toContain(
+      ": firstAvailableBotMarkKey(id, usedMarkKeys);",
+    );
     expect(setup).toContain("<BotMarkPicker");
     expect(setup).toContain('method: "PATCH"');
     expect(setup).toContain("if (edits.markKey !== undefined)");
@@ -91,33 +95,17 @@ describe("customer-selectable Bot identity marks", () => {
     expect(nextAvailableRadioIndex("ArrowRight", 0, 2, () => false)).toBeNull();
   });
 
-  it("retains the persisted mark in post-create state and voice-preview compatibility", () => {
-    const create = read("src/components/CreateAgentDialog.tsx");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
-    const roleplay = read("src/components/RoleplaySandbox.tsx");
+  it("retains the persisted mark in Bo's onboarding and voice-preview compatibility", () => {
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    const rehearsal = read("src/components/StudioVoiceRehearsal.tsx");
     const openai = read("src/components/OpenAILiveVoiceSandbox.tsx");
     const liveVoice = read("src/components/LiveVoiceSandbox.tsx");
 
-    const parsed = parsePostCreateWizardPayload(
-      JSON.stringify({
-        agentId: "agent-test",
-        agentName: "Jordan",
-        markKey: "spark-rose",
-        phoneProvisionRequested: false,
-        phoneProvisioned: false,
-      }),
-    );
-    expect(parsed?.markKey).toBe("spark-rose");
-    expect(
-      parsePostCreateWizardPayload(
-        JSON.stringify({ agentId: "agent-test", agentName: "Jordan", markKey: "forged-mark" }),
-      )?.markKey,
-    ).toBe(null);
-
-    expect(create).toContain("mark_key: isBotMarkKey(body.mark_key) ? body.mark_key : null");
-    expect(create).toContain("markKey: savedAgent.mark_key ?? null");
-    expect(wizard).toContain("markKey={payload.markKey}");
-    expect(roleplay).toContain("markKey={markKey}");
+    // Only a catalog mark from the server reaches the roster; Bo's conversation
+    // shows the mark the roster holds.
+    expect(bo).toContain("mark_key: isBotMarkKey(body.mark_key) ? body.mark_key : null");
+    expect(bo).toContain("markKey={bot?.mark_key}");
+    expect(rehearsal).toContain("markKey={markKey}");
     expect(openai).toContain("markKey?: BotMarkKey | null");
     expect(liveVoice).toContain('export { default } from "./OpenAILiveVoiceSandbox"');
   });

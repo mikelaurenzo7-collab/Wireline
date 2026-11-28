@@ -6,15 +6,11 @@ const password = process.env.WIRELINE_E2E_PASSWORD;
 const GOLD_ROUTES = [
   {
     path: "/studio",
-    eyebrow: /Workspace|Create Your Bot|Try It/i,
-    marker: '#studio-brief, #studio-workroom-message, [aria-label="Loading Studio workspace"]',
+    eyebrow: /Workspace|Bo|Try It/i,
+    marker:
+      '[data-bo-onboarding], #studio-workroom-message, [aria-label="Loading Studio workspace"]',
   },
   { path: "/phone?tab=logs", eyebrow: /New call/i, marker: ".wl-operate-surface" },
-  {
-    path: "/studio?create=1",
-    eyebrow: /Create|Agent|Studio/i,
-    marker: ".wl-composer-dock, .wl-paper",
-  },
 ] as const;
 
 const VIEWPORTS = [

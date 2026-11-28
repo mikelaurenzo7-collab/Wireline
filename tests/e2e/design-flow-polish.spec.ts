@@ -2,7 +2,11 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-async function mockWorkspace(page: Page, { emptyRoster = false } = {}) {
+async function mockWorkspace(page: Page, { emptyRoster = false, failCreates = 0 } = {}) {
+  let bots = emptyRoster
+    ? []
+    : [{ id: "design-bot", name: "Front Desk", role: "receptionist", mark_key: "spark-rose" }];
+  let createFailures = failCreates;
   let businessProfile = {
     business_hours: null,
     timezone: "America/Chicago",
@@ -16,6 +20,29 @@ async function mockWorkspace(page: Page, { emptyRoster = false } = {}) {
   // Isolated UI fixtures: no live account, database, billing, or provider calls.
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/agents" && route.request().method() === "POST") {
+      if (createFailures > 0) {
+        createFailures -= 1;
+        await route.fulfill({ status: 503, json: { error: "Try again." } });
+        return;
+      }
+      bots = [{ id: "design-bot", name: "Bo", role: "receptionist", mark_key: "spark-rose" }];
+      await route.fulfill({
+        status: 201,
+        json: {
+          id: "design-bot",
+          name: "Bo",
+          mark_key: "spark-rose",
+          channel: "voice",
+          created: true,
+        },
+      });
+      return;
+    }
+    if (path.endsWith("/managed-identity")) {
+      await route.fulfill({ status: 402, json: { code: "ACTIVATION_REQUIRED" } });
+      return;
+    }
     if (path === "/api/agent-config/design-bot/business") {
       businessProfile = { ...businessProfile, ...route.request().postDataJSON() };
       await route.fulfill({ json: { success: true, businessProfile } });
@@ -38,18 +65,7 @@ async function mockWorkspace(page: Page, { emptyRoster = false } = {}) {
       path === "/api/auth/session"
         ? { user: { id: "design-owner", email: "owner@example.test" } }
         : path === "/api/agents"
-          ? {
-              agents: emptyRoster
-                ? []
-                : [
-                    {
-                      id: "design-bot",
-                      name: "Front Desk",
-                      role: "receptionist",
-                      mark_key: "spark-rose",
-                    },
-                  ],
-            }
+          ? { agents: bots }
           : path === "/api/agent-config/design-bot"
             ? { personality: "Clear", directives: [], mark_key: "spark-rose", businessProfile }
             : { accounts: [], data: [], numbers: [], integrations: [], messages: [], threads: [] };
@@ -66,33 +82,25 @@ async function capture(page: Page, info: TestInfo, name: string) {
 }
 
 for (const width of [320, 390, 1440]) {
-  test(`Bot creation stays compact and preserves custom intent at ${width}px`, async ({
+  test(`Bo's first conversation stays compact and keeps the owner's words at ${width}px`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
     await mockWorkspace(page, { emptyRoster: true });
-    await page.goto("/studio?create=1");
-    const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
-    await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeFocused();
-    const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
-    const supplied = "Book repairs only after checking the customer's ZIP code.";
-    await brief.fill(supplied);
-    await expect(brief).toHaveValue(supplied);
-    await expect(dialog.getByText("Start from a Role", { exact: true })).toHaveCount(0);
-    await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "Create Bot", exact: true })).toBeInViewport();
+    await page.goto("/studio");
+    const log = page.getByRole("log", { name: "Conversation with Bo" });
+    await expect(log).toContainText("What's your business called, and what do you do?");
+    // One Bot, no templates: nothing to choose before answering.
+    await expect(page.getByText(/Start from a Role|What should it handle first/)).toHaveCount(0);
+    const answer = page.getByRole("textbox", { name: "Your answer to Bo" });
+    const supplied = "We repair appliances and only book after checking the customer's ZIP code.";
+    await answer.fill(supplied);
+    await expect(answer).toHaveValue(supplied);
+    await expect(page.getByRole("button", { name: "Send", exact: true })).toBeInViewport();
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       .toBe(true);
-    await capture(page, info, `create-${width}`);
-    const identity = dialog.getByRole("button", { name: /Appearance/ });
-    await identity.click();
-    await dialog.getByRole("textbox", { name: /Bot Name/ }).fill("Repair Desk");
-    await identity.click();
-    await expect(identity).toContainText("Repair Desk");
-    await expect(brief).toHaveValue(supplied);
-    await identity.press("Escape");
-    await expect(dialog).toBeHidden();
+    await capture(page, info, `meet-bo-${width}`);
   });
 }
 
@@ -103,7 +111,6 @@ test("Studio setup edits survive Review and closing the inspector without saving
   await mockWorkspace(page);
   await page.goto("/studio?agent=design-bot&section=setup");
   await page.getByLabel("Opening Greeting").fill("Welcome to the repair desk.");
-  await page.getByLabel(/Add facts or rules/).fill("Ask for the appliance model before booking.");
   await page.getByRole("button", { name: "Warm", exact: true }).click();
   await page.getByRole("tab", { name: "Summary", exact: true }).click();
   await page.getByRole("tab", { name: "Set Up", exact: true }).click();
@@ -114,9 +121,9 @@ test("Studio setup edits survive Review and closing the inspector without saving
   await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
   await capture(page, info, "studio-draft-desktop");
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByLabel(/Add facts or rules/)).toHaveValue(
-    "Ask for the appliance model before booking.",
-  );
+  await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
+  // Knowledge is taught in chat; Set Up has no second typed box.
+  await expect(page.getByLabel(/Add facts or rules/)).toHaveCount(0);
   await capture(page, info, "studio-draft-mobile");
 });
 
@@ -288,72 +295,48 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
   await workroom.getByRole("button", { name: "Send", exact: true }).click({ trial: true });
 });
 
-test("Bot creation keeps its heading, fields and actions usable at 320px with enlarged text", async ({
-  page,
-}) => {
+test("Bo's first conversation stays usable at 320px with enlarged text", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await mockWorkspace(page, { emptyRoster: true });
-  await page.goto("/studio?create=1");
+  await page.goto("/studio");
   await page.evaluate(() =>
     document.documentElement.style.setProperty("font-size", "32px", "important"),
   );
-  const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
-  await expect(dialog).toBeVisible();
+  const log = page.getByRole("log", { name: "Conversation with Bo" });
+  await expect(log).toContainText("What's your business called");
   await page.evaluate(() => document.fonts.ready);
-  await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeInViewport();
-  await expect(dialog.getByRole("button", { name: "Create Bot", exact: true })).toBeInViewport();
-  const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
-  await brief.fill("Answer repair questions and book a visit.");
-  const identity = dialog.getByRole("button", { name: /Appearance/ });
-  await identity.click();
-  await dialog.getByRole("textbox", { name: /Bot Name/ }).fill("Repair Desk");
-  await identity.click();
-  await expect(brief).toHaveValue("Answer repair questions and book a visit.");
+  const answer = page.getByRole("textbox", { name: "Your answer to Bo" });
+  await answer.fill("Answer repair questions and book a visit.");
+  await expect(page.getByRole("button", { name: "Send", exact: true })).toBeInViewport();
   expect(
-    await dialog.evaluate((element) =>
-      [element, ...element.querySelectorAll("div, h2, button, textarea, label")]
-        .filter(
-          (item) =>
-            item.clientWidth > 0 &&
-            item.scrollWidth > item.clientWidth + 1 &&
-            getComputedStyle(item).overflowX === "visible",
-        )
-        .map((item) => ({ tag: item.tagName, width: item.clientWidth, scroll: item.scrollWidth })),
-    ),
+    await page
+      .locator("[data-bo-onboarding]")
+      .evaluate((element) =>
+        [element, ...element.querySelectorAll("div, h1, button, textarea, label, p")]
+          .filter(
+            (item) =>
+              item.clientWidth > 0 &&
+              item.scrollWidth > item.clientWidth + 1 &&
+              getComputedStyle(item).overflowX === "visible",
+          )
+          .map((item) => ({
+            tag: item.tagName,
+            width: item.clientWidth,
+            scroll: item.scrollWidth,
+          })),
+      ),
   ).toEqual([]);
-  await dialog.getByRole("button", { name: "Close Bot setup", exact: true }).click();
-  await expect(dialog).toBeHidden();
 });
 
-for (const code of ["NAME_CONFLICT", "name_conflict", "BOT_MARK_CONFLICT", "bot_mark_conflict"]) {
-  test(`creation conflict ${code} reveals and focuses the relevant control`, async ({ page }) => {
-    await mockWorkspace(page, { emptyRoster: true });
-    await page.route("**/api/agents", async (route) => {
-      if (route.request().method() === "POST") {
-        await route.fulfill({ status: 409, json: { code } });
-      } else await route.fallback();
-    });
-    await page.goto("/studio?create=1");
-    const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
-    const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
-    await brief.fill("Book repair appointments.");
-    await dialog.getByRole("button", { name: "Create Bot", exact: true }).click();
-    await expect(dialog.getByRole("button", { name: /Appearance/ })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    if (code.toLowerCase() === "bot_mark_conflict") {
-      await expect(
-        dialog
-          .getByRole("radiogroup", { name: "Bot identity symbol" })
-          .getByRole("radio", { checked: true }),
-      ).toBeFocused();
-      await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).not.toBeFocused();
-      await expect(dialog.getByText(/Choose another mark or color/)).toBeVisible();
-    } else await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).toBeFocused();
-    await expect(brief).toHaveValue("Book repair appointments.");
-  });
-}
+test("Bo says plainly when it could not be set up and tries again on request", async ({ page }) => {
+  await mockWorkspace(page, { emptyRoster: true, failCreates: 1 });
+  await page.goto("/studio");
+  await expect(page.getByText("Bo Isn't Ready Yet", { exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Your answer to Bo" })).toBeDisabled();
+  await page.getByRole("button", { name: "Try Again", exact: true }).click();
+  await expect(page.getByText("Bo Isn't Ready Yet", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Your answer to Bo" })).toBeEnabled();
+});
 
 test("password reset names and focuses the invalid field and permits reviewing both entries", async ({
   page,

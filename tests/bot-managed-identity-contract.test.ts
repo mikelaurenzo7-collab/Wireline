@@ -78,17 +78,26 @@ describe("BotBound managed Bot identity", () => {
     expect(mailbox).toContain('account.provider !== "agentmail"');
   });
 
-  it("resumes idempotently in Studio and never resets the user's setup step during background provisioning", () => {
+  it("bootstraps Bo's identity once, only after creating Bo, and never moves the onboarding step in the background", () => {
     const studio = read("src/pages/AgentStudioHome.tsx");
-    const createFlow = read("src/lib/wireline-create-flow.ts");
-    expect(studio).toContain("bootstrapManagedBotIdentity(payload.agentId)");
-    expect(studio).toContain("identityBootstrapAgentIds.current.has(payload.agentId)");
-    expect(studio).toContain("identityBootstrapComplete: true");
-    expect(studio).toContain("durable server job owns");
-    expect(studio).toContain("updatePostCreateWizard(pending)");
-    expect(studio).toContain("updatePostCreateWizard(updated)");
-    expect(createFlow).toContain("export function updatePostCreateWizard");
-    expect(createFlow).toContain("without moving the user's current step");
-    expect(createFlow).toContain("durable paid repair owns retries");
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    const routes = read("src/routes/agent-routes-v2.ts");
+    // Another tab that also found no Bot asks again and gets the existing Bot
+    // back as created: false, so only the request that made Bo provisions it.
+    expect(bo).toContain("only_if_none: true,");
+    expect(routes).toContain("const onlyIfNone = req.body?.only_if_none === true;");
+    expect(routes).toContain("created: false,");
+    expect(bo.match(/bootstrapManagedBotIdentity\(/g)).toHaveLength(1);
+    expect(studio).not.toContain("bootstrapManagedBotIdentity");
+    const created = bo.indexOf("if (body.created === true) {");
+    expect(created).toBeGreaterThan(-1);
+    const createdOnly = bo.slice(created, bo.indexOf("} catch {", created));
+    expect(createdOnly).toContain("void bootstrapManagedBotIdentity(id)");
+    expect(createdOnly).toContain("server job owns retries");
+    // The background result only refreshes the roster; the owner stays on
+    // whichever question they have reached.
+    expect(bo).toMatch(
+      /void bootstrapManagedBotIdentity\(id\)\.then\(\(\) => \{\s*if \(mounted\.current\) refresh\(\);\s*\}\);/,
+    );
   });
 });

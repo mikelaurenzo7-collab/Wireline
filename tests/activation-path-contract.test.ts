@@ -6,12 +6,15 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("activation path contract", () => {
-  it("offers plan review and a direct path to private Studio setup", () => {
+  it("meets Bo first and keeps a picked plan for going live", () => {
     const authRedirect = read("src/lib/auth-redirect.ts");
-    expect(authRedirect).toContain('return "/studio?create=1"');
-    expect(authRedirect).toContain("&onboarding=1");
-    expect(read("src/pages/BillingSettings.tsx")).toContain("Set Up a Bot First");
-    expect(authRedirect).not.toContain("create=1&posture=");
+    expect(authRedirect).toContain('return "/studio";');
+    expect(authRedirect).not.toContain("create=1");
+    expect(authRedirect).not.toContain("&onboarding=1");
+    expect(authRedirect).toContain("persistSignupIntent(intent)");
+    // Billing has no pre-Bot "choose a plan" header any more.
+    expect(read("src/pages/BillingSettings.tsx")).not.toContain("Set Up a Bot First");
+    expect(read("src/lib/signup-intent.ts")).toContain("export function choosePlanHref(): string");
   });
 
   it("documents the deferred operations checklist", () => {
@@ -32,11 +35,11 @@ describe("activation path contract", () => {
     expect(studioSetup).toContain("Bot Setup");
     expect(studioSetup).toContain('{applyingSetup ? "Saving…" : "Save Changes"}');
     expect(studio).toContain("if (agents.length === 0 && degraded) return <WorkspaceRecovery");
-    expect(studio).toContain("Create Your Bot");
+    // An account without a Bot meets Bo; the Workspace has no create screen.
+    expect(studio).not.toContain("Create Your Bot");
+    expect(studio).not.toContain("create=1");
+    expect(read("src/pages/AgentStudioHome.tsx")).toContain("<BoOnboarding");
     expect(studio).not.toMatch(/one (?:job|task)/i);
-    expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
-    expect(studio).not.toContain("Describe the role and outcome.");
-    expect(studio).toContain("to={createHref()}");
     expect(studio).not.toMatch(/posture=|personalAgents|businessAgents|dayGreeting/);
   });
 
@@ -56,44 +59,26 @@ describe("activation path contract", () => {
     expect(nudge).toContain("scope: activationScope");
   });
 
-  it("keeps post-create setup resumable, honest, and focused", () => {
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+  it("keeps Bo's first conversation resumable, honest, and focused", () => {
+    const onboarding = read("src/components/onboarding/BoOnboarding.tsx");
+    const state = read("src/lib/bo-onboarding.ts");
     const billing = read("src/pages/BillingSettings.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
-    expect(wizard).toContain('value === "train"');
-    expect(wizard).toContain('value === "wire"');
-    expect(wizard).toContain('value === "test"');
-    expect(wizard).toContain('value === "launch"');
-    expect(wizard).toContain(
-      'const stepOrder: WizardStep[] = ["train", "voice", "test", "launch", "complete"]',
+    expect(state).toContain(
+      'export const BO_ONBOARDING_STEPS = ["about", "website", "questions", "checks", "done"] as const;',
     );
-    expect(wizard).toContain('if (stored === "channels") return "test"');
-    expect(wizard).toContain('if (stored === "wire") return "launch"');
-    expect(wizard).toContain(
-      "function finish(line: string | null = hasLiveLine ? phoneNumber : null)",
-    );
-    expect(wizard).toContain("if (line && testStarted)");
-    expect(wizard).toContain("disabled={!testStarted}");
-    expect(wizard).not.toContain('event: "launch_readiness_reached"');
-    expect(wizard).toContain("onTestCompleted");
-    expect(wizard).toContain('event: "test_call_completed"');
-    expect(wizard).toContain('result: "assistant_response_completed"');
-    expect(wizard).not.toContain("Finish without a test");
-    expect(copy).toContain('label: "Knowledge"');
-    expect(copy).toContain('label: "Rehearse"');
-    expect(copy).toContain('label: "Launch"');
-    expect(copy).not.toContain('label: "Wire"');
-    expect(copy).not.toContain('label: "Number"');
-    expect(copy).not.toContain('label: "Try It"');
-    expect(copy).toContain("Continue to Rehearse");
-    expect(copy).toContain("Continue to Launch");
-    expect(copy).toContain("Skip Rehearsal");
-    expect(copy).toContain("Put It on the Line");
-    expect(billing).toContain("shouldResumePostCreateLaunch(");
-    expect(billing).toContain("Boolean(readPostCreateWizard())");
-    expect(billing).toContain("readPostCreateWizardStep()");
-    const resume = "window.location.replace(`/studio?agent=${encodeURIComponent(wizard.agentId)}`)";
-    expect(billing).toContain(resume);
-    expect(billing.indexOf("window.history.replaceState")).toBeLessThan(billing.indexOf(resume));
+    // A reload continues at the same question for the same Bot.
+    expect(onboarding).toContain("writeBoOnboarding(userId, {");
+    expect(onboarding).toContain("clearBoOnboarding(userId);");
+    // A web lookup saves nothing until the owner says it is their business.
+    expect(onboarding).toContain("From a web search I confirmed is my business: ");
+    expect(copy).toContain('confirm: "Is this your business?"');
+    expect(onboarding).toContain('event: "post_create_wizard_step_completed"');
+    expect(onboarding).toContain('event: "launch_readiness_reached"');
+    // Going live is the one moment a plan is chosen.
+    expect(onboarding).toContain("choosePlanHref()");
+    expect(copy).toContain('number: "Get a Number"');
+    // Checkout no longer reopens a setup guide.
+    expect(billing).not.toMatch(/readPostCreateWizard|shouldResumePostCreateLaunch/);
   });
 });

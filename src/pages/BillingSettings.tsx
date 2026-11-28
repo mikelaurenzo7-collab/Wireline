@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import { Loader2, Plus, ShieldCheck } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -13,25 +13,16 @@ import UsageSpendCard from "../components/usage-billing/UsageSpendCard";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
-import { firstBotSetupHref } from "../lib/auth-redirect";
 import {
-  activatedPostCreateWizard,
   checkoutReturnFlowFromSearch,
   checkoutReturnUrlWithoutProof,
   classifyCheckoutReturn,
   hasCheckoutReturnToVerify,
   shouldFinalizeCheckoutReturn,
-  shouldResumePostCreateLaunch,
   type CheckoutReturnOutcome,
   type CheckoutReturnVerification,
 } from "../lib/billing-checkout-return";
-import {
-  readPostCreateWizard,
-  readPostCreateWizardStep,
-  updatePostCreateWizard,
-} from "../lib/wireline-create-flow";
 import { isUsagePlanId, planById } from "../lib/plan-catalog";
-import { getStoredSignupIntent, parseSignupIntent } from "../lib/signup-intent";
 import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -76,7 +67,6 @@ function waitForCheckoutRetry(delayMs: number): Promise<void> {
 }
 
 export default function BillingSettings() {
-  const { search } = useLocation();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
   const [usageTierName, setUsageTierName] = useState<string | null>(null);
@@ -113,8 +103,6 @@ export default function BillingSettings() {
         const returnFlow = checkoutReturnFlowFromSearch(window.location.search);
         let checkoutOutcome: CheckoutReturnOutcome | null = null;
         let verification: CheckoutReturnVerification | null = null;
-        let resumePostCreateLaunch = false;
-        const resumeWizardAgentId = readPostCreateWizard()?.agentId ?? null;
 
         if (returnFlow && returnedSessionId) {
           for (const retryDelayMs of CHECKOUT_VERIFY_RETRY_DELAYS_MS) {
@@ -195,15 +183,6 @@ export default function BillingSettings() {
                   "We could not confirm this checkout yet. Its secure reference has been retained, so refreshing this page will retry safely.",
               });
             }
-
-            resumePostCreateLaunch = checkoutOutcome
-              ? shouldResumePostCreateLaunch(
-                  returnFlow,
-                  checkoutOutcome,
-                  Boolean(readPostCreateWizard()),
-                  readPostCreateWizardStep(),
-                )
-              : false;
           }
         }
 
@@ -223,21 +202,6 @@ export default function BillingSettings() {
               window.location.hash,
             ),
           );
-        }
-        if (resumePostCreateLaunch && !cancelled && returnFlow && checkoutOutcome) {
-          const wizard = activatedPostCreateWizard(
-            returnFlow,
-            checkoutOutcome,
-            resumeWizardAgentId,
-            readPostCreateWizard(),
-            readPostCreateWizardStep(),
-          );
-          // Persist the fulfilled plan before reopening this same Bot's guide.
-          // A dismissed or replaced guide must not be resumed by a late return.
-          if (wizard && updatePostCreateWizard(wizard)) {
-            window.location.replace(`/studio?agent=${encodeURIComponent(wizard.agentId)}`);
-            return;
-          }
         }
         if (!cancelled) setBillingReady(true);
 
@@ -330,13 +294,6 @@ export default function BillingSettings() {
     (subscription?.status === "active" || subscription?.status === "trialing");
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
-  const params = new URLSearchParams(search);
-  const onboarding =
-    params.get("onboarding") === "1" ||
-    (params.get("billing") === "canceled" && liveChannels?.agentCount === 0);
-  const createBotHref = firstBotSetupHref(
-    parseSignupIntent(search)?.preferredTemplateId ?? getStoredSignupIntent()?.preferredTemplateId,
-  );
 
   async function addBalance(amountUsd: number) {
     if (!canAddBalance) {
@@ -371,22 +328,8 @@ export default function BillingSettings() {
   return (
     <WorkspaceShell contentClassName="min-w-0 overflow-x-clip pt-1 pb-6">
       <WorkspacePageFrame mode="narrow">
-        {onboarding ? (
-          <WorkspacePageIntro
-            title="Choose a Plan"
-            description="Start a subscription for live work, or set up and rehearse your Bot for free."
-            action={
-              <Button asChild variant="secondary">
-                <Link to={createBotHref}>Set Up a Bot First</Link>
-              </Button>
-            }
-          />
-        ) : (
-          <>
-            <SettingsTabs />
-            <WorkspacePageIntro title="Billing" titleHidden />
-          </>
-        )}
+        <SettingsTabs />
+        <WorkspacePageIntro title="Billing" titleHidden />
 
         {checkoutReturnNotice ? (
           <StatusNotice
@@ -398,11 +341,11 @@ export default function BillingSettings() {
               checkoutReturnNotice.planConfirmed && liveChannels ? (
                 liveChannels.agentCount === 0 ? (
                   <Button asChild size="sm">
-                    <Link to={createBotHref}>Create Your Bot</Link>
+                    <Link to="/studio">Meet Your Bot</Link>
                   </Button>
                 ) : liveChannels.channels.includes("voice") && liveChannels.linesUsed === 0 ? (
                   <Button asChild size="sm">
-                    <Link to="/phone?tab=setup">Choose Your Number</Link>
+                    <Link to="/phone?tab=lines">Choose Your Number</Link>
                   </Button>
                 ) : liveChannels.channels.includes("email") ? (
                   <Button asChild size="sm" variant="secondary">

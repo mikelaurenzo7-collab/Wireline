@@ -8,7 +8,6 @@ import { AGENTS_CHANGED_EVENT, useAgents } from "../../contexts/AgentsContext";
 import { useToast } from "../../contexts/ToastContext";
 import { authFetch } from "../../lib/api";
 import { formatPhone } from "../../lib/safe-number";
-import { clearPostCreateWizard, readPostCreateWizard } from "../../lib/wireline-create-flow";
 
 type DeletionBlock = "live_call" | "outbound_call" | "computer_task" | "identity_setup";
 
@@ -151,7 +150,6 @@ export default function DeleteBotSection({
       // success notice from a retired settings panel.
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       if (!mounted.current) return;
-      if (readPostCreateWizard()?.agentId === agentId) clearPostCreateWizard();
       forgetDeletedAgent(agentId);
       navigate("/studio", { replace: true });
       toast({ type: "success", title: "Bot Deleted", message: `${agentName} was deleted.` });

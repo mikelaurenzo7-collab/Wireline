@@ -24,12 +24,11 @@ describe("Atomic Design completion contract", () => {
     expect(resetPassword).toContain("FormField, StatusNotice");
     expect(resetPassword).not.toContain("components/ui/shadcn");
 
-    expect(onboarding).toContain('const CREATE_DESTINATION = "/studio?create=1"');
+    // /onboarding only forwards to the Workspace, where the owner meets Bo.
+    expect(onboarding).toContain("navigate(`/studio${search}`, { replace: true });");
     expect(onboarding).toContain('workspace_model: "one_workspace"');
     expect(onboarding).not.toContain("posture=");
     expect(onboarding).not.toContain("readStoredWorkspaceMode");
-    expect(onboarding).toContain('from "../components/TransitionSurface"');
-    expect(onboarding).toContain("language.createCta");
     expect(onboarding).not.toContain("components/ui/shadcn");
 
     expect(developers).toContain('import { Button } from "../components/atoms"');

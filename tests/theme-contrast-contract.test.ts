@@ -265,7 +265,7 @@ describe("BotBound appearance contrast", () => {
       "src/components/IntakeKeysManager.tsx",
       "src/components/WebhooksManager.tsx",
       "src/components/TrialGateModal.tsx",
-      "src/components/CreateAgentDialog.tsx",
+      "src/components/onboarding/BoOnboarding.tsx",
       "src/components/admin/AuditActivityPanel.tsx",
     ];
     for (const path of surfaces) {

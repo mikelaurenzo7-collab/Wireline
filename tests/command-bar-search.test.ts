@@ -86,7 +86,6 @@ describe("workspace command discovery", () => {
     expect(workspaceCommandHref("/knowledge", "bot-b")).toBe("/knowledge?agent=bot-b");
     expect(workspaceCommandHref("/studio", "bot-b")).toBe("/studio?agent=bot-b");
     expect(workspaceCommandHref("/computer", null)).toBe("/studio?panel=computer");
-    expect(workspaceCommandHref("/studio?create=1", "bot-b")).toBe("/studio?create=1");
     expect(workspaceCommandHref("/settings/billing", "bot-b")).toBe("/settings/billing");
   });
 

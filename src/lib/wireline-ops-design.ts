@@ -70,7 +70,7 @@ export const OPS_CHANNEL_EMPTY = {
   audit: {
     title: "Audit Trail Is Quiet",
     actions: [
-      { label: "Deploy a Bot", to: "/studio?create=1", primary: true },
+      { label: "Open Workspace", to: "/studio", primary: true },
       { label: "Open Activity", to: "/insights" },
     ],
   },

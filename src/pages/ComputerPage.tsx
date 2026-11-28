@@ -66,6 +66,8 @@ import {
 } from "../contexts/ComputerWorkspaceContext";
 import { readComputerTaskReceipt } from "../lib/computer-task-receipt";
 import { shortComputerTaskLabel } from "../lib/computer-task-display";
+import { choosePlanHref } from "../lib/signup-intent";
+import { GO_LIVE_PLAN_COPY } from "../lib/wireline-onboarding-copy";
 
 const EVENT_KIND_LABEL: Record<TaskEvent["kind"], string> = {
   action: "Step",
@@ -171,7 +173,7 @@ function UnavailableNotice({ status }: { status: ComputerStatus }) {
         title="Give Your Bot Its Own Computer"
         action={
           <Button asChild size="sm">
-            <Link to="/settings/billing">See Plans</Link>
+            <Link to={choosePlanHref()}>{GO_LIVE_PLAN_COPY.cta}</Link>
           </Button>
         }
       >
@@ -1979,14 +1981,14 @@ export function ComputerWorkbench({
       ) : rosterEmpty ? (
         <StatusNotice
           tone="info"
-          title="Create a Bot First"
+          title="Meet Your Bot First"
           action={
             <Button asChild size="sm">
-              <Link to="/studio?create=1">Create a Bot</Link>
+              <Link to="/studio">Open Workspace</Link>
             </Button>
           }
         >
-          Your Bot's computer belongs to a Bot. Build one, then give it work here.
+          The computer belongs to your Bot. Meet it in the Workspace, then give it work here.
         </StatusNotice>
       ) : null}
       {scopedAgentUnavailable ? (

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { MessageSquareText, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
-import LiveVoiceSandbox from "./LiveVoiceSandbox";
-import { authFetch } from "../lib/api";
-import type { BotMarkKey } from "../lib/bot-mark";
-import { fetchSelfServeCheckoutAvailable } from "../lib/checkout-availability";
-import { SOFT_OPEN_CHECKOUT_COPY } from "../lib/wireline-onboarding-copy";
+
+import { authFetch } from "../../lib/api";
+import { fetchSelfServeCheckoutAvailable } from "../../lib/checkout-availability";
+import { choosePlanHref } from "../../lib/signup-intent";
+import { SOFT_OPEN_CHECKOUT_COPY } from "../../lib/wireline-onboarding-copy";
 
 type SimulationAllowanceStatus = {
   month_to_date_usd: number;
@@ -32,14 +31,14 @@ export function voiceRehearsalsLeftCopy(status: {
 }
 
 /**
- * Free Builder's simulation allowance meter. plan-catalog.ts names silent
+ * Free Builder's private rehearsal allowance. plan-catalog.ts names silent
  * mid-training depletion "the likeliest place a converting prospect churns" —
  * this makes the allowance visible before it runs out, warns near the
  * threshold, and gives the depleted state a plan path instead of a dead mic.
  * Renders nothing for paid tenants (their guard scope is not the simulation
  * allowance) and nothing while unknown, so it can never block testing.
  */
-function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
+export default function RehearsalAllowanceMeter({ refreshTick }: { refreshTick: number }) {
   const [status, setStatus] = useState<SimulationAllowanceStatus | null>(null);
   const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(null);
 
@@ -127,7 +126,7 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
             <>
               This month's included rehearsal allowance is used.{" "}
               <Link
-                to="/settings/billing"
+                to={choosePlanHref()}
                 className="font-semibold text-primary underline underline-offset-4"
               >
                 Choose a Plan
@@ -145,69 +144,6 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
             : "Running low. Preview Voice is still available."}
         </p>
       ) : null}
-    </div>
-  );
-}
-
-export default function RoleplaySandbox({
-  agentId,
-  agentName = "your agent",
-  markKey,
-  onTestStarted,
-  onTestCompleted,
-}: {
-  agentId: string;
-  agentName?: string;
-  markKey?: BotMarkKey | null;
-  onTestStarted?: () => void;
-  onTestCompleted?: () => void;
-}) {
-  const [allowanceRefreshTick, setAllowanceRefreshTick] = useState(0);
-  return (
-    <div className="space-y-4">
-      <LiveVoiceSandbox
-        agentId={agentId}
-        agentName={agentName}
-        markKey={markKey}
-        onTestStarted={() => {
-          setAllowanceRefreshTick((tick) => tick + 1);
-          onTestStarted?.();
-        }}
-        onTestCompleted={() => {
-          setAllowanceRefreshTick((tick) => tick + 1);
-          onTestCompleted?.();
-        }}
-      />
-      <SimulationAllowanceMeter refreshTick={allowanceRefreshTick} />
-      <div className="grid gap-3 rounded-xl border border-border bg-secondary p-4 sm:grid-cols-2">
-        <div className="flex gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-primary">
-            <MessageSquareText size={17} />
-          </span>
-          <div>
-            <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
-              Rehearse realistic interruptions
-            </p>
-            <p className="mt-1 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Talk naturally, pause, change your mind, and interrupt the agent while it is speaking.
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-primary">
-            <ShieldCheck size={17} />
-          </span>
-          <div>
-            <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
-              Private rehearsal
-            </p>
-            <p className="mt-1 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Your rehearsal may search approved Knowledge but cannot send, book, transfer, or
-              change outside systems.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

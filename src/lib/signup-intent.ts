@@ -491,6 +491,17 @@ export function activationBillingHref(intent: SignupIntent | null | undefined): 
   return `/settings/billing?${params.toString()}`;
 }
 
+/**
+ * The one place every "choose a plan" control sends the owner: Billing, with
+ * the plan they picked on Pricing (if any) already selected. Without one,
+ * Billing opens on the plans, nothing preselected. Plans are chosen when going
+ * live, never before the owner has met their Bot.
+ */
+export function choosePlanHref(): string {
+  const intent = getStoredSignupIntent();
+  return intent ? activationBillingHref(intent) : "/settings/billing";
+}
+
 export function getSignupWedgeRecommendation(
   wedge: string | null | undefined,
 ): SignupWedgeRecommendation | null {

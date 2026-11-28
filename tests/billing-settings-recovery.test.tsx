@@ -90,11 +90,6 @@ vi.mock("../src/components/layout/WorkspacePageFrame", () => ({
 vi.mock("../src/components/WorkspaceShell", () => ({ default: "div" }));
 vi.mock("../src/lib/api", () => ({ authFetch: (...args: unknown[]) => h.fetch(...args) }));
 vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() }));
-vi.mock("../src/lib/wireline-create-flow", () => ({
-  readPostCreateWizard: () => null,
-  readPostCreateWizardStep: () => null,
-  updatePostCreateWizard: vi.fn(),
-}));
 vi.mock("../src/lib/signup-intent", async (original) => ({
   ...(await original<typeof import("../src/lib/signup-intent")>()),
   DEFAULT_ACTIVATION_PLAN_ID: "voice-regular",

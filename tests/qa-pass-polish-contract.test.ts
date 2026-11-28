@@ -10,12 +10,12 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 /** Findings from the Nov 23 QA-account visual pass; each one stays fixed. */
 describe("QA pass polish", () => {
-  it("says the Calls list is empty and uses the one label for creating a Bot", () => {
+  it("says the Calls list is empty and sends an owner without a Bot to meet Bo", () => {
     const calls = read("src/components/PhoneCallHistoryPanel.tsx");
     expect(calls).toContain('title: "No Calls Yet",');
     expect(calls).toContain('description: "Calls appear here once your Bot has a phone line."');
-    expect(calls).toContain('action: { label: "Create Bot", to: "/studio?create=1" }');
-    expect(calls).not.toContain('label: "New Bot"');
+    expect(calls).toContain('action: { label: "Open Workspace", to: "/studio" }');
+    expect(calls).not.toMatch(/label: "(?:New|Create) Bot"/);
   });
 
   it("names the plan the pricing estimate uses and draws the Plan Details toggle", () => {
@@ -60,14 +60,10 @@ describe("QA pass polish", () => {
     );
   });
 
-  it("starts a plain signup in free Bot setup and keeps chosen plans on review", () => {
+  it("starts every signup with Bo and keeps a chosen plan for going live", () => {
     const redirect = read("src/lib/auth-redirect.ts");
-    expect(redirect).toContain(
-      'if (plan === "personal" || !plan) return firstBotSetupHref(template);',
-    );
-    expect(redirect).toContain(
-      "return `${activationBillingHref(intent)}&onboarding=1${templateParam}`;",
-    );
+    expect(redirect).toContain("    return firstBotSetupHref(template);\n  }");
+    expect(redirect).not.toContain("&onboarding=1");
   });
 
   it("gives every industry page its pain points, questions and a pricing path", () => {

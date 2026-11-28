@@ -332,21 +332,6 @@
   padding-left: 0.625rem;
 }
 
-.wl-shell-bot-add {
-  display: grid;
-  width: 2.25rem;
-  height: 2.25rem;
-  flex: 0 0 2.25rem;
-  place-items: center;
-  border-radius: var(--wireline-radius-sm);
-  color: var(--wireline-color-text-secondary);
-}
-
-.wl-shell-bot-add:hover {
-  background: var(--bb-shell-active);
-  color: var(--wireline-color-text-primary);
-}
-
 .wl-shell-bot-roster-list {
   display: flex;
   max-height: 15rem;

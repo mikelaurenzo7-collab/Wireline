@@ -40,6 +40,12 @@ The palette change is an opportunity to tighten brand voice consistency, not jus
 
 ## 3. Onboarding & first-time user experience (FTUE)
 
+> **Superseded (November 2026).** First run is now Bo's conversation
+> (`src/components/onboarding/BoOnboarding.tsx`): one Bot per account, four
+> questions, website import or a confirmed web lookup, then Hear Me, Pick My
+> Voice, Get a Number. The create dialog, the post-create wizard and
+> `RoleplaySandbox` named below are removed.
+
 The existing `Create -> Train -> Wire -> Run` loop with `PostCreateActivationWizard.tsx` (Train → Channels → Wire → Test) is the right shape. Sharpen it:
 
 1. **Time-to-first-value:** the fastest path to "wow" is hearing the Bot work, not configuring it. Confirm the wizard's **Test** step (RoleplaySandbox) is reachable in the fewest possible clicks from signup and defaults to a working role starter so a new user can hear the Bot before writing an instruction.

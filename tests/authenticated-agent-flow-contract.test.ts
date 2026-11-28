@@ -45,7 +45,7 @@ describe("authenticated Bot flow", () => {
     expect(permissions).toContain("encodeURIComponent(savedFor)");
   });
 
-  it("keeps the signup form focused and offers direct plan review and Bot setup", () => {
+  it("keeps the signup form focused and sends every new owner to meet Bo, keeping a picked plan", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
     const authRedirect = read("src/lib/auth-redirect.ts");
@@ -65,11 +65,19 @@ describe("authenticated Bot flow", () => {
     expect(workspaceShell).toContain('import BotBoundMark from "./brand/BotBoundMark"');
     expect(workspaceShell).not.toContain("WirelineMark");
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
-    expect(authRedirect).toContain('return "/studio?create=1"');
-    expect(authRedirect).toContain("&onboarding=1");
-    expect(authRedirect).not.toContain("create=1&posture=");
+    // Every fresh sign-up meets Bo in Studio, even with a paid plan picked on
+    // Pricing: the plan is remembered for going live instead of opening Billing first.
+    expect(authRedirect).toContain('return "/studio";');
+    expect(authRedirect).toContain("return `/studio?template=${encodeURIComponent(template)}`;");
+    expect(authRedirect).toContain(
+      "if (currentIntent?.preferredPlanId && intent) persistSignupIntent(intent);",
+    );
+    expect(authRedirect).not.toContain("&onboarding=1");
+    expect(authRedirect).not.toContain("create=1");
     expect(authAccess.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
-    expect(onboardingFlow).toContain("language.createCta");
+    // The old /onboarding link opens the Workspace with its query intact.
+    expect(onboardingFlow).toContain("`/studio${search}`");
+    expect(onboardingFlow).not.toContain("create=1");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
   });
@@ -116,21 +124,19 @@ describe("authenticated Bot flow", () => {
 
   it("keeps Studio as the one authenticated Bot configuration and run surface", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const boOnboarding = read("src/components/onboarding/BoOnboarding.tsx");
     const productCopy = read("src/lib/product-copy.ts");
     const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
     const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
-    expect(createDialog).toContain("{language.setupPrompt}");
-    expect(createDialog).not.toContain("BOT_ROLE_TEMPLATES.map");
-    expect(createDialog).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
-    );
-    expect(createDialog).toContain("Cancel");
-    expect(createDialog).not.toContain("VoicePickerField");
-    expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
+    // Bo's first conversation is the create surface, and it renders in Studio.
+    expect(studioHome).toMatch(/<StudioPageShell>\s*<BoOnboarding /);
+    expect(boOnboarding).not.toContain("BOT_ROLE_TEMPLATES");
+    expect(boOnboarding).toContain("{COPY.finishLater}");
+    expect(boOnboarding).not.toContain("VoicePickerField");
+    expect(boOnboarding).not.toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Create Your Bot"');
     const emptyCue = productCopy.match(/emptyCue:\s*"([^"]+)"/)?.[1] ?? "";
     expect(emptyCue).toMatch(/Describe the job/i);
@@ -143,18 +149,20 @@ describe("authenticated Bot flow", () => {
     expect(mobileUtilities).toContain('pathname.startsWith("/settings")');
 
     expect(studioHome).toContain('params.get("brief")');
-    expect(studioHome).toContain('params.get("template")');
+    expect(boOnboarding).toContain('params.get("template")');
     expect(studioHome).not.toContain('params.get("posture")');
-    expect(studioHome).toContain("PostCreateActivationWizard");
-    expect(studioHome).toContain("readPostCreateWizard");
+    expect(boOnboarding).not.toContain('params.get("posture")');
+    expect(studioHome).toContain("<BoOnboarding");
+    expect(studioHome).toContain("readBoOnboarding(user?.id)");
     expect(studioWorkspace).toContain('type InspectorSection = "details" | "setup" | "review"');
     expect(studioWorkspace).toContain('type WorkroomMode = "configure" | "test"');
     expect(studioWorkspace).not.toContain("useAccount");
     expect(studioWorkspace).not.toContain("posture=");
   });
 
-  it("keeps Fast Start broad across proven roles and custom workflows", () => {
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
+  it("keeps the starter catalog broad while a starter only sets Bo's posture", () => {
+    const boOnboarding = read("src/components/onboarding/BoOnboarding.tsx");
+    const boState = read("src/lib/bo-onboarding.ts");
     const botProduct = read("src/lib/bot-product.ts");
 
     for (const phrase of [
@@ -172,55 +180,72 @@ describe("authenticated Bot flow", () => {
       expect(botProduct).toContain(`name: "${phrase}"`);
     }
     expect(botProduct).not.toContain('name: "Collections"');
-    expect(createDialog).not.toContain("BOT_ROLE_TEMPLATES.map");
-    expect(createDialog).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+    // Starter links still name a role, but Bo is never built from one: a
+    // starter only decides whether Bo starts as a personal assistant.
+    expect(boState).toContain(
+      'const PERSONAL_TEMPLATE_IDS = new Set(["personal-assistant", "family-concierge"]);',
     );
-    expect(createDialog).not.toContain('aria-label="Bot role starters"');
-    expect(createDialog).not.toContain("<option key={template.key} value={template.key}>");
-    expect(createDialog).not.toContain("Choose one personal job");
+    expect(boOnboarding).toMatch(
+      /isPersonalStarter\(\s*params\.get\("template"\),\s*getStoredSignupIntent\(\)\?\.preferredTemplateId,?\s*\)/,
+    );
+    expect(boOnboarding).toContain("name: FIRST_BOT_NAME,");
+    expect(boOnboarding).toContain("is_business_agent: !personal,");
+    expect(boOnboarding).not.toMatch(
+      /BOT_ROLE_TEMPLATES|Bot role starters|Choose one personal job/,
+    );
   });
 
   it("keeps the retired template gallery from coming back as a create surface", () => {
-    // One Bot means nothing to browse: the create dialog offers a short row of
-    // starting briefs and the gallery, its search, and its category filter are
-    // gone rather than hidden.
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
+    // One Bot means nothing to browse: Bo's first conversation replaced the
+    // create dialog, and the gallery, its search, its category filter, and the
+    // dialog's row of starting briefs are gone rather than hidden.
+    const boOnboarding = read("src/components/onboarding/BoOnboarding.tsx");
     expect(existsSync("src/components/AgentTemplates.tsx")).toBe(false);
     expect(existsSync("src/pages/TemplatesPage.tsx")).toBe(false);
-    expect(createDialog).not.toMatch(/searchableTemplateText|Search templates|activeCategory/);
-    expect(createDialog).toContain('aria-label="Starting briefs"');
-    expect(createDialog).toContain("What should it handle first?");
+    expect(existsSync("src/components/CreateAgentDialog.tsx")).toBe(false);
+    expect(boOnboarding).not.toMatch(/searchableTemplateText|Search templates|activeCategory/);
+    expect(boOnboarding).not.toContain("Starting briefs");
   });
 
-  it("launches a resumable Train, Test, Launch wizard after Fast Start", () => {
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
+  it("meets Bo in a resumable four-question conversation that ends on Hear, Voice, Number, Chat", () => {
+    const boOnboarding = read("src/components/onboarding/BoOnboarding.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
-    const createFlow = read("src/lib/wireline-create-flow.ts");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const boState = read("src/lib/bo-onboarding.ts");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
 
-    expect(createDialog).toContain("stashPostCreateWizard");
-    expect(createDialog).toContain("onCreated?.(wizardPayload)");
-    // The create dialog is now the only create surface, so it owns the whole
-    // handoff the template gallery used to duplicate.
-    expect(createDialog).toContain("isBotMarkKey(body.mark_key)");
-    expect(createDialog).toContain("setPostSignupFlowActive(true)");
-    expect(createDialog).toContain("&section=setup");
-    expect(studioHome).toContain("onCreated={setPostCreateWizard}");
-    expect(createFlow).toContain("POST_CREATE_WIZARD_KEY");
-    expect(createFlow).toContain("readPostCreateWizard");
-    expect(createFlow).toContain("clearPostCreateWizard");
-    expect(wizard).toContain("RoleplaySandbox");
-    expect(wizard).toContain('value === "train"');
-    expect(wizard).toContain('value === "test"');
-    expect(wizard).toContain('value === "launch"');
-    expect(wizard).toContain(
-      'const stepOrder: WizardStep[] = ["train", "voice", "test", "launch", "complete"]',
+    // Bo is created once per account; another tab that asks too gets the same Bot.
+    expect(copy).toContain('export const FIRST_BOT_NAME = "Bo";');
+    expect(boOnboarding).toContain("only_if_none: true,");
+    // The conversation is the only create surface, so it owns the whole
+    // handoff the create dialog and the post-create guide used to split.
+    expect(boOnboarding).toContain("isBotMarkKey(body.mark_key)");
+    expect(boOnboarding).toContain("setPostSignupFlowActive(true)");
+    expect(boOnboarding).toContain("setPostSignupFlowActive(false)");
+    expect(boOnboarding).toContain('event: "agent_created"');
+    // A reload continues at the same question for the same Bot.
+    expect(boState).toContain('const STATE_PREFIX = "wireline:bo-onboarding:v1:";');
+    expect(boState).toContain("export function readBoOnboarding");
+    expect(boState).toContain("export function writeBoOnboarding");
+    expect(boState).toContain("export function clearBoOnboarding");
+    expect(studioHome).toContain("agents.some((agent) => agent.id === onboarding?.agentId)");
+    expect(boOnboarding).toContain(
+      'const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;',
     );
-    expect(wizard).toContain("clearPostCreateWizard");
-    expect(wizard).toContain("stashPostCreateWizardStep");
-    expect(copy).toContain("POST_CREATE_WIZARD_COPY");
+    // It ends on the four next steps: rehearse, voice, a number, and chat.
+    expect(boOnboarding).toContain("finish(`/studio?agent=${id}&workroom=test`)");
+    expect(boOnboarding).toContain("finish(`/studio?agent=${id}&section=setup#voice`)");
+    expect(boOnboarding).toContain("`/phone?tab=lines&agent=${id}`");
+    expect(boOnboarding).toContain("choosePlanHref()");
+    for (const action of [
+      'hear: "Hear Me"',
+      'voice: "Pick My Voice"',
+      'number: "Get a Number"',
+      'chat: "Start Chatting"',
+    ]) {
+      expect(copy).toContain(action);
+    }
+    expect(copy).toContain("export const BO_ONBOARDING_COPY");
+    expect(copy).not.toContain("POST_CREATE_WIZARD_COPY");
   });
 
   it("keeps the retired presence live preview deleted", () => {

@@ -19,9 +19,9 @@ Repository workflow: [repo conventions](./REPO_CONVENTIONS.md).
 | Surface          | Source                                                                                              | Release posture                                                                                                    |
 | ---------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Web and API      | `src/`, `server.ts`, `api/`                                                                         | **Live** canonical runtime.                                                                                        |
-| Create           | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                             | Short role or brief intake; detailed setup stays in Workspace.                                                     |
+| Meet Bo          | `src/pages/AgentStudioHome.tsx`, `src/components/onboarding/BoOnboarding.tsx`                       | One Bot per account. Bo is created and asks four questions; answers go to Knowledge. No templates.                 |
 | Workspace        | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Selected Bot, instructions, private rehearsal, details, summary, and access to Knowledge and Computer.             |
-| Knowledge        | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | Sources, facts, rules, reports, and saved context for the selected Bot.                                            |
+| Knowledge        | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | The library of what the Bot knows: facts, rules, documents, website, About You. Teaching happens in the chat.      |
 | Inbox            | `src/pages/EmailPage.tsx`, `src/components/ApprovalInbox.tsx`                                       | Email conversations and Approvals, with preserved legacy channel access where applicable.                          |
 | Calls            | `src/pages/PhonePage.tsx`, `src/components/CallLogsClaude.tsx`                                      | Call history, allowed reviewed calls, and Lines.                                                                   |
 | Calendar         | `src/pages/CalendarPage.tsx`                                                                        | Appointments and availability.                                                                                     |
@@ -44,7 +44,8 @@ The optional voice-reference prototype is governed by [Voice cloning private pil
 The isolated speech worker has its own [setup guide](../services/voice-engine/README.md) and [third-party notices](../services/voice-engine/THIRD_PARTY_NOTICES.md).
 
 - Public pages explain. Authenticated pages execute.
-- Create stays short. Workspace owns instructions, rehearsal, and setup details; Knowledge owns saved sources and reports.
+- One place per job. The Workspace chat is where the owner teaches Bo and gives it work; Set Up is how Bo works (voice, greeting, hours, handoff); Knowledge is the library of what Bo knows, with documents and the website import. No surface has a second typed knowledge box.
+- Plans are chosen once, when going live ("Get a Number"). Sign-up never asks; a plan picked on Pricing is remembered and every choose-a-plan control opens Billing through `choosePlanHref()`.
 - Calls owns Lines, Inbox owns Needs You (what only the owner can do), Settings owns Billing, and Connections owns mailbox connections and optional tools.
 - Workspace is home. Overview and older roster routes remain compatibility entrances rather than competing dashboards.
 - Navigation comes from `src/constants/navigation.ts`: a compact desktop rail, a mobile dock, and More for secondary destinations.
@@ -55,49 +56,49 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 
 ## Canonical repository and system documents
 
-| Document                                                                                         | Role                                                                                               |
-| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| [README.md](../README.md)                                                                        | Repository entry point, current product map, setup, and verification.                              |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)                                                            | Branch, review, migration, validation, and release workflow.                                       |
-| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.                         |
-| [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.                          |
-| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                                 |
-| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | One-product business focus, one Bot per business and roster-compatible launch framing.              |
-| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                     |
-| [CLOUD_COMPUTER_BROWSER.md](./CLOUD_COMPUTER_BROWSER.md)                                         | Owner browser tools, session privacy, provider limits, and extension/password implementation path. |
-| [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                            |
-| [HANDS_FREE.md](./HANDS_FREE.md) | Studio speech, Bluetooth and wearable opportunities, private notes, reviewed task handoffs, and Meta preview acceptance. |
-| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.                      |
-| [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                                    |
-| [USAGE_BILLING.md](./USAGE_BILLING.md)                                                               | Canonical current shared-work offer: Lite $12 / Starter $24 / Plus $49, meters, caps, and checkout. |
-| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                       | Historical $19-era billing decision; superseded by USAGE_BILLING.md and the usage catalog.            |
-| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                       | Checkout, entitlement, webhook, cancellation, and reconciliation proof.                            |
-| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | August 2026 historical snapshot. Not the current launch status.                                 |
-| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                           | Customer-facing trust, compliance, and proof posture.                                              |
-| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                               | Launch readiness and account-level margin operating model.                                         |
-| [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md)                             | Shareable recap/proposal artifact contract and entitlement boundaries.                             |
-| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                           | Number, calling, SMS, and email identity boundaries.                                               |
-| [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary.                  |
-| [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md)                                           | Canonical OpenAI Realtime browser and Twilio PSTN/SIP architecture.                                |
-| [HELP_CLONED_VOICES.md](./HELP_CLONED_VOICES.md)                                                 | Customer help note for cloning a voice and using it on calls.                                      |
-| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                                         |
-| [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                                  |
-| [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                                              |
-| [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md)                     | Agent customization client/domain boundary.                                                        |
-| [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                                   |
-| [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                                   |
-| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                             | Generated authorization-coverage artifact.                                                         |
-| [PROJECT.md](../PROJECT.md)                                                                      | Feature inventory, milestone coverage, and launch readiness tracking.                               |
-| [TEST_INFRA.md](../TEST_INFRA.md)                                                                | End-to-end 4-tier testing infrastructure, methodology, and matrix.                                  |
-| [TEST_READY.md](../TEST_READY.md)                                                                | Acceptance criteria, pass/fail thresholds, and verification commands.                                |
+| Document                                                                                         | Role                                                                                                                     |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| [README.md](../README.md)                                                                        | Repository entry point, current product map, setup, and verification.                                                    |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)                                                            | Branch, review, migration, validation, and release workflow.                                                             |
+| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.                                               |
+| [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.                                                |
+| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                                                       |
+| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | One-product business focus, one Bot per business and roster-compatible launch framing.                                   |
+| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                                           |
+| [CLOUD_COMPUTER_BROWSER.md](./CLOUD_COMPUTER_BROWSER.md)                                         | Owner browser tools, session privacy, provider limits, and extension/password implementation path.                       |
+| [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                                                  |
+| [HANDS_FREE.md](./HANDS_FREE.md)                                                                 | Studio speech, Bluetooth and wearable opportunities, private notes, reviewed task handoffs, and Meta preview acceptance. |
+| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.                                            |
+| [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                                                          |
+| [USAGE_BILLING.md](./USAGE_BILLING.md)                                                           | Canonical current shared-work offer: Lite $12 / Starter $24 / Plus $49, meters, caps, and checkout.                      |
+| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                       | Historical $19-era billing decision; superseded by USAGE_BILLING.md and the usage catalog.                               |
+| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                       | Checkout, entitlement, webhook, cancellation, and reconciliation proof.                                                  |
+| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | August 2026 historical snapshot. Not the current launch status.                                                          |
+| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                           | Customer-facing trust, compliance, and proof posture.                                                                    |
+| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                               | Launch readiness and account-level margin operating model.                                                               |
+| [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md)                             | Shareable recap/proposal artifact contract and entitlement boundaries.                                                   |
+| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                           | Number, calling, SMS, and email identity boundaries.                                                                     |
+| [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary.                                        |
+| [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md)                                           | Canonical OpenAI Realtime browser and Twilio PSTN/SIP architecture.                                                      |
+| [HELP_CLONED_VOICES.md](./HELP_CLONED_VOICES.md)                                                 | Customer help note for cloning a voice and using it on calls.                                                            |
+| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                                                               |
+| [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                                                        |
+| [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                                                                    |
+| [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md)                     | Agent customization client/domain boundary.                                                                              |
+| [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                                                         |
+| [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                                                         |
+| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                             | Generated authorization-coverage artifact.                                                                               |
+| [PROJECT.md](../PROJECT.md)                                                                      | Feature inventory, milestone coverage, and launch readiness tracking.                                                    |
+| [TEST_INFRA.md](../TEST_INFRA.md)                                                                | End-to-end 4-tier testing infrastructure, methodology, and matrix.                                                       |
+| [TEST_READY.md](../TEST_READY.md)                                                                | Acceptance criteria, pass/fail thresholds, and verification commands.                                                    |
 
 ## Launch and production architecture
 
-| Document                                                                                       | Role                                                                                                                                           |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| [LAUNCH_READINESS.md](../LAUNCH_READINESS.md)                                                   | Executive launch readiness scorecard, domain verification status, and decision gates.                          |
-| [ENVIRONMENT_VARIABLES_MATRIX.md](./launch/ENVIRONMENT_VARIABLES_MATRIX.md)                     | Complete production secret/public environment matrix across all 10 services with safety rules.                                                  |
-| [FLAWLESS_LAUNCH_ROADMAP.md](./launch/FLAWLESS_LAUNCH_ROADMAP.md)                               | Prioritized remediation tasks, operational requirements, and pre-launch verification checks.                                                    |
+| Document                                                                    | Role                                                                                           |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [LAUNCH_READINESS.md](../LAUNCH_READINESS.md)                               | Executive launch readiness scorecard, domain verification status, and decision gates.          |
+| [ENVIRONMENT_VARIABLES_MATRIX.md](./launch/ENVIRONMENT_VARIABLES_MATRIX.md) | Complete production secret/public environment matrix across all 10 services with safety rules. |
+| [FLAWLESS_LAUNCH_ROADMAP.md](./launch/FLAWLESS_LAUNCH_ROADMAP.md)           | Prioritized remediation tasks, operational requirements, and pre-launch verification checks.   |
 
 ## Operating and release runbooks
 
@@ -112,14 +113,14 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [AGENTMAIL_PRODUCTION_ACTIVATION.md](./AGENTMAIL_PRODUCTION_ACTIVATION.md)                     | Managed Bot email domain, credential, DNS, readiness, reconciliation, customer-domain, and rollback runbook.                                   |
 | [IOS_APP_STORE_CARPLAY_READINESS.md](./IOS_APP_STORE_CARPLAY_READINESS.md)                     | iOS signing, App Review, native capability, physical-device, and entitlement-gated CarPlay release checks.                                     |
 | [FOUNDER_LAUNCH_COMMAND_CENTER.md](./FOUNDER_LAUNCH_COMMAND_CENTER.md)                         | Founder go/no-go, runtime, GTM, KPI, support, and rollback command center.                                                                     |
-| [LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md)                 | Historical launch positioning (self-superseded October 27, 2026); see design/master-plan.md and USAGE_BILLING.md. |
-| [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md)                     | Historical July 2026 launch playbook; retained for record.                                                                        |
-| [LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md](./LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md)           | Historical creative kit; retained for asset provenance.                                                                            |
-| [WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md](./WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md)             | Historical campaign pack; retained for record.                                                                                     |
-| [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md)                                             | Historical pre-launch billing ops note; current offer lives in USAGE_BILLING.md.                                                  |
-| [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md)     | Historical pre-Render demo reset checklist.                                                                                        |
-| [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md)           | Historical pre-Render environment checklist.                                                                                       |
-| [MULTI_SURFACE_QA_2026-07-07.md](./MULTI_SURFACE_QA_2026-07-07.md)                             | Historical pre-Render QA ritual notes.                                                                                             |
+| [LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md)                 | Historical launch positioning (self-superseded October 27, 2026); see design/master-plan.md and USAGE_BILLING.md.                              |
+| [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md)                     | Historical July 2026 launch playbook; retained for record.                                                                                     |
+| [LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md](./LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md)           | Historical creative kit; retained for asset provenance.                                                                                        |
+| [WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md](./WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md)             | Historical campaign pack; retained for record.                                                                                                 |
+| [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md)                                             | Historical pre-launch billing ops note; current offer lives in USAGE_BILLING.md.                                                               |
+| [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md)     | Historical pre-Render demo reset checklist.                                                                                                    |
+| [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md)           | Historical pre-Render environment checklist.                                                                                                   |
+| [MULTI_SURFACE_QA_2026-07-07.md](./MULTI_SURFACE_QA_2026-07-07.md)                             | Historical pre-Render QA ritual notes.                                                                                                         |
 | [HARNESS_WINGMAN.md](./HARNESS_WINGMAN.md)                                                     | Operations and infrastructure harness doctrine.                                                                                                |
 | [CHATGPT_APP_DASHBOARD_CONFIG.md](./CHATGPT_APP_DASHBOARD_CONFIG.md)                           | OAuth/CIMD dashboard registration record.                                                                                                      |
 | [CHATGPT_APP_SUBMISSION.md](./CHATGPT_APP_SUBMISSION.md)                                       | Submission and reviewer contract.                                                                                                              |
@@ -189,15 +190,15 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 
 ## Active strategy and planned work
 
-| Document                                                                                     | Role                                                                     |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md)                       | Historical July 2026 phased plan; current direction is design/master-plan.md.                         |
-| [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md)                               | Research lanes, prioritization, metrics, and execution horizon.          |
-| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md)                       | Guided call-plan setup doctrine (retired 2026-08-13; historical record). |
-| [VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md](./VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md) | Provider-neutral voice moat and partner sequence.                        |
-| [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md)                                                 | Operational success and support motion.                                  |
-| [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md)                       | Planned Runtime Balance referral loop.                                   |
-| [DESIGN_PARTNER_SPRINT_2026-07-08.md](./DESIGN_PARTNER_SPRINT_2026-07-08.md)                 | Planned design-partner sprint and entry gates.                           |
+| Document                                                                                     | Role                                                                          |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md)                       | Historical July 2026 phased plan; current direction is design/master-plan.md. |
+| [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md)                               | Research lanes, prioritization, metrics, and execution horizon.               |
+| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md)                       | Guided call-plan setup doctrine (retired 2026-08-13; historical record).      |
+| [VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md](./VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md) | Provider-neutral voice moat and partner sequence.                             |
+| [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md)                                                 | Operational success and support motion.                                       |
+| [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md)                       | Planned Runtime Balance referral loop.                                        |
+| [DESIGN_PARTNER_SPRINT_2026-07-08.md](./DESIGN_PARTNER_SPRINT_2026-07-08.md)                 | Planned design-partner sprint and entry gates.                                |
 
 ## Historical planning reference
 

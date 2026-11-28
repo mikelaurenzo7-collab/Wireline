@@ -210,14 +210,17 @@ describe("code review hardening contracts", () => {
     expect(routes.indexOf("return;", duplicateGuard)).toBeLessThan(spendStart);
   });
 
-  it("tracks post-create roleplay starts only from a connected live voice test", () => {
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
-    const roleplay = read("src/components/RoleplaySandbox.tsx");
+  it("reports rehearsal starts only from a connected live voice test", () => {
+    // The post-create guide that counted roleplay starts is gone; Bo's "Hear Me"
+    // opens the Studio rehearsal, which reacts to the same connected start.
+    const rehearsal = read("src/components/StudioVoiceRehearsal.tsx");
     const liveVoice = read("src/components/OpenAILiveVoiceSandbox.tsx");
 
-    expect(wizard).not.toContain("onFocusCapture");
-    expect(wizard).toContain("onTestStarted={() =>");
-    expect(roleplay).toContain("onTestStarted?: () => void");
+    expect(rehearsal).not.toContain("onFocusCapture");
+    expect(rehearsal).toContain("onTestStarted={() =>");
+    // The free rehearsal allowance is read again as each rehearsal starts and ends.
+    expect(rehearsal).toContain("<RehearsalAllowanceMeter refreshTick={allowanceTick} />");
+    expect(rehearsal.match(/setAllowanceTick\(\(tick\) => tick \+ 1\)/g)).toHaveLength(2);
     expect(liveVoice).toContain("onTestStarted?: () => void");
     expect(liveVoice).toContain("reportedStarted.current = true");
     expect(liveVoice).toContain("onTestStarted?.()");

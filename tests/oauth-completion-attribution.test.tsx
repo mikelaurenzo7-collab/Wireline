@@ -31,7 +31,7 @@ vi.mock("../src/lib/signup-intent", () => ({
 }));
 vi.mock("../src/lib/auth-redirect", () => ({
   readStoredWorkspaceMode: () => "personal",
-  resolvePostAuthDestination: () => "/studio?create=1",
+  resolvePostAuthDestination: () => "/studio",
 }));
 vi.mock("../src/lib/post-signup-onboarding", () => ({
   clearFreshSignupSession: vi.fn(),
@@ -64,9 +64,7 @@ describe("OAuth completion optional attribution", () => {
     OAuthComplete();
     h.effects.forEach((effect) => effect());
     try {
-      await vi.waitFor(() =>
-        expect(h.navigate).toHaveBeenCalledWith("/studio?create=1", { replace: true }),
-      );
+      await vi.waitFor(() => expect(h.navigate).toHaveBeenCalledWith("/studio", { replace: true }));
       expect(h.signIn).toHaveBeenCalledWith({ user });
       expect(h.markFresh).toHaveBeenCalledOnce();
       expect(h.sync).toHaveBeenCalledOnce();

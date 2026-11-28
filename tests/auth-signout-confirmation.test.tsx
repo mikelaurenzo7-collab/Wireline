@@ -39,9 +39,9 @@ vi.mock("../src/lib/api", () => ({
   AUTH_SESSION_EXPIRED_EVENT: "session-expired",
   refreshSessionIfNeeded: vi.fn(),
 }));
-vi.mock("../src/lib/create-brief-recovery", () => ({
-  setCreateBriefRecoveryOwner: h.setRecoveryOwner,
-  suspendCreateBriefRecovery: vi.fn(),
+vi.mock("../src/lib/signed-in-owner", () => ({
+  setSignedInOwner: h.setRecoveryOwner,
+  suspendSignedInOwner: vi.fn(),
 }));
 vi.mock("../src/lib/studio-agent-preference", () => ({
   clearStudioLastAgentId: h.clearLastAgent,

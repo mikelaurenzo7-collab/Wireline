@@ -1528,16 +1528,16 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
   await expect(page.getByRole("button", { name: "Start Task" })).toBeEnabled();
 });
 
-test("an empty roster shows Bot creation before computer setup", async ({ page }) => {
+test("an empty roster sends the owner to meet Bo before computer setup", async ({ page }) => {
   await mockComputer(page, {
     status: { available: false, reason: "not_configured" },
     agents: [],
     tasks: [],
   });
   await page.goto("/computer");
-  await expect(page.getByRole("link", { name: "Create a Bot", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Open Workspace", exact: true })).toHaveAttribute(
     "href",
-    "/studio?create=1",
+    "/studio",
   );
   await expect(page.getByText("Your Bot's Computer Is Being Set Up")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "What should your Bot do?" })).toHaveCount(0);

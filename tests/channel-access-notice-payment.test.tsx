@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("react-router", () => ({ Link: "a" }));
 
 import ChannelAccessNotice from "../src/components/ChannelAccessNotice";
+import { GO_LIVE_PLAN_COPY } from "../src/lib/wireline-onboarding-copy";
 
 type Props = { children?: ReactNode; title?: string; tone?: string; to?: string };
 function elements(node: ReactNode): ReactElement<Props>[] {
@@ -83,7 +84,8 @@ describe("channel access notice", () => {
       channel: "sms",
     })!;
     expect(notice.props.title).toBe("Texts Aren't in Your Plan");
-    expect(text(notice.props.children)).toContain("Choose a plan to connect this channel");
+    // The same words as every other place a plan is offered: going live.
+    expect(text(notice.props.children)).toContain(GO_LIVE_PLAN_COPY.detail);
     expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
       "/settings/billing",
     );

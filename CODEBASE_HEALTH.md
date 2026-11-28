@@ -23,7 +23,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Routing              | `src/App.tsx`, `src/routes/AppRoutes.tsx`                                                                                                  |
 | Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` both resolve to `/studio`             |
-| Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                    |
+| First run (meet Bo)  | `src/pages/AgentStudioHome.tsx`, `src/components/onboarding/BoOnboarding.tsx`                                                              |
 | Training             | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/`                                        |
 | Launch / Connections | `src/pages/ConnectionsPage.tsx`                                                                                                            |
 | Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                |

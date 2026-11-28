@@ -41,17 +41,25 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
 
   it("keeps the compact CookieConsent non-modal and avoids fake no-line after phone refresh failure", () => {
     const cookie = read("src/components/CookieConsent.tsx");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    const lines = read("src/components/PhoneSetupPanel.tsx");
     expect(cookie).toContain('role="region"');
     expect(cookie).toContain("privacyPanelRef.current?.focus({ preventScroll: true });");
     expect(cookie).not.toContain("useModalFocusTrap");
     expect(cookie).not.toContain("aria-modal={");
-    expect(wizard).toContain(
-      "Couldn't refresh phone lines. Retry before provisioning another number.",
+    // The post-create guide that looked up and provisioned lines is gone. Bo's
+    // "Get a Number" opens Lines and never provisions a number itself.
+    expect(bo).toContain("`/phone?tab=lines&agent=${id}`");
+    expect(bo).not.toContain("/api/phone-numbers/provision");
+    // Lines fails closed when its inventory cannot load: no "No Line Yet", no
+    // provisioning form, and no activation until a retry succeeds.
+    expect(lines).toMatch(/catch \(reason\) \{\s*setInventoryUnavailable\(true\);/);
+    expect(lines).toContain("!inventoryUnavailable && numbers.length === 0");
+    expect(lines).toContain(
+      "const showProvisionForm = addingLine && !inventoryUnavailable && !showSoftOpen;",
     );
-    expect(wizard).toContain("phoneLookup?.active && !refreshingPhone && !phoneLookupFailed");
-    expect(wizard).not.toContain('authFetch("/api/phone-numbers/provision"');
-    expect(wizard).toContain("disabled={refreshingPhone || phoneLookupFailed}");
+    const provision = lines.slice(lines.indexOf("async function provisionNumber()"));
+    expect(provision.slice(0, provision.indexOf("return;"))).toContain("inventoryUnavailable");
   });
 
   it("keeps Call Logs usable when secondary fetches fail", () => {

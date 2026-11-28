@@ -33,7 +33,7 @@ describe("design consolidation contracts", () => {
 
   it("migrates hot-path surfaces off the legacy studio-card theme", () => {
     const migrated = [
-      "src/components/CreateAgentDialog.tsx",
+      "src/components/onboarding/BoOnboarding.tsx",
       "src/pages/KnowledgePage.tsx",
       "src/pages/SettingsPage.tsx",
       "src/pages/ClientAppsPage.tsx",
@@ -48,6 +48,10 @@ describe("design consolidation contracts", () => {
         expect(source).toContain("text-foreground");
       } else if (file.endsWith("KnowledgeBaseClaude.tsx")) {
         expect(source).toContain("text-foreground");
+        expect(source).toContain("border-border");
+      } else if (file.endsWith("BoOnboarding.tsx")) {
+        // Bo's first conversation draws on the Workspace chat's own surfaces.
+        expect(source).toContain("wl-studio-message");
         expect(source).toContain("border-border");
       } else {
         expect(source).toContain("wl-paper");

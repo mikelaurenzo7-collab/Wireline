@@ -53,5 +53,5 @@ export function decryptBrowserHandoffContext(encrypted: string): BrowserCommandC
 }
 
 export function studioHandoffUrl(handoffId: string): string {
-  return `${appBase()}/studio?create=1&handoff_id=${encodeURIComponent(handoffId)}`;
+  return `${appBase()}/studio?handoff_id=${encodeURIComponent(handoffId)}`;
 }

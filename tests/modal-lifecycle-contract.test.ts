@@ -31,8 +31,6 @@ describe("authenticated modal lifecycle contract", () => {
   it("keeps every custom authenticated modal on the shared lifecycle hooks", () => {
     const customDialogs = [
       "src/components/TrialGateModal.tsx",
-      "src/components/CreateAgentDialog.tsx",
-      "src/components/onboarding/PostCreateActivationWizard.tsx",
       "src/pages/TeamSettings.tsx",
       "src/components/CommandBar.tsx",
       "src/components/PageShell.tsx",
@@ -56,7 +54,6 @@ describe("authenticated modal lifecycle contract", () => {
     expect(trialGate).toContain("onClick={closeModal}");
 
     for (const [path, guard] of [
-      ["src/components/CreateAgentDialog.tsx", "if (creating) return"],
       ["src/components/OutboundDialDialog.tsx", "if (!next && !placing) onClose()"],
       ["src/components/DncManager.tsx", "if (!nextOpen && adding) return"],
       ["src/pages/TeamSettings.tsx", "if (inviting) return"],

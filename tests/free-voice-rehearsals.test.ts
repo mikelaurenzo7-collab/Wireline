@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("react-router", () => ({ Link: "a" }));
 
-import { voiceRehearsalsLeftCopy } from "../src/components/RoleplaySandbox";
+import { voiceRehearsalsLeftCopy } from "../src/components/voice/RehearsalAllowanceMeter";
 import {
   OPENAI_FREE_REHEARSAL_SECONDS,
   OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD,

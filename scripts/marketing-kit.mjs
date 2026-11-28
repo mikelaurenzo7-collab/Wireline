@@ -481,7 +481,7 @@ async function captureZoomCrops(browser, session, manifest) {
 
   const shots = [
     { id: "overview-command", route: "/overview", selector: "main" },
-    { id: "studio-create", route: "/studio?create=1", selector: "main" },
+    { id: "studio-workspace", route: "/studio", selector: "main" },
     { id: "connections-stack", route: "/connections", selector: "main" },
     { id: "phone-history", route: "/phone?tab=logs", selector: "main" },
     { id: "phone-outbound", route: "/phone?tab=outbound", selector: "main" },
@@ -584,7 +584,7 @@ async function recordReel(browser, session, manifest) {
       id: "reel-30s-product-loop",
       viewport: layouts.reel,
       beats: [
-        { route: "/studio?create=1", hold: 3400 }, // Create
+        { route: "/studio", hold: 3400 }, // Meet the Bot
         { route: "/knowledge", hold: 3400 }, // Train
         { route: "/phone", hold: 3400 }, // Launch
         { route: "/phone?tab=logs", hold: 3400, scroll: 240 }, // Run

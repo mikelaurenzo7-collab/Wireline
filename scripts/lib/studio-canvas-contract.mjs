@@ -111,7 +111,6 @@ export const STUDIO_CANVAS_REQUIRED = {
   studioChrome: [
     { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
     { id: "readiness", pattern: /agentReadinessLabel/ },
-    { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
     { id: "bot-switch-options", pattern: /agents\.map/ },
     { id: "settings-entry", pattern: /id="studio-settings-toggle"/ },
@@ -150,7 +149,11 @@ export const STUDIO_CANVAS_REQUIRED = {
       pattern: /initialDraft=\{workroomDrafts\.get\(main\.draftKey\)\}/,
     },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "create-first-empty-state", pattern: /Create Your Bot/i },
+    // An empty roster meets Bo (AgentStudioHome); the canvas never draws a create screen.
+    {
+      id: "empty-roster-meets-bo",
+      pattern: /if \(agents\.length === 0\) return <StudioLoadingState \/>/,
+    },
     { id: "command-nonce", pattern: /commandNonce/ },
     { id: "progressive-inspector", pattern: /collapsed=\{!panelOpen\}/ },
     // The owner can expand Computer and restore the split view.

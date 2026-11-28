@@ -198,11 +198,10 @@ describe("production visual QA safety gate", () => {
     expect(workflow).toContain("!artifacts/visual-qa-prod/**/*-authenticated-*.png");
   });
 
-  it("binds route semantics to stable page, dialog, tab, hash, and admin-panel attributes", () => {
+  it("binds route semantics to stable page, tab, hash, and admin-panel attributes", () => {
     const marker = read("src/components/VisualQaMarker.tsx");
     const app = read("src/App.tsx");
     const routes = read("src/routes/AppRoutes.tsx");
-    const dialog = read("src/components/CreateAgentDialog.tsx");
     const phone = read("src/pages/PhonePage.tsx");
     const phoneSetup = read("src/components/PhoneSetupPanel.tsx");
     const admin = read("src/components/AdminSettings.tsx");
@@ -213,7 +212,6 @@ describe("production visual QA safety gate", () => {
     expect(app).toContain('"auth-portal"');
     expect(routes).toContain('withVisualQaPage(module, "settings", "billing")');
     expect(routes).toContain('page="authenticated-not-found" state="not-found"');
-    expect(dialog).toContain('data-visual-qa-state="create-dialog"');
     expect(phone).toContain('data-visual-qa-state="primary-outbound"');
     expect(phone).toContain("`secondary-${outboundView}`");
     expect(phoneSetup).toContain('"company-identity" : undefined');
@@ -284,7 +282,6 @@ describe("production visual QA safety gate", () => {
       ["/computer", "/computer", "breakpoint", true],
       ["/studio", "/studio?agent=qa-bot", "phone", true],
       ["/studio", "/studio?agent=qa-bot&extra=1", "phone", false],
-      ["/studio?create=1", "/studio?create=1&agent=qa-bot", "desktop", false],
     ] as const) {
       expect(routeReachedExactly(origin, route, origin + destination, viewport, roster)).toBe(
         accepted,

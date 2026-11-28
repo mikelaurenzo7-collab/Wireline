@@ -4,52 +4,52 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("Fast Start brief-first flow contract", () => {
-  const create = read("src/components/CreateAgentDialog.tsx");
+describe("Bo's first conversation flow contract", () => {
+  const create = read("src/components/onboarding/BoOnboarding.tsx");
+  const studioHome = read("src/pages/AgentStudioHome.tsx");
 
-  it("keeps creation on one brief-first screen without a role gallery", () => {
-    expect(create).toContain("{language.setupPrompt}");
-    expect(create).not.toContain("Start from a Role");
-    expect(create).not.toContain("{language.setupDescription}");
-    expect(create).not.toContain("BOT_ROLE_TEMPLATES.map");
+  it("keeps creation in one in-page conversation that opens on the business, without a role gallery", () => {
     expect(create).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+      'const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;',
     );
+    // A ?brief= link or a browser-extension capture becomes Bo's first answer.
+    expect(create).toContain("initialAbout.slice(0, BO_ANSWER_MAX_CHARS)");
+    expect(studioHome).toMatch(
+      /<StudioPageShell>\s*<BoOnboarding key=\{user\?\.id\} initialAbout=\{brief\} \/>/,
+    );
+    // It is part of the Workspace page, not a modal over it.
+    expect(create).not.toMatch(/role="dialog"|aria-modal|useModalFocusTrap/);
+    expect(create).not.toContain("Start from a Role");
+    expect(create).not.toContain("BOT_ROLE_TEMPLATES");
     expect(create).not.toContain('aria-label="Bot role starters"');
-    expect(create).toContain("aria-expanded={customizing}");
-    expect(create).toContain("Describe the Job");
-    expect(create).toContain("language.createCta");
-    expect(create).toContain("Cancel");
-    expect(create).not.toContain("useState<1 | 2>(1)");
-    expect(create).not.toMatch(/Step [12] ·/);
-    expect(create).not.toContain("continueToVoice");
+    // The voice is chosen afterwards in Set Up, not as a step of creation.
+    expect(create).not.toContain("SimpleVoicePicker");
   });
 
-  it("starts custom creation empty while preserving explicit template intent", () => {
-    expect(create).toContain('BOT_ROLE_TEMPLATES.find((template) => template.key === "custom")');
-    expect(create).toContain(
-      'setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary))',
+  it("starts Bo without template text while honoring a personal starter link", () => {
+    expect(create).toMatch(
+      /isPersonalStarter\(\s*params\.get\("template"\),\s*getStoredSignupIntent\(\)\?\.preferredTemplateId,?\s*\)/,
     );
-    expect(create).toContain("briefIsTemplateTextRef.current");
-    expect(create).toContain('nextTemplate.key === "custom" ? "" : nextTemplate.summary');
-    expect(create).toContain("const finalBrief = brief.trim() || selectedTemplate.summary");
-    expect(create).toContain("if (finalBrief) {");
-    expect(create).not.toContain("defaultBrief");
+    expect(create).toContain("is_business_agent: !personal,");
+    expect(create).toContain('useState(stored ? "" : initialAbout.slice(0, BO_ANSWER_MAX_CHARS))');
+    expect(create).not.toMatch(/nextTemplate|selectedTemplate|template\.summary/);
   });
 
   it("creates a technical agent record but emits one-workspace Bot product semantics", () => {
     expect(create).toContain('authFetch("/api/agents"');
     expect(create).toContain('workspace_model: "one_workspace"');
     expect(create).toContain('object: "bot"');
+    expect(create).toContain('source: "bo_onboarding"');
     expect(create).not.toMatch(/setPosture|rolesForPosture/);
   });
 
-  it("hands off into Studio with the resumable post-create wizard", () => {
-    expect(create).toContain("stashPostCreateWizard(wizardPayload)");
-    expect(create).toContain("onCreated?.(wizardPayload)");
-    expect(create).toContain("phoneProvisionRequested: false");
+  it("hands off into Studio from a conversation that resumes after a reload", () => {
+    expect(create).toContain("writeBoOnboarding(userId, {");
+    expect(studioHome).toContain("agents.some((agent) => agent.id === onboarding?.agentId)");
     expect(create).toMatch(
-      /navigate\(`\/studio\?agent=\$\{encodeURIComponent\(body\.id\)\}&section=setup`/,
+      /function finish\(destination: string\) \{\s*clearBoOnboarding\(userId\);\s*setPostSignupFlowActive\(false\);\s*navigate\(destination\);\s*\}/,
     );
+    expect(create).toContain("finish(`/studio?agent=${id}`)");
+    expect(create).toContain("finish(`/studio?agent=${id}&workroom=test`)");
   });
 });

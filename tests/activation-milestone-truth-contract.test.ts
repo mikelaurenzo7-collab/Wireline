@@ -3,18 +3,18 @@ import { describe, expect, it } from "vitest";
 import { shouldDispatchProductEvent } from "../src/lib/product-event-client";
 
 describe("activation milestone truth", () => {
-  it("does not classify advancing past training as launch readiness", () => {
+  it("counts launch readiness only once training was actually saved", () => {
+    // Skipping a question in Bo's first conversation is not readiness.
     expect(
       shouldDispatchProductEvent({
         event: "launch_readiness_reached",
-        metadata: { source: "wizard_train_step" },
+        metadata: { source: "bo_onboarding" },
       }),
     ).toBe(false);
-
     expect(
       shouldDispatchProductEvent({
         event: "launch_readiness_reached",
-        metadata: { source: "server_readiness_check" },
+        metadata: { source: "bo_onboarding", has_training: true },
       }),
     ).toBe(true);
   });
@@ -69,7 +69,7 @@ describe("activation milestone truth", () => {
     expect(
       shouldDispatchProductEvent({
         event: "agent_created",
-        metadata: { source: "post_create_wizard" },
+        metadata: { source: "bo_onboarding" },
       }),
     ).toBe(true);
   });

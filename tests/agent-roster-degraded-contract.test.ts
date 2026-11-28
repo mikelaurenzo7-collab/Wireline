@@ -22,7 +22,12 @@ function rosterEmptyStateSurfaces(): string[] {
   return tsxFiles(SRC)
     .filter((file) => {
       const source = readFileSync(file, "utf8");
-      return source.includes("/studio?create=1") && emptyBranch.test(source);
+      // An empty roster sends the owner to meet Bo: the onboarding itself, or
+      // an "Open Workspace" link from a surface that needs a Bot first.
+      return (
+        (source.includes("<BoOnboarding") || source.includes("Open Workspace")) &&
+        emptyBranch.test(source)
+      );
     })
     .map((file) => relative(process.cwd(), file).replaceAll("\\", "/"))
     .sort();
@@ -35,7 +40,7 @@ describe("Bot roster: empty versus unreachable", () => {
     // while allowing the 2026 workspace consolidation to remove duplicate
     // roster surfaces without forcing a phantom replacement.
     expect(surfaces.length).toBeGreaterThanOrEqual(4);
-    expect(surfaces).toContain("src/components/StudioWorkspaceV2.tsx");
+    expect(surfaces).toContain("src/pages/AgentStudioHome.tsx");
     expect(surfaces).toContain("src/components/OutboundDialDialog.tsx");
     expect(surfaces).toContain("src/components/insights/shared.tsx");
     expect(surfaces).toContain("src/pages/KnowledgePage.tsx");
@@ -71,7 +76,11 @@ describe("Bot roster: empty versus unreachable", () => {
     expect(emptyGuard).toBeGreaterThan(-1);
     expect(recoveryGuard).toBeLessThan(emptyGuard);
     expect(studio.slice(recoveryGuard, emptyGuard)).toContain("WorkspaceRecovery");
-    expect(studio.slice(emptyGuard)).toContain("StudioEmptyState");
+    // The Workspace never draws a create screen; AgentStudioHome shows Bo's
+    // onboarding only for a loaded, reachable, empty roster.
+    expect(studio.slice(emptyGuard, emptyGuard + 80)).toContain("<StudioLoadingState />");
+    const home = read("src/pages/AgentStudioHome.tsx");
+    expect(home).toContain("!loading &&\n    !degraded &&");
 
     const dial = read("src/components/OutboundDialDialog.tsx");
     const dialGuard = dial.indexOf("agents.length === 0 && (degraded || phoneLookupDegraded)");
@@ -86,20 +95,20 @@ describe("Bot roster: empty versus unreachable", () => {
     );
   });
 
-  it("still offers the unified create path when the roster is genuinely empty", () => {
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("return <StudioEmptyState />");
+  it("sends a genuinely empty roster to meet Bo, never to a create dialog", () => {
+    expect(read("src/pages/AgentStudioHome.tsx")).toContain("agents.length === 0 ||");
     const phoneSetup = read("src/components/PhoneSetupPanel.tsx");
     const degradedBranch = phoneSetup.indexOf(") : agentsDegraded ? (");
-    const createBranch = phoneSetup.indexOf('<Link to="/studio?create=1">Create Bot</Link>');
+    const meetBranch = phoneSetup.indexOf('<Link to="/studio">Open Workspace</Link>');
     expect(degradedBranch).toBeGreaterThan(-1);
-    expect(createBranch).toBeGreaterThan(-1);
-    expect(degradedBranch).toBeLessThan(createBranch);
-    expect(read("src/components/OutboundDialDialog.tsx")).toContain(
-      "Create a Bot",
-    );
+    expect(meetBranch).toBeGreaterThan(-1);
+    expect(degradedBranch).toBeLessThan(meetBranch);
+    expect(read("src/components/OutboundDialDialog.tsx")).toContain("Meet your Bot");
     expect(existsSync("src/components/overview/FirstRunWorkspace.tsx")).toBe(false);
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain('to="/studio?create=1"');
-    expect(read("src/components/StudioWorkspaceV2.tsx")).not.toContain("posture=");
+    for (const path of ["src/components/StudioWorkspaceV2.tsx", "src/pages/AgentStudioHome.tsx"]) {
+      expect(read(path)).not.toContain("create=1");
+      expect(read(path)).not.toContain("posture=");
+    }
   });
 });
 

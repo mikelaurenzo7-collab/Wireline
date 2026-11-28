@@ -1,47 +1,23 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router";
 
-import TransitionSurface from "../components/TransitionSurface";
-import { PageMeta } from "../lib/page-meta";
-import { customerAgentLanguage } from "../lib/product-copy";
 import { emitProductEventOnce } from "../lib/product-event-client";
 
-const CREATE_DESTINATION = "/studio?create=1";
-
+/**
+ * /onboarding predates one Bot per account. The Workspace is where an owner
+ * meets Bo, so the old link keeps its query (a starter id, a brief) and opens it.
+ */
 export default function OnboardingFlow() {
   const navigate = useNavigate();
-  const language = customerAgentLanguage();
-  const [showFallback, setShowFallback] = useState(false);
+  const { search } = useLocation();
 
   useEffect(() => {
     emitProductEventOnce({
       event: "onboarding_create_redirect",
-      metadata: { workspace_model: "one_workspace", target: CREATE_DESTINATION },
+      metadata: { workspace_model: "one_workspace", target: "/studio" },
     });
-    navigate(CREATE_DESTINATION, { replace: true });
-  }, [navigate]);
+    navigate(`/studio${search}`, { replace: true });
+  }, [navigate, search]);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowFallback(true), 1800);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  return (
-    <>
-      <PageMeta title="Create" noIndex />
-      <TransitionSurface
-        eyebrow="Create"
-        title={language.createCta}
-        busyLabel="Opening"
-        actions={
-          showFallback
-            ? [
-                { href: CREATE_DESTINATION, label: "Continue now" },
-                { href: "/", label: "Back Home", variant: "secondary" },
-              ]
-            : []
-        }
-      />
-    </>
-  );
+  return null;
 }

@@ -124,8 +124,8 @@ describe("Studio Preview Voice during a closed self-serve checkout", () => {
 
   it("keeps checkout closure separate from server-verified live-number entitlement", () => {
     const setup = read("src/components/PhoneSetupPanel.tsx");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
-    const roleplay = read("src/components/RoleplaySandbox.tsx");
+    const firstRun = read("src/components/onboarding/BoOnboarding.tsx");
+    const allowance = read("src/components/voice/RehearsalAllowanceMeter.tsx");
     const note = read("src/components/onboarding/SoftOpenCheckoutNote.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
 
@@ -136,10 +136,13 @@ describe("Studio Preview Voice during a closed self-serve checkout", () => {
     expect(setup).toContain('body.code === "ACTIVATION_REQUIRED"');
     expect(setup).toContain("const showSoftOpen = liveNumberClosed");
     expect(setup).not.toContain("const checkoutClosed");
-    expect(wizard).toContain("SoftOpenCheckoutNote");
-    expect(wizard).toContain('step === "launch" && hasVoiceAccess');
-    expect(wizard).toContain("disabled={refreshingPhone || phoneLookupFailed}");
-    expect(roleplay).toContain("SOFT_OPEN_CHECKOUT_COPY");
-    expect(roleplay).toContain("fetchSelfServeCheckoutAvailable");
+    // Bo's Get a Number follows the server-verified voice entitlement: Lines
+    // when calling is included, otherwise the plan choice in Billing.
+    expect(firstRun).toContain("const access = useChannelEntitlements();");
+    expect(firstRun).toContain(
+      'access.includes("voice") ? `/phone?tab=lines&agent=${id}` : choosePlanHref()',
+    );
+    expect(allowance).toContain("SOFT_OPEN_CHECKOUT_COPY");
+    expect(allowance).toContain("fetchSelfServeCheckoutAvailable");
   });
 });

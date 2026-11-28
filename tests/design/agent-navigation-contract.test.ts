@@ -15,7 +15,7 @@ describe("authenticated Bot navigation contract", () => {
   const studioPanel = read("src/components/StudioAgentWorkspacePanel.tsx");
   const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
   const workroom = read("src/components/StudioWorkroom.tsx");
-  const create = read("src/components/CreateAgentDialog.tsx");
+  const firstRun = read("src/components/onboarding/BoOnboarding.tsx");
   const copy = read("src/lib/product-copy.ts");
 
   it("keeps daily IA small and moves management destinations below it", () => {
@@ -62,7 +62,10 @@ describe("authenticated Bot navigation contract", () => {
     expect(navigation).toContain('href: "/phone"');
     expect(shell).toContain('aria-label="Bot conversations"');
     expect(shell).toContain('data-wireline-bot-selected={selected ? "true" : undefined}');
-    expect(shell).toContain('aria-label="Add a Bot"');
+    // One Bot per account: neither the rail nor the Studio header offers another.
+    expect(shell).not.toContain('aria-label="Add a Bot"');
+    expect(shell).not.toContain("/studio?create=1");
+    expect(studioChrome).not.toContain("/studio?create=1");
   });
 
   it("keeps one conversation for messages and tasks with explicit private rehearsal", () => {
@@ -124,21 +127,25 @@ describe("authenticated Bot navigation contract", () => {
     expect(studioReview).toContain("No phone connected");
   });
 
-  it("makes Fast Start brief-first, posture-neutral, and free of provider complexity", () => {
-    expect(create).toContain("language.setupPrompt");
-    expect(create).not.toContain("Start from a Role");
-    expect(create).toContain("language.createCta");
-    expect(create).not.toContain("BOT_ROLE_TEMPLATES.map");
-    expect(create).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+  it("makes Bo's first conversation brief-first, posture-neutral, and free of provider complexity", () => {
+    // Bo asks about the business first; there is no role gallery to start from.
+    expect(firstRun).toContain(
+      'const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;',
     );
-    expect(create).not.toContain('aria-label="Bot role starters"');
-    expect(create).toContain("phoneProvisionRequested: false");
-    expect(create).toContain("&section=setup");
-    expect(create).not.toMatch(
+    expect(firstRun).not.toContain("Start from a Role");
+    expect(firstRun).not.toContain("BOT_ROLE_TEMPLATES");
+    expect(firstRun).not.toContain('aria-label="Bot role starters"');
+    // Creating Bo sends only its name, starting posture, and time zone: no number, voice, or face.
+    expect(firstRun).toMatch(
+      /body: JSON\.stringify\(\{\s*name: FIRST_BOT_NAME,\s*only_if_none: true,\s*is_business_agent: !personal,\s*timezone: Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone,\s*\}\)/,
+    );
+    expect(firstRun).toContain("&section=setup#voice");
+    expect(firstRun).not.toMatch(
       /setPosture|rolesForPosture|VoicePickerField|CreateAgentCatalogFacePicker/,
     );
-    expect(create).not.toMatch(/Provision a number|video-presenter/);
+    expect(firstRun).not.toMatch(
+      /Provision a number|video-presenter|\/api\/phone-numbers\/provision/,
+    );
   });
 
   it("keeps secondary surfaces mounted to current destinations and shared page rhythm", () => {

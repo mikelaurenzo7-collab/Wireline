@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Fast Start activation spine — public surfaces advertise the create path and
- * the post-create wizard session keys stay stable in the browser.
+ * Fast Start activation spine: sign-up is reachable, and the old onboarding
+ * link opens the Workspace, where a new account meets its Bot.
  */
 test.describe.configure({ timeout: 60_000 });
 
@@ -18,7 +18,7 @@ test("signup exposes the account creation entry", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("onboarding route resolves to studio create query", async ({ page }) => {
+test("onboarding route resolves to the Workspace", async ({ page }) => {
   const response = await page.goto("/onboarding", {
     waitUntil: "domcontentloaded",
     timeout: 45_000,
@@ -26,28 +26,6 @@ test("onboarding route resolves to studio create query", async ({ page }) => {
   expect(response?.status()).toBeLessThan(500);
   await page.waitForURL(/\/(studio|signin)/, { timeout: 20_000 });
   const url = page.url();
-  expect(url).toMatch(/studio\?create=1|signin/);
-});
-
-test("post-create wizard session keys are stable", async ({ page }) => {
-  const response = await page.goto("/", { waitUntil: "domcontentloaded", timeout: 45_000 });
-  expect(response?.status()).toBeLessThan(500);
-  await page.evaluate(() => {
-    sessionStorage.setItem(
-      "wireline:post-create-wizard",
-      JSON.stringify({
-        agentId: "e2e-agent",
-        agentName: "E2E Agent",
-        phoneProvisionRequested: false,
-        phoneProvisioned: false,
-      }),
-    );
-    sessionStorage.setItem("wireline:post-create-wizard-step", "channels");
-  });
-  const stored = await page.evaluate(() => ({
-    wizard: sessionStorage.getItem("wireline:post-create-wizard"),
-    step: sessionStorage.getItem("wireline:post-create-wizard-step"),
-  }));
-  expect(stored.step).toBe("channels");
-  expect(stored.wizard).toContain("e2e-agent");
+  expect(url).toMatch(/\/studio(?:\?|$)|\/signin/);
+  expect(url).not.toContain("create=1");
 });

@@ -46,15 +46,18 @@ describe("a signed-in customer can reach Stripe", () => {
 });
 
 describe("the paywall is visible when it fires", () => {
-  it("stacks the trial gate above the first-run activation wizard", () => {
+  it("keeps the first run in the page and stacks the trial gate above every modal", () => {
     const gate = read("src/components/TrialGateModal.tsx");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    // Bo's first conversation renders in the Workspace page rather than as an
+    // overlay, so a paywall that fires during it is never drawn underneath.
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    expect(bo).not.toContain('role="dialog"');
+    expect(bo).not.toMatch(/\bfixed inset-0\b/);
 
     const gateZ = gate.match(/fixed inset-0 z-\[(\d+)\]/);
     expect(gateZ).not.toBeNull();
     const gateZIndex = Number(gateZ![1]);
 
-    expect(wizard).toContain("z-[var(--wireline-zIndex-modal,1050)]");
     const modalToken = Number(
       read("src/styles/tokens.generated.css").match(/--wireline-zIndex-modal:\s*(\d+)/)![1],
     );

@@ -4,8 +4,10 @@ import { Pause, Phone, Play } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
+import { emitProductEventOnce } from "../lib/product-event-client";
 import { Badge } from "./atoms";
 import OpenAILiveVoiceSandbox from "./OpenAILiveVoiceSandbox";
+import RehearsalAllowanceMeter from "./voice/RehearsalAllowanceMeter";
 import TestCallLink from "./voice/TestCallLink";
 
 export function studioVoiceStartId(agentId: string) {
@@ -56,6 +58,8 @@ export default function StudioVoiceRehearsal({
   const clone = useActiveClone(agentId);
   // Shown once a rehearsal in which the Bot answered has ended.
   const [suggestPhoneTest, setSuggestPhoneTest] = useState(false);
+  // Each rehearsal reserves from the free allowance; reread it as one starts and ends.
+  const [allowanceTick, setAllowanceTick] = useState(0);
   const [playing, setPlaying] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const url = useRef<string | null>(null);
@@ -155,11 +159,36 @@ export default function StudioVoiceRehearsal({
         historyOwnerId={ownerId}
         compact
         startButtonId={studioVoiceStartId(agentId)}
-        onTestStarted={() => setSuggestPhoneTest(false)}
+        onTestStarted={() => {
+          setSuggestPhoneTest(false);
+          setAllowanceTick((tick) => tick + 1);
+          emitProductEventOnce({
+            event: "first_test_call_started",
+            agentId,
+            metadata: { channel: "rehearsal" },
+          });
+          // A Bot is launched once it has a line and has been rehearsed; the
+          // line may come first (Calls › Lines reports the other order).
+          if (dialable)
+            emitProductEventOnce({
+              event: "agent_launch_completed",
+              agentId,
+              metadata: { has_line: true, test_started: true, source: "studio_rehearsal" },
+            });
+        }}
+        onTestCompleted={() => {
+          emitProductEventOnce({
+            event: "test_call_completed",
+            agentId,
+            metadata: { channel: "rehearsal", result: "assistant_response_completed" },
+          });
+        }}
         onTestEnded={({ replied, failed }) => {
+          setAllowanceTick((tick) => tick + 1);
           if (replied && !failed) setSuggestPhoneTest(true);
         }}
       />
+      <RehearsalAllowanceMeter refreshTick={allowanceTick} />
       {suggestPhoneTest && onCallMyPhone ? (
         <div
           className="space-y-3 rounded-xl border border-border bg-card px-4 py-3"

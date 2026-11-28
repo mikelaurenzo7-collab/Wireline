@@ -16,7 +16,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
   const settingsPage = read("src/pages/SettingsPage.tsx");
   const accountRoutes = read("src/routes/account-routes.ts");
-  const createDialog = read("src/components/CreateAgentDialog.tsx");
+  const boOnboarding = read("src/components/onboarding/BoOnboarding.tsx");
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
   const trainingPage = read("src/pages/KnowledgePage.tsx");
@@ -140,28 +140,34 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "shell must not switch visual systems by Studio route state",
   );
   mustInclude(
-    "src/components/CreateAgentDialog.tsx",
-    createDialog,
-    /\{language\.setupPrompt\}/,
-    "create flow must lead with the customer's job",
+    "src/components/onboarding/BoOnboarding.tsx",
+    boOnboarding,
+    /only_if_none: true/,
+    "first run must meet the account's one Bot, created once, not a create form",
   );
   mustInclude(
-    "src/components/CreateAgentDialog.tsx",
-    createDialog,
-    /role="group" aria-label="Starting briefs"[\s\S]*STARTER_KEYS\.map\([\s\S]*templateForKey\(key\)/,
-    "create flow must expose shared starting briefs",
-  );
-  mustInclude(
-    "src/components/CreateAgentDialog.tsx",
-    createDialog,
-    /\/studio\?agent=/,
-    "create flow must hand into the real Studio canvas",
+    "src/components/onboarding/BoOnboarding.tsx",
+    boOnboarding,
+    /aria-label=\{`Conversation with \$\{botName\}`\}/,
+    "first run must be a conversation with the Bot",
   );
   mustExclude(
-    "src/components/CreateAgentDialog.tsx",
-    createDialog,
-    /setPosture|rolesForPosture|business\?: boolean|posture === "business"/,
-    "create flow must not ask customers to choose a personal or business workspace",
+    "src/components/onboarding/BoOnboarding.tsx",
+    boOnboarding,
+    /STARTER_KEYS|templateForKey|Starting briefs/,
+    "first run must not bring back a template picker",
+  );
+  mustInclude(
+    "src/components/onboarding/BoOnboarding.tsx",
+    boOnboarding,
+    /\/studio\?agent=/,
+    "first run must hand into the real Studio canvas",
+  );
+  mustExclude(
+    "src/components/onboarding/BoOnboarding.tsx",
+    boOnboarding,
+    /setPosture|rolesForPosture|posture === "business"/,
+    "first run must not ask customers to choose a personal or business workspace",
   );
 
   mustInclude(
@@ -210,20 +216,20 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/lib/auth-redirect.ts",
     authRedirect,
-    /return "\/studio\?create=1"/,
-    "fresh signups must route directly into the one real create dialog",
+    /export function firstBotSetupHref\(template\?: string\): string \{[\s\S]*?return "\/studio";/,
+    "fresh signups must route directly into the Workspace, where they meet their Bot",
   );
   mustExclude(
     "src/lib/auth-redirect.ts",
     authRedirect,
-    /create=1&posture=/,
-    "fresh signup routing must not create posture-specific workspaces",
+    /create=1|posture=/,
+    "fresh signup routing must not open a create dialog or posture-specific workspaces",
   );
   mustInclude(
     "src/pages/OnboardingFlow.tsx",
     onboardingFlow,
-    /language\.createCta/,
-    "legacy onboarding must hand directly into create",
+    /navigate\(`\/studio\$\{search\}`, \{ replace: true \}\)/,
+    "legacy onboarding must hand directly into the Workspace",
   );
   mustExclude(
     "src/pages/OnboardingFlow.tsx",
@@ -351,7 +357,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   );
 
   for (const file of [
-    "src/components/CreateAgentDialog.tsx",
+    "src/components/onboarding/BoOnboarding.tsx",
     "src/components/AuthPortal.tsx",
     "src/components/auth/AuthAccessPanel.tsx",
     "src/components/layout/AppShell.tsx",

@@ -108,7 +108,7 @@ export function InsightEmpty({
       : (agentsDegraded && agents.length === 0) || (phoneLookupDegraded && agents.length > 0)
         ? [{ label: "Retry Bot Status", onClick: refreshAgents, primary: true }]
         : agents.length === 0
-          ? [{ label: "Create Bot", to: "/studio?create=1", primary: true }]
+          ? [{ label: "Open Workspace", to: "/studio", primary: true }]
           : !agents.some((agent) => agent.phone_number)
             ? [
                 { label: "Connect Phone", to: "/phone?tab=lines", primary: true },

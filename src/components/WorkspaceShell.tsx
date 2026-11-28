@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronsLeft, ChevronsRight, Plus, Search } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Search } from "lucide-react";
 
 import ActivationNudge from "./ActivationNudge";
 import BotMark from "./BotMark";
@@ -12,7 +12,6 @@ import { BotBoundWordmark } from "./brand/BotBoundBrand";
 import BotBoundMark from "./brand/BotBoundMark";
 import { useAuth } from "../contexts/AuthContext";
 import { useAgents } from "../contexts/AgentsContext";
-import { canOfferAnotherBot } from "../lib/bot-roster-policy";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useChromeHeight } from "../hooks/useChromeHeight";
 import { buildAgentOptionLabels } from "../lib/agent-option-labels";
@@ -220,9 +219,6 @@ function DesktopRail({
   // An unavailable explicit ID must not highlight another Bot as its owner.
   const selectedAgentId = requestedId?.trim() || resolvedId;
   const selectedAgent = agents.find((candidate) => candidate.id === selectedAgentId);
-  // One Bot per business: a single-Bot workspace grows through tasks, so the
-  // rail stops offering another Bot. Settings > Advanced keeps that path.
-  const offerAnotherBot = loading || degraded || canOfferAnotherBot(agents.length);
   const agentLabels = buildAgentOptionLabels(agents);
   const settingsActive = isNavActive(pathname, "/settings");
 
@@ -279,18 +275,11 @@ function DesktopRail({
 
         <nav className="wl-shell-bot-roster" aria-label="Bot conversations">
           <div className="wl-shell-bot-roster-heading">
-            {!collapsed ? <span className="wl-shell-nav-heading">Your Bots</span> : null}
-            {offerAnotherBot ? (
-              <RailHint label="Add a Bot" enabled={collapsed}>
-                <Link
-                  to="/studio?create=1"
-                  aria-label="Add a Bot"
-                  title={collapsed ? undefined : "Add a Bot"}
-                  className="wl-shell-bot-add wl-focus-ring-halo"
-                >
-                  <Plus size={16} aria-hidden="true" />
-                </Link>
-              </RailHint>
+            {/* One Bot per account: the rail names it and offers no way to add another. */}
+            {!collapsed ? (
+              <span className="wl-shell-nav-heading">
+                {agents.length > 1 ? "Your Bots" : "Your Bot"}
+              </span>
             ) : null}
           </div>
           <div className="wl-shell-bot-roster-list" aria-busy={loading}>
@@ -333,7 +322,7 @@ function DesktopRail({
                   </button>
                 </>
               ) : (
-                "Add your first Bot to get started."
+                "Meet your Bot in the Workspace."
               )}
             </p>
           ) : null}

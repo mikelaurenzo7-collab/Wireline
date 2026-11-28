@@ -1,4 +1,4 @@
-import { ArrowLeft, Maximize2, Minimize2, Plus, Users, X } from "lucide-react";
+import { ArrowLeft, Maximize2, Minimize2, Users, X } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 
@@ -28,7 +28,6 @@ import {
   setStudioWorkroomModeParams,
   setStudioBrowserTaskParams,
 } from "../lib/studio-route-state";
-import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioBotDetailsPanel from "./studio/StudioBotDetailsPanel";
@@ -48,7 +47,6 @@ const ComputerWorkbench = lazy(() =>
 type InspectorSection = "details" | "setup" | "review";
 type WorkroomMode = "configure" | "test";
 
-const BOT_LANGUAGE = customerAgentLanguage();
 // A wider computer workspace has its own size preference. Earlier saved widths
 // belong to the narrower setup inspector and cannot fit a usable computer panel.
 const STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-panel:v3";
@@ -91,63 +89,24 @@ function StudioLoadingState() {
   );
 }
 
-function StudioEmptyState() {
-  const [brief, setBrief] = useState("");
+type StudioWorkspaceProps = {
+  /** Text to start the chat with (a captured page, a marketing brief). Never sent on its own. */
+  composerPrefill?: string;
+  onComposerPrefilled?: () => void;
+};
 
-  function createHref() {
-    const params = new URLSearchParams({ create: "1" });
-    const trimmed = brief.trim();
-    if (trimmed) params.set("brief", trimmed);
-    return `/studio?${params.toString()}`;
-  }
-
-  return (
-    <div
-      data-studio-first-run
-      className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-8 sm:px-6 sm:pt-12 lg:pt-16"
-    >
-      <EmptyState
-        title="Create Your Bot"
-        headingAs="h2"
-        className="wl-composer-dock mx-auto w-full max-w-3xl py-6"
-      >
-        <div className="mx-auto mt-2 w-full max-w-xl text-left">
-          <label
-            className="mb-2 block text-sm font-semibold text-foreground"
-            htmlFor="studio-brief"
-          >
-            {BOT_LANGUAGE.setupPrompt}
-          </label>
-          <textarea
-            id="studio-brief"
-            value={brief}
-            onChange={(event) => setBrief(event.target.value)}
-            className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-base"
-            placeholder="Answer calls, qualify leads, book appointments…"
-          />
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild>
-              <Link to={createHref()}>
-                <Plus size={15} aria-hidden="true" />
-                Create Bot
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </EmptyState>
-    </div>
-  );
-}
-
-export default function StudioWorkspaceV2() {
+export default function StudioWorkspaceV2(props: StudioWorkspaceProps) {
   return (
     <ComputerWorkspaceProvider>
-      <StudioWorkspaceContent />
+      <StudioWorkspaceContent {...props} />
     </ComputerWorkspaceProvider>
   );
 }
 
-function StudioWorkspaceContent() {
+function StudioWorkspaceContent({
+  composerPrefill,
+  onComposerPrefilled,
+}: StudioWorkspaceProps = {}) {
   const computer = useComputerWorkspace();
   const { loading, degraded, refresh } = useAgents();
   const { user } = useAuth();
@@ -199,7 +158,6 @@ function StudioWorkspaceContent() {
 
   const sectionParam = params.get("section");
   const panelParam = params.get("panel");
-  const creatingRequested = params.get("create") === "1";
   const workroomParam = params.get("workroom");
   const commandParam = params.get("command");
   const commandNonceParam = params.get("commandNonce");
@@ -324,10 +282,7 @@ function StudioWorkspaceContent() {
   ]);
 
   useEffect(() => {
-    // Creation owns the next destination. A roster refresh must not write the
-    // old ?create=1 URL over its handoff to the new Bot's setup panel.
     if (
-      creatingRequested ||
       requestedAgentId ||
       loading ||
       agents.length === 0 ||
@@ -350,19 +305,22 @@ function StudioWorkspaceContent() {
       },
       { replace: true },
     );
-  }, [
-    agents,
-    creatingRequested,
-    loading,
-    requestedAgentId,
-    requestedId,
-    resolvedAgentId,
-    setParams,
-  ]);
+  }, [agents, loading, requestedAgentId, requestedId, resolvedAgentId, setParams]);
 
   useEffect(() => {
     if (active?.id) writeStudioLastAgentId(active.id);
   }, [active?.id]);
+
+  // A captured page or a marketing brief starts as a draft in the chat; the
+  // owner reads it and decides to send it. A draft already typed wins.
+  useEffect(() => {
+    if (!composerPrefill?.trim() || !active?.id || loading) return;
+    const frame = requestAnimationFrame(() => {
+      workroomRef.current?.focusComposer(composerPrefill);
+      onComposerPrefilled?.();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [active?.id, composerPrefill, loading, onComposerPrefilled]);
 
   const openInspector = useCallback(
     (section: InspectorSection) => {
@@ -555,25 +513,11 @@ function StudioWorkspaceContent() {
     );
   }
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
-  if (agents.length === 0) return <StudioEmptyState />;
+  // An account without a Bot meets Bo instead of this view (AgentStudioHome).
+  if (agents.length === 0) return <StudioLoadingState />;
 
   if (!active) {
-    return (
-      <EmptyState
-        fill
-        icon={Users}
-        headingAs="h2"
-        title="Choose a Bot"
-        action={
-          <Button asChild>
-            <Link to="/studio?create=1">
-              <Plus size={15} aria-hidden="true" />
-              New Bot
-            </Link>
-          </Button>
-        }
-      />
-    );
+    return <EmptyState fill icon={Users} headingAs="h2" title="Choose a Bot" />;
   }
 
   if (computerFocused && !splitWorkspace) {

@@ -232,8 +232,8 @@ describe("secure website knowledge ingestion", () => {
     expect(spend).toContain("auditContext.ambiguousProviderAttempts === 0");
     expect(spend).toContain("await dependencies.release(reservation)");
     expect(spend).toContain("await dependencies.commit(reservation)");
-    expect(route).toContain("eq(schema.agents.id, req.params.id)");
-    expect(route).toContain("eq(schema.agents.userId, req.user.id)");
+    expect(route).toContain("eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)");
+    expect(route).toContain("if (!(await ownedTrainingTarget(req.params.id, req.user.id)))");
     expect(route).toContain('parsed.protocol !== "https:"');
     expect(route).toContain('parsed.port !== "443"');
     expect(route).toContain("parsed.username || parsed.password");
