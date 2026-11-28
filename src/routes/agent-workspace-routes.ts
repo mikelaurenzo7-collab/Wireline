@@ -44,6 +44,8 @@ import { isRuntimeAvailable } from "../lib/ai-client";
 import { withAudit } from "../middleware/audit-middleware";
 import { enforceSpendCap, enforcePrivateTextSimulationSpendCap } from "../lib/spend-guards";
 import { OPENING_GREETING_PREFIX, resolveAgentGreeting } from "../lib/agent-greeting";
+import { cleanBotName } from "../lib/bot-name";
+import { renameBot } from "../lib/bot-rename";
 import { composeSetupPersonality } from "../lib/compose-setup-personality";
 import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
 import {
@@ -917,10 +919,21 @@ router.post(
               ...(field === "transfer_phone" ? { escalationHandoffEnabled: true } : {}),
             };
           }
-          await tx
-            .update(schema.agents)
-            .set(handoff ?? { [spec.column]: value })
-            .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+          if (field === "name") {
+            // The same rename as Set Up's Name field, so the greeting a caller
+            // hears follows the name here too.
+            const renamed = await renameBot(tx, {
+              agentId,
+              userId: req.user.id,
+              name: cleanBotName(value),
+            });
+            if (!renamed) throw AppError.fromHttpStatus(404, "Agent not found");
+          } else {
+            await tx
+              .update(schema.agents)
+              .set(handoff ?? { [spec.column]: value })
+              .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+          }
           if (field === "first_message") {
             // Retire the previous Studio override in the same transaction so
             // a reviewed Build greeting becomes the effective runtime greeting.

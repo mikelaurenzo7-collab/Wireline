@@ -5,7 +5,8 @@
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem("wireline-theme");
+          // botbound-theme, as src/contexts/ThemeContext.tsx saves it.
+          var stored = localStorage.getItem("botbound-theme");
           var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           var useLight = stored !== "dark" && (stored !== "system" || !systemDark);
           if (useLight) document.documentElement.classList.add("light");

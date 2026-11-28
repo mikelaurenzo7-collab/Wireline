@@ -9,9 +9,9 @@ describe("guided agent setup retirement", () => {
     // PhoneAgentBlueprint was removed 2026-08-13: nothing rendered it, so its
     // gate was asserting guidance wiring on UI no user could reach. The
     // guided-agent-learning model existed only to feed that component, so it
-    // left with it. The live activation surface is CreateAgentDialog plus the
-    // recipe forms under src/components/recipes/, covered by
-    // product-voice-contract and authenticated-agent-flow-contract.
+    // left with it. The live activation surface is Bo's first conversation
+    // (src/components/onboarding/BoOnboarding.tsx) plus the recipe forms under
+    // src/components/recipes/, covered by authenticated-agent-flow-contract.
     expect(absent("src/components/PhoneAgentBlueprint.tsx")).toBe(true);
     expect(absent("src/lib/guided-agent-learning.ts")).toBe(true);
   });

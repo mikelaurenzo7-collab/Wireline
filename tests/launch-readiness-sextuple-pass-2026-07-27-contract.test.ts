@@ -30,14 +30,19 @@ describe("launch readiness cross-surface contract", () => {
       "Image uploads are unavailable. Upload TXT, MD, CSV, PDF, DOCX, or XLSX files.",
     );
     expect(kb).toContain("document type that does not match its extension");
-    // National screening is said only for the calls it runs on: sales calls,
-    // which are held when it is unavailable.
+    // National screening is said only for the calls it runs on, as the Terms
+    // say it: campaigns and automated sales wait for it, and a one-at-a-time
+    // sales call goes out on the owner's confirmation.
     expect(security).toMatch(
       /Before an outgoing call BotBound checks the account's block list and the calling hours where the recipient is\./i,
     );
-    expect(security).toMatch(
-      /Sales calls are also screened against the national do-not-call list, and are held when that screening is unavailable\./i,
+    expect(security).toContain(
+      "Campaigns, imported lists, and automated sales sequences wait until screening against the national do-not-call list is connected.",
     );
+    expect(security).toContain(
+      "One-at-a-time sales calls and texts go out after you confirm you are responsible for permission and Do Not Call rules, and are checked against that list once you connect your registry account.",
+    );
+    expect(security).not.toMatch(/Sales calls are also screened against the national/i);
     expect(security).not.toMatch(/screens the national do-not-call list, the account block list/i);
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");

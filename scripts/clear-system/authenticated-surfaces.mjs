@@ -145,11 +145,19 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     /only_if_none: true/,
     "first run must meet the account's one Bot, created once, not a create form",
   );
+  // One Bot, called Bo: its first conversation introduces it by name and
+  // offers nothing to pick. Starter chips went the way of the template gallery.
   mustInclude(
     "src/components/onboarding/BoOnboarding.tsx",
     boOnboarding,
     /aria-label=\{`Conversation with \$\{botName\}`\}/,
     "first run must be a conversation with the Bot",
+  );
+  mustInclude(
+    "src/components/onboarding/BoOnboarding.tsx",
+    boOnboarding,
+    /COPY\.intro\(botName\)/,
+    "first run must say what the Bot is called",
   );
   mustExclude(
     "src/components/onboarding/BoOnboarding.tsx",

@@ -24,7 +24,7 @@ describe("visual capture theme", () => {
     applyCaptureTheme({ theme: "light", storageKey: THEME_STORAGE_KEY });
     expect(stored.size).toBe(0);
     applyCaptureTheme({ theme: "dark", storageKey: THEME_STORAGE_KEY });
-    expect(stored.get("wireline-theme")).toBe("dark");
+    expect(stored.get("botbound-theme")).toBe("dark");
     delete (globalThis as { localStorage?: unknown }).localStorage;
   });
 

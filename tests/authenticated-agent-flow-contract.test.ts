@@ -204,7 +204,8 @@ describe("authenticated Bot flow", () => {
     expect(existsSync("src/pages/TemplatesPage.tsx")).toBe(false);
     expect(existsSync("src/components/CreateAgentDialog.tsx")).toBe(false);
     expect(boOnboarding).not.toMatch(/searchableTemplateText|Search templates|activeCategory/);
-    expect(boOnboarding).not.toContain("Starting briefs");
+    expect(boOnboarding).not.toMatch(/\bSTARTER_KEYS\b|Starting briefs|aria-pressed/);
+    expect(boOnboarding).not.toContain("What should it handle first?");
   });
 
   it("meets Bo in a resumable four-question conversation that ends on Hear, Voice, Number, Chat", () => {

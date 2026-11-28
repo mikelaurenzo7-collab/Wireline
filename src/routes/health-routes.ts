@@ -28,7 +28,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { reportError } from "../lib/error-reporter";
 import { errorReportRoute } from "../lib/error-report-route";
-import { errorReportContext } from "../lib/error-report-context";
+import { componentTrail, errorReportContext } from "../lib/error-report-context";
 
 const router = express.Router();
 const healthRateLimiter = createIpRateLimiter({
@@ -76,6 +76,7 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
     typeof context.componentStack === "string"
       ? context.componentStack.split("\n").slice(0, 3).join("\n").slice(0, 800)
       : undefined;
+  const trail = componentTrail(context.componentStack);
   const errorClass =
     typeof context.errorClass === "string" ? context.errorClass.slice(0, 80) : "browser";
   const widget = context.widget;
@@ -101,6 +102,7 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
     route,
     stackTop,
     componentTop,
+    componentTrail: trail,
     widget,
     source,
     contextKeys,
@@ -115,6 +117,7 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
     },
     fingerprint,
     browser_stack: stack,
+    component_trail: trail,
     context_keys: contextKeys,
   });
   return res.status(202).json({ ok: true });

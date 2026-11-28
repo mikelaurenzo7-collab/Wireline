@@ -458,11 +458,14 @@ export function applyInboundAdmission(
   }
   const afterHours = input.admission?.reason === "after_hours";
   const followup = runtime.session.tools.filter((tool) => tool.name === "create_followup_task");
+  // A caller has reached the business, not the Bot. With every Bot named Bo,
+  // "you've reached Bo" told an owner's callers nothing.
+  const reached = input.businessName?.trim() || runtime.agentName;
   const greeting =
     input.admission?.greeting?.trim() ||
     (afterHours
-      ? `Hi, you've reached ${runtime.agentName}. We're currently closed, but I can take a message for the team.`
-      : `Hi, you've reached ${runtime.agentName}. I can take a message for the team.`);
+      ? `Hi, you've reached ${reached}. We're currently closed, but I can take a message for the team.`
+      : `Hi, you've reached ${reached}. I can take a message for the team.`);
   // The one thing every after-hours caller asks is when the business opens.
   // The message-taker replaces everything else the Bot knows, so without this
   // it could only say "we're closed" and take a message.

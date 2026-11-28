@@ -589,10 +589,23 @@ async function liveCallTextCounterpart(
  */
 export const UNATTENDED_TEXT_WINDOW_MS = 15 * 60_000;
 
+/**
+ * How long after a call a text to the caller still counts as part of that
+ * conversation, so calling hours do not apply to it. Past this, a text the
+ * owner presses Send on from Needs You or the notice email is held to calling
+ * hours like any other: a call that ended at 8:55pm is not a text at 10:40pm.
+ */
+export const LIVE_SESSION_TEXT_WINDOW_MS = 60 * 60_000;
+
 export async function screenApprovedText(input: {
   userId: string;
   phone: string;
   requestedOnThisCall: boolean;
+  /**
+   * The call is still under way or ended within LIVE_SESSION_TEXT_WINDOW_MS,
+   * so calling hours are skipped. Defaults to requestedOnThisCall.
+   */
+  liveSession?: boolean;
   confirmations?: TextSendConfirmations;
   content?: string;
   leadId?: bigint | number | string;
@@ -635,7 +648,7 @@ export async function screenApprovedText(input: {
     isMarketingCall: manual.screening.isMarketingCall,
     requireFederalDncScreening: manual.screening.requireFederalDncScreening,
     salesScreening: "one_off",
-    isLiveSessionFollowUp: input.requestedOnThisCall,
+    isLiveSessionFollowUp: input.liveSession ?? input.requestedOnThisCall,
     hasExpressWrittenConsent: false,
     audit: manual.audit,
   });
@@ -731,6 +744,10 @@ async function handleSendTextMessage(
       userId,
       phone,
       requestedOnThisCall,
+      liveSession:
+        requestedOnThisCall &&
+        callEndedAt !== null &&
+        Date.now() - callEndedAt.getTime() <= LIVE_SESSION_TEXT_WINDOW_MS,
       confirmations: context.textConfirmations,
       content: typeof action.payload.body === "string" ? action.payload.body : "",
       leadId: lead?.id,

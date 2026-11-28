@@ -60,14 +60,19 @@ type VoiceFilter = (typeof VOICE_FILTERS)[number]["id"];
 
 /**
  * Query for a sample that sounds like the call. It changes whenever the saved
- * pace or pronunciations do, so a replayed sample is never a stale one.
+ * pace or pronunciations do, or the Bot's name (the sample says it), so a
+ * replayed sample is never a stale one the browser kept.
  */
-function sampleDeliveryQuery(delivery: CallDeliveryView | null): string {
-  if (!delivery) return "";
+function sampleDeliveryQuery(delivery: CallDeliveryView | null, agentName: string): string {
   let hash = 0;
-  for (const char of JSON.stringify([delivery.speakingRate, delivery.pronunciations]))
+  for (const char of JSON.stringify([
+    delivery?.speakingRate ?? null,
+    delivery?.pronunciations ?? null,
+    agentName,
+  ]))
     hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return `&pace=${delivery.speakingRate}&rev=${(hash >>> 0).toString(36)}`;
+  const rev = `&rev=${(hash >>> 0).toString(36)}`;
+  return delivery ? `&pace=${delivery.speakingRate}${rev}` : rev;
 }
 
 type AgentVoiceResponse = {
@@ -288,7 +293,7 @@ export default function SimpleVoicePicker({
     setError(null);
     try {
       const response = await authFetch(
-        `/api/agent-config/${encodeURIComponent(agentId)}/voice/sample?voice=${encodeURIComponent(voice.id)}&provider=${voice.provider}${sampleDeliveryQuery(delivery)}`,
+        `/api/agent-config/${encodeURIComponent(agentId)}/voice/sample?voice=${encodeURIComponent(voice.id)}&provider=${voice.provider}${sampleDeliveryQuery(delivery, agentName)}`,
       );
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -418,6 +423,18 @@ export default function SimpleVoicePicker({
       })
       .catch(() => undefined);
   }
+
+  // Both openings say the Bot's name, so a rename in the Name field above is
+  // read back at once and not only when the panel is next opened.
+  const greetingName = useRef(agentName);
+  useEffect(() => {
+    if (greetingName.current === agentName) return;
+    greetingName.current = agentName;
+    greetingReadAt.current = 0;
+    refreshGreeting();
+    // Runs when the name changes; refreshGreeting reads the current Bot itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentName]);
 
   function renderVoice(voice: PickerVoice) {
     const selected =

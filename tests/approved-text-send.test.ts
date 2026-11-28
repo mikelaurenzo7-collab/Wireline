@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   SALES_ATTESTATION_REQUIRED_MESSAGE,
@@ -18,7 +18,10 @@ function attestedRow() {
   };
 }
 
-async function loadApprovedText(selectRows: unknown[][]) {
+async function loadApprovedText(
+  selectRows: unknown[][],
+  options: { callingHoursAllowed?: boolean } = {},
+) {
   vi.resetModules();
   let calls = 0;
   const limit = async () => selectRows[calls++] ?? [];
@@ -36,7 +39,12 @@ async function loadApprovedText(selectRows: unknown[][]) {
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   }));
   vi.doMock("../src/lib/tcpa-calling-hours", () => ({
-    resolveCallingHoursForPhone: () => ({ allowed: true, timeZone: "America/Chicago" }),
+    resolveCallingHoursForPhone: () => ({
+      allowed: options.callingHoursAllowed ?? true,
+      timeZone: "America/Chicago",
+      inferred: false,
+      reason: "outside_calling_hours",
+    }),
   }));
   vi.doMock("../src/lib/federal-dnc-service", () => ({
     assertFederalDncForMarketing: () => ({
@@ -65,7 +73,16 @@ async function loadApprovedText(selectRows: unknown[][]) {
   return { screenApprovedText, smsActionResult, evaluateOutboundDialGate };
 }
 
-describe("approved text confirmations", () => {
+// Each test loads the action engine afresh behind its own mocks, and the first
+// load compiles that whole module graph: over a second alone, and far past a
+// test's time limit when the full suite is running beside it. So the first
+// load happens here, outside any one test.
+describe("approved text confirmations", { timeout: 20_000 }, () => {
+  beforeAll(async () => {
+    await loadApprovedText([]);
+    vi.resetModules();
+  }, 180_000);
+
   beforeEach(() => {
     vi.stubEnv("FEDERAL_DNC_API_URL", "");
     vi.stubEnv("FEDERAL_DNC_API_KEY", "");
@@ -161,6 +178,33 @@ describe("approved text confirmations", () => {
     });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.sales).toBe(false);
+  });
+
+  // A held text pressed Send from Needs You hours after the call is not part
+  // of that conversation any more, and calling hours apply to it.
+  it("holds a text to the caller to calling hours once the call is over an hour old", async () => {
+    const { screenApprovedText } = await loadApprovedText([], { callingHoursAllowed: false });
+    const late = await screenApprovedText({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      requestedOnThisCall: true,
+      liveSession: false,
+      confirmations: { permissionConfirmed: true, nonsalesConfirmed: true },
+    });
+    expect(late.ok).toBe(false);
+    // Still a follow-up to the caller, not sales.
+    expect(late.sales).toBe(false);
+    const { screenApprovedText: screenDuringCall } = await loadApprovedText([], {
+      callingHoursAllowed: false,
+    });
+    const during = await screenDuringCall({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      requestedOnThisCall: true,
+      liveSession: true,
+      confirmations: { permissionConfirmed: true, nonsalesConfirmed: true },
+    });
+    expect(during.ok).toBe(true);
   });
 
   it("keeps an untagged bulk sales send fail-closed without a provider", async () => {

@@ -402,7 +402,7 @@ describe("a compliance mode", () => {
   });
 
   it.each([
-    ["pci", "Do not record, repeat, or write down card numbers, expiry dates, or CVVs."],
+    ["pci", "Never ask for, record, repeat, or write down card numbers, expiry dates, or CVVs."],
     ["gdpr", 'Honor opt-out, deletion, and "speak to a human" requests immediately.'],
     ["financial", "Do not provide tax, investment, or specific financial advice."],
     ["legal", "Do not provide legal advice. You may share general public information only."],

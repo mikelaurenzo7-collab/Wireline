@@ -188,13 +188,18 @@ describe("the knowledge search during a call", () => {
     await vi.waitFor(() => expect(h.saved).toHaveBeenCalledOnce());
 
     // One keyword match beside it is a verified answer, and nothing is saved.
+    // The entry found by meaning keeps its own label below the verified one.
     h.saved.mockClear();
     h.open.mockClear();
     h.search.mockResolvedValue([
       { source: "knowledge", content: "Financing is available on new furnaces.", score: 204 },
       { source: "knowledge", content: "We are at 12 Main St.", score: 0 },
     ]);
-    expect((await ask(QUESTION))?.result).toMatch(/^VERIFIED_KNOWLEDGE_MATCH:/);
+    const mixed = (await ask(QUESTION))?.result ?? "";
+    expect(mixed).toMatch(/^VERIFIED_KNOWLEDGE_MATCH:/);
+    const possible = mixed.indexOf("POSSIBLE_MATCH: These were found by meaning");
+    expect(mixed.indexOf("[knowledge] Financing is available")).toBeLessThan(possible);
+    expect(mixed.indexOf("[knowledge] We are at 12 Main St.")).toBeGreaterThan(possible);
     await Promise.resolve();
     expect(h.open).not.toHaveBeenCalled();
   });

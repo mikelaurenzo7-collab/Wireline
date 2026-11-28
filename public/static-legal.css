@@ -1,43 +1,32 @@
 @import url("/fonts.css");
 
 :root {
-  --wireline-color-canvas-default: #0A0A0E;
-  --wireline-color-surface-default: #141319;
-  --wireline-color-surface-subtle: #100F15;
-  --wireline-color-surface-container: #1E1730;
-  --wireline-color-action-primary-pressed: #8B5CF6;
-  --wireline-color-action-primary-default: #A78BFA;
-  --wireline-color-action-secondary-default: #C7CCD6;
-  --wireline-color-text-primary: #F5F4F8;
-  --wireline-color-text-secondary: #B6B1C6;
-  --wireline-color-border-default: #262430;
-  --wireline-color-text-onAction: #0E0B16;
+  --wireline-color-canvas-default: #ffffff;
+  --wireline-color-surface-default: #ffffff;
+  --wireline-color-surface-subtle: #f8f9fa;
+  --wireline-color-surface-container: #f3f4f6;
+  --wireline-color-action-primary-pressed: #5e2fbd;
+  --wireline-color-action-primary-default: #7040d7;
+  --wireline-color-action-secondary-default: #596170;
+  --wireline-color-text-primary: #171717;
+  --wireline-color-text-secondary: #50545c;
+  --wireline-color-text-onAction: #ffffff;
+  --wireline-color-border-default: #d9dde3;
   --wireline-primary: var(--wireline-color-action-primary-default);
   --wireline-primary-container: var(--wireline-color-action-primary-default);
   --wireline-text: var(--wireline-color-text-primary);
   --wireline-outline: var(--wireline-color-border-default);
   --wireline-card: var(--wireline-color-surface-default);
-  color-scheme: dark;
+  color-scheme: light;
   font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* These standalone documents and account-consent forms also work without JavaScript. */
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --wireline-color-canvas-default: #ffffff;
-    --wireline-color-surface-default: #ffffff;
-    --wireline-color-surface-subtle: #f8f9fa;
-    --wireline-color-surface-container: #f3f4f6;
-    --wireline-color-action-primary-pressed: #5e2fbd;
-    --wireline-color-action-primary-default: #7040d7;
-    --wireline-color-action-secondary-default: #596170;
-    --wireline-color-text-primary: #171717;
-    --wireline-color-text-secondary: #50545c;
-    --wireline-color-text-onAction: #ffffff;
-    --wireline-color-border-default: #d9dde3;
-  }
-}
+/*
+ * These standalone documents and account-consent forms also work without
+ * JavaScript, so they cannot read a choice saved in the app. They open in
+ * light, as the app does on a first visit; a device's dark setting does not
+ * switch the app either.
+ */
 
 * {
   box-sizing: border-box;

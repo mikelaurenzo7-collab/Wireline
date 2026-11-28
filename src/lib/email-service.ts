@@ -516,7 +516,7 @@ export async function sendPaymentFailedEmail(opts: {
     "",
     opts.invoiceUrl ? `View invoice: ${opts.invoiceUrl}` : "",
     "",
-    "If you have questions, reply to this email, we're happy to help.",
+    "If you have questions, email support@botbound.app. We're happy to help.",
     "",
     "BotBound",
   ]
@@ -529,7 +529,7 @@ export async function sendPaymentFailedEmail(opts: {
       <p style="margin: 0 0 24px; line-height: 1.55;">To keep your Bots live, update your payment method.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.updateCardUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method</a></p>
       ${opts.invoiceUrl ? `<p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;"><a href="${escapeHtml(opts.invoiceUrl)}" style="color: ${BRAND.colors.primary};">View invoice</a></p>` : ""}
-      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have questions, reply to this email, we're happy to help.</p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have questions, email support@botbound.app. We're happy to help.</p>
     </div>
   `;
   if (process.env.RESEND_API_KEY) {

@@ -23,6 +23,7 @@ import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
+import BotNameField, { type PendingNameSave } from "./studio/BotNameField";
 import DeleteBotSection from "./studio/DeleteBotSection";
 import HumanHandoffEditor from "./HumanHandoffEditor";
 import PlaybookEditor from "./PlaybookEditor";
@@ -113,7 +114,11 @@ export default function StudioAgentWorkspacePanel({
     greeting: setupGreeting,
     permission,
   } = snapshot.values;
-  const applyingSetup = snapshot.saving;
+  // A name typed in the Name field and not yet saved; Save Changes saves it too.
+  const pendingNameSave = useRef<PendingNameSave | null>(null);
+  const [namePending, setNamePending] = useState(false);
+  const [savingName, setSavingName] = useState(false);
+  const applyingSetup = snapshot.saving || savingName;
   const toneOptions = PERSONALITIES.some((tone) => tone === setupPersonality)
     ? PERSONALITIES
     : [...PERSONALITIES, setupPersonality];
@@ -291,6 +296,15 @@ export default function StudioAgentWorkspacePanel({
   }
 
   async function applySetup() {
+    const nameSave = pendingNameSave.current;
+    if (nameSave && !savingName) {
+      // The name saves through its own route; the field reports how it went.
+      setSavingName(true);
+      setSetupNotice(null);
+      const saved = await nameSave().finally(() => setSavingName(false));
+      // A name alone needs nothing more; the Name field says it was saved.
+      if (!saved || !snapshot.dirty) return;
+    }
     if (
       !agentId ||
       !user?.id ||
@@ -382,12 +396,23 @@ export default function StudioAgentWorkspacePanel({
           >
             Bot Setup
           </h2>
-          {snapshot.dirty ? (
+          {snapshot.dirty || namePending ? (
             <p className="mt-1 text-xs text-muted-foreground" role="status">
               Unsaved changes
             </p>
           ) : null}
         </header>
+
+        <section className={sectionClass} aria-label="Name">
+          <BotNameField
+            agentId={agentId}
+            agentName={agentName}
+            onPendingSave={(save) => {
+              pendingNameSave.current = save;
+              setNamePending(Boolean(save));
+            }}
+          />
+        </section>
 
         <section className={sectionClass} aria-label="Tone and greeting">
           {loadingSetup ? (
@@ -555,7 +580,7 @@ export default function StudioAgentWorkspacePanel({
                 size={compact ? "sm" : undefined}
                 className="h-auto whitespace-normal"
                 onClick={() => void applySetup()}
-                disabled={applyingSetup || !snapshot.dirty}
+                disabled={applyingSetup || !(snapshot.dirty || namePending)}
               >
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />

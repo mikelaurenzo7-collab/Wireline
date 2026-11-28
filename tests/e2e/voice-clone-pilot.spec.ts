@@ -411,7 +411,7 @@ test("native voice pilot uploads, reviews, previews, and deletes without changin
   page,
 }, info) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
+  await page.addInitScript(() => localStorage.setItem("botbound-theme", "light"));
   const state = await mockPilot(page);
   const voice = await openVoice(page);
   const panel = voice.getByRole("region", { name: "Private custom voice previews", exact: true });
@@ -477,7 +477,7 @@ for (const enlarged of [false, true]) {
     page,
   }, info) => {
     await page.setViewportSize({ width: 320, height: 900 });
-    await page.addInitScript(() => localStorage.setItem("wireline-theme", "dark"));
+    await page.addInitScript(() => localStorage.setItem("botbound-theme", "dark"));
     const state = await mockPilot(page, { saved: [reference("Founder voice")] });
     const voice = await openVoice(page);
     const panel = voice.getByRole("region", { name: "Private custom voice previews", exact: true });

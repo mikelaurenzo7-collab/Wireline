@@ -54,6 +54,7 @@ import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agen
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import type { AuthenticatedRequest } from "../types/auth";
 import { DEFAULT_BOT_ARCHETYPE } from "../lib/agent-constants";
+import { generatedBotGreeting } from "../lib/bot-name";
 import {
   defaultBotMarkKey,
   firstAvailableBotMarkKey,
@@ -247,7 +248,7 @@ router.post(
           autonomyLevel: DEFAULT_NEW_BOT_AUTONOMY,
           ...(startingTimeZone ? { timezone: startingTimeZone } : {}),
           enabledTools,
-          firstMessage: `Hi, this is ${name}. How can I help?`,
+          firstMessage: generatedBotGreeting(name),
           isBusinessAgent,
           ...videoPresenter,
         });
