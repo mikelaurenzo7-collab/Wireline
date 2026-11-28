@@ -212,6 +212,22 @@ describe("authenticated workspace design architecture", () => {
     expect(typeIntegrity).toContain(".wl-shell-more-group-label");
   });
 
+  it("keeps the rail's saved chats their own height on short windows", () => {
+    // The rail is a scrolling flex column. The Chats block once shrank to zero
+    // height there, drawing New chat over the Work heading and leaving saved
+    // chats under the Work links, so a click on a chat landed on Inbox.
+    const shell = read("src/styles/workspace-shell.css");
+    const rule = shell.slice(shell.indexOf(".wl-shell-chat-rail {"));
+    const block = rule.slice(0, rule.indexOf("}"));
+    expect(block).toContain("flex-shrink: 0;");
+    expect(block).not.toContain("min-height: 0");
+    // The list inside caps itself and scrolls, so the block stays bounded.
+    expect(shell).toMatch(/\.wl-shell-chat-list \{[^}]*max-height: 14rem;[^}]*overflow-y: auto;/);
+    expect(read("src/components/WorkspaceShell.tsx")).toContain(
+      'className="wl-shell-rail hidden h-full w-full min-w-0 flex-col lg:flex"',
+    );
+  });
+
   it("lets call triage resize or fold the history list without changing mobile list-to-report flow", () => {
     const calls = read("src/components/CallLogsClaude.tsx");
     expect(calls).toContain("WorkspaceResizablePanel");

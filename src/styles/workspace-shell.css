@@ -757,10 +757,14 @@
   }
 }
 
-/* Saved chats for the selected Bot, under the roster. */
+/* Saved chats for the selected Bot, under the roster. On a short window the
+ * rail scrolls; this block keeps its height, because a block that shrank to
+ * nothing drew New chat over the Work heading and left saved chats under the
+ * Work links, where a click landed on Inbox. The chat list caps its own height
+ * and scrolls. */
 .wl-shell-chat-rail {
   display: flex;
-  min-height: 0;
+  flex-shrink: 0;
   flex-direction: column;
   gap: 0.125rem;
   margin: 0.25rem 0 0.375rem;
