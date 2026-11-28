@@ -244,48 +244,42 @@ for (const width of [390, 1440]) {
   });
 }
 
-test("memory persists per Bot and a failed save preserves the note", async ({ page }, info) => {
+test("About You lists each Bot's private notes in Knowledge and a failed forget keeps them", async ({
+  page,
+}, info) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await mockWorkspace(page);
-  const notes: Record<string, Array<{ id: string; content: string }>> = {};
-  let fail = false;
+  const notes: Record<string, Array<{ id: string; content: string }>> = {
+    [bots[0].id]: [{ id: "42", content: "Use Central time." }],
+  };
+  let fail = true;
   await page.route("**/api/agents/*/workspace/memory**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     const id = path.split("/")[3]!;
     notes[id] ||= [];
-    if (route.request().method() === "POST") {
+    // About You never adds a note: the chat or hands-free does.
+    expect(route.request().method()).not.toBe("POST");
+    if (route.request().method() === "DELETE") {
       if (fail)
-        return route.fulfill({ status: 503, json: { error: "Save could not be confirmed." } });
-      notes[id].push({ id: "42", content: route.request().postDataJSON().content });
+        return route.fulfill({ status: 503, json: { error: "Change could not be confirmed." } });
+      notes[id] = [];
     }
-    if (route.request().method() === "DELETE") notes[id] = [];
     return route.fulfill({ json: { memories: notes[id] } });
   });
-  await page.goto(`/studio?agent=${bots[0].id}&section=details`);
-  await page.getByText("Memory", { exact: true }).click();
-  const input = page.getByRole("textbox", { name: "Remember this", exact: true });
-  await expect(input).toBeVisible();
-  await input.fill("Use Central time.");
-  await page.getByRole("button", { name: "Save memory" }).click();
-  await expect(page.getByRole("button", { name: "Forget: Use Central time." })).toBeVisible();
-  fail = true;
-  await input.fill("Keep summaries brief.");
-  await page.getByRole("button", { name: "Save memory" }).click();
-  await expect(page.getByRole("alert")).toContainText("Save could not be confirmed.");
-  await expect(input).toHaveValue("Keep summaries brief.");
-  await proof(page, info, "memory-recovery");
-  await page
-    .getByRole("navigation", { name: "Bot conversations" })
-    .getByRole("link", { name: "Open Sales Bot conversation" })
-    .click();
-  await page.getByRole("button", { name: "Sales Bot details" }).click();
-  await page.getByText("Memory", { exact: true }).click();
-  await expect(input).toHaveValue("");
+  await page.goto(`/knowledge?agent=${bots[0].id}`);
+  const about = page.getByRole("region", { name: "About You" });
+  await expect(about.getByText("Use Central time.", { exact: true })).toBeVisible();
+  await expect(about.getByRole("textbox")).toHaveCount(0);
+  await about.getByRole("button", { name: "Forget: Use Central time." }).click();
+  await expect(about.getByRole("alert")).toContainText("Change could not be confirmed.");
+  await expect(about.getByText("Use Central time.", { exact: true })).toBeVisible();
+  await proof(page, info, "about-you-recovery");
+  await page.goto(`/knowledge?agent=${bots[1].id}`);
   await expect(page.getByText("Use Central time.", { exact: true })).toHaveCount(0);
-  await page.goto(`/studio?agent=${bots[0].id}&section=details`);
-  await page.getByText("Memory", { exact: true }).click();
-  await page.getByRole("button", { name: "Forget: Use Central time." }).click();
-  await expect(page.getByText("No saved memories yet.", { exact: false })).toBeVisible();
+  fail = false;
+  await page.goto(`/knowledge?agent=${bots[0].id}`);
+  await about.getByRole("button", { name: "Forget: Use Central time." }).click();
+  await expect(about.getByText("Nothing saved yet.", { exact: true })).toBeVisible();
 });
 
 test("New chat preserves earlier threads and their projects across a reload", async ({ page }) => {

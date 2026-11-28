@@ -222,7 +222,8 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
 
       expect(studioHome).toContain("<StudioPageShell>");
       expect(studioHome).toContain("<StudioContextChrome />");
-      expect(studioHome).toContain("<StudioWorkspaceV2 />");
+      expect(studioHome).toContain("<StudioWorkspaceV2 composerPrefill={brief}");
+      expect(studioHome).toContain("<BoOnboarding");
 
       expect(studioV2).toContain('id="studio-computer-panel"');
       expect(studioV2).toContain('aria-label="Bot setup sections"');
@@ -247,10 +248,13 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       const phonePage = read("src/pages/PhonePage.tsx");
       const callLogs = read("src/components/CallLogsClaude.tsx");
 
-      expect(phonePage).toContain('{ id: "logs", label: "History" }');
-      expect(phonePage).toContain('{ id: "settings", label: "Settings" }');
-      expect(phonePage).toContain('{ id: "outbound", label: "Outbound" }');
-      expect(phonePage).toContain('{ id: "lines", label: "Lines" }');
+      // The Calls tabs have one definition, in page-sub-tabs, in display order.
+      const tabs = read("src/lib/page-sub-tabs.ts");
+      const calls = tabs.slice(tabs.indexOf('pathname: "/phone"'));
+      expect(phonePage).toContain("tabs={PHONE_ROUTE.tabs}");
+      expect(calls).toMatch(
+        /\{ id: "logs", label: "History"[\s\S]*?id: "outbound",\s*label: "Outbound"[\s\S]*?\{ id: "lines", label: "Lines"[\s\S]*?\{ id: "settings", label: "Settings"/,
+      );
       expect(phonePage).toContain("<WorkspaceControlBand");
       expect(phonePage).toContain("<PhoneCallHistoryPanel");
       expect(phonePage).toContain("<PhoneSetupPanel");
@@ -289,8 +293,9 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       const knowledgePage = read("src/pages/KnowledgePage.tsx");
       const knowledgeEditor = read("src/components/KnowledgeBaseClaude.tsx");
 
-      expect(knowledgePage).toContain("<KnowledgeQuickAdd");
+      expect(knowledgePage).not.toContain("<KnowledgeQuickAdd");
       expect(knowledgePage).toContain("<WebsiteKnowledgeImport");
+      expect(knowledgePage).toContain("<AboutYouMemories");
       expect(knowledgePage).toContain("<KnowledgeBaseClaude");
       expect(knowledgePage).toContain("Choose a Bot");
       expect(knowledgePage).toContain('<WorkspacePageIntro title="Knowledge" size="compact"');

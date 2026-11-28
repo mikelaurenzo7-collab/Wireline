@@ -63,14 +63,17 @@ describe("the name every Bot starts with", () => {
     ).toBe("Hi, I'm Bo, an AI assistant with Ridge Dental. How can I help?");
   });
 
-  it("is what the create dialog shows, and what it leaves the server to decide", () => {
-    const dialog = read("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain("startingBotName(existingNames, roleName(templateKey))");
-    expect(dialog).toContain("placeholder={defaultName(templateKey, existingNames)}");
-    // An empty field sends the role, and the server names the Bot from its own list.
-    expect(dialog).toContain("...(name.trim() ? {} : { role_name: roleName(templateKey) })");
-    expect(dialog).toContain("name: body.name || finalName");
-    expect(dialog).not.toContain("e.g. Nora or Alex");
+  it("is the name Bo's first conversation creates the account's one Bot with", () => {
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    // The Bot is created only when the account has none; the server checks
+    // under its lock and hands back the existing Bot instead.
+    expect(bo).toContain("name: DEFAULT_BOT_NAME,");
+    expect(bo).toContain("only_if_none: true,");
+    // The roster shows the name the server answered with.
+    expect(bo).toContain(
+      'name: typeof body.name === "string" && body.name ? body.name : DEFAULT_BOT_NAME,',
+    );
+    expect(bo).not.toContain("e.g. Nora or Alex");
   });
 });
 

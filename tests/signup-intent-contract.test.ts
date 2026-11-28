@@ -172,10 +172,11 @@ describe("signup intent contract", () => {
     ).toBeUndefined();
 
     // P-4: signup no longer displays the template pill. The choice survives
-    // signup via stored intent into the post-auth redirect to bot creation.
+    // signup via stored intent into the Workspace, where it only sets whether
+    // Bo starts as a personal assistant.
     const redirect = read("src/lib/auth-redirect.ts");
     expect(redirect).toContain("currentIntent?.preferredTemplateId ||");
-    expect(redirect).toContain("`/studio?create=1&template=${encodeURIComponent(template)}`");
+    expect(redirect).toContain("`/studio?template=${encodeURIComponent(template)}`");
   });
 
   it("never emits legacy audience-shaped plan ids from public conversion surfaces", () => {

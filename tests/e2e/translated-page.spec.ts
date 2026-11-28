@@ -6,7 +6,9 @@ import { expect, test, type Page } from "@playwright/test";
  * <font><font>text</font></font>, and keeps doing so as new text appears.
  * React then holds nodes that are no longer in the document. Before the guard
  * in src/lib/dom-reconciliation-recovery.ts, pressing Create Bot on such a page
- * threw NotFoundError and replaced the whole view with the crash screen.
+ * threw NotFoundError and replaced the whole view with the crash screen. The
+ * create dialog is gone; a new owner now meets Bo in a conversation, which
+ * swaps the same busy icon beside a translated label.
  */
 async function translateLikeABrowser(page: Page) {
   await page.addInitScript(() => {
@@ -41,12 +43,12 @@ async function translateLikeABrowser(page: Page) {
   });
 }
 
-test("a new owner can create a Bot while the browser translates the page", async ({ page }) => {
-  const bot = { id: "translated-bot", name: "Bo", mark_key: "spark-rose" };
+test("a new owner meets Bo while the browser translates the page", async ({ page }) => {
+  const bot = { id: "translated-bot", name: "Bo", mark_key: "spark-rose", channel: "voice" };
   let created = false;
-  let releaseCreate = () => {};
-  const createHeld = new Promise<void>((resolve) => {
-    releaseCreate = resolve;
+  let releaseSave = () => {};
+  const saveHeld = new Promise<void>((resolve) => {
+    releaseSave = resolve;
   });
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -59,23 +61,21 @@ test("a new owner can create a Bot while the browser translates the page", async
     }
     if (path === "/api/agents") {
       if (request.method() === "POST") {
-        // Held open so the button is seen in its busy state first.
-        await createHeld;
         created = true;
-        await route.fulfill({ status: 201, json: bot });
+        await route.fulfill({ status: 201, json: { ...bot, created: true } });
       } else {
         await route.fulfill({ json: { agents: created ? [bot] : [] } });
       }
       return;
     }
-    if (path === `/api/agent-config/${bot.id}`) {
-      await route.fulfill({
-        json: { personality: "Clear", directives: [], mark_key: bot.mark_key },
-      });
+    if (path === "/api/company-identity" && request.method() === "POST") {
+      // Held open so the Send button is seen in its busy state first.
+      await saveHeld;
+      await route.fulfill({ json: { business_name: "Rivera Plumbing" } });
       return;
     }
-    if (path === "/api/train/extract") {
-      await route.fulfill({ json: { readiness: { rules: 1, facts: 0, tone: false } } });
+    if (path.endsWith("/managed-identity")) {
+      await route.fulfill({ status: 402, json: { code: "ACTIVATION_REQUIRED" } });
       return;
     }
     await route.fulfill({
@@ -86,28 +86,30 @@ test("a new owner can create a Bot while the browser translates the page", async
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
   await translateLikeABrowser(page);
-  await page.goto("/studio?create=1");
-  const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
-  await expect(dialog).toBeVisible();
+  await page.goto("/studio");
+  const log = page.getByRole("log", { name: "Conversation with Bo" });
+  await expect(log).toContainText("First, what's your business called?");
+  const name = page.getByRole("textbox", { name: "Your business name" });
+  await expect(name).toBeEnabled();
   await page.evaluate(() =>
     (window as unknown as { startTranslating: () => void }).startTranslating(),
   );
   // The page is now translated: the label is no longer React's own text node.
-  await expect(dialog.locator("button[type=submit] font font")).toHaveText("Create Bot");
+  const send = page.locator("form button[type=submit]");
+  await expect(send.locator("font font")).toHaveText("Send");
 
-  await dialog
-    .getByRole("textbox", { name: "Describe the Job" })
-    .fill("Answer calls and take messages.");
-  await dialog.getByRole("textbox", { name: /Bot Name/ }).fill("Bo");
-  await dialog.locator("button[type=submit]").click();
+  await name.fill("Rivera Plumbing");
+  await send.click();
 
   // The busy state swaps the icon beside the translated label. This is where
   // the view used to crash.
-  await expect(dialog.locator("button[type=submit]")).toContainText("Creating Your Bot…");
+  await expect(log.getByRole("status")).toContainText("Saving…");
   await expect(page.getByText("Something broke")).toHaveCount(0);
-  releaseCreate();
+  releaseSave();
 
-  await expect(page).toHaveURL(new RegExp(`agent=${bot.id}&section=setup$`));
+  await expect(log).toContainText("Nice to meet you, Rivera Plumbing.");
+  // A keyed label shows its new words on a translated page.
+  await expect(page.getByText("Step 2 of 5", { exact: true })).toBeVisible();
   await expect(page.getByText("Something broke")).toHaveCount(0);
   expect(pageErrors.filter((message) => /insertBefore|removeChild/.test(message))).toEqual([]);
 });

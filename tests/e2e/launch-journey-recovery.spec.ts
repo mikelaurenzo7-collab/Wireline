@@ -44,62 +44,6 @@ async function mockWorkspace(page: Page) {
   });
 }
 
-test("setup offers cloning at voice selection and resumes before rehearsal", async ({ page }) => {
-  await mockWorkspace(page);
-  let cloneCreates = 0;
-  await page.route("**/api/voice/live-voices", async (route) => {
-    if (route.request().method() === "POST") cloneCreates += 1;
-    await route.fulfill({
-      json: {
-        available: true,
-        voices: [],
-        maxVoices: 3,
-        minSeconds: 10,
-        recommendedSeconds: 90,
-        maxSeconds: 120,
-        maxBytes: 10000000,
-        consentVersion: "fixture-consent",
-        biometricReleaseVersion: "fixture-release",
-      },
-    });
-  });
-  await page.route("**/api/agent-config/*", (route) =>
-    route.fulfill({
-      json: {
-        voice: { voiceId: "marin", provider: "openai" },
-      },
-    }),
-  );
-  await page.addInitScript(() => {
-    if (sessionStorage.getItem("wireline:post-create-wizard")) return;
-    sessionStorage.setItem(
-      "wireline:post-create-wizard",
-      JSON.stringify({
-        agentId: "bot-front-desk",
-        agentName: "Front Desk",
-        phoneProvisionRequested: false,
-        phoneProvisioned: false,
-      }),
-    );
-    sessionStorage.setItem("wireline:post-create-wizard-step", "train");
-  });
-  await page.goto("/studio?agent=bot-front-desk&section=setup");
-  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
-  await guide.getByRole("button", { name: "Choose Voice", exact: true }).click();
-  await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
-  const cloneVoice = guide.getByRole("button", { name: "Clone Voice", exact: true });
-  await expect(cloneVoice).toHaveCount(1);
-  await cloneVoice.click();
-  await expect(guide.getByText("Step 1 of 3 · Permission", { exact: true })).toBeVisible();
-  await expect(guide.getByRole("button", { name: "Continue", exact: true })).toBeDisabled();
-  await guide.getByRole("button", { name: "Cancel", exact: true }).click();
-  await page.reload();
-  await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
-  await guide.getByRole("button", { name: "Continue to Rehearse", exact: true }).click();
-  await expect(guide.getByText("Hear It First", { exact: true })).toBeVisible();
-  expect(cloneCreates).toBe(0);
-});
-
 test("a second Bot keeps its own activation selection and opens its new line", async ({ page }) => {
   await mockWorkspace(page);
   const lines = [initialLine];
@@ -136,38 +80,32 @@ test("a second Bot keeps its own activation selection and opens its new line", a
   await expect(page.getByRole("combobox", { name: "Assigned Bot" })).toHaveText("Sales Bot");
 });
 
-test("a saved setup guide follows its Bot across navigation and reloads", async ({ page }) => {
+test("Bo's first conversation resumes at its question, and only for a Bot the account has", async ({
+  page,
+}) => {
   await mockWorkspace(page);
   await page.goto("/studio?agent=bot-sales");
   await page.evaluate(() => {
     sessionStorage.setItem(
-      "wireline:post-create-wizard",
-      JSON.stringify({
-        agentId: "bot-front-desk",
-        agentName: "Front Desk",
-        phoneProvisionRequested: false,
-        phoneProvisioned: false,
-        identityBootstrapComplete: true,
-      }),
+      "wireline:bo-onboarding:v1:journey-owner",
+      JSON.stringify({ agentId: "bot-front-desk", step: "questions" }),
     );
-    sessionStorage.setItem("wireline:post-create-wizard-step", "train");
   });
 
-  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
+  const conversation = page.getByRole("log", { name: "Conversation with Front Desk" });
   await page.reload();
-  await expect(page.getByRole("button", { name: "Sales Bot details" })).toBeVisible();
-  await expect(guide).toHaveCount(0);
-
-  await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-front-desk");
-  await expect(guide).toBeVisible();
+  await expect(conversation).toContainText("What do customers usually ask you?");
+  await expect(page.getByText("Step 3 of 4", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(conversation).toContainText("What do customers usually ask you?");
 
   await page.route("**/api/agents", (route) => route.fulfill({ json: { agents: [agents[1]] } }));
   await page.reload();
-  await expect(page.getByText("Bot Unavailable", { exact: true })).toBeVisible();
-  await expect(guide).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sales Bot details" })).toBeVisible();
+  await expect(conversation).toHaveCount(0);
 });
 
-test("deleting the selected Bot clears its guide and selects the remaining Bot before reload", async ({
+test("deleting the selected Bot selects the remaining Bot and never resumes its first conversation", async ({
   page,
 }) => {
   await mockWorkspace(page);
@@ -200,16 +138,14 @@ test("deleting the selected Bot clears its guide and selects the remaining Bot b
     await section.getByLabel("Type DELETE to Confirm").fill("DELETE");
     await page.evaluate(() => {
       sessionStorage.setItem(
-        "wireline:post-create-wizard",
-        JSON.stringify({ agentId: "bot-front-desk", agentName: "Front Desk" }),
+        "wireline:bo-onboarding:v1:journey-owner",
+        JSON.stringify({ agentId: "bot-front-desk", step: "website" }),
       );
     });
     await section.getByRole("button", { name: "Delete Bot", exact: true }).click();
     await expect(page.getByRole("button", { name: "Sales Bot details" })).toBeVisible();
     await expect(page).toHaveURL(/agent=bot-sales/);
-    expect(
-      await page.evaluate(() => sessionStorage.getItem("wireline:post-create-wizard")),
-    ).toBeNull();
+    await expect(page.getByRole("log", { name: /^Conversation with / })).toHaveCount(0);
   } finally {
     releaseRoster();
   }
@@ -422,70 +358,6 @@ for (const failure of ["unavailable", "malformed"] as const) {
   });
 }
 
-test("a newly paid Bot can choose a number while new checkout is paused", async ({ page }) => {
-  await mockWorkspace(page);
-  await page.route("**/api/billing/plans", (route) =>
-    route.fulfill({ json: { checkout_available: false, stripe_configured: true, plans: [] } }),
-  );
-  await page.addInitScript(() => {
-    sessionStorage.setItem(
-      "wireline:post-create-wizard",
-      JSON.stringify({
-        agentId: "bot-front-desk",
-        agentName: "Front Desk",
-        phoneProvisionRequested: true,
-        phoneProvisioned: false,
-        phoneActivationRequired: true,
-        identityBootstrapComplete: true,
-      }),
-    );
-    sessionStorage.setItem("wireline:post-create-wizard-step", "launch");
-  });
-  await page.goto("/studio?agent=bot-front-desk");
-  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
-  const chooseNumber = guide.getByRole("button", { name: "Choose a Number", exact: true });
-  await expect(chooseNumber).toBeEnabled();
-  await expect(
-    guide.getByText("Live activation isn't available right now", { exact: true }),
-  ).toHaveCount(0);
-  await chooseNumber.click();
-  await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
-  await expect(page.getByRole("button", { name: "Find Numbers", exact: true })).toBeVisible();
-});
-
-test("a verified checkout returns to the Bot that was being launched", async ({ page }) => {
-  await mockWorkspace(page);
-  let verifiedSession: string | undefined;
-  await page.route("**/api/billing/checkout/verify", async (route) => {
-    verifiedSession = route.request().postDataJSON().session_id;
-    await route.fulfill({ json: { status: "complete", payment_status: "paid", synced: true } });
-  });
-  await page.addInitScript(() => {
-    if (sessionStorage.getItem("wireline:post-create-wizard")) return;
-    localStorage.setItem("wireline:studio:last-agent-id", "bot-sales");
-    sessionStorage.setItem(
-      "wireline:post-create-wizard",
-      JSON.stringify({
-        agentId: "bot-front-desk",
-        agentName: "Front Desk",
-        phoneProvisionRequested: true,
-        phoneProvisioned: false,
-        phoneActivationRequired: true,
-        identityBootstrapComplete: true,
-      }),
-    );
-    sessionStorage.setItem("wireline:post-create-wizard-step", "launch");
-  });
-
-  await page.goto("/settings/billing?billing=success&session_id=cs_setup_fixture");
-  await expect(page).toHaveURL(/\/studio\?agent=bot-front-desk$/);
-  expect(verifiedSession).toBe("cs_setup_fixture");
-  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
-  await guide.getByRole("button", { name: "Choose a Number", exact: true }).click();
-  await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
-  await expect(page.getByRole("combobox", { name: "Bot for this line" })).toHaveText("Front Desk");
-});
-
 test("caller identity deep links reveal the section", async ({ page }) => {
   await mockWorkspace(page);
   await page.goto("/phone?tab=setup#company-identity");
@@ -582,70 +454,16 @@ test("texting registration collects a sole proprietor's details and lists every 
   await expect(section.getByRole("button", { name: "Save changes" })).toBeVisible();
 });
 
-test("changing a role starter preserves a supplied customer brief", async ({ page }) => {
+test("a supplied brief starts as an unsent chat draft for the account's Bot", async ({ page }) => {
   await mockWorkspace(page);
   const brief = "Book a 30-minute appointment only after confirming the customer's ZIP code.";
-  await page.goto(`/studio?create=1&brief=${encodeURIComponent(brief)}`);
-  const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
-  const description = dialog.getByRole("textbox", { name: "Describe the Job" });
-  await expect(description).toHaveValue(brief);
-  await expect(dialog.getByText("Start from a Role", { exact: true })).toHaveCount(0);
+  await page.goto(`/studio?agent=bot-front-desk&brief=${encodeURIComponent(brief)}`);
+  await expect(page.getByRole("textbox", { name: /Message|Conversation/ }).first()).toHaveValue(
+    brief,
+  );
+  await expect(page).not.toHaveURL(/brief=/);
+  await expect(page.getByText("Start from a Role", { exact: true })).toHaveCount(0);
 });
-
-for (const failure of ["unavailable", "malformed"] as const) {
-  test(`setup guide blocks number activation until ${failure} inventory recovers`, async ({
-    page,
-  }) => {
-    await mockWorkspace(page);
-    let recovered = false;
-    let provisionCount = 0;
-    await page.route("**/api/phone-numbers", (route) =>
-      route.fulfill(
-        recovered
-          ? { status: 200, json: { numbers: [] } }
-          : failure === "unavailable"
-            ? { status: 503, json: { error: "Phone numbers unavailable." } }
-            : { status: 200, json: {} },
-      ),
-    );
-    await page.route("**/api/phone-numbers/provision", async (route) => {
-      provisionCount += 1;
-      await route.fulfill({ status: 402, json: { code: "ACTIVATION_REQUIRED" } });
-    });
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        "wireline:post-create-wizard",
-        JSON.stringify({
-          agentId: "bot-front-desk",
-          agentName: "Front Desk",
-          phoneProvisionRequested: false,
-          phoneProvisioned: false,
-          phoneActivationRequired: true,
-        }),
-      );
-      sessionStorage.setItem("wireline:post-create-wizard-step", "launch");
-    });
-    await page.goto("/studio?agent=bot-front-desk");
-    const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
-    // Disabled also describes the initial request. Observe the actual failure
-    // before allowing the mock to recover, or a pending mount lookup can win.
-    await expect(
-      guide.getByText("Couldn't refresh phone lines. Retry before provisioning another number."),
-    ).toBeVisible();
-    await expect(guide.getByRole("button", { name: "Retry Line Lookup" })).toBeEnabled();
-    await expect(
-      guide.getByRole("button", { name: "Choose a Number", exact: true }),
-    ).toBeDisabled();
-    await expect(guide.getByText("No phone number yet.", { exact: false })).toHaveCount(0);
-    recovered = true;
-    await guide.getByRole("button", { name: "Retry Line Lookup" }).click();
-    await expect(guide.getByRole("button", { name: "Choose a Number", exact: true })).toBeEnabled();
-    await guide.getByRole("button", { name: "Choose a Number", exact: true }).click();
-    await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
-    await expect(page.getByRole("button", { name: "Find Numbers", exact: true })).toBeVisible();
-    expect(provisionCount).toBe(0);
-  });
-}
 
 test("Studio keeps a draft unsent until saved conversation history loads", async ({ page }) => {
   await mockWorkspace(page);

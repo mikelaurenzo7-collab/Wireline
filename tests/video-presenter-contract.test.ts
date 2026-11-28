@@ -117,10 +117,11 @@ describe("bot visual identity", () => {
     expect(shell).not.toContain("<AgentFace");
   });
 
-  it("keeps Fast Start and the tracked client tree free of avatar selection UI", () => {
-    const dialog = source("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain("Cancel");
-    expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
+  it("keeps Bo's first conversation and the tracked client tree free of avatar selection UI", () => {
+    // Bo is introduced with its Bot Mark; nothing in the conversation picks a face.
+    const firstRun = source("src/components/onboarding/BoOnboarding.tsx");
+    expect(firstRun).toContain("<BotMark");
+    expect(firstRun).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
     expect(existsSync(resolve(root, "src/components/AgentPresenceAvatarPicker.tsx"))).toBe(false);
   });
 });

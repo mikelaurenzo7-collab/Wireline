@@ -7,6 +7,8 @@ import { useStudioSessionState } from "../contexts/StudioSessionContext";
 import { useAgents } from "../contexts/AgentsContext";
 import { readWorkHandoff } from "../lib/work-handoff";
 import { setStudioBrowserTaskParams } from "../lib/studio-route-state";
+import { choosePlanHref } from "../lib/signup-intent";
+import { GO_LIVE_PLAN_COPY } from "../lib/wireline-onboarding-copy";
 
 /** Task intent shares the conversation's input; execution stays in the task controller. */
 export function useStudioTaskComposer({
@@ -232,7 +234,7 @@ export function useStudioTaskComposer({
           action={
             model.status.reason === "plan_required" ? (
               <Button asChild size="sm">
-                <Link to="/settings/billing">See plans</Link>
+                <Link to={choosePlanHref()}>{GO_LIVE_PLAN_COPY.cta}</Link>
               </Button>
             ) : undefined
           }

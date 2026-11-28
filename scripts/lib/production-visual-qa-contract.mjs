@@ -48,8 +48,6 @@ export const PRODUCTION_VISUAL_MARKETING_EXPECTATIONS = Object.freeze([
 
 export const PRODUCTION_VISUAL_AUTHENTICATED_EXPECTATIONS = Object.freeze([
   visualExpectation("/studio", "studio"),
-  visualExpectation("/studio?create=1", "studio", ["create-dialog"]),
-  visualExpectation("/templates", "templates"),
   visualExpectation("/knowledge", "knowledge"),
   visualExpectation("/connections", "connections"),
   visualExpectation("/connections/salesforce", "salesforce"),
@@ -294,7 +292,6 @@ export function routeReachedExactly(
     const selected = final.searchParams.get("agent");
     if (
       expectedPath === "/studio" &&
-      !search.has("create") &&
       !search.has("agent") &&
       selected &&
       rosterIds.includes(selected)

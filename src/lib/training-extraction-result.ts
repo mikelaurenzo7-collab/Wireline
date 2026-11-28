@@ -27,13 +27,3 @@ export function extractionBodyPersistedSomething(
     (typeof body?.personality === "string" && body.personality.trim().length > 0)
   );
 }
-
-/** /api/train/extract must confirm that it found or saved training. */
-export async function extractionPersistedSomething(response: Response): Promise<boolean> {
-  if (!response.ok) return false;
-  try {
-    return extractionBodyPersistedSomething((await response.json()) as TrainingExtractionBody);
-  } catch {
-    return false;
-  }
-}

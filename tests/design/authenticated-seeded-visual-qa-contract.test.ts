@@ -38,13 +38,14 @@ describe("authenticated seeded-state visual QA contract", () => {
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     const chrome = read("src/components/studio/StudioContextChrome.tsx");
     const routes = read("src/routes/AppRoutes.tsx");
+    const firstRun = read("src/components/onboarding/BoOnboarding.tsx");
 
     expect(routes).toContain('<Route path="/" element={<Navigate to="/studio" replace />} />');
     expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
-    expect(studio).toContain('title="Create Your Bot"');
-    expect(studio).toContain("Create Bot");
-    expect(studio).toContain("data-studio-first-run");
-    expect(studio).toContain("sm:pt-12 lg:pt-16");
+    // First run is Bo's conversation, not a create screen.
+    expect(studio).not.toContain("Create Your Bot");
+    expect(firstRun).toContain("data-bo-onboarding={step}");
+    expect(firstRun).toContain('role="log"');
     expect(studio).not.toMatch(/<EmptyState\s+fill\s+icon=\{Sparkles\}/);
     expect(studio).not.toContain("Good morning");
     expect(studio).not.toContain("dayGreeting");
@@ -52,7 +53,7 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(chrome).toContain('aria-label="Set Up Bot"');
     expect(chrome).not.toContain("Open Computer Panel");
     expect(studio).toContain('aria-label="Bot setup sections"');
-    expect(chrome).toContain('to="/studio?create=1"');
+    expect(chrome).not.toContain("create=1");
   });
 
   it("uses navigation semantics only for links and pressed-state semantics for in-page tabs", () => {

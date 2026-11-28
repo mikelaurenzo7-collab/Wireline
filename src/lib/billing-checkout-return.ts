@@ -1,5 +1,3 @@
-import type { PostCreateWizardPayload } from "./wireline-create-flow";
-
 export type CheckoutReturnFlow = "plan" | "runtime_balance" | "live_video";
 
 export type CheckoutReturnVerification = {
@@ -79,47 +77,6 @@ export function shouldFinalizeCheckoutReturn(outcome: CheckoutReturnOutcome): bo
     outcome === "expired" ||
     outcome === "invalid"
   );
-}
-
-/**
- * A paid plan Checkout may interrupt the post-create wizard at its Launch
- * step. Resume only that proven flow: Runtime Balance and unrelated billing
- * visits must remain on Billing, and an unfulfilled Checkout must retain its
- * verification proof instead of navigating away.
- */
-export function shouldResumePostCreateLaunch(
-  flow: CheckoutReturnFlow,
-  outcome: CheckoutReturnOutcome,
-  hasSavedWizard: boolean,
-  savedStep: string | null,
-): boolean {
-  return (
-    flow === "plan" &&
-    outcome === "fulfilled" &&
-    hasSavedWizard &&
-    (savedStep === "launch" || savedStep === "wire")
-  );
-}
-
-/**
- * Clear a stale activation rejection only for the Bot whose saved Launch guide
- * started this verified plan return. Keep current identity results and the
- * completed bootstrap marker; the durable job still owns number provisioning.
- */
-export function activatedPostCreateWizard(
-  flow: CheckoutReturnFlow,
-  outcome: CheckoutReturnOutcome,
-  expectedAgentId: string | null,
-  wizard: PostCreateWizardPayload | null,
-  savedStep: string | null,
-): PostCreateWizardPayload | null {
-  if (
-    !expectedAgentId ||
-    !wizard ||
-    wizard.agentId !== expectedAgentId ||
-    !shouldResumePostCreateLaunch(flow, outcome, true, savedStep)
-  ) return null;
-  return { ...wizard, phoneActivationRequired: false };
 }
 
 export function checkoutReturnUrlWithoutProof(

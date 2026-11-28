@@ -263,38 +263,38 @@ describe("the enrichment SLO reports the window, not the lifetime", () => {
   });
 });
 
-describe("Studio only clears the essentials box when something was stored", () => {
-  const source = read("src/components/StudioAgentWorkspacePanel.tsx");
+describe("Bo's first conversation moves on only when something was stored", () => {
+  const source = read("src/components/onboarding/BoOnboarding.tsx");
 
   it("reads the readiness counts rather than trusting the 200", () => {
-    expect(source).toContain("extractionBodyPersistedSomething");
+    expect(source).toContain("if (!extractionBodyPersistedSomething(body)) return null;");
     const check = read("src/lib/training-extraction-result.ts");
     expect(check).toContain("readiness");
   });
 
   it("keeps the Account Holder's typing when nothing was captured", () => {
-    const apply = source.slice(source.indexOf("async function applySetup"));
-    const capture = apply.indexOf("if (!extractionBodyPersistedSomething(body))");
-    const clear = apply.indexOf(
-      'setupDrafts.confirm(setupAgentId, { knowledge: edits.knowledge }, { knowledge: "" })',
-    );
+    const submit = source.slice(source.indexOf("function submitAnswer"));
+    const capture = submit.indexOf("if (!reply) {");
+    const moveOn = submit.indexOf("advance(", capture);
     expect(capture).toBeGreaterThan(-1);
-    expect(clear).toBeGreaterThan(capture);
-    expect(apply.slice(capture, clear)).toMatch(
-      /if \(!extractionBodyPersistedSomething\(body\)\) \{\s+throw new Error\(/,
+    expect(moveOn).toBeGreaterThan(capture);
+    // Nothing saved: take the answer back out of the transcript and stay on
+    // the question with the text still in the box (only advance clears it).
+    expect(submit.slice(capture, moveOn)).toMatch(/if \(!reply\) \{\s+unsay\(sent\);/);
+    expect(submit.slice(capture, moveOn)).toContain("return;");
+    const advance = source.slice(source.indexOf("function advance("));
+    expect(advance.slice(0, advance.indexOf('say("bo", questionFor(to));'))).toContain(
+      'setDraft("");',
     );
-    expect(apply.slice(capture, clear)).toContain("if (!isCurrentOwner()) return;");
   });
 
-  it("does not claim the setup is ready to test when the facts were dropped", () => {
-    const apply = source.slice(source.indexOf("async function applySetup"));
-    const capture = apply.indexOf("if (!extractionBodyPersistedSomething(body))");
-    const notice = apply.indexOf('setSetupNotice("Saved.');
-    const recovery = apply.indexOf("catch (reason)", notice);
+  it("does not say it saved anything when the facts were dropped", () => {
+    const submit = source.slice(source.indexOf("function submitAnswer"));
+    const capture = submit.indexOf("if (!reply) {");
+    const saved = submit.indexOf('say("bo", `Got it. ${reply}`);');
     expect(capture).toBeGreaterThan(-1);
-    expect(notice).toBeGreaterThan(capture);
-    expect(recovery).toBeGreaterThan(notice);
-    expect(apply.slice(recovery)).toContain("setSetupError(");
+    expect(saved).toBeGreaterThan(capture);
+    expect(source).toContain("if (current()) setError(");
   });
 });
 

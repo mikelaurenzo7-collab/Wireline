@@ -15,7 +15,7 @@ const AUTHENTICATED_SURFACE_GLOBS = [
   "src/pages/ClientAppsPage.tsx",
   "src/pages/ConnectionsPage.tsx",
   "src/components/WorkspaceShell.tsx",
-  "src/components/CreateAgentDialog.tsx",
+  "src/components/onboarding/BoOnboarding.tsx",
   "src/components/StudioWorkroom.tsx",
   "src/components/CallLogsClaude.tsx",
 ];

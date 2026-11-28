@@ -62,10 +62,12 @@ export type WorkspaceFieldKey =
   | "name"
   | "auto_zoom_link"
   | "autonomy_level"
-  | "operating_rule";
+  | "operating_rule"
+  | "business_fact"
+  | "owner_memory";
 
 interface FieldSpec {
-  /** Drizzle column on `schema.agents`; null for an additive directive. */
+  /** Drizzle column on `schema.agents`; null for an additive rule or fact. */
   column:
     | "firstMessage"
     | "personalityVibe"
@@ -81,12 +83,19 @@ interface FieldSpec {
     | "autonomyLevel"
     | null;
   label: string;
-  kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url" | "directive";
+  kind:
+    "text" | "vibe" | "phone" | "email" | "boolean" | "url" | "directive" | "knowledge" | "memory";
   maxLen: number;
 }
 
 export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
   operating_rule: { column: null, label: "Operating rule", kind: "directive", maxLen: 2000 },
+  // What the owner tells the chat about the business is saved to Knowledge,
+  // so talking to the Bot is the one way to teach it.
+  business_fact: { column: null, label: "Knowledge fact", kind: "knowledge", maxLen: 2000 },
+  // A private note about the owner themselves, used in this chat and computer
+  // tasks and never with customers.
+  owner_memory: { column: null, label: "About you", kind: "memory", maxLen: 500 },
   first_message: {
     column: "firstMessage",
     label: "Greeting (first message)",
@@ -278,8 +287,9 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
       config_changes: {
         type: "array",
         description:
-          "Concrete settings changes you propose. ONLY include when the Account Holder clearly asked to " +
-          "change behaviour/config. Fill `value` with the exact final text/value. Do the work for them.",
+          "Concrete settings changes and business facts you propose. ONLY include when the Account Holder " +
+          "clearly asked to change behaviour/config or told you a fact about the business to remember " +
+          "(business_fact). Fill `value` with the exact final text/value. Do the work for them.",
         items: {
           type: "object",
           properties: {
@@ -416,10 +426,11 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
 Your job each turn:
 1. Reply ${coachAsDirector ? "as the Director" : "in first person, in character as " + name}: warm, concise, never salesy.
 2. If they ask to change how ${coachAsDirector ? "this agent behaves" : "you behave"}, FILL OUT the exact change in config_changes with the final value (don't tell them to go edit a tab, prepare it for one-click approval). Only the allowlisted fields below can be changed this way.
-3. If they ask to gain/lose a capability ("turn on SMS", "stop booking appointments"), add it to tool_toggles.
-4. If they explicitly ask you to contact someone (email/text/call), add it to actions with a clear draft.
-5. If they ask to run connected integration work (CRM lookup, Shopify order, Slack alert, calendar, DocuSign), add integration_jobs with a clear query.
-6. If nothing actionable was asked, just reply. Leave the arrays empty.
+3. If they tell you something about the business (prices, hours, services, service area, policies, people, answers to common questions), add one business_fact per distinct fact so you can use it with customers. This is how they teach you.
+4. If they ask to gain/lose a capability ("turn on SMS", "stop booking appointments"), add it to tool_toggles.
+5. If they explicitly ask you to contact someone (email/text/call), add it to actions with a clear draft.
+6. If they ask to run connected integration work (CRM lookup, Shopify order, Slack alert, calendar, DocuSign), add integration_jobs with a clear query.
+7. If nothing actionable was asked, just reply. Leave the arrays empty.
 
 Creative collaborator mode (chat-only, no extra tools required):
 - You CAN draft full deliverables in your reply: business plans, GTM one-pagers, marketing copy, email sequences, SOPs, objection playbooks, meeting agendas, and logo/brand briefs.
@@ -436,6 +447,8 @@ Rules:
 - For personality_vibe, value MUST be one of: warm, playful, authoritative.
 - For autonomy_level, value MUST be one of: ${WORKSPACE_AUTONOMY_GUIDE}. A Bot starts on auto: it works on its own and decides when to check with the Account Holder. Propose full only when they ask for it never to check, and supervised or draft only when they ask it to check first.
 - For explicit new operating rules, include one operating_rule proposal per distinct instruction. This appends rules without replacing existing rules. Describe only the changes included in the proposal cards. If the Account Holder asks to replace or edit an existing rule, explain that this chat cannot do that; direct them to Knowledge → Rules to edit the current rule. Do not propose an additive operating_rule as a replacement.
+- An owner_memory is something private about the Account Holder themselves (how they like updates, their time zone, who they are). It is used only in this chat and computer tasks, never with customers. Propose one only when they ask you to remember something about them.
+- A business_fact is what you know (e.g. "Service calls are $89."); an operating_rule is how you must behave (e.g. "Never quote a repair price."). Write each business_fact as one short standalone sentence in the Account Holder's terms. Skip facts already in Saved business facts. If a new fact contradicts a saved one (a new price, new hours), do not propose it; tell them to edit the saved fact in Knowledge so you never hold two answers. Saving adds it to Knowledge, where they can review, edit, or remove anything you know.
 - Approving transfer_phone turns on live transfer: callers who ask for a person are transferred to that number. Say so in that change's summary.
 - Never claim a proposal has been saved or an external action has happened. Saving and dispatch require separate approval.
 - Everything you propose is a PROPOSAL the Account Holder approves. Say so naturally ("I've drafted… approve it when ready").
@@ -553,9 +566,11 @@ export function normalizePlan(
       const key = field as WorkspaceFieldKey;
       const value = validateFieldValue(key, (c as Record<string, unknown>).value);
       if (value === null) continue;
-      if (key === "operating_rule") {
-        if (seenRules.has(value)) continue;
-        seenRules.add(value);
+      if (key === "operating_rule" || key === "business_fact" || key === "owner_memory") {
+        // Rules and facts are additive: keep each distinct one reviewable.
+        const additiveKey = `${key}:${value}`;
+        if (seenRules.has(additiveKey)) continue;
+        seenRules.add(additiveKey);
       } else {
         if (seenFields.has(key)) continue;
         seenFields.add(key);

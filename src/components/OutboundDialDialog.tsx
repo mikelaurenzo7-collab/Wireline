@@ -513,13 +513,13 @@ function DirectOutboundDialDialog({
             </p>
           ) : agents.length === 0 ? (
             <p className="px-6 py-8 text-sm text-muted-foreground">
-              Create a Bot before placing a call.{" "}
+              Meet your Bot before placing a call.{" "}
               <Link
-                to="/studio?create=1"
+                to="/studio"
                 onClick={closeForNavigation}
                 className="text-brand underline underline-offset-2"
               >
-                Create a Bot
+                Open Workspace
               </Link>
               .
             </p>

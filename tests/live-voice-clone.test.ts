@@ -220,8 +220,12 @@ describe("clone discoverability and stock voice undo", () => {
   });
 
   it("links the picker and short routes to the clone studio", () => {
-    expect(picker).toContain("Clone Voice");
-    expect(picker).toContain("LIVE_VOICE_ANCHOR_ID");
+    // The catalog comes first; the clone studio follows it under its own heading.
+    expect(picker).not.toContain("scrollToClone");
+    expect(picker.indexOf("<PhoneVoiceCatalog")).toBeLessThan(
+      picker.indexOf("<LiveVoiceCloneStudio"),
+    );
+    expect(picker).toContain("anchorId={LIVE_VOICE_ANCHOR_ID}");
     for (const path of ['path="/voice"', 'path="/voices"', 'path="/voice-clone"'])
       expect(routes).toContain(path);
     expect(routes).toContain('search.set("section", "setup")');

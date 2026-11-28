@@ -1528,16 +1528,16 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
   await expect(page.getByRole("button", { name: "Start Task" })).toBeEnabled();
 });
 
-test("an empty roster shows Bot creation before computer setup", async ({ page }) => {
+test("an empty roster sends the owner to meet Bo before computer setup", async ({ page }) => {
   await mockComputer(page, {
     status: { available: false, reason: "not_configured" },
     agents: [],
     tasks: [],
   });
   await page.goto("/computer");
-  await expect(page.getByRole("link", { name: "Create a Bot", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Open Workspace", exact: true })).toHaveAttribute(
     "href",
-    "/studio?create=1",
+    "/studio",
   );
   await expect(page.getByText("Your Bot's Computer Is Being Set Up")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "What should your Bot do?" })).toHaveCount(0);
@@ -1555,7 +1555,8 @@ test("an account without a paid plan sees one clear upgrade path", async ({ page
   });
   await page.goto("/computer");
   await expect(page.getByText("Give Your Bot Its Own Computer")).toBeVisible();
-  await expect(page.getByRole("link", { name: "See Plans" })).toHaveAttribute(
+  // Every place a plan is offered uses the same words and the same link.
+  await expect(page.getByRole("link", { name: "Choose a Plan" })).toHaveAttribute(
     "href",
     "/settings/billing",
   );

@@ -7,12 +7,7 @@ import {
   ALWAYS_ON_AGENT_TOOL_NAMES,
   type AgentToolName,
 } from "../src/lib/agent-capabilities";
-import {
-  ANOTHER_BOT_HREF,
-  canOfferAnotherBot,
-  canOfferAnotherLine,
-  shouldOpenExistingBot,
-} from "../src/lib/bot-roster-policy";
+import { canOfferAnotherLine } from "../src/lib/bot-roster-policy";
 import { BOT_TASKS, botTaskTools, isBotTaskEnabled, setBotTaskEnabled } from "../src/lib/bot-tasks";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -20,26 +15,15 @@ const everyTool = () => true;
 const task = (id: string) => BOT_TASKS.find((candidate) => candidate.id === id)!;
 
 describe("one Bot, one line roster policy", () => {
-  it("offers another Bot only with none yet or to a workspace already running several", () => {
-    expect(canOfferAnotherBot(0)).toBe(true);
-    expect(canOfferAnotherBot(1)).toBe(false);
-    expect(canOfferAnotherBot(2)).toBe(true);
-  });
-
-  it("sends a create link to the existing Bot unless Advanced asked for another", () => {
-    expect(
-      shouldOpenExistingBot({ createRequested: true, anotherRequested: false, botCount: 1 }),
-    ).toBe(true);
-    expect(
-      shouldOpenExistingBot({ createRequested: true, anotherRequested: true, botCount: 1 }),
-    ).toBe(false);
-    expect(
-      shouldOpenExistingBot({ createRequested: true, anotherRequested: false, botCount: 0 }),
-    ).toBe(false);
-    expect(
-      shouldOpenExistingBot({ createRequested: true, anotherRequested: false, botCount: 3 }),
-    ).toBe(false);
-    expect(ANOTHER_BOT_HREF).toBe("/studio?create=1&another=1");
+  it("offers no way to create another Bot: an account without one meets Bo", () => {
+    const policy = read("src/lib/bot-roster-policy.ts");
+    expect(policy).not.toMatch(/canOfferAnotherBot|shouldOpenExistingBot|ANOTHER_BOT_HREF/);
+    const studio = read("src/pages/AgentStudioHome.tsx");
+    expect(studio).toContain("<BoOnboarding");
+    expect(studio).toContain('const RETIRED_CREATE_PARAMS = ["create", "another"] as const;');
+    expect(read("src/routes/agent-routes-v2.ts")).toContain(
+      "const onlyIfNone = req.body?.only_if_none === true;",
+    );
   });
 
   it("keeps one line per single-Bot business", () => {
@@ -48,17 +32,18 @@ describe("one Bot, one line roster policy", () => {
     expect(canOfferAnotherLine({ lineCount: 1, botCount: 2 })).toBe(true);
   });
 
-  it("wires the policy into Studio, the rail, the palette, Lines and Settings", () => {
-    expect(read("src/pages/AgentStudioHome.tsx")).toContain("shouldOpenExistingBot({");
-    expect(read("src/components/WorkspaceShell.tsx")).toContain(
-      "canOfferAnotherBot(agents.length)",
-    );
-    expect(read("src/components/studio/StudioContextChrome.tsx")).toContain(
-      "canOfferAnotherBot(agents.length)",
-    );
-    expect(read("src/components/CommandBar.tsx")).toContain('command.id !== "create-bot"');
+  it("keeps add-a-Bot controls out of Studio, the rail, the palette and Settings", () => {
+    for (const path of [
+      "src/components/WorkspaceShell.tsx",
+      "src/components/studio/StudioContextChrome.tsx",
+      "src/components/CommandBar.tsx",
+      "src/pages/SettingsPage.tsx",
+    ]) {
+      const source = read(path);
+      expect(source).not.toContain("create=1");
+      expect(source).not.toMatch(/Add a Bot|Add Bot|Create a Bot|"create-bot"/);
+    }
     expect(read("src/components/PhoneSetupPanel.tsx")).toContain("canOfferAnotherLine({");
-    expect(read("src/pages/SettingsPage.tsx")).toContain("ANOTHER_BOT_HREF");
   });
 });
 

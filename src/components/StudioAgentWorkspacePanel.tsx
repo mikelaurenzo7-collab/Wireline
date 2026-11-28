@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
+import { BookOpen, CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
@@ -8,20 +8,7 @@ import { readSetupDeliveryTone } from "../lib/compose-setup-personality";
 import { OPENING_GREETING_PREFIX } from "../lib/agent-greeting";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  CREATE_BRIEF_MAX_CHARS,
-  clearCreateBrief,
-  isCreateBriefRecoveryOwner,
-  isCreateBriefTraining,
-  readCreateBrief,
-  rememberCreateBrief,
-  useCreateBriefTraining,
-} from "../lib/create-brief-recovery";
-import { readPostCreateWizard } from "../lib/wireline-create-flow";
-import {
-  extractionBodyPersistedSomething,
-  type TrainingExtractionBody,
-} from "../lib/training-extraction-result";
+import { isSignedInOwner } from "../lib/signed-in-owner";
 import { createStudioSetupDrafts, type StudioSetupDrafts } from "../lib/studio-setup-drafts";
 import {
   BOT_PERMISSION_LABELS,
@@ -63,10 +50,10 @@ type AgentSetupResponse = {
   knowledge?: unknown[];
 };
 
-/** What the Bot already knows, so the add box never reads as an empty Bot. */
+/** What the Bot knows. Teaching happens in chat; Knowledge is where it is kept. */
 function knowledgeSummaryLabel(summary: { facts: number; rules: number }) {
   if (summary.facts === 0 && summary.rules === 0) {
-    return "No saved facts or rules yet.";
+    return "Nothing saved yet.";
   }
   const facts = `${summary.facts} ${summary.facts === 1 ? "fact" : "facts"}`;
   const rules = `${summary.rules} ${summary.rules === 1 ? "rule" : "rules"}`;
@@ -125,7 +112,6 @@ export default function StudioAgentWorkspacePanel({
     tone: setupPersonality,
     markKey: setupMarkKey,
     greeting: setupGreeting,
-    knowledge: setupKnowledge,
     permission,
   } = snapshot.values;
   // A name typed in the Name field and not yet saved; Save Changes saves it too.
@@ -133,7 +119,6 @@ export default function StudioAgentWorkspacePanel({
   const [namePending, setNamePending] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const applyingSetup = snapshot.saving || savingName;
-  const trainingBrief = useCreateBriefTraining(user?.id ?? "", agentId);
   const toneOptions = PERSONALITIES.some((tone) => tone === setupPersonality)
     ? PERSONALITIES
     : [...PERSONALITIES, setupPersonality];
@@ -153,7 +138,6 @@ export default function StudioAgentWorkspacePanel({
     [agentId, agents],
   );
   const [permissionError, setPermissionError] = useState<string | null>(null);
-  const [recoveringBrief, setRecoveringBrief] = useState(false);
   const [loadingSetup, setLoadingSetup] = useState(true);
   const [setupLoadError, setSetupLoadError] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
@@ -212,9 +196,6 @@ export default function StudioAgentWorkspacePanel({
     let cancelled = false;
     setLoadingSetup(true);
     setSetupLoadError(null);
-    const recovered = user?.id && !trainingBrief ? readCreateBrief(user.id, agentId) : "";
-    setupDrafts.seedKnowledge(agentId, recovered);
-    setRecoveringBrief(Boolean(recovered));
     const startedRevision = setupDrafts.revision();
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
@@ -234,7 +215,6 @@ export default function StudioAgentWorkspacePanel({
             markKey: isBotMarkKey(data.mark_key) ? data.mark_key : defaultBotMarkKey(agentId),
             tone: inferPersonality(personality),
             greeting: existingGreeting(data),
-            knowledge: "",
             permission: isBotPermissionLevel(data.autonomy) ? data.autonomy : "auto",
           },
           startedRevision,
@@ -253,7 +233,7 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, reloadKey, user?.id, setupDrafts, trainingBrief]);
+  }, [agentId, reloadKey, user?.id, setupDrafts]);
 
   async function saveManual(type: "tone" | "directive", content: string, replacePrefix?: string) {
     const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
@@ -270,7 +250,7 @@ export default function StudioAgentWorkspacePanel({
     return (
       activeAgentIdRef.current === targetAgentId &&
       activeUserIdRef.current === targetUserId &&
-      isCreateBriefRecoveryOwner(targetUserId)
+      isSignedInOwner(targetUserId)
     );
   }
 
@@ -328,7 +308,6 @@ export default function StudioAgentWorkspacePanel({
     if (
       !agentId ||
       !user?.id ||
-      isCreateBriefTraining(user.id, agentId) ||
       !snapshot.dirty ||
       !isCurrentAgent(agentId, user.id) ||
       !setupDrafts.beginSave(agentId)
@@ -336,13 +315,12 @@ export default function StudioAgentWorkspacePanel({
       return;
     const setupAgentId = agentId;
     const setupUserId = user.id;
-    const isCurrentOwner = () => isCreateBriefRecoveryOwner(setupUserId);
+    const isCurrentOwner = () => isSignedInOwner(setupUserId);
     const showResult = () => isCurrentAgent(setupAgentId, setupUserId);
     const { edits } = snapshot;
     setSetupError(null);
     setSetupNotice(null);
     let confirmedChange = false;
-    let trainingAlreadySaved = false;
     try {
       if (edits.markKey !== undefined) {
         const markResponse = await authFetch(
@@ -380,39 +358,8 @@ export default function StudioAgentWorkspacePanel({
         setupDrafts.confirm(setupAgentId, { greeting: edits.greeting }, { greeting });
         confirmedChange = true;
       }
-      if (!isCurrentOwner()) return;
-      const knowledge = edits.knowledge?.trim();
-      if (knowledge) {
-        const knowledgeResponse = await authFetch("/api/train/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agentId: setupAgentId, message: knowledge }),
-        });
-        const body = (await knowledgeResponse.json().catch(() => null)) as
-          (TrainingExtractionBody & { error?: unknown }) | null;
-        if (!knowledgeResponse.ok) {
-          const detail =
-            typeof body?.error === "string" && body.error.trim()
-              ? body.error
-              : "Knowledge and rules could not be saved.";
-          throw new Error(detail);
-        }
-        if (!extractionBodyPersistedSomething(body)) {
-          throw new Error("Add a specific fact, preference, or operating rule and try again.");
-        }
-        if (!isCurrentOwner()) return;
-        clearCreateBrief(setupUserId, setupAgentId, knowledge);
-        if (showResult()) setRecoveringBrief(false);
-        trainingAlreadySaved = body?.alreadySaved === true;
-        confirmedChange ||= !trainingAlreadySaved;
-      }
-      if (edits.knowledge !== undefined) {
-        setupDrafts.confirm(setupAgentId, { knowledge: edits.knowledge }, { knowledge: "" });
-      }
       if (confirmedChange && showResult()) {
         setSetupNotice("Saved. Try the updated Bot before sending live traffic.");
-      } else if (trainingAlreadySaved && showResult()) {
-        setSetupNotice("This is already saved in Knowledge.");
       }
     } catch (reason) {
       if (showResult()) {
@@ -421,7 +368,7 @@ export default function StudioAgentWorkspacePanel({
       }
     } finally {
       setupDrafts.endSave(setupAgentId);
-      if ((confirmedChange || trainingAlreadySaved) && isCurrentOwner())
+      if (confirmedChange && isCurrentOwner())
         window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     }
   }
@@ -456,12 +403,6 @@ export default function StudioAgentWorkspacePanel({
           ) : null}
         </header>
 
-        {/* The setup guide says this while it is open over this panel; once it
-            closes, this line explains why the brief is locked. */}
-        {trainingBrief && readPostCreateWizard()?.agentId !== agentId ? (
-          <StatusNotice tone="info">Applying your starting brief…</StatusNotice>
-        ) : null}
-
         <section className={sectionClass} aria-label="Name">
           <BotNameField
             agentId={agentId}
@@ -473,7 +414,7 @@ export default function StudioAgentWorkspacePanel({
           />
         </section>
 
-        <section className={sectionClass} aria-label="Tone and knowledge">
+        <section className={sectionClass} aria-label="Tone and greeting">
           {loadingSetup ? (
             <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -554,46 +495,25 @@ export default function StudioAgentWorkspacePanel({
                 </span>
               </div>
 
-              <div className="grid gap-2">
-                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-                  <label
-                    className="text-sm font-semibold text-foreground"
-                    htmlFor="setup-knowledge"
-                  >
-                    Add facts or rules{" "}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                  </label>
-                  <Link
-                    to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
-                    className="shrink-0 text-xs font-medium text-primary hover:underline"
-                  >
-                    Manage Knowledge
-                  </Link>
-                </div>
-                {knowledgeSummary ? (
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    {knowledgeSummaryLabel(knowledgeSummary)}
+              {/* Knowledge is taught by telling the Bot in chat and kept on the
+                  Knowledge page. Set Up only says how much it knows. */}
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    What {agentName || "Your Bot"} Knows
                   </p>
-                ) : null}
-                <textarea
-                  id="setup-knowledge"
-                  disabled={applyingSetup || trainingBrief}
-                  maxLength={recoveringBrief ? CREATE_BRIEF_MAX_CHARS : undefined}
-                  value={setupKnowledge}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    setupDrafts.edit(agentId, "knowledge", next);
-                    if (recoveringBrief && user?.id) {
-                      if (next.trim()) rememberCreateBrief(user.id, agentId, next);
-                      else {
-                        clearCreateBrief(user.id, agentId);
-                        setRecoveringBrief(false);
-                      }
-                    }
-                  }}
-                  className={`${compact ? "min-h-20" : "min-h-24"} w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50`}
-                  placeholder="Facts, preferences, policies, calendar rules, and handoffs…"
-                />
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {knowledgeSummary ? `${knowledgeSummaryLabel(knowledgeSummary)} ` : ""}
+                    To teach it something new, tell it in chat.
+                  </p>
+                </div>
+                <Link
+                  to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <BookOpen className="size-3.5" aria-hidden="true" />
+                  Open Knowledge
+                </Link>
               </div>
 
               <details className="group rounded-xl border border-border bg-background">
@@ -618,11 +538,6 @@ export default function StudioAgentWorkspacePanel({
               </details>
 
               {setupNotice ? <StatusNotice tone="success">{setupNotice}</StatusNotice> : null}
-              {recoveringBrief ? (
-                <StatusNotice tone="info">
-                  Your starting brief is preserved above. Review it, then save changes to apply it.
-                </StatusNotice>
-              ) : null}
               {setupError ? (
                 <StatusNotice tone="destructive" title="Needs Attention">
                   {setupError}
@@ -665,7 +580,7 @@ export default function StudioAgentWorkspacePanel({
                 size={compact ? "sm" : undefined}
                 className="h-auto whitespace-normal"
                 onClick={() => void applySetup()}
-                disabled={applyingSetup || trainingBrief || !(snapshot.dirty || namePending)}
+                disabled={applyingSetup || !(snapshot.dirty || namePending)}
               >
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />

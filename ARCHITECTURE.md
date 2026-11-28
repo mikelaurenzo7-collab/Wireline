@@ -39,19 +39,19 @@ The Details panel's Reports row links to the existing account-level post-call ou
 
 ## Frontend surfaces
 
-| Concern              | Source                                                                                                                                                                                |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Entry                | `src/main.tsx`                                                                                                                                                                        |
-| Routing              | `src/App.tsx`, `src/routes/AppRoutes.tsx`                                                                                                                                             |
-| Session boundary     | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx`                                                                                                             |
-| Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` resolve to `/studio`                                                             |
-| Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                                                               |
-| Train                | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
-| Launch / Connections | `src/pages/ConnectionsPage.tsx`                                                                                                                                                       |
-| Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                                                           |
-| People               | `src/pages/PeoplePage.tsx`, `src/lib/people-client.ts`, `src/lib/people/`, `src/routes/people-routes.ts`                                                                              |
-| Bot roster/state     | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
-| Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                            |
+| Concern              | Source                                                                                                                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entry                | `src/main.tsx`                                                                                                                                                                      |
+| Routing              | `src/App.tsx`, `src/routes/AppRoutes.tsx`                                                                                                                                           |
+| Session boundary     | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx`                                                                                                           |
+| Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` resolve to `/studio`                                                           |
+| Meet Bo (create)     | `src/pages/AgentStudioHome.tsx`, `src/components/onboarding/BoOnboarding.tsx`, `src/lib/bo-onboarding.ts`; an account without a Bot gets Bo and four questions                      |
+| Knowledge (library)  | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/`; teaching happens in the Workspace chat (`business_fact`, `owner_memory` cards) |
+| Launch / Connections | `src/pages/ConnectionsPage.tsx`                                                                                                                                                     |
+| Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                                                         |
+| People               | `src/pages/PeoplePage.tsx`, `src/lib/people-client.ts`, `src/lib/people/`, `src/routes/people-routes.ts`                                                                            |
+| Bot roster/state     | `src/contexts/AgentsContext.tsx`                                                                                                                                                    |
+| Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                          |
 
 The visual layer is intentionally restrained: the BotBound Design System uses a true-white light canvas, cool-neutral surfaces, violet actions, generous space, and accessible focus states. Light is the first-visit appearance; saved light, dark, or system preferences take precedence. Both appearances share one component and interaction system. Titles and controls use Title Case or uppercase; generated conversation prose remains naturally cased.
 
@@ -63,7 +63,7 @@ The visual layer is intentionally restrained: the BotBound Design System uses a 
 
 - Requires an authenticated user.
 - Enforces account entitlement and agent-cap rules.
-- Creates a Bot and starting personality in one transaction.
+- Creates a Bot and starting personality in one transaction. With `only_if_none: true` (Bo's first conversation) it returns the account's existing Bot instead, under the same per-account advisory lock, so two tabs cannot create two Bos.
 - Records an audit event and invalidates account caches.
 - Queues durable identity setup after the Bot record commits. Unpaid draft accounts allocate no live identity. BotBound Personal is a paid plan with a number and connected existing inbox; historical Free Builder labels and compatibility plan slugs do not grant paid entitlements. Paid channel entitlements independently authorize the customer-selected number and/or managed mailbox; Email-only has no carrier dependency, and Calls-only has no mailbox dependency. SMS activation also requires carrier readiness. Connected-client drafts remain private until explicitly activated in BotBound. Private microphone rehearsal and workflow review still precede customer traffic; a real-call test can execute enabled live actions.
 

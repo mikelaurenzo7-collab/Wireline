@@ -28,17 +28,16 @@ const PRODUCT_EVENT_ONCE_PREFIX = "wireline:product-event-once:";
 
 /**
  * Keep activation milestones semantically strict at the final client boundary.
- * The setup wizard may be deferred or skipped; those navigation actions must
- * not be persisted as launch readiness or a completed launch.
+ * Skipping or finishing a setup step later is navigation, not progress: it
+ * must not be persisted as launch readiness or a completed launch. Readiness
+ * needs saved training; a launch needs a live line and a rehearsal the owner
+ * actually started.
  */
 export function shouldDispatchProductEvent(
   input: Pick<ProductEventPayload, "event" | "metadata">,
 ): boolean {
-  if (
-    input.event === "launch_readiness_reached" &&
-    input.metadata?.source === "wizard_train_step"
-  ) {
-    return false;
+  if (input.event === "launch_readiness_reached") {
+    return input.metadata?.has_training === true;
   }
 
   if (input.event === "agent_launch_completed") {
@@ -147,6 +146,16 @@ function onceScope(
         "global",
     )
   );
+}
+
+/** Whether a once-only milestone has already fired for this scope in this browser. */
+export function hasEmittedProductEventOnce(event: ProductEventName, scope: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(`${PRODUCT_EVENT_ONCE_PREFIX}${event}:${scope}`) === "1";
+  } catch {
+    return false;
+  }
 }
 
 /** Fire a product event at most once per browser profile (activation milestones). */

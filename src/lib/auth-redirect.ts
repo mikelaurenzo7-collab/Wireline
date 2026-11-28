@@ -4,6 +4,7 @@ import {
   getSignupWedgeRecommendation,
   mergeSignupIntent,
   parseSignupIntent,
+  persistSignupIntent,
   recommendedPlanFromIntent,
   type SignupIntent,
 } from "./signup-intent";
@@ -107,9 +108,10 @@ export function persistOAuthReturnFromSearch(search: string): void {
   persistAuthRedirect(readRedirectFromSearch(search) || returningPaidIntentDestination(search));
 }
 
+/** Where an owner meets Bo. A starter id only chooses a personal assistant's posture. */
 export function firstBotSetupHref(template?: string): string {
-  if (template) return `/studio?create=1&template=${encodeURIComponent(template)}`;
-  return "/studio?create=1";
+  if (template) return `/studio?template=${encodeURIComponent(template)}`;
+  return "/studio";
 }
 
 export function resolvePostAuthDestination(
@@ -153,16 +155,11 @@ export function resolvePostAuthDestination(
       getSignupWedgeRecommendation(currentIntent?.signupWedge)?.templateId ||
       storedIntent?.preferredTemplateId ||
       getSignupWedgeRecommendation(storedIntent?.signupWedge)?.templateId;
-    // A bare /signup visit fills in a default plan for the form to show; that
-    // is not a choice, so it starts in setup like any other plain sign-up.
-    const plan = intent?.planIsDefault ? undefined : intent?.preferredPlanId;
-    // Setup and private rehearsal are free, so a new owner starts by building
-    // their Bot. Only a visitor who already picked a paid plan goes to review
-    // it first; everyone else meets plans when live work needs one.
-    if (plan === "personal" || !plan) return firstBotSetupHref(template);
-
-    const templateParam = template ? `&template=${encodeURIComponent(template)}` : "";
-    return `${activationBillingHref(intent)}&onboarding=1${templateParam}`;
+    // Every new owner meets Bo first; setup and private rehearsal are free.
+    // A plan picked on Pricing is remembered, so going live opens Billing with
+    // it already selected (choosePlanHref) instead of asking before Bo exists.
+    if (currentIntent?.preferredPlanId && intent) persistSignupIntent(intent);
+    return firstBotSetupHref(template);
   }
 
   const stored = readStoredValue(AUTH_REDIRECT_KEY);

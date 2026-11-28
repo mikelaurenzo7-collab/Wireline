@@ -55,7 +55,11 @@ import {
   storedStudioMessageMetadata,
 } from "../lib/studio-proposal-state";
 
-import { loadOwnerMemories, changeOwnerMemory } from "../lib/owner-memory-store";
+import {
+  addOwnerMemoryInTransaction,
+  changeOwnerMemory,
+  loadOwnerMemories,
+} from "../lib/owner-memory-store";
 import { ownerMemorySchema, ownerMemoryIdSchema } from "../lib/owner-memory";
 import { humanHandoffProblem, normalizeHandoffPhone } from "../lib/human-handoff-settings";
 import { withoutCarrierVendorName } from "../lib/sms-customer-errors";
@@ -838,7 +842,29 @@ router.post(
           value: rawValue.trim(),
         });
         if (review.metadata.savedProposalKeys.includes(review.ref.key)) return;
-        if (spec.kind === "directive") {
+        if (spec.kind === "memory") {
+          // The same private list hands-free "remember" and Knowledge > About
+          // You read; this transaction already holds the Bot's row lock.
+          await addOwnerMemoryInTransaction(tx, req.user.id, agentId, String(value));
+        } else if (spec.kind === "knowledge") {
+          // A fact the owner told the chat joins Knowledge once, like a fact
+          // typed anywhere else; the index sweep picks it up from there.
+          const [existing] = await tx
+            .select({ id: schema.knowledge.id })
+            .from(schema.knowledge)
+            .where(
+              and(
+                eq(schema.knowledge.agentId, agentId),
+                eq(schema.knowledge.userId, req.user.id),
+                eq(schema.knowledge.content, String(value)),
+              ),
+            )
+            .limit(1);
+          if (!existing)
+            await tx
+              .insert(schema.knowledge)
+              .values({ agentId, userId: req.user.id, content: String(value) });
+        } else if (spec.kind === "directive") {
           const [existing] = await tx
             .select({ id: schema.directives.id })
             .from(schema.directives)

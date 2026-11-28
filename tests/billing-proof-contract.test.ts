@@ -432,7 +432,7 @@ describe("billing proof contract", () => {
     const billing = read("src/pages/BillingSettings.tsx");
     expect(billing).toContain("planConfirmed: true,");
     expect(billing).toMatch(
-      /liveChannels\.channels\.includes\("voice"\) && liveChannels\.linesUsed === 0[\s\S]*?to="\/phone\?tab=setup">Choose Your Number/,
+      /liveChannels\.channels\.includes\("voice"\) && liveChannels\.linesUsed === 0[\s\S]*?to="\/phone\?tab=lines">Choose Your Number/,
     );
     expect(billing).toContain('<Link to="/inbox">Open Inbox</Link>');
   });

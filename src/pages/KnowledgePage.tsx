@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
-import { Mic } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -8,13 +8,15 @@ import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/Wor
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
-import KnowledgeQuickAdd from "../components/training/KnowledgeQuickAdd";
+import AboutYouMemories from "../components/training/AboutYouMemories";
 import WebsiteKnowledgeImport from "../components/training/WebsiteKnowledgeImport";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { buildAgentOptionLabels } from "../lib/agent-option-labels";
 
 function EmptyKnowledge() {
+  // The Workspace creates Bo for an account without a Bot, so this only shows
+  // until that first visit.
   return (
     <EmptyState
       headingAs="h2"
@@ -23,37 +25,36 @@ function EmptyKnowledge() {
       titleTone="ui"
       withHalo={false}
       className="wl-paper wl-paper-elevated mx-auto w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
-      title="Create a Bot to add knowledge"
-      actions={[{ label: "Create Bot", to: "/studio?create=1", primary: true }]}
+      title="Meet Your Bot First"
+      actions={[{ label: "Open Workspace", to: "/studio", primary: true }]}
     />
   );
 }
 
-export function KnowledgeEditor({ agentId }: { agentId: string }) {
+/**
+ * The library of what a Bot knows. Typing new knowledge happens in one place,
+ * the Workspace chat ("tell Bo"); this page adds what is too big to type
+ * (documents, a website) and lets the owner review, fix, or remove anything.
+ */
+export function KnowledgeEditor({ agentId, agentName }: { agentId: string; agentName: string }) {
   const [knowledgeRevision, setKnowledgeRevision] = useState(0);
   const [knowledgeBusy, setKnowledgeBusy] = useState(true);
   const [importing, setImporting] = useState(false);
-  const [teaching, setTeaching] = useState(false);
   return (
     <div className="space-y-5">
-      <KnowledgeQuickAdd
-        agentId={agentId}
-        disabled={knowledgeBusy || importing}
-        onSavingChange={setTeaching}
-        onSaved={() => setKnowledgeRevision((value) => value + 1)}
-      />
       <WebsiteKnowledgeImport
         agentId={agentId}
-        disabled={knowledgeBusy || teaching}
+        disabled={knowledgeBusy}
         onImportingChange={setImporting}
         onImported={() => setKnowledgeRevision((value) => value + 1)}
       />
       <KnowledgeBaseClaude
         key={knowledgeRevision}
         agentId={agentId}
-        externallyBusy={importing || teaching}
+        externallyBusy={importing}
         onInteractionChange={setKnowledgeBusy}
       />
+      <AboutYouMemories key={agentId} agentId={agentId} agentName={agentName} />
     </div>
   );
 }
@@ -71,6 +72,7 @@ export default function KnowledgePage() {
     requestedAgentId && !agents.some((agent) => agent.id === requestedAgentId),
   );
   const agentId = requestedAgentUnavailable ? "" : resolvedId || "";
+  const agentName = agents.find((agent) => agent.id === agentId)?.name || "Your Bot";
   const rawRequestedTab = params.get("tab");
   const populated = !loading && agents.length > 0;
 
@@ -99,9 +101,9 @@ export default function KnowledgePage() {
           size="sm"
           className="min-h-11 shrink-0 justify-center rounded-lg border-border/80 px-3.5 shadow-2xs sm:min-h-9"
         >
-          <Link to={`/studio?agent=${encodeURIComponent(agentId)}&workroom=test`}>
-            <Mic size={15} aria-hidden="true" />
-            Rehearse
+          <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>
+            <MessageCircle size={15} aria-hidden="true" />
+            Teach in Chat
           </Link>
         </Button>
       ) : null}
@@ -147,6 +149,12 @@ export default function KnowledgePage() {
       ) : (
         <WorkspacePageFrame mode="standard">
           <WorkspacePageIntro title="Knowledge" size="compact" action={secondaryControls} />
+          {!requestedAgentUnavailable && agentId ? (
+            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+              Everything {agentName} knows. To teach it something new, tell it in chat. Add
+              documents or your website here, and fix or remove anything.
+            </p>
+          ) : null}
 
           {requestedAgentUnavailable && !loading ? (
             <StatusNotice
@@ -165,7 +173,9 @@ export default function KnowledgePage() {
                 : "The Bot in this link is no longer available. Choose a Bot above before adding knowledge."}
             </StatusNotice>
           ) : null}
-          {!requestedAgentUnavailable ? <KnowledgeEditor key={agentId} agentId={agentId} /> : null}
+          {!requestedAgentUnavailable ? (
+            <KnowledgeEditor key={agentId} agentId={agentId} agentName={agentName} />
+          ) : null}
         </WorkspacePageFrame>
       )}
     </WorkspaceShell>

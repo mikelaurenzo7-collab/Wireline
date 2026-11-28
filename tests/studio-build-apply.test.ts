@@ -4,6 +4,8 @@ type Handler = (req: unknown, res: unknown) => Promise<unknown>;
 const h = vi.hoisted(() => ({
   routes: new Map<string, Handler>(),
   rules: [] as string[],
+  facts: [] as string[],
+  memories: [] as Array<{ user: string; agent: string; content: string }>,
   firstMessage: "Original greeting",
   personality: "Protect private information.",
   owns: true,
@@ -52,6 +54,16 @@ vi.mock("../src/lib/agent-ownership", () => ({
   }),
 }));
 vi.mock("../src/lib/action-engine", () => ({ executeAction: h.executeAction }));
+vi.mock("../src/lib/owner-memory-store", () => ({
+  loadOwnerMemories: vi.fn(async () => []),
+  changeOwnerMemory: vi.fn(),
+  addOwnerMemoryInTransaction: vi.fn(
+    async (tx: unknown, user: string, agent: string, content: string) => {
+      expect(tx).toBeTruthy();
+      h.memories.push({ user, agent, content });
+    },
+  ),
+}));
 vi.mock("../src/lib/server-context", async () => {
   const { getTableName } = await import("drizzle-orm");
   const { PgDialect } = await import("drizzle-orm/pg-core");
@@ -96,9 +108,13 @@ vi.mock("../src/lib/server-context", async () => {
                         ]
                       : name === "wireline_phone_numbers"
                         ? h.phones.map((phone) => ({ phone }))
-                        : h.rules.includes(String(query.params.at(-1)))
-                          ? [{ id: 1n }]
-                          : [];
+                        : name === "wireline_knowledge"
+                          ? h.facts.includes(String(query.params.at(-1)))
+                            ? [{ id: 1n }]
+                            : []
+                          : h.rules.includes(String(query.params.at(-1)))
+                            ? [{ id: 1n }]
+                            : [];
                 const result = () =>
                   Object.assign(Promise.resolve(rows), {
                     for: async (mode: string) => {
@@ -138,7 +154,8 @@ vi.mock("../src/lib/server-context", async () => {
                     h.personality = value.content;
                   },
                 };
-              h.rules.push(value.content);
+              if (getTableName(table) === "wireline_knowledge") h.facts.push(value.content);
+              else h.rules.push(value.content);
               return Promise.resolve();
             },
           }),
@@ -177,6 +194,8 @@ async function apply(field: string, value: string) {
 
 beforeEach(() => {
   h.rules = ["Keep the caller's information private.", "Opening greeting: Old Studio greeting"];
+  h.facts = ["We serve Austin and Round Rock."];
+  h.memories = [];
   h.firstMessage = "Original greeting";
   h.personality = "Protect private information.";
   h.owns = true;
@@ -205,6 +224,32 @@ describe("explicit Studio proposal application", () => {
       "Opening greeting: Old Studio greeting",
       "Confirm callback numbers.",
     ]);
+  });
+
+  it("saves a fact the owner told the chat to Knowledge once, not as a rule", async () => {
+    await Promise.all([
+      apply("business_fact", "Service calls are $89."),
+      apply("business_fact", "Service calls are $89."),
+    ]);
+    expect(h.facts).toEqual(["We serve Austin and Round Rock.", "Service calls are $89."]);
+    expect(h.rules).not.toContain("Service calls are $89.");
+    expect(await apply("business_fact", "We serve Austin and Round Rock.")).toMatchObject({
+      success: true,
+      field: "business_fact",
+    });
+    expect(h.facts).toEqual(["We serve Austin and Round Rock.", "Service calls are $89."]);
+  });
+
+  it("keeps a note about the owner private, in the Bot's locked transaction", async () => {
+    expect(await apply("owner_memory", "I like short updates.")).toMatchObject({
+      success: true,
+      field: "owner_memory",
+    });
+    expect(h.memories).toEqual([
+      { user: "tenant", agent: "bot", content: "I like short updates." },
+    ]);
+    expect(h.facts).not.toContain("I like short updates.");
+    expect(h.rules).not.toContain("I like short updates.");
   });
 
   it("removes a stale Studio override when approving a new Build greeting", async () => {

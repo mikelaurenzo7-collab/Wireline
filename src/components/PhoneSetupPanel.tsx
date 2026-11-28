@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useAgents } from "../contexts/AgentsContext";
 import { canOfferAnotherLine } from "../lib/bot-roster-policy";
 import { authFetch } from "../lib/api";
+import { emitProductEventOnce, hasEmittedProductEventOnce } from "../lib/product-event-client";
 import {
   fetchSelfServeCheckoutAvailable,
   isBillingSettingsPath,
@@ -600,6 +601,28 @@ export default function PhoneSetupPanel({
         );
       }
       setMessage(body.reused ? "Existing line connected." : "Line activated.");
+      for (const event of [
+        "wire_started",
+        "phone_channel_wired",
+        "number_wired",
+        "phone_number_provision_completed",
+      ] as const)
+        emitProductEventOnce({
+          event,
+          agentId: selectedAgentId,
+          metadata: { channel: "phone", source: "phone_setup" },
+        });
+      // A Bot with a line is launched once its owner has rehearsed it; the
+      // rehearsal may come first (the Workspace reports the other order).
+      emitProductEventOnce({
+        event: "agent_launch_completed",
+        agentId: selectedAgentId,
+        metadata: {
+          has_line: true,
+          test_started: hasEmittedProductEventOnce("first_test_call_started", selectedAgentId),
+          source: "phone_setup",
+        },
+      });
       setLiveNumberClosed(false);
       refreshAgents();
       await loadNumbers(selectedAgentId);
@@ -785,7 +808,7 @@ export default function PhoneSetupPanel({
                 </div>
               ) : (
                 <Button asChild variant="secondary">
-                  <Link to="/studio?create=1">Create Bot</Link>
+                  <Link to="/studio">Open Workspace</Link>
                 </Button>
               )}
             </label>

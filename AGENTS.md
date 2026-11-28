@@ -50,4 +50,4 @@ Use `npm run verify:full` before merge for release-impacting work. GitHub Action
 
 ### Product smoke
 
-A useful core smoke is sign-up followed by agent creation at `/studio?create=1`. Capacity responses are plan behavior, not necessarily application failures; validate them against `src/lib/plan-catalog.ts` and the current account state.
+A useful core smoke is sign-up followed by Bo's first conversation at `/studio`: an account without a Bot gets one, Bo, which asks about the business. Capacity responses are plan behavior, not necessarily application failures; validate them against `src/lib/plan-catalog.ts` and the current account state.

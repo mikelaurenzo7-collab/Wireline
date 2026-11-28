@@ -1,25 +1,12 @@
 /**
- * Post-signup onboarding copy — Account Holder-facing, BotBound-native.
- * Public marketing uses capability and outcome copy, without a setup sequence.
- * After create, the setup guide is Train → Voice → Rehearse → Launch.
+ * First-run copy, Account Holder-facing and BotBound-native.
+ *
+ * Every account has one Bot, Bo (DEFAULT_BOT_NAME in bot-name.ts). An account
+ * that opens the Workspace without a Bot gets Bo, and Bo's first conversation
+ * is the onboarding: the business name, then four questions whose answers go to
+ * Knowledge, then the things to do next. Public marketing uses capability and
+ * outcome copy, without a setup sequence.
  */
-
-/** Shown after Fast Start — Bot exists but activation (first useful call) pending. */
-export const ACTIVATION_PENDING_COPY = {
-  eyebrow: "One step left",
-  title: "Make Your First",
-  titleAccent: "Real Call",
-  subtitle: (agentName: string) =>
-    `${agentName} has a number. Call it to check the greeting, answers, and conversation.`,
-  phoneLabel: "Your live number",
-  dialCta: "Call your Bot",
-  browserTestTitle: "Private rehearsal (optional)",
-  browserTestDetail: "Hear your Bot's voice and answers in Set Up without calling the number.",
-  browserTestAction: "Open Set Up",
-  opsTitle: "Watch Calls",
-  opsDetail: "See the call land in real time once you dial in.",
-  opsAction: "Open Calls",
-} as const;
 
 export const ACTIVATION_NUDGE_COPY = {
   eyebrow: "First call",
@@ -27,57 +14,88 @@ export const ACTIVATION_NUDGE_COPY = {
   cta: "Call your Bot",
 } as const;
 
-/** Guided steps after create — Knowledge → Voice → Rehearse → Launch. */
-export const POST_CREATE_WIZARD_COPY = {
-  eyebrow: "Setup",
-  title: "Next Up for",
-  steps: {
-    train: {
-      label: "Knowledge",
-      title: "Teach It the Job",
-      detail: "Review its instructions. Add a site, document, or policy when needed.",
-      salesHint:
-        "Teach it what matters on day one, hear it privately, then put it on a live number.",
-      primary: "Open Knowledge",
-      secondary: "Choose Voice",
-    },
-    voice: {
-      label: "Voice",
-      title: "Choose Voice",
-      detail: "Pick a voice or clone your own. Change it anytime.",
-      primary: "Continue to Rehearse",
-    },
-    launch: {
-      label: "Launch",
-      title: "Put It on the Line",
-      detail: "Connect a dedicated number so callers can reach this Bot directly.",
-      primary: "Choose a Number",
-      skip: "Launch Later",
-    },
-    test: {
-      label: "Rehearse",
-      title: "Hear It First",
-      detail:
-        "Practice privately with your built-in voice. To hear a cloned voice in a conversation, connect a number and make a real test call.",
-      primary: "Continue to Launch",
-      skip: "Skip Rehearsal",
-    },
+/** Bo's first conversation, one question at a time. */
+export const BO_ONBOARDING_COPY = {
+  stepLabel: (step: number, total: number) => `Step ${step} of ${total}`,
+  finishLater: "Finish Later",
+  gettingReady: "Getting ready…",
+  /** Said before the first question. */
+  intro: (botName: string) => `Hi, I'm ${botName}. I'll answer your calls, texts, and email.`,
+  name: {
+    question: "First, what's your business called?",
+    placeholder: "For example: Rivera Plumbing",
+    saved: (business: string) =>
+      `Nice to meet you, ${business}. Callers will hear that name when I answer.`,
+    notSaved: "I couldn't save your business name just now. You can add it later in Settings.",
+    skipped: "No problem. You can add your business name later in Settings.",
   },
-  complete: {
-    liveTitle: "It's on the Line",
-    liveDetail: (agentName: string, phone: string) =>
-      `${agentName} is on ${phone}. Dial from your phone when you're ready.`,
-    deferredTitle: "Ready When You Are",
-    deferredDetail: (agentName: string) =>
-      `${agentName} is saved. Connect a number under Phone when you want it live.`,
-    studioCta: "Continue in Workspace",
-    phoneCta: "Get a Number",
+  about: {
+    question: "What's your business called, and what do you do?",
+    followUp: (business: string) =>
+      `What does ${business} do, and where? Tell me your services, the area you serve, and your hours.`,
+    placeholder: "For example: Rivera Plumbing. We fix leaks and water heaters in Austin.",
+    unclear:
+      "I couldn't pick out the details. Try a sentence like “Rivera Plumbing fixes leaks and water heaters in Austin.”",
+  },
+  website: {
+    question:
+      "Do you have a website? Paste the link and I'll read it to learn your services, hours, and prices.",
+    placeholder: "For example: riveraplumbing.com",
+    read: "Read My Website",
+    none: "I Don't Have One",
+    invalid: "That doesn't look like a website address. Try something like riveraplumbing.com.",
+    reading: "Reading your website…",
+    lookupOffer:
+      "No problem. I can look you up online. I'll show you what I find before I save anything.",
+    lookUp: "Look Me Up",
+    lookingUp: "Looking you up…",
+    found: "Here's what I found:",
+    confirm: "Is this your business?",
+    yes: "Yes, Save It",
+    no: "Not Us",
+    declined: "Thanks. I won't save it.",
+    notFound: "I couldn't find your business online. You can tell me about it any time in chat.",
+  },
+  questions: {
+    question:
+      "What do customers usually ask you? Give me the answers too, like prices, hours, or the area you serve.",
+    placeholder:
+      "For example: Service calls are $89. We're open Monday to Friday, 8 to 6. We serve Austin and Round Rock.",
+  },
+  checks: {
+    question: "What should I always check with you before I agree to it? One per line.",
+    placeholder:
+      "For example:\nDiscounts or refunds\nJobs outside our service area\nPromising a same-day visit",
+    saved: "Got it. I'll check with you before any of those.",
+  },
+  skip: "Skip",
+  skipped: "No problem. You can tell me later in chat.",
+  send: "Send",
+  tryAgain: "Try Again",
+  saving: "Saving…",
+  done: {
+    message:
+      "That's a great start. Everything I learned is in Knowledge, and you can keep teaching me right here in chat. You can rename me any time in Set Up.",
+    hear: "Hear Me",
+    voice: "Pick My Voice",
+    number: "Get a Number",
+    chat: "Start Chatting",
   },
 } as const;
 
 /**
- * Phone setup, post-create, and Preview Voice fallback shown only when the server
- * reports self-serve checkout closed or the plan catalog cannot be reached (fail
+ * The one moment a plan is chosen: going live. Every "choose a plan" control
+ * says this and opens Billing through choosePlanHref() (src/lib/signup-intent.ts).
+ */
+export const GO_LIVE_PLAN_COPY = {
+  cta: "Choose a Plan",
+  detail:
+    "Setting up and rehearsing stay free. A plan connects calls, texts, and email with customers.",
+} as const;
+
+/**
+ * Phone setup and Preview Voice fallback shown only when the server reports
+ * self-serve checkout closed or the plan catalog cannot be reached (fail
  * closed). With paid checkout open it never renders, so it must not imply that
  * BotBound itself is paused.
  */

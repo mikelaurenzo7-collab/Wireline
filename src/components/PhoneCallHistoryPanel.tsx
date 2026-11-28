@@ -153,7 +153,7 @@ export default function PhoneCallHistoryPanel({
     ? {
         title: "No Calls Yet",
         description: "Calls appear here once your Bot has a phone line.",
-        action: { label: "Create Bot", to: "/studio?create=1" },
+        action: { label: "Open Workspace", to: "/studio" },
       }
     : !livePhone
       ? {

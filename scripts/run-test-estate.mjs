@@ -72,7 +72,6 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/navigation-ia-contract.test.ts",
   "tests/auth-redirect-returning-plan.test.ts",
   "src/lib/signup-intent.test.ts",
-  "tests/wireline-create-flow.test.ts",
   "src/lib/billing-checkout-return.test.ts",
   "tests/activation-path-contract.test.ts",
   "tests/botbound-brand-casing-contract.test.ts",
@@ -83,8 +82,7 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/browser-extension-contract.test.ts",
   "tests/stripe-brand-asset-contract.test.ts",
   "tests/stripe-account-identity.test.ts",
-  "tests/create-brief-recovery.test.tsx",
-  "tests/create-brief-recovery-storage.test.ts",
+  "tests/signed-in-owner.test.ts",
   "tests/stripe-webhook-readiness.test.ts",
   "scripts/lib/product-proof-files.test.ts",
 ];

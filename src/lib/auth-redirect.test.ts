@@ -46,7 +46,7 @@ describe("auth-redirect", () => {
     expect(resolvePostAuthDestination("business", "")).toBe("/studio");
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
-    expect(resolvePostAuthDestination("personal", "")).toBe("/studio?create=1");
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
   });
 
@@ -54,7 +54,7 @@ describe("auth-redirect", () => {
     localStorage.setItem(AUTH_REDIRECT_KEY, "/settings");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("personal", "?plan=personal")).toBe("/studio?create=1");
+    expect(resolvePostAuthDestination("personal", "?plan=personal")).toBe("/studio");
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
@@ -63,9 +63,7 @@ describe("auth-redirect", () => {
     localStorage.setItem(AUTH_REDIRECT_KEY, "/settings");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings%2Fphone")).toBe(
-      "/studio?create=1",
-    );
+    expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings%2Fphone")).toBe("/studio");
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
     expect(resolvePostAuthDestination("business", "")).toBe("/studio");
@@ -137,7 +135,7 @@ describe("auth-redirect", () => {
     it("opens the current signup template and consumes the fresh signup marker", () => {
       sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
       expect(resolvePostAuthDestination("personal", "?template=front-desk")).toBe(
-        "/studio?create=1&template=front-desk",
+        "/studio?template=front-desk",
       );
       expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
       expect(resolvePostAuthDestination("personal", "")).toBe("/studio");

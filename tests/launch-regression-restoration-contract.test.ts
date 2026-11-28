@@ -95,11 +95,12 @@ describe("restored launch regression guards", () => {
   it("keeps every create path on the one-Bot defaults instead of a role", () => {
     const mobile = read("src/routes/mobile-routes.ts");
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
-    const dialog = read("src/components/CreateAgentDialog.tsx");
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
 
     expect(DEFAULT_BOT_ARCHETYPE).toBe("All-Purpose Bot");
     expect(existsSync(resolve(root, "src/components/AgentTemplates.tsx"))).toBe(false);
     expect(existsSync(resolve(root, "src/pages/TemplatesPage.tsx"))).toBe(false);
+    expect(existsSync(resolve(root, "src/components/CreateAgentDialog.tsx"))).toBe(false);
 
     for (const [path, source] of [
       ["mobile-routes.ts", mobile],
@@ -113,13 +114,15 @@ describe("restored launch regression guards", () => {
       expect(source, path).not.toMatch(/"\/roles"/);
     }
 
-    expect(dialog).not.toContain("accountType");
-    expect(dialog).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
-    );
-    expect(dialog).toContain('workspace_model: "one_workspace"');
-    expect(dialog).not.toMatch(/setPosture|rolesForPosture|Choose one personal job/);
-    expect(dialog).not.toMatch(/TECHNICAL_ROLE_BY_TEMPLATE|Start from a role/);
+    // The web create path is Bo's onboarding: always the one Bot, named Bo, and
+    // taught from the owner's own answers rather than a starter's role.
+    expect(bo).toContain("name: DEFAULT_BOT_NAME,");
+    expect(bo).toContain("only_if_none: true,");
+    expect(bo).not.toContain("accountType");
+    expect(bo).toContain('workspace_model: "one_workspace"');
+    expect(bo).not.toMatch(/BOT_ROLE_TEMPLATES|Starter: |Conversation direction: /);
+    expect(bo).not.toMatch(/setPosture|rolesForPosture|Choose one personal job/);
+    expect(bo).not.toMatch(/TECHNICAL_ROLE_BY_TEMPLATE|Start from a role/);
   });
 
   it("keeps one roster while preserving legacy seed flags for safe migrations", () => {

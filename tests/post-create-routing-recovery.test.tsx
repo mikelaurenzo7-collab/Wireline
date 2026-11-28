@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import PostCreateActivationWizard from "../src/components/onboarding/PostCreateActivationWizard";
+import BoOnboarding from "../src/components/onboarding/BoOnboarding";
+import { readBoOnboarding, writeBoOnboarding } from "../src/lib/bo-onboarding";
 import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../src/lib/page-sub-tabs";
 
 vi.mock("../src/hooks/useChannelEntitlements", () => ({
@@ -17,11 +18,13 @@ const h = vi.hoisted(() => ({
   refs: [] as Array<{ current: unknown }>,
   stateCursor: 0,
   refCursor: 0,
-  effects: [] as Array<() => () => void>,
+  effects: [] as Array<() => unknown>,
   mounting: true,
   fetch: vi.fn(),
   event: vi.fn(),
   navigate: vi.fn(),
+  flow: vi.fn(),
+  bootstrap: vi.fn(),
 }));
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
@@ -36,119 +39,73 @@ vi.mock("react", async (importOriginal) => ({
     ];
   },
   useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
-  useEffect: (effect: () => () => void) => {
+  useEffect: (effect: () => unknown) => {
     if (h.mounting) h.effects.push(effect);
   },
   useCallback: (callback: unknown) => callback,
   useMemo: (factory: () => unknown) => factory(),
-  useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
 }));
-vi.mock("react-router", () => ({ Link: "a", useNavigate: () => h.navigate }));
-vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: null }) }));
-vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
-vi.mock("../src/lib/use-modal-focus-trap", () => ({ useModalFocusTrap: vi.fn() }));
-vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }));
-vi.mock("../src/lib/post-signup-onboarding", () => ({ setPostSignupFlowActive: vi.fn() }));
-vi.mock("../src/lib/wireline-create-flow", () => ({
-  clearPostCreateWizard: vi.fn(),
-  readPostCreateWizardStep: () => "launch",
-  stashPostCreateWizardStep: vi.fn(),
+vi.mock("react-router", () => ({
+  useNavigate: () => h.navigate,
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
 }));
+vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "owner" } }) }));
+vi.mock("../src/contexts/BrandingContext", () => ({
+  useBranding: () => ({ branding: { business_name: "Rivera Plumbing" }, updateBranding: vi.fn() }),
+}));
+vi.mock("../src/contexts/AgentsContext", () => ({
+  useAgents: () => ({
+    agents: [{ id: "bot", name: "Bo", mark_key: null, channel: "voice" }],
+    loading: false,
+    degraded: false,
+    rememberCreatedAgent: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}));
+vi.mock("../src/lib/api", () => ({ authFetch: h.fetch, safeJson: vi.fn() }));
+vi.mock("../src/lib/bot-identity-bootstrap", () => ({ bootstrapManagedBotIdentity: h.bootstrap }));
 vi.mock("../src/lib/product-event-client", () => ({
   emitProductEvent: h.event,
   emitProductEventOnce: h.event,
 }));
-vi.mock("../src/lib/plan-catalog", () => ({ planById: () => ({ price_usd_monthly: 19 }) }));
+vi.mock("../src/lib/post-signup-onboarding", () => ({ setPostSignupFlowActive: h.flow }));
 vi.mock("../src/lib/signup-intent", () => ({
-  activationBillingHref: () => "/settings/billing",
+  choosePlanHref: () => "/settings/billing?plan=starter",
   getStoredSignupIntent: () => null,
 }));
-vi.mock("../src/components/atoms", () => ({ Button: "button" }));
+vi.mock("../src/components/atoms", () => ({
+  Button: "button",
+  Input: "input",
+  Textarea: "textarea",
+}));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "aside" }));
-vi.mock("../src/components/RoleplaySandbox", () => ({ default: "sandbox" }));
+vi.mock("../src/components/BotMark", () => ({ default: "span" }));
 
-type Props = {
-  children?: ReactNode;
-  action?: ReactNode;
-  title?: string;
-  disabled?: boolean;
-  onClick?: () => unknown;
-  to?: string;
-};
+type Props = { children?: ReactNode; onClick?: () => unknown };
 type Element = ReactElement<Props>;
-function expand(node: Element): ReactNode {
-  return typeof node.type === "function" && node.type.name === "SoftOpenCheckoutNote"
-    ? (node.type as (props: { detail?: string }) => ReactNode)(node.props as { detail?: string })
-    : node.props.children;
-}
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!isValidElement<Props>(node)) return [];
-  return [node, ...elements(expand(node)), ...elements(node.props.action)];
+  return [node, ...elements(node.props.children)];
 }
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
-  if (isValidElement<Props>(node))
-    return `${node.props.title || ""}${text(expand(node))}${text(node.props.action)}`;
+  if (isValidElement<Props>(node)) return text(node.props.children);
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
-const phone = "+13125550100";
-let payload: Parameters<typeof PostCreateActivationWizard>[0]["payload"];
-let cleanups: Array<() => void>;
 function render() {
   h.stateCursor = 0;
   h.refCursor = 0;
-  return PostCreateActivationWizard({ payload, onClose: vi.fn() });
+  return BoOnboarding({});
 }
 function button(label: string) {
   return elements(render()).find((element) => element.type === "button" && text(element) === label);
 }
-function response(numbers: unknown[], status = 200) {
-  return new Response(JSON.stringify({ numbers }), { status });
-}
-function plans(available = true) {
-  return new Response(
-    JSON.stringify({ checkout_available: available, stripe_configured: true, plans: [] }),
-  );
-}
-function line(status?: string) {
-  return { agent_id: "bot", phone_number: phone, native_voice_status: status };
-}
-function stubFetch({
-  numbers = [] as unknown[],
-  numbersStatus = 200,
-  checkoutAvailable = true,
-  provision,
-}: {
-  numbers?: unknown[] | (() => unknown[]);
-  numbersStatus?: number | (() => number);
-  checkoutAvailable?: boolean;
-  provision?: Response | (() => Response);
-} = {}) {
-  h.fetch.mockImplementation(async (url: string, init?: RequestInit) => {
-    if (url === "/api/billing/plans") return plans(checkoutAvailable);
-    if (url === "/api/phone-numbers" && init?.method !== "POST") {
-      const current = typeof numbers === "function" ? numbers() : numbers;
-      const status = typeof numbersStatus === "function" ? numbersStatus() : numbersStatus;
-      return response(current, status);
-    }
-    if (url === "/api/phone-numbers/provision") {
-      if (typeof provision === "function") return provision();
-      if (provision) return provision;
-      throw new Error("unexpected provision");
-    }
-    throw new Error(String(url));
-  });
-}
-async function mount() {
+let cleanups: unknown[];
+function mount() {
   render();
   h.mounting = false;
   cleanups = h.effects.map((effect) => effect());
-  await vi.waitFor(() => {
-    const visible = text(render());
-    expect(visible).not.toContain("Checking your line");
-    expect(visible).not.toContain("Checking plan availability");
-  });
 }
 beforeEach(() => {
   h.channels = ["voice", "email", "sms"];
@@ -157,184 +114,62 @@ beforeEach(() => {
   h.refs = [];
   h.effects = [];
   h.mounting = true;
-  h.fetch.mockReset();
-  payload = {
-    agentId: "bot",
-    agentName: "Front Desk",
-    phoneProvisionRequested: true,
-    phoneProvisioned: true,
-    phoneNumber: phone,
-  };
+  const storage = new Map<string, string>();
+  vi.stubGlobal("sessionStorage", {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+    removeItem: (key: string) => storage.delete(key),
+  });
+  // Bo was created and has asked its four questions; the owner picks what is next.
+  writeBoOnboarding("owner", { agentId: "bot", step: "done" });
   cleanups = [];
 });
-afterEach(() => cleanups.forEach((cleanup) => cleanup()));
-
-describe("setup guide requires confirmed calling", () => {
-  it.each(["degraded", "configuration_required", "unavailable", undefined])(
-    "keeps a %s line reserved and recovers without another number purchase",
-    async (status) => {
-      let numbers = [line(status)];
-      stubFetch({ numbers: () => numbers });
-      await mount();
-      expect(text(render())).toContain("Number reserved");
-      expect(text(render())).not.toContain("Your live number");
-      expect(button("Continue")).toBeUndefined();
-      expect(button("Choose a Number")).toBeUndefined();
-      expect(button("Retry Connection")?.props.disabled).toBe(false);
-      numbers = [line("active")];
-      button("Retry Connection")?.props.onClick?.();
-      await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
-      button("Continue")?.props.onClick?.();
-      expect(text(render())).toContain("It's on the Line");
-      expect(h.fetch.mock.calls.filter(([url]) => url === "/api/phone-numbers")).toHaveLength(2);
-      expect(h.fetch.mock.calls.some(([url]) => url === "/api/billing/plans")).toBe(true);
-    },
-  );
-
-  it("does not resurrect an old payload number after a successful empty inventory read", async () => {
-    stubFetch({ numbers: [] });
-    await mount();
-    expect(text(render())).not.toContain("(312) 555-0100");
-    expect(text(render())).toContain("No phone number yet");
-    expect(button("Choose a Number")?.props.disabled).toBe(false);
-    expect(button("Continue")).toBeUndefined();
-  });
-
-  it("does not trust a previously provisioned payload when routing lookup fails", async () => {
-    let numbersStatus = 503;
-    let numbers: unknown[] = [];
-    stubFetch({
-      numbers: () => numbers,
-      numbersStatus: () => numbersStatus,
-    });
-    await mount();
-    expect(text(render())).not.toContain("Your live number");
-    expect(button("Continue")).toBeUndefined();
-    numbersStatus = 200;
-    numbers = [line("active")];
-    button("Retry Line Lookup")?.props.onClick?.();
-    await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
-  });
-
-  it.each(["picker", "completion"])(
-    "keeps the chosen Bot in the %s route without an automatic purchase",
-    async (route) => {
-      payload = {
-        agentId: "bot",
-        agentName: "Front Desk",
-        phoneProvisionRequested: false,
-        phoneProvisioned: false,
-      };
-      stubFetch({ numbers: [] });
-      await mount();
-      if (route === "picker") {
-        button("Choose a Number")?.props.onClick?.();
-        expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
-      } else {
-        const launchLater = button("Launch Later");
-        expect(launchLater).toBeDefined();
-        launchLater!.props.onClick?.();
-        expect(text(render())).toContain("Ready When You Are");
-        const phoneSetup = elements(render()).find(
-          (element) => element.type === "a" && text(element) === "Get a Number",
-        );
-        expect(phoneSetup?.props.to).toBe("/phone?tab=setup&agent=bot");
-      }
-      const phoneRoute = resolveAppPageSubTabRoute("/phone");
-      expect(phoneRoute).toBeDefined();
-      expect(resolveAppPageSubTabId(phoneRoute!, "setup")).toBe("lines");
-      expect(h.fetch.mock.calls.some(([url]) => url === "/api/phone-numbers/provision")).toBe(
-        false,
-      );
-      expect(h.event.mock.calls.some(([event]) => event.event === "phone_channel_wired")).toBe(
-        false,
-      );
-    },
-  );
-
-  it("uses honest soft-open copy instead of a checkout CTA when billing is closed", async () => {
-    h.channels = [];
-    payload = {
-      agentId: "bot",
-      agentName: "Front Desk",
-      phoneProvisionRequested: false,
-      phoneProvisioned: false,
-      phoneActivationRequired: true,
-    };
-    stubFetch({ numbers: [], checkoutAvailable: false });
-    await mount();
-    const tree = render();
-    expect(button("Choose a Number")).toBeUndefined();
-    expect(text(tree)).toContain("Live activation isn't available right now");
-    expect(text(tree)).toContain("Keep trying your Bot privately in Set Up, then check back soon.");
-    expect(text(tree)).not.toContain("Every paid plan includes a US number");
-    expect(text(tree)).not.toContain("Choose Plan");
-    expect(text(tree)).not.toContain("Starter begins at $19/mo");
-    const contact = elements(tree).find(
-      (element) => element.type === "a" && text(element) === "Contact support",
-    );
-    expect(contact?.props.to).toBe("/contact?topic=billing");
-  });
-
-  it("offers a paid plan to a free Bot when self-serve checkout is available", async () => {
-    h.channels = [];
-    payload = {
-      agentId: "bot",
-      agentName: "Front Desk",
-      phoneProvisionRequested: false,
-      phoneProvisioned: false,
-      phoneActivationRequired: true,
-    };
-    stubFetch({ numbers: [], checkoutAvailable: true });
-    await mount();
-    expect(button("Choose a Number")).toBeUndefined();
-    const plan = elements(render()).find(
-      (element) => element.type === "a" && text(element) === "Choose Plan",
-    );
-    expect(plan?.props.to).toBe("/settings/billing");
-    expect(text(render())).not.toContain("Live activation isn't available right now");
-  });
-
-  it.each([true, false])(
-    "honors confirmed voice access after a previous activation rejection with checkout available %s",
-    async (checkoutAvailable) => {
-      payload = {
-        agentId: "bot",
-        agentName: "Front Desk",
-        phoneProvisionRequested: true,
-        phoneProvisioned: false,
-        phoneActivationRequired: true,
-        identityBootstrapComplete: true,
-      };
-      stubFetch({ numbers: [], checkoutAvailable });
-      await mount();
-      expect(text(render())).not.toContain("Live activation isn't available right now");
-      expect(text(render())).not.toContain("Choose Plan");
-      expect(text(render())).not.toContain("Choose your plan");
-      expect(button("Choose a Number")?.props.disabled).toBe(false);
-      button("Choose a Number")?.props.onClick?.();
-      expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
-    },
-  );
+afterEach(() => {
+  for (const cleanup of cleanups) if (typeof cleanup === "function") cleanup();
+  vi.unstubAllGlobals();
 });
 
-it("email-only activation has no phone prerequisite or invented live milestone", async () => {
-  h.channels = ["email"];
-  payload = {
-    agentId: "bot",
-    agentName: "Email Bot",
-    phoneProvisionRequested: false,
-    phoneProvisioned: false,
-    phoneActivationRequired: true,
-  };
-  stubFetch({ numbers: [] });
-  await mount();
-  expect(text(render())).toContain("Open Email");
-  expect(text(render())).not.toContain("No phone number");
-  expect(button("Choose a Number")).toBeUndefined();
-  button("Finish for Now")?.props.onClick?.();
-  expect(text(render())).toContain("Your Bot Is Saved");
-  expect(h.event.mock.calls.some(([event]) => event.event === "agent_launch_completed")).toBe(
-    false,
+describe("routing after Bo's first conversation", () => {
+  it("opens Lines for the chosen Bot when calling is included, without buying a number", () => {
+    mount();
+    expect(text(render())).toContain("That's a great start.");
+    button("Get a Number")?.props.onClick?.();
+    expect(h.navigate).toHaveBeenCalledWith("/phone?tab=lines&agent=bot");
+    expect(h.flow).toHaveBeenLastCalledWith(false);
+    expect(readBoOnboarding("owner")).toBeNull();
+    const phoneRoute = resolveAppPageSubTabRoute("/phone");
+    expect(phoneRoute).toBeDefined();
+    expect(resolveAppPageSubTabId(phoneRoute!, "lines")).toBe("lines");
+    // Older Phone links still say tab=setup; they open the same Lines tab.
+    expect(resolveAppPageSubTabId(phoneRoute!, "setup")).toBe("lines");
+    expect(h.fetch).not.toHaveBeenCalled();
+    expect(h.bootstrap).not.toHaveBeenCalled();
+    expect(h.event).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, string[]]>([
+    ["email only", ["email"]],
+    ["no channels yet", []],
+  ])(
+    "sends an account with %s to the plan choice, with no phone prerequisite or invented live milestone",
+    (_label, channels) => {
+      h.channels = channels;
+      mount();
+      button("Get a Number")?.props.onClick?.();
+      expect(h.navigate).toHaveBeenCalledWith("/settings/billing?plan=starter");
+      expect(h.fetch).not.toHaveBeenCalled();
+      expect(h.event).not.toHaveBeenCalled();
+    },
   );
+
+  it.each([
+    ["Hear Me", "/studio?agent=bot&workroom=test"],
+    ["Pick My Voice", "/studio?agent=bot&section=setup#voice"],
+    ["Start Chatting", "/studio?agent=bot"],
+  ])("keeps the chosen Bot when %s opens the Workspace", (label, destination) => {
+    mount();
+    button(label)?.props.onClick?.();
+    expect(h.navigate).toHaveBeenCalledWith(destination);
+    expect(readBoOnboarding("owner")).toBeNull();
+  });
 });

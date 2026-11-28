@@ -14,10 +14,21 @@ import {
   websiteKnowledgeDailyRateLimit,
 } from "../middleware/website-knowledge-rate-limits";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
+import { enforcePrivateTextSimulationSpendCap } from "../lib/spend-guards";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 const WEBSITE_URL_MAX_CHARS = 2048;
+const WEB_LOOKUP_BUSINESS_MAX_CHARS = 600;
+
+async function ownedTrainingTarget(agentId: string, userId: string) {
+  const [agent] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  return agent;
+}
 
 function importSummary(result: {
   factsAdded: number;
@@ -68,12 +79,8 @@ router.post(
       throw AppError.fromHttpStatus(400, "Website URLs must not contain credentials.");
     }
 
-    const [agent] = await drizzle
-      .select({ id: schema.agents.id })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-      .limit(1);
-    if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
+    if (!(await ownedTrainingTarget(req.params.id, req.user.id)))
+      throw AppError.fromHttpStatus(404, "Bot not found");
 
     try {
       const result = await importWebsiteKnowledge({
@@ -115,6 +122,48 @@ router.post(
       });
       throw AppError.fromHttpStatus(502, "BotBound could not analyze that website page.");
     }
+  },
+);
+
+/**
+ * A Bot getting to know a business that has no website: look it up on the
+ * public web and return what was found. Nothing is saved here. The owner sees
+ * the answer and its sources, and only "Yes, that's us" sends it to Knowledge
+ * through the training extractor. The owner's own words name the business;
+ * the server writes the research question.
+ */
+router.post(
+  "/api/agent-config/:id/web-lookup",
+  authenticateUser,
+  websiteKnowledgeBurstRateLimit,
+  websiteKnowledgeDailyRateLimit,
+  enforceLaunchHardGate,
+  enforcePrivateTextSimulationSpendCap,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const business =
+      typeof req.body?.business === "string" ? req.body.business.replace(/\s+/g, " ").trim() : "";
+    if (!business || business.length > WEB_LOOKUP_BUSINESS_MAX_CHARS) {
+      throw AppError.fromHttpStatus(400, "Describe the business in up to 600 characters.");
+    }
+    if (!(await ownedTrainingTarget(req.params.id, req.user.id)))
+      throw AppError.fromHttpStatus(404, "Bot not found");
+
+    const { freshPublicResearch } = await import("../lib/fresh-public-research");
+    const result = await freshPublicResearch(
+      `Public information about this business: "${business}". List its services, hours, service area, phone number, and prices if published. If you cannot find this exact business, say so.`,
+    );
+    const found = result.mode !== "unavailable" && Boolean(result.answer.trim());
+    log.info("Business web lookup", {
+      userId: req.user.id,
+      agentId: req.params.id,
+      found,
+      sources: result.sources.length,
+    });
+    res.json({
+      found,
+      answer: found ? result.answer : "",
+      sources: found ? result.sources : [],
+    });
   },
 );
 

@@ -4,7 +4,7 @@ import StudioAgentWorkspacePanel from "../src/components/StudioAgentWorkspacePan
 import StudioAgentReviewPanel from "../src/components/StudioAgentReviewPanel";
 import { createStudioSetupDrafts, type StudioSetupDrafts } from "../src/lib/studio-setup-drafts";
 import { defaultBotMarkKey } from "../src/lib/bot-mark";
-import { setCreateBriefRecoveryOwner } from "../src/lib/create-brief-recovery";
+import { setSignedInOwner } from "../src/lib/signed-in-owner";
 import { composeSetupPersonality } from "../src/lib/compose-setup-personality";
 
 vi.mock("../src/hooks/useChannelEntitlements", () => ({
@@ -191,7 +191,7 @@ beforeEach(() => {
     openingGreeting: undefined,
     firstMessage: undefined,
   };
-  setCreateBriefRecoveryOwner(h.userId);
+  setSignedInOwner(h.userId);
   const events = new EventTarget();
   vi.stubGlobal("window", {
     dispatchEvent: vi.fn((event: Event) => events.dispatchEvent(event)),
@@ -213,7 +213,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   unmount();
-  setCreateBriefRecoveryOwner(null);
+  setSignedInOwner(null);
   vi.unstubAllGlobals();
 });
 
@@ -248,27 +248,19 @@ describe("Studio inspector draft lifecycle", () => {
     await vi.waitFor(() => expect(text(render())).toContain("Phone VoiceCheck Voice Setup"));
   });
 
-  it("names the saved Knowledge and rules destination and preserves the active Bot", async () => {
+  it("names the Knowledge library and preserves the active Bot", async () => {
     await mount();
     const link = elements(render()).find(
-      (element) => element.type === "a" && text(element) === "Manage Knowledge",
+      (element) => element.type === "a" && text(element).includes("Open Knowledge"),
     );
     expect(link?.props.to).toBe(`/knowledge?agent=${h.botId}`);
   });
 
-  it("saves a new fact without writing older setup fields back", async () => {
+  it("teaches in chat: Set Up has no typed knowledge field to save", async () => {
     await mount();
-    change("setup-knowledge", "Diagnostic visits are $89.");
-    h.config.personality = "Updated support policy in another editor.";
-    h.config.directives = [{ content: "Opening greeting: New approved greeting" }];
-
-    await save();
-
-    expect(
-      h.fetch.mock.calls.filter(([, options]) => options?.method).map(([path]) => path),
-    ).toEqual(["/api/train/extract"]);
-    expect(h.config.personality).toBe("Updated support policy in another editor.");
-    expect(h.config.directives).toEqual([{ content: "Opening greeting: New approved greeting" }]);
+    expect(field("setup-knowledge")).toBeUndefined();
+    expect(text(render())).toContain("To teach it something new, tell it in chat.");
+    expect(h.fetch.mock.calls.some(([path]) => path === "/api/train/extract")).toBe(false);
   });
 
   it("keeps the confirmed permission until the only pending change is acknowledged", async () => {
@@ -570,7 +562,6 @@ describe("Studio inspector draft lifecycle", () => {
   it("retains every edited setup field through close, review, layout remounts and Bot changes", async () => {
     await mount();
     change("setup-greeting", "Welcome to our repair shop.");
-    change("setup-knowledge", "Ask for the appliance model.");
     button("Warm").props.onClick!();
     const nextMark = defaultBotMarkKey("different-mark");
     const picker = elements(render()).find((element) => element.type === "mark-picker")!;
@@ -585,7 +576,6 @@ describe("Studio inspector draft lifecycle", () => {
     h.botId = "bot-a";
     await mount();
     expect(field("setup-greeting")!.props.value).toBe("Welcome to our repair shop.");
-    expect(field("setup-knowledge")!.props.value).toBe("Ask for the appliance model.");
     expect(button("Warm").props["aria-pressed"]).toBe(true);
     expect(drafts.read("bot-a").values.markKey).toBe(nextMark);
     expect(h.fetch.mock.calls.every(([, options]) => !options?.method)).toBe(true);
@@ -604,7 +594,6 @@ describe("Studio inspector draft lifecycle", () => {
   it("clears confirmed edits after saving and preserves the full existing playbook", async () => {
     await mount();
     change("setup-greeting", "Welcome");
-    change("setup-knowledge", "Open at 7am.");
     button("Warm").props.onClick!();
     await save();
     expect(drafts.read(h.botId).dirty).toBe(false);
@@ -612,87 +601,13 @@ describe("Studio inspector draft lifecycle", () => {
     expect(text(render())).not.toContain("Unsaved changes");
     await mount();
     expect(field("setup-greeting")!.props.value).toBe("Welcome");
-    expect(field("setup-knowledge")!.props.value).toBe("");
-  });
-
-  it.each(["empty", "failed"])("retains knowledge after %s extraction", async (result) => {
-    await mount();
-    change("setup-knowledge", "Open at 7am.");
-    const usual = h.fetch.getMockImplementation()!;
-    h.fetch.mockImplementation((path: string, options?: RequestInit) =>
-      path === "/api/train/extract"
-        ? Promise.resolve(
-            result === "empty"
-              ? json({ readiness: { rules: 0, facts: 0, tone: false } })
-              : json({}, 503),
-          )
-        : usual(path, options),
-    );
-    await save();
-    expect(text(render())).not.toContain("Saved. Try the updated Bot");
-    await mount();
-    expect(field("setup-knowledge")!.props.value).toBe("Open at 7am.");
-    expect(drafts.read(h.botId).dirty).toBe(true);
-  });
-
-  it.each([
-    [402, "Monthly usage limit reached. Open Billing to review your allowance."],
-    [503, "Open Billing and refresh your subscription before starting new work."],
-  ])(
-    "preserves the actionable training refusal (%s) and confirmed manual setup",
-    async (status, error) => {
-      await mount();
-      change("setup-greeting", "Welcome to the repair shop.");
-      change("setup-knowledge", "Open at 7am.");
-      button("Warm").props.onClick!();
-      const usual = h.fetch.getMockImplementation()!;
-      h.fetch.mockImplementation((path: string, options?: RequestInit) =>
-        path === "/api/train/extract"
-          ? Promise.resolve(json({ error }, status as number))
-          : usual(path, options),
-      );
-      await save();
-      const content = text(render());
-      expect(content).toContain(error);
-      expect(content).toContain("Earlier changes were saved.");
-      // Confirmed manual changes trigger the normal configuration refresh.
-      await vi.waitFor(() => expect(field("setup-knowledge")).toBeDefined());
-      expect(field("setup-knowledge")!.props.value).toBe("Open at 7am.");
-      expect(drafts.read(h.botId).values.greeting).toBe("Welcome to the repair shop.");
-      expect(drafts.read(h.botId).values.tone).toBe("Warm");
-      expect(drafts.read(h.botId).dirty).toBe(true);
-      await mount();
-      expect(field("setup-knowledge")!.props.value).toBe("Open at 7am.");
-      expect(field("setup-greeting")!.props.value).toBe("Welcome to the repair shop.");
-    },
-  );
-
-  it("does not resubmit knowledge whose save finished while the inspector was closed", async () => {
-    await mount();
-    change("setup-knowledge", "Open at 7am.");
-    const pending = deferred();
-    const usual = h.fetch.getMockImplementation()!;
-    h.fetch.mockImplementation((path: string, options?: RequestInit) =>
-      path === "/api/train/extract" ? pending.promise : usual(path, options),
-    );
-    button("Save Changes").props.onClick!();
-    await vi.waitFor(() =>
-      expect(h.fetch.mock.calls.some(([path]) => path === "/api/train/extract")).toBe(true),
-    );
-    unmount();
-    pending.resolve(json({ readiness: { rules: 1, facts: 0, tone: false } }));
-    await vi.waitFor(() => expect(drafts.read(h.botId).saving).toBe(false));
-    await mount();
-    expect(field("setup-knowledge")!.props.value).toBe("");
-    await save();
-    expect(h.fetch.mock.calls.filter(([path]) => path === "/api/train/extract")).toHaveLength(1);
   });
 
   it("rejects another account's draft store even when the same Bot id is supplied", async () => {
     await mount();
     change("setup-greeting", "Private draft");
     h.userId = "owner-b";
-    setCreateBriefRecoveryOwner(h.userId);
+    setSignedInOwner(h.userId);
     await mount();
     expect(field("setup-greeting")!.props.value).toBe("");
     expect(text(render())).not.toContain("Private draft");

@@ -90,7 +90,7 @@ test("settings sign-out followed by ordinary signup opens Bot setup despite a st
   });
 
   await page.getByRole("button", { name: "Create Account", exact: true }).last().click();
-  await expect(page).toHaveURL(/\/studio\?create=1$/);
+  await expect(page).toHaveURL(/\/studio$/);
   expect(
     await page.evaluate(
       ({ redirectKey, freshKey }) => ({

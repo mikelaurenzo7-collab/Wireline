@@ -1,13 +1,12 @@
-import { ChevronDown, Plus, SlidersHorizontal, Users } from "lucide-react";
+import { ChevronDown, SlidersHorizontal, Users } from "lucide-react";
 import { useMemo } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
 import BotMark from "../BotMark";
 import { useAgents } from "../../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
-import { canOfferAnotherBot } from "../../lib/bot-roster-policy";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
 import {
@@ -161,19 +160,6 @@ export default function StudioContextChrome() {
               />
               {readyLabel}
             </span>
-          ) : null}
-          {agents.length > 0 && canOfferAnotherBot(agents.length) ? (
-            <Button
-              asChild
-              variant="secondary"
-              size="sm"
-              className="min-h-11 min-w-11 px-0 sm:w-auto sm:px-3 lg:hidden"
-            >
-              <Link to="/studio?create=1" aria-label={language.createCta}>
-                <Plus className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline">New</span>
-              </Link>
-            </Button>
           ) : null}
         </div>
       </div>

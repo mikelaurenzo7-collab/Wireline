@@ -45,8 +45,6 @@
  * This specifically prevents a popup from inheriting page/hero typography. */
 #trial-gate-title,
 #deploy-agent-title,
-#create-agent-title,
-#post-create-wizard-title,
 #team-invite-title {
   max-width: 100%;
   font-family: var(--wireline-font-family-display) !important;
@@ -71,15 +69,13 @@
 
 /* Activation / billing used to read like a centered marketing sheet. Keep it a
  * compact product dialog on every viewport instead. */
-[role="dialog"][aria-labelledby="trial-gate-title"],
-[role="dialog"][aria-labelledby="post-create-wizard-title"] {
+[role="dialog"][aria-labelledby="trial-gate-title"] {
   align-items: center !important;
   padding: max(1rem, env(safe-area-inset-top, 0px)) var(--wireline-modal-inline-gutter)
     max(1rem, env(safe-area-inset-bottom, 0px)) !important;
 }
 
-[role="dialog"][aria-labelledby="trial-gate-title"] > div,
-[role="dialog"][aria-labelledby="post-create-wizard-title"] > div {
+[role="dialog"][aria-labelledby="trial-gate-title"] > div {
   width: min(100%, 48rem) !important;
   max-height: calc(100dvh - 2rem) !important;
   border-radius: var(--wireline-radius-xl) !important;
@@ -88,17 +84,6 @@
 [role="dialog"][aria-labelledby="trial-gate-title"] .font-display,
 [role="dialog"][aria-labelledby="deploy-agent-title"] .font-display {
   font-style: normal !important;
-}
-
-/* Fast Start's job prompt is important, but it lives inside a modal rather than
- * a page hero. Keep a clear step down from page-level display typography. */
-[role="dialog"][aria-labelledby="create-agent-title"] h3 {
-  max-width: 28ch;
-  font-size: clamp(1.5rem, 1.32rem + 0.8vw, 1.9rem) !important;
-  font-weight: 600 !important;
-  line-height: 1.12 !important;
-  letter-spacing: -0.025em !important;
-  text-wrap: balance;
 }
 
 @media (max-width: 639px) {
@@ -112,7 +97,6 @@
     border-radius: var(--wireline-radius-xl);
   }
 
-  [role="dialog"][aria-labelledby="create-agent-title"],
   [role="dialog"][aria-labelledby="team-invite-title"],
   [role="dialog"][aria-labelledby="deploy-agent-title"] {
     width: calc(100vw - 1.5rem) !important;

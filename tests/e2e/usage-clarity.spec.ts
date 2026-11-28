@@ -192,7 +192,7 @@ for (const width of [1440, 390]) {
 
     await page.goto("/insights");
     await expect(page.getByText("No Conversations Yet", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Create Bot", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Workspace", exact: true })).toBeVisible();
     await expect(page.getByText("Simulation allowance", { exact: true })).toHaveCount(0);
   });
 }

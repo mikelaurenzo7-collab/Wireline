@@ -35,8 +35,9 @@ export async function bootstrapManagedBotIdentity(
       `/api/agents/${encodeURIComponent(agentId)}/managed-identity`,
       {
         method: "POST",
-        // The setup wizard owns this expected Free Builder activation state.
-        // Keep its guide visible instead of stacking a second payment dialog.
+        // A Free Builder account is expected to get 402 here: Bo's first
+        // conversation offers the plan at Get a Number, so no payment dialog
+        // opens over it now.
         suppressTrialGateEvent: true,
       },
     );

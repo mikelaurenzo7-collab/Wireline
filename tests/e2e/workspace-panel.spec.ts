@@ -247,8 +247,8 @@ test("the desktop roster opens each Bot's own work and its identity details", as
     "href",
     `/knowledge?agent=${bots[0].id}`,
   );
-  await panel.getByText("Memory", { exact: true }).click();
-  await expect(panel.getByRole("textbox", { name: "Remember this" })).toBeVisible();
+  // Notes about the owner live in Knowledge under About You, not in Details.
+  await expect(panel.getByText("Memory", { exact: true })).toHaveCount(0);
   await expect(panel.getByText("Automations", { exact: true })).toHaveCount(0);
   await expect(panel.getByRole("link", { name: /Reports/ })).toHaveAttribute(
     "href",
@@ -272,13 +272,8 @@ test("the desktop roster opens each Bot's own work and its identity details", as
   await expect(conversation(page, "Sales Bot")).toHaveValue("");
   await front.click();
   await expect(conversation(page)).toHaveValue("Keep this draft with Front Desk");
-  await roster.getByRole("link", { name: "Add a Bot" }).click();
-  await expect(
-    page
-      .getByRole("dialog")
-      .getByText(/Most businesses need one Bot: give it more tasks instead\./),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Close Bot setup" }).click();
+  // One Bot per account: the rail offers no way to add another.
+  await expect(roster.getByRole("link", { name: "Add a Bot" })).toHaveCount(0);
   expect(api.starts).toHaveLength(0);
 });
 

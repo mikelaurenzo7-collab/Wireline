@@ -126,6 +126,7 @@ vi.mock("../src/components/training/RecentCallArtifactRequests", () => ({
   default: "call-artifacts",
 }));
 vi.mock("../src/components/training/WebsiteKnowledgeImport", () => ({ default: "website-import" }));
+vi.mock("../src/components/training/AboutYouMemories", () => ({ default: "about-you" }));
 
 type Props = {
   children?: ReactNode;
@@ -316,14 +317,17 @@ describe("Bot context across workspace pages", () => {
       const expected = requested === "bot-a" ? "bot-a" : "bot-b";
       const nodes = elements(render(KnowledgePage));
       expect(nodes.find((node) => node.type === KnowledgeEditor)?.props.agentId).toBe(expected);
-      const editorNodes = elements(render(() => KnowledgeEditor({ agentId: expected })));
+      const editorNodes = elements(
+        render(() => KnowledgeEditor({ agentId: expected, agentName: "Bo" })),
+      );
       for (const type of ["knowledge-base", "website-import"]) {
         expect(editorNodes.find((node) => node.type === type)?.props.agentId).toBe(expected);
       }
       expect(nodes.find((node) => node.type === "select")?.props.value).toBe(expected);
-      expect(nodes.find((node) => text(node) === "Rehearse" && node.type === "a")?.props.to).toBe(
-        `/studio?agent=${expected}&workroom=test`,
-      );
+      // Knowledge sends the owner to the chat to teach; it has no second input.
+      expect(
+        nodes.find((node) => text(node) === "Teach in Chat" && node.type === "a")?.props.to,
+      ).toBe(`/studio?agent=${expected}`);
     },
   );
 
@@ -340,7 +344,8 @@ describe("Bot context across workspace pages", () => {
   });
 
   it("coordinates website import with open Knowledge drafts and its refresh", () => {
-    const editor = () => elements(render(() => KnowledgeEditor({ agentId: "bot-a" })));
+    const editor = () =>
+      elements(render(() => KnowledgeEditor({ agentId: "bot-a", agentName: "Bo" })));
     const base = () => editor().find((node) => node.type === "knowledge-base")!;
     const website = () => editor().find((node) => node.type === "website-import")!;
     expect(website().props.disabled).toBe(true);

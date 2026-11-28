@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, ChevronDown, KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 
 import { Button } from "../components/atoms";
@@ -10,7 +10,6 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import { authFetch } from "../lib/api";
-import { ANOTHER_BOT_HREF } from "../lib/bot-roster-policy";
 
 function DangerZone() {
   const [expanded, setExpanded] = useState(false);
@@ -393,28 +392,6 @@ export default function SettingsPage() {
               {error}
             </StatusNotice>
           ) : null}
-        </section>
-
-        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <h2 className="text-base font-semibold leading-6 text-foreground">Advanced</h2>
-          <div className="mt-3 grid">
-            <div className="wl-data-row wl-data-row--divided">
-              <span className="wl-data-row__leading" aria-hidden="true">
-                <Bot size={15} />
-              </span>
-              <span className="wl-data-row__main">
-                <span className="wl-data-row__title">Another Bot</span>
-                <span className="wl-data-row__detail">
-                  One Bot handles most businesses. Add one only for a separate identity.
-                </span>
-              </span>
-              <span className="wl-data-row__trailing">
-                <Button asChild variant="secondary" size="sm">
-                  <Link to={ANOTHER_BOT_HREF}>Add Bot</Link>
-                </Button>
-              </span>
-            </div>
-          </div>
         </section>
 
         <DangerZone />

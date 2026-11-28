@@ -131,6 +131,10 @@ Wireline **does not** use generic Material-style dark SaaS palettes (pure black 
 
 ### 3.3 Onboarding wizard (implemented path)
 
+> **Superseded (November 2026).** The wizard below is removed. First run is
+> Bo's conversation (`src/components/onboarding/BoOnboarding.tsx`): one Bot
+> per account, four questions, then Hear Me, Pick My Voice, Get a Number.
+
 ```mermaid
 flowchart TD
     A[Signup / Fast Start create] --> B[Post-create wizard]

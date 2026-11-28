@@ -317,13 +317,6 @@
   box-shadow: none;
 }
 
-/* This heading receives initial dialog focus for announcement, not interaction.
- * Keep the focus trap and keyboard rings on the actual form controls. */
-#create-agent-title[tabindex="-1"]:focus {
-  outline: 0;
-  box-shadow: none;
-}
-
 @media (forced-colors: active) {
   .wl-workspace-shell .wl-composer-dock:focus-within {
     outline: 2px solid Highlight;

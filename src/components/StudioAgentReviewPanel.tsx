@@ -11,12 +11,11 @@ import { resolveVoiceLabel } from "../lib/voice-catalog";
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { resolveDeliveryToneLabel } from "../lib/compose-setup-personality";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
-import { useAuth } from "../contexts/AuthContext";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "./ChannelAccessNotice";
-import { activationBillingHref, getStoredSignupIntent } from "../lib/signup-intent";
+import { choosePlanHref } from "../lib/signup-intent";
+import { GO_LIVE_PLAN_COPY } from "../lib/wireline-onboarding-copy";
 import { formatPhone } from "../lib/safe-number";
-import { useCreateBriefTraining } from "../lib/create-brief-recovery";
 
 type AgentConfigResponse = {
   personality?: string | null;
@@ -62,8 +61,6 @@ export default function StudioAgentReviewPanel({
   compact = false,
   focusEmail = false,
 }: StudioAgentReviewPanelProps) {
-  const { user } = useAuth();
-  const trainingBrief = useCreateBriefTraining(user?.id ?? "", agentId);
   const emailSectionRef = useRef<HTMLDivElement>(null);
   const access = useChannelEntitlements();
   const [config, setConfig] = useState<AgentConfigResponse | null>(null);
@@ -235,7 +232,7 @@ export default function StudioAgentReviewPanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, reloadKey, trainingBrief]);
+  }, [agentId, reloadKey]);
 
   const voiceIncluded = access.includes("voice");
   const [callVoice, setCallVoice] = useState<{
@@ -360,9 +357,9 @@ export default function StudioAgentReviewPanel({
             title={hasPhone ? "Phone connected" : "No phone connected"}
             action={
               <Button asChild size="sm" variant="secondary">
-                <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=setup#voice-clone`}>
+                <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=setup#voice`}>
                   <Mic className="size-4" aria-hidden="true" />
-                  Clone Voice
+                  Choose Voice
                 </Link>
               </Button>
             }
@@ -379,14 +376,11 @@ export default function StudioAgentReviewPanel({
             title="Connect Live Channels"
             action={
               <Button asChild size="sm" variant="secondary">
-                <Link to={activationBillingHref(getStoredSignupIntent())}>
-                  See Plans to Go Live
-                </Link>
+                <Link to={choosePlanHref()}>{GO_LIVE_PLAN_COPY.cta}</Link>
               </Button>
             }
           >
-            Keep rehearsing privately. A plan connects your phone, email, and texting. Pick one when
-            you're ready to go live.
+            {GO_LIVE_PLAN_COPY.detail}
           </StatusNotice>
         ) : null}
 
@@ -466,7 +460,8 @@ export default function StudioAgentReviewPanel({
                 visibleMailbox.error
               ) : null}
             </StatusNotice>
-          ) : (
+          ) : access.status === "ready" && !access.data?.channels.length ? null : (
+            // Without any plan, the one Connect Live Channels prompt above covers email too.
             <ChannelAccessNotice access={access} channel="email" />
           )}
         </div>

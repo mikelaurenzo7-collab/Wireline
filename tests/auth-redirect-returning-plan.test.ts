@@ -8,6 +8,7 @@ import {
 } from "../src/lib/auth-redirect";
 import { FRESH_SIGNUP_SESSION_KEY } from "../src/lib/post-signup-onboarding";
 import {
+  choosePlanHref,
   SIGNUP_INTENT_STORAGE_KEY,
   SIGNUP_WEDGE_KEYS,
   SIGNUP_WEDGE_RECOMMENDATIONS,
@@ -72,9 +73,7 @@ describe("post-auth destination", () => {
   it("opens first-Bot setup even when an incidental settings return target rides along", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings")).toBe(
-      "/studio?create=1",
-    );
+    expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings")).toBe("/studio");
   });
 
   it("still honors the preserved invite target for a fresh signup", () => {
@@ -90,31 +89,34 @@ describe("post-auth destination", () => {
 
     const destination = resolvePostAuthDestination("business", "");
 
-    expect(destination).toBe("/studio?create=1");
+    expect(destination).toBe("/studio");
     expect(destination).not.toContain("posture=");
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+    // No plan was picked, so going live opens Billing with nothing preselected.
+    expect(choosePlanHref()).toBe("/settings/billing");
   });
 
-  it("preserves a selected paid plan, its included options, and the role during fresh signup", () => {
+  it("meets Bo first after picking a paid plan, and keeps the plan for going live", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
     const search =
       "?plan=usage&interval=month&tier=lite&number=0&email_address=1&template=front-desk";
-    const expected =
-      "/settings/billing?plan=usage&interval=month&number=0&email_address=1&tier=lite&onboarding=1&template=front-desk";
+    const plan = "/settings/billing?plan=usage&interval=month&number=0&email_address=1&tier=lite";
 
-    expect(resolvePostAuthDestination("business", search)).toBe(expected);
+    expect(resolvePostAuthDestination("business", search)).toBe("/studio?template=front-desk");
+    expect(choosePlanHref()).toBe(plan);
     window.location.search = search;
     captureSignupIntentFromLocation();
     persistOAuthReturnFromSearch(search);
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
-    expect(resolvePostAuthDestination("business", "")).toBe(expected);
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio?template=front-desk");
+    expect(choosePlanHref()).toBe(plan);
   });
 
   it("opens the role selected on a marketing CTA after email signup", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("personal", "?plan=free&template=front-desk")).toBe(
-      "/studio?create=1&template=front-desk",
+      "/studio?template=front-desk",
     );
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
@@ -126,7 +128,7 @@ describe("post-auth destination", () => {
     );
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("personal", "")).toBe("/studio?create=1&template=sales-rep");
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio?template=sales-rep");
     // Signup attribution must not reopen creation on a later sign-in.
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
   });
@@ -139,7 +141,7 @@ describe("post-auth destination", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("personal", "?template=front-desk")).toBe(
-      "/studio?create=1&template=front-desk",
+      "/studio?template=front-desk",
     );
   });
 
@@ -150,7 +152,7 @@ describe("post-auth destination", () => {
 
     // The current URL wins even if account completion precedes intent capture.
     expect(resolvePostAuthDestination("business", "?wedge=support&plan=free")).toBe(
-      "/studio?create=1&template=front-desk",
+      "/studio?template=front-desk",
     );
 
     // A query change on the same signup route must also replace the stored role
@@ -161,7 +163,7 @@ describe("post-auth destination", () => {
     window.location.search = "";
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "")).toBe("/studio?create=1&template=front-desk");
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio?template=front-desk");
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
     expect(resolvePostAuthDestination("business", "")).toBe("/studio");
   });
@@ -173,23 +175,21 @@ describe("post-auth destination", () => {
       expect(parseSignupIntent(`?template=${template}`)?.preferredTemplateId).toBe(template);
       sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
       expect(resolvePostAuthDestination("business", `?wedge=${wedge}`)).toBe(
-        `/studio?create=1&template=${template}`,
+        `/studio?template=${template}`,
       );
       localStorage.setItem(
         SIGNUP_INTENT_STORAGE_KEY,
         JSON.stringify({ signupWedge: wedge, capturedAt: "2026-09-19T00:00:00Z" }),
       );
       sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
-      expect(resolvePostAuthDestination("business", "")).toBe(
-        `/studio?create=1&template=${template}`,
-      );
+      expect(resolvePostAuthDestination("business", "")).toBe(`/studio?template=${template}`);
     },
   );
 
   it("keeps an explicit role choice ahead of a solution recommendation", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
     expect(resolvePostAuthDestination("business", "?wedge=sales&template=front-desk")).toBe(
-      "/studio?create=1&template=front-desk",
+      "/studio?template=front-desk",
     );
     localStorage.setItem(
       SIGNUP_INTENT_STORAGE_KEY,
@@ -200,9 +200,7 @@ describe("post-auth destination", () => {
       }),
     );
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
-    expect(resolvePostAuthDestination("business", "")).toBe(
-      "/studio?create=1&template=appointment-setter",
-    );
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio?template=appointment-setter");
   });
   it("ignores unrecognized roles at the fresh-signup redirect boundary", () => {
     localStorage.setItem(
@@ -211,9 +209,7 @@ describe("post-auth destination", () => {
     );
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("personal", "?template=unknown-role")).toBe(
-      "/studio?create=1",
-    );
+    expect(resolvePostAuthDestination("personal", "?template=unknown-role")).toBe("/studio");
   });
 
   it.each(["month", "year"])(
@@ -263,10 +259,10 @@ describe("post-auth destination", () => {
     );
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "")).toBe("/studio?create=1");
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
   });
 
-  it("keeps plan review once the visitor actually picks a plan over that default", () => {
+  it("remembers the plan a visitor picks over that default for going live", () => {
     localStorage.setItem(
       SIGNUP_INTENT_STORAGE_KEY,
       JSON.stringify({
@@ -279,9 +275,8 @@ describe("post-auth destination", () => {
     );
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "?plan=usage&tier=lite")).toContain(
-      "&onboarding=1",
-    );
+    expect(resolvePostAuthDestination("business", "?plan=usage&tier=lite")).toBe("/studio");
+    expect(choosePlanHref()).toContain("tier=lite");
   });
 
   it("opens free setup after OAuth when an older paid CTA names no current tier", () => {
@@ -290,7 +285,7 @@ describe("post-auth destination", () => {
     persistOAuthReturnFromSearch("?plan=team&interval=year");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "")).toBe("/studio?create=1");
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });

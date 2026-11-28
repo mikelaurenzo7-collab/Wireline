@@ -17,6 +17,7 @@ import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import {
   getStoredSignupIntent,
   activationBillingHref,
+  choosePlanHref,
   DEFAULT_ACTIVATION_PLAN_ID,
   recommendedPlanFromIntent,
   persistSignupIntent,
@@ -128,8 +129,9 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
       };
     case "TRIAL_EXPIRED":
       return {
-        title: "Your Trial Has Ended",
-        body: "Choose a plan to resume. Your Bot and history are saved.",
+        // Sent for an ended legacy trial and for a canceled plan alike.
+        title: "Your Plan Isn't Active",
+        body: "Choose a plan to resume live work. Your Bot and history are saved.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
@@ -632,7 +634,7 @@ export default function TrialGateModal() {
               {showPlanCheckout && (
                 <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground wl-label">
                   <Link
-                    to="/settings/billing"
+                    to={choosePlanHref()}
                     onClick={closeModal}
                     className="text-brand hover:underline"
                   >

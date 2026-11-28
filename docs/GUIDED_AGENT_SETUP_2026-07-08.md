@@ -9,7 +9,9 @@
 > The dead-code sweep removed both files;
 > `tests/guided-agent-learning-contract.test.ts` now pins them deleted. The
 > activation principles in this document live on in the real surfaces:
-> `CreateAgentDialog` and the recipe forms under `src/components/recipes/`.
+> Bo's first conversation (`src/components/onboarding/BoOnboarding.tsx`, which
+> replaced `CreateAgentDialog` in November 2026) and the recipe forms under
+> `src/components/recipes/`.
 
 ## Decision
 

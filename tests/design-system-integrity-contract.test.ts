@@ -103,11 +103,13 @@ describe("no text token is diluted below the AA floor", () => {
     }
   });
 
-  it("gives the Studio brief the shared focus treatment, not a 1px 40%-opacity ring", () => {
-    const studio = read("src/components/StudioWorkspaceV2.tsx");
-    expect(studio).not.toContain("focus:ring-1 focus:ring-primary/40");
-    expect(studio).toContain("focus-visible:ring-2");
-    expect(studio).toContain("focus-visible:border-[var(--wireline-color-focus-default)]");
+  it("gives Bo's first answers the shared field focus treatment, not a 1px 40%-opacity ring", () => {
+    const onboarding = read("src/components/onboarding/BoOnboarding.tsx");
+    expect(onboarding).not.toContain("focus:ring-1 focus:ring-primary/40");
+    // The answer box and website field are the shared atoms, which own focus.
+    expect(onboarding).toContain('import { Button, Input, Textarea } from "../atoms";');
+    expect(onboarding).toContain("<Textarea");
+    expect(onboarding).toContain("<Input");
   });
 
   it("paints success text with the success token, never the violet action token", () => {

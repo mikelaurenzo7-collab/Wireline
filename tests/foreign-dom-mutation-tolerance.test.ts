@@ -182,9 +182,12 @@ describe("startup", () => {
     expect(installed).toBeLessThan(main.indexOf("createRoot(document.getElementById"));
   });
 
-  it("gives the Create Bot label its own element, so a translated page shows the new words", () => {
-    const dialog = read("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain('<span key={creating ? "creating" : "idle"}>');
-    expect(dialog).toContain('{creating ? "Creating Your Bot…" : language.createCta}');
+  it("gives Bo's changing labels their own elements, so a translated page shows the new words", () => {
+    // Bo's first conversation replaced the create dialog and its Create Bot button.
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    expect(bo).toContain('<span key={step === "website" ? "read" : "send"}>');
+    expect(bo).toContain('{step === "website" ? COPY.website.read : COPY.send}');
+    expect(bo).toContain("<span key={`step-${stepNumber}`}>");
+    expect(bo).toContain('<span key={busy || "getting-ready"}>{busy || COPY.gettingReady}</span>');
   });
 });

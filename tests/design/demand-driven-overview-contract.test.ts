@@ -26,12 +26,14 @@ describe("demand-driven authenticated experience", () => {
     );
   });
 
-  it("uses one role-first next action when the workspace is empty", () => {
-    expect(studio).toContain('title="Create Your Bot"');
-    expect(studio).not.toMatch(/one (?:job|task)/i);
-    expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
-    expect(studio).toContain("Create Bot");
-    expect(studio).not.toContain('description="Describe the role and outcome."');
+  it("meets Bo with one question at a time when the workspace is empty", () => {
+    const firstRun = read("src/components/onboarding/BoOnboarding.tsx");
+    const copy = read("src/lib/wireline-onboarding-copy.ts");
+    expect(studio).not.toContain("Create Your Bot");
+    expect(firstRun).not.toMatch(/one (?:job|task)/i);
+    expect(copy).toContain("What's your business called, and what do you do?");
+    // No role templates: the owner describes the business in their own words.
+    expect(firstRun).not.toContain("BOT_ROLE_TEMPLATES");
     expect(studio).not.toContain("posture=");
   });
 

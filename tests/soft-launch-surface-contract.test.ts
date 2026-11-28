@@ -24,22 +24,30 @@ describe("soft launch surfaces", () => {
     expect(css).toContain(".wl-computer-screen__controls");
   });
 
-  it("keeps the command palette on calls, email, and computer without sms or campaigns", () => {
+  it("keeps the command palette on calls, email, and computer without sms, campaigns, or another Bot", () => {
     const commands = searchWorkspaceCommands(" ").map((command) => command.label);
-    expect(commands).toEqual(
-      expect.arrayContaining(["Calls", "Inbox", "Computer", "Create a Bot"]),
-    );
+    expect(commands).toEqual(expect.arrayContaining(["Calls", "Inbox", "Computer"]));
+    // One Bot per account: the palette never offers to create another.
+    expect(commands).not.toContain("Create a Bot");
     expect(commands.join(" ")).not.toMatch(/SMS|Campaign|Lead Hunt|Sequence/);
     expect(searchWorkspaceCommands("sms")).toEqual([]);
     expect(searchWorkspaceCommands("campaign")).toEqual([]);
   });
 
-  it("keeps Create Bot to one brief without promotional copy", () => {
-    const create = read("src/components/CreateAgentDialog.tsx");
-    expect(create).toContain("Describe the Job");
-    expect(create).not.toContain("Answers and calls, plus email and a computer.");
-    expect(create).not.toContain("SMS is coming soon");
-    expect(create).not.toContain("setup wizard");
+  it("keeps Bo's first question to one brief without promotional copy", () => {
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    const copy = read("src/lib/wireline-onboarding-copy.ts");
+    // Bo asks one thing at a time, and the first answer is the owner's own
+    // description of the business.
+    expect(read("src/lib/bo-onboarding.ts")).toContain(
+      ': ["about", "website", "questions", "checks"];',
+    );
+    expect(bo).toContain("About my business: `");
+    for (const source of [bo, copy]) {
+      expect(source).not.toContain("Answers and calls, plus email and a computer.");
+      expect(source).not.toContain("SMS is coming soon");
+      expect(source).not.toContain("setup wizard");
+    }
   });
 
   it("shares listening, speaking, and thinking words between rehearsal and a live test call", () => {

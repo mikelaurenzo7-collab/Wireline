@@ -47,39 +47,46 @@ describe("authenticated mobile cleanup", () => {
     expect(knowledge).toContain('"Choose Files"');
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
-    // The template gallery and the row of starter chips that replaced it are
-    // both gone: one Bot means nothing to pick. What has to hold on a phone is
-    // that the dialog stays one column that scrolls inside the screen.
-    const create = read("src/components/CreateAgentDialog.tsx");
-    expect(create).not.toContain('aria-label="Starting briefs"');
-    expect(create).toContain('className="grid min-w-0 grid-cols-1 gap-5"');
-    expect(create).toContain("max-h-[calc(100dvh-2rem)]");
+    // The template gallery and the create dialog are gone: Bo's first
+    // conversation asks one thing at a time. What still has to hold on a phone
+    // is that its reply buttons wrap and its next steps stack rather than
+    // overflowing.
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    expect(bo).toContain('<div className="flex flex-wrap gap-2">');
+    expect(bo).toContain('<div className="grid gap-2 sm:grid-cols-2">');
   });
 
-  it("keeps first run on one brief-first Studio launchpad", () => {
+  it("keeps first run on one brief-first Bo conversation in Studio", () => {
     const studio = read("src/components/StudioWorkspaceV2.tsx");
-    expect(studio).toContain('title="Create Your Bot"');
-    expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
-    expect(studio).toContain("Create Bot");
-    expect(studio).not.toContain('description="Describe the role and outcome."');
-    expect(studio).toContain('params.set("brief", trimmed)');
-    expect(studio).toContain('htmlFor="studio-brief"');
-    expect(studio).not.toContain("dayGreeting");
-    expect(studio).not.toContain("Good morning");
+    const home = read("src/pages/AgentStudioHome.tsx");
+    const bo = read("src/components/onboarding/BoOnboarding.tsx");
+    // An account without a Bot meets Bo in Studio; the Workspace draws no
+    // create screen of its own.
+    expect(home).toMatch(
+      /<StudioPageShell>\s*<BoOnboarding key=\{user\?\.id\} initialAbout=\{brief\} \/>/,
+    );
+    expect(studio).toContain("if (agents.length === 0) return <StudioLoadingState />;");
+    expect(studio).not.toContain('title="Create Your Bot"');
+    // A ?brief= link becomes Bo's first answer, for the owner to read and send.
+    expect(home).toContain('useState(() => params.get("brief") || "")');
+    expect(bo).toContain("initialAbout.slice(0, BO_ANSWER_MAX_CHARS)");
+    expect(bo).toContain('htmlFor="bo-onboarding-answer"');
+    for (const source of [studio, bo]) {
+      expect(source).not.toContain('description="Describe the role and outcome."');
+      expect(source).not.toContain("dayGreeting");
+      expect(source).not.toContain("Good morning");
+    }
   });
 
   it("uses Bot language, an identity roster, and a compact mobile switcher", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const chrome = read("src/components/studio/StudioContextChrome.tsx");
-    const create = read("src/components/CreateAgentDialog.tsx");
 
     expect(shell).toContain('singular: "Bot"');
     expect(shell).toContain('navLabel: "Workspace"');
     expect(shell).toContain('aria-label="Bot conversations"');
     expect(shell).toContain('data-wireline-bot-selected={selected ? "true" : undefined}');
     expect(chrome).toContain('aria-label="Switch Bot"');
-    expect(create).toContain("BOT_ROLE_TEMPLATES.find");
-    expect(create).toContain("Cancel");
   });
 
   it("keeps guidance next to decisions and removes provider/runtime narration", () => {

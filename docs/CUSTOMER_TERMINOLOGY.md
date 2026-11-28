@@ -4,9 +4,11 @@ Status: **Active canonical language policy**.
 
 ## Decision
 
-BotBound is one product and one workspace model. Customers describe the work,
-choose a role starter, and configure a **Bot**. `BotBound Personal` is a paid plan
-name, while the workspace and Bot use the same product and policy model.
+BotBound is one product, one workspace model, and one **Bot** per account. A new
+account meets its Bot, **Bo**, which asks about the business in a short
+conversation; the owner then sets it up, rehearses it, and chooses a plan when
+going live. `BotBound Personal` is a paid plan name, while the workspace and Bot
+use the same product and policy model.
 
 The `personal` plan ID now identifies the paid BotBound Personal plan. Historical
 Free Builder text and `free`/`builder` signup aliases do not make it free.
@@ -19,9 +21,9 @@ separate workspace models.
 | Surface                                       | Canonical language                                                                                                                                                                                                                                                                                                                          |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Broad marketing                               | `Bot`, `Phone Bot`, or a concrete role such as `Front Desk`; launch capabilities are calls, texts, email, and Computer, with recipient permission for texts and outgoing calls. Campaign calling to lists and unproven messaging integrations stay outside launch promotion.                                                                |
-| Signup and setup                              | `Create` a Bot, `Set Up` its playbook, `Rehearse` privately, then activate live work when ready. Never `Wire` as a customer step.                                                                                                                                                                                                           |
+| Signup and setup                              | `Meet` the Bot (Bo asks about the business), `Set Up` its playbook, `Rehearse` privately, then `Choose a Plan` when going live. Never `Wire` as a customer step, and never a plan choice at sign-up.                                                                                                                                        |
 | Workspace and navigation                      | `Bot`, `Bots`, `workspace`, `Knowledge`                                                                                                                                                                                                                                                                                                     |
-| Role starters                                 | Job names such as `Sales Rep`, `Support`, or `Personal Assistant`                                                                                                                                                                                                                                                                           |
+| Role starters                                 | Job names such as `Sales Rep`, `Support`, or `Personal Assistant` describe what the Bot does. They are not a picker: every account gets one Bot, Bo.                                                                                                                                                                                        |
 | Pricing                                       | `Lite`, `Starter`, and `Plus`, billed monthly, each with one shared allowance for calls, texts, email, and Computer. Earlier channel packages are not promoted. Use `Custom Setup` for a founder reviewed request. Use the current catalog (`src/lib/usage-billing-catalog.ts`) and account entitlements for price and availability claims. |
 | Technical APIs, routes, DB, events, MCP tools | Keep stable `agent`, plan, and account identifiers                                                                                                                                                                                                                                                                                          |
 
