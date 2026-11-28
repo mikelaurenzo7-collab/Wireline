@@ -79,6 +79,8 @@ export class ElevenLabsMediaSession extends EventEmitter {
   >();
   private earlyAudio: string[] = [];
   private earlyAudioBytes = 0;
+  private responseStartedAt = 0;
+  private awaitingFirstClause = false;
 
   constructor(
     private readonly options: {
@@ -89,6 +91,8 @@ export class ElevenLabsMediaSession extends EventEmitter {
       stockSpeech: SpeechStream;
       onClonePlayed: () => Promise<void>;
       onFallback: () => void;
+      /** How long a reply's first clause took to arrive from the model, and its length. */
+      onFirstClause?: (sinceResponseMs: number, characters: number) => void;
       markTimeoutMs?: number;
       initialStock?: boolean;
     },
@@ -256,6 +260,8 @@ export class ElevenLabsMediaSession extends EventEmitter {
       this.responseId = event.response?.id ?? "";
       this.previousText = "";
       this.modelResponding = true;
+      this.responseStartedAt = performance.now();
+      this.awaitingFirstClause = true;
     }
     if (event.type === "response.output_text.delta") {
       if (this.cancelledResponses.has(String(event.response_id))) return;
@@ -323,6 +329,10 @@ export class ElevenLabsMediaSession extends EventEmitter {
   private enqueueSpeech(value: string) {
     const text = value.trim();
     if (!text) return;
+    if (this.awaitingFirstClause) {
+      this.awaitingFirstClause = false;
+      this.options.onFirstClause?.(performance.now() - this.responseStartedAt, text.length);
+    }
     const generation = this.generation;
     const responseId = this.responseId;
     const signal = this.controller.signal;

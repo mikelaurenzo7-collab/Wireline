@@ -547,7 +547,9 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
               </h1>
               {stepNumber > 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  {COPY.stepLabel(stepNumber, steps.length)}
+                  {/* Keyed, like every label here that changes: a browser translating
+                      the page replaces bare text nodes, which then never update. */}
+                  <span key={`step-${stepNumber}`}>{COPY.stepLabel(stepNumber, steps.length)}</span>
                 </p>
               ) : null}
             </div>
@@ -615,7 +617,7 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
           {busy || (!agentId && !createFailed) ? (
             <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
               <BotMark seed={agentId || "bo"} name={botName} size={20} working decorative />
-              {busy || COPY.gettingReady}
+              <span key={busy || "getting-ready"}>{busy || COPY.gettingReady}</span>
             </p>
           ) : null}
         </div>
@@ -771,7 +773,9 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
                   ) : (
                     <Send className="size-4" aria-hidden="true" />
                   )}
-                  {step === "website" ? COPY.website.read : COPY.send}
+                  <span key={step === "website" ? "read" : "send"}>
+                    {step === "website" ? COPY.website.read : COPY.send}
+                  </span>
                 </Button>
               </div>
             </form>
