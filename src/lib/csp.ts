@@ -22,6 +22,13 @@ export const INLINE_STYLE_HASHES = [
   "'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw='",
   // Playwright axe gate — disables transitions/animations before scanning.
   "'sha256-pjBMouHaxzAZFuesw6ZdkjqrWeDPx0aK6XjL/EpYcbk='",
+  // The scroll area's one fixed rule, which hides its viewport's native
+  // scrollbar. Refused, the command palette showed a second scrollbar.
+  "'sha256-vGQdhYJbTuF+M8iCn1IZCHpdkiICocWHDq4qnQF4Rjw='",
+  // The select's one fixed rule, the same for its option list. Both hashes
+  // are recomputed from the installed packages by
+  // tests/csp-inline-style-hashes.test.ts, so an upgrade cannot drift.
+  "'sha256-441zG27rExd4/il+NvIqyL8zFx5XmyNQtE381kSkUJk='",
 ] as const;
 
 export const MARKETING_SCRIPT_SRCS = [

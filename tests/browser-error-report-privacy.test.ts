@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { captureException } from "../src/lib/sentry";
 import { errorReportRoute } from "../src/lib/error-report-route";
-import { componentTrail, errorReportContext } from "../src/lib/error-report-context";
+import {
+  componentPlaces,
+  componentTrail,
+  errorReportContext,
+} from "../src/lib/error-report-context";
 
 describe("error report route boundary", () => {
   it.each([
@@ -133,6 +137,43 @@ describe("browser error reporting privacy", () => {
     expect(errorReportContext({ componentStack: "x".repeat(9_000) })?.componentStack).toHaveLength(
       4_000,
     );
+  });
+
+  // A production build shortens component names to a letter or two. Tracing
+  // the 2026-11-27 crash from names alone meant rebuilding the release and
+  // guessing; the built file and position place each frame directly.
+  it("says where each of those components lives, by built file and position", () => {
+    const stack = [
+      "",
+      "    at Presence (https://botbound.app/assets/Textarea-Du9rX6ik.js:6:16652)",
+      "    at Provider (https://botbound.app/assets/Textarea-Du9rX6ik.js:6:3424)",
+      "    at https://botbound.app/assets/Textarea-Du9rX6ik.js:6:9001",
+      "    at MobileNavMoreSheet (https://botbound.app/assets/AppShell-BBG32q51.js:2:100)",
+      "    at div",
+      "    at WorkspaceShell (https://botbound.app/assets/AppShell-BBG32q51.js:2:900)",
+    ].join("\n");
+    const places = componentPlaces(stack)!;
+    expect(places).toBe(
+      "Textarea-Du9rX6ik:6:16652 < Textarea-Du9rX6ik:6:3424 < AppShell-BBG32q51:2:100 < ? < AppShell-BBG32q51:2:900",
+    );
+    // One place for each name, in the same order.
+    expect(places.split(" < ")).toHaveLength(componentTrail(stack)!.split(" < ").length);
+    expect(places).not.toContain("botbound.app");
+    expect(places).not.toContain("http");
+    // Only the file's name and position: nothing after a question mark.
+    expect(
+      componentPlaces("    at Qe (https://botbound.app/assets/Studio-a1.js?token=fake_secret:3:7)"),
+    ).toBe("Studio-a1:3:7");
+    // Nothing to say when no frame names a built file.
+    expect(componentPlaces("    at div\n    at span")).toBeUndefined();
+    expect(componentPlaces("")).toBeUndefined();
+    expect(componentPlaces({ not: "text" })).toBeUndefined();
+    const deep = Array.from(
+      { length: 200 },
+      (_, index) => `    at L${index} (https://botbound.app/assets/Chunk-${index}.js:1:${index})`,
+    ).join("\n");
+    expect(componentPlaces(deep)!.split(" < ").length).toBeLessThanOrEqual(40);
+    expect(componentPlaces(deep)!.length).toBeLessThanOrEqual(1_600);
   });
 
   it("does not amplify an application error when context is circular", () => {

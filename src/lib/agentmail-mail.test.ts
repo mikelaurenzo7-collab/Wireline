@@ -43,10 +43,12 @@ import {
   AGENTMAIL_IMAP_HOST,
   AGENTMAIL_SMTP_HOST,
   AGENTMAIL_WEBHOOK_EVENT_TYPES,
+  AgentMailCapacityError,
   AgentMailConnectError,
   agentMailManagedInboxClientId,
   agentMailWebhookClientId,
   agentmailLocalPart,
+  assertAgentMailInboxAvailable,
   createAgentMailInbox,
   deleteAgentMailWebhooksForAccount,
   deleteWirelineAgentMailWebhooks,
@@ -58,6 +60,7 @@ import {
   listAgentMailInboxes,
   normalizeAgentMailInbox,
   publicAgentMailWebhookUrl,
+  readAgentMailInboxCapacity,
   resolveAgentMailInbox,
   sendAgentMail,
   verifyAgentMailCredentials,
@@ -704,5 +707,94 @@ describe("agentmail-mail", () => {
         headers: unsubscribeHeaders,
       }),
     );
+  });
+});
+
+/**
+ * On 2026-11-27 the managed organization held 15 of its 15 inboxes. AgentMail
+ * answered a paying customer's inbox request with 403, which BotBound reported
+ * as "That AgentMail API key was rejected." The key was fine; the retry job
+ * died five attempts later with that message, and nothing named the limit.
+ */
+describe("a full AgentMail organization", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetchWithTimeout.mockReset();
+  });
+
+  const paths = () =>
+    mockFetchWithTimeout.mock.calls.map(([url]) => String(url).replace(/^https:\/\/[^/]+\/v0/, ""));
+
+  it("reads how many inboxes the organization holds and how many it may hold", async () => {
+    mockFetchWithTimeout.mockResolvedValueOnce(
+      jsonResponse(200, { organization_id: "org", inbox_count: 12, inbox_limit: 15 }),
+    );
+    await expect(readAgentMailInboxCapacity("am_test")).resolves.toEqual({ used: 12, limit: 15 });
+    expect(paths()).toEqual(["/organizations"]);
+  });
+
+  it.each([
+    ["an error status", jsonResponse(500, { message: "unavailable" })],
+    ["no counts", jsonResponse(200, { organization_id: "org" })],
+    [
+      "counts that are not whole numbers",
+      jsonResponse(200, { inbox_count: "15", inbox_limit: 15 }),
+    ],
+    ["a limit of zero", jsonResponse(200, { inbox_count: 0, inbox_limit: 0 })],
+  ])("does not guess from %s", async (_name, response) => {
+    mockFetchWithTimeout.mockResolvedValueOnce(response);
+    await expect(readAgentMailInboxCapacity("am_test")).resolves.toBeNull();
+  });
+
+  it("refuses a new inbox when none is free, and names the limit", async () => {
+    mockFetchWithTimeout.mockResolvedValueOnce(
+      jsonResponse(200, { inbox_count: 15, inbox_limit: 15 }),
+    );
+    const refusal = await assertAgentMailInboxAvailable("am_test").catch((error) => error);
+    expect(refusal).toBeInstanceOf(AgentMailCapacityError);
+    expect(refusal).toBeInstanceOf(AgentMailConnectError);
+    expect(refusal.message).toContain("15 of 15");
+    expect(refusal).toMatchObject({ used: 15, limit: 15 });
+  });
+
+  it("allows a new inbox while one is free, or when the organization cannot be read", async () => {
+    mockFetchWithTimeout.mockResolvedValueOnce(
+      jsonResponse(200, { inbox_count: 14, inbox_limit: 15 }),
+    );
+    await expect(assertAgentMailInboxAvailable("am_test")).resolves.toBeUndefined();
+    mockFetchWithTimeout.mockRejectedValueOnce(new Error("network down"));
+    await expect(assertAgentMailInboxAvailable("am_test")).resolves.toBeUndefined();
+  });
+
+  it("reports a refused create as a full organization, not a rejected key", async () => {
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(jsonResponse(403, { name: "ForbiddenError" }))
+      .mockResolvedValueOnce(jsonResponse(200, { inbox_count: 15, inbox_limit: 15 }));
+    await expect(
+      createAgentMailInbox("am_test", "miguel-c31f4c2e", "Miguel", { domain: "bots.botbound.app" }),
+    ).rejects.toThrow("AgentMail has no free inboxes for this organization (15 of 15).");
+    expect(paths()).toEqual(["/inboxes", "/organizations"]);
+  });
+
+  it("still reports a rejected key when the organization has room or cannot be read", async () => {
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(jsonResponse(403, { name: "ForbiddenError" }))
+      .mockResolvedValueOnce(jsonResponse(200, { inbox_count: 3, inbox_limit: 15 }));
+    await expect(createAgentMailInbox("am_test", "one", "One")).rejects.toThrow(
+      "That AgentMail API key was rejected.",
+    );
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(jsonResponse(403, { name: "ForbiddenError" }))
+      .mockResolvedValueOnce(jsonResponse(403, { name: "ForbiddenError" }));
+    await expect(createAgentMailInbox("am_test", "two", "Two")).rejects.toThrow(
+      "That AgentMail API key was rejected.",
+    );
+    // A key AgentMail does not know is refused with 401: no capacity read.
+    mockFetchWithTimeout.mockReset();
+    mockFetchWithTimeout.mockResolvedValueOnce(jsonResponse(401, { name: "UnauthorizedError" }));
+    await expect(createAgentMailInbox("am_test", "three", "Three")).rejects.toThrow(
+      "That AgentMail API key was rejected.",
+    );
+    expect(paths()).toEqual(["/inboxes"]);
   });
 });
