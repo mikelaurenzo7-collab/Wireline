@@ -683,7 +683,11 @@ export default function CreateAgentDialog({
               ) : (
                 <WandSparkles size={15} aria-hidden="true" />
               )}
-              {creating ? "Creating Your Bot…" : language.createCta}
+              {/* Its own keyed element, so a browser translating the page sees the
+                  new words: a bare text node it has replaced never updates. */}
+              <span key={creating ? "creating" : "idle"}>
+                {creating ? "Creating Your Bot…" : language.createCta}
+              </span>
             </Button>
           </div>
         </div>

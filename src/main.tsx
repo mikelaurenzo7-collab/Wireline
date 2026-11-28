@@ -10,6 +10,7 @@ import {
   clearDomReconciliationReloadGuardAfterStableRender,
   isDomReconciliationError,
   requestDomReconciliationReload,
+  tolerateForeignDomMutations,
 } from "./lib/dom-reconciliation-recovery";
 import { captureException } from "./lib/sentry";
 import { canonicalLegacyBrowserHandoff } from "./lib/canonical-browser-origin";
@@ -27,6 +28,9 @@ if (legacyBrowserHandoffUrl) {
 }
 
 if (!legacyBrowserHandoffUrl && typeof window !== "undefined") {
+  // Before React creates a node: a translated page must not crash on a click.
+  tolerateForeignDomMutations();
+
   // Preserve campaign and plan intent before a public landing-page CTA changes
   // the URL. Signup can then persist first-touch attribution server-side.
   const signupIntent = captureSignupIntentFromLocation();
