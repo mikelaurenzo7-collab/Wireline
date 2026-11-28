@@ -16,6 +16,7 @@ import { hasUnfinishedConversation } from "../lib/studio-session-state";
 import {
   STUDIO_THREAD_PARAM,
   parseStudioThreadParam,
+  pendingStudioThreadRequest,
   setActiveStudioChat,
 } from "../lib/studio-active-chat";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
@@ -399,8 +400,23 @@ function StudioWorkspaceContent() {
   // once, with the same unsent-draft guard as the in-page controls, then
   // removes it so a refresh opens a fresh chat again.
   const conversationParam = params.get(STUDIO_THREAD_PARAM);
+  // The effect runs again after its own change to the open chat, with the
+  // parameter still present, so the request it applied is remembered until the
+  // router has removed it. See pendingStudioThreadRequest.
+  const appliedConversation = useRef<string | null>(null);
   useEffect(() => {
-    if (!conversationParam || !activeAgentId || !openThreadId) return;
+    if (!conversationParam) {
+      appliedConversation.current = null;
+      return;
+    }
+    const request = pendingStudioThreadRequest({
+      param: conversationParam,
+      agentId: activeAgentId,
+      openThreadId,
+      applied: appliedConversation.current,
+    });
+    if (!request) return;
+    appliedConversation.current = request;
     const target = parseStudioThreadParam(conversationParam);
     const draftKey = `${activeAgentId}:configure`;
     if (
