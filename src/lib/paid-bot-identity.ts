@@ -6,6 +6,7 @@ import {
   AGENTMAIL_MANAGED_SCOPE_MARKER,
   agentMailManagedInboxClientId,
   agentmailGrantedScopes,
+  assertAgentMailInboxAvailable,
   createAgentMailInbox,
   deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
@@ -482,6 +483,11 @@ async function ensurePaidBotMailbox(
   }
 
   const reservedEmailAddress = `${managedMailboxUsername(agentName, agentId)}@${domain}`;
+  // A new mailbox needs a free inbox. Refuse before the address is reserved:
+  // an address the provider then refuses is shown to its owner as the Bot's
+  // email while nothing receives mail there. The phone line is already
+  // secured by this point and is kept for the retry.
+  await assertAgentMailInboxAvailable(apiKey);
   // Persist the deterministic BotBound-managed address before calling the
   // provider. If AgentMail accepts creation and the process crashes, terminal
   // erasure and the next retry still have an authoritative local pointer.

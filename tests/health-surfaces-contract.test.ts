@@ -75,6 +75,10 @@ describe("health surfaces contract", () => {
     // crash inside a shared primitive can be traced to its screen.
     expect(source).toContain("componentTrail: trail,");
     expect(source).toContain("component_trail: trail,");
+    // And where each of those components lives in the build, because a
+    // production build shortens their names.
+    expect(source).toContain("componentPlaces: places,");
+    expect(source).toContain("component_places: places,");
     expect(source).toContain("body.stack.slice(0, 4_000)");
   });
 
