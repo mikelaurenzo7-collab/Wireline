@@ -6,6 +6,7 @@ import {
   STUDIO_THREAD_PARAM,
   notifyStudioChatsChanged,
   parseStudioThreadParam,
+  pendingStudioThreadRequest,
   setActiveStudioChat,
 } from "../src/lib/studio-active-chat";
 
@@ -55,5 +56,77 @@ describe("Studio chats in the workspace rail", () => {
 
     // The list refreshes when a reply is saved or a chat is cleared.
     expect(workroom.match(/notifyStudioChatsChanged\(\)/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  /**
+   * On 2026-11-27 Studio showed a paying customer "Something broke" (React
+   * error 185), and pressing New chat in the rail reproduces it. The router
+   * removes `?conversation=new` in a transition that React renders after
+   * Studio's own change to the open chat, so Studio saw the request again each
+   * time. `new` never equals the open chat, so each pass opened another fresh
+   * chat, which rebuilt the whole conversation, until React stopped the loop.
+   */
+  describe("a rail link is applied once", () => {
+    const bot = "bot-front-desk";
+    const pass = (param: string | null, openThreadId: string, applied: string | null) =>
+      pendingStudioThreadRequest({ param, agentId: bot, openThreadId, applied });
+
+    it("opens one fresh chat however many times Studio sees the same request", () => {
+      const first = pass("new", "thread-a", null);
+      expect(first).not.toBeNull();
+      // Studio opened a fresh chat, and the parameter is still in the address.
+      expect(pass("new", "thread-b", first)).toBeNull();
+      expect(pass("new", "thread-c", first)).toBeNull();
+    });
+
+    it("applies again once the parameter has gone and comes back", () => {
+      const first = pass("new", "thread-a", null);
+      // The removal landed: Studio forgets the request it applied.
+      expect(pass(null, "thread-b", first)).toBeNull();
+      expect(pass("new", "thread-b", null)).toBe(first);
+    });
+
+    it("treats another chat or another Bot as a new request", () => {
+      const fresh = pass("new", "thread-a", null);
+      const saved = pass("3f2c1a9e-8b7d-4c6f-9a1b-2d3e4f5a6b7c", "thread-a", fresh);
+      expect(saved).not.toBeNull();
+      expect(saved).not.toBe(fresh);
+      expect(
+        pendingStudioThreadRequest({
+          param: "new",
+          agentId: "bot-sales",
+          openThreadId: "thread-a",
+          applied: fresh,
+        }),
+      ).not.toBeNull();
+    });
+
+    it("waits until a Bot and a chat are open", () => {
+      expect(
+        pendingStudioThreadRequest({ param: "new", agentId: "", openThreadId: "t", applied: null }),
+      ).toBeNull();
+      expect(
+        pendingStudioThreadRequest({ param: "new", agentId: bot, openThreadId: "", applied: null }),
+      ).toBeNull();
+    });
+
+    it("is remembered by Studio before it changes the open chat", () => {
+      const workspace = read("src/components/StudioWorkspaceV2.tsx");
+      const effect = workspace.slice(
+        workspace.indexOf("const appliedConversation = useRef"),
+        workspace.indexOf("const requestMessage = useCallback"),
+      );
+      expect(effect).toContain("pendingStudioThreadRequest({");
+      expect(effect).toContain("applied: appliedConversation.current,");
+      // Forgotten only once the parameter is gone.
+      expect(effect).toMatch(
+        /if \(!conversationParam\) \{\s*appliedConversation\.current = null;\s*return;\s*\}/,
+      );
+      // Remembered before the open chat changes, so the next pass is a no-op.
+      expect(effect.indexOf("appliedConversation.current = request;")).toBeGreaterThan(-1);
+      expect(effect.indexOf("appliedConversation.current = request;")).toBeLessThan(
+        effect.indexOf("setThread({"),
+      );
+    });
   });
 });

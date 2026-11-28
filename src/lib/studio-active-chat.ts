@@ -51,3 +51,25 @@ export function parseStudioThreadParam(value: string | null): string | null | un
   if (value === "legacy" || THREAD_ID.test(value)) return value;
   return undefined;
 }
+
+/**
+ * The `?conversation=` request Studio still has to apply, or `null` when there
+ * is nothing to do. `applied` is the request Studio applied last.
+ *
+ * A request is applied once per Bot. The router removes the parameter in a
+ * transition, which React renders only after Studio's own change to the open
+ * chat, so Studio sees the same request again with a different chat open.
+ * `new` never equals the open chat: applied on every pass, it opened another
+ * fresh chat each time, rebuilt the conversation, and never let the removal
+ * land. That loop is the "Something broke" screen behind the rail's New chat.
+ */
+export function pendingStudioThreadRequest(input: {
+  param: string | null;
+  agentId: string | null;
+  openThreadId: string;
+  applied: string | null;
+}): string | null {
+  if (!input.param || !input.agentId || !input.openThreadId) return null;
+  const request = JSON.stringify([input.agentId, input.param]);
+  return request === input.applied ? null : request;
+}
