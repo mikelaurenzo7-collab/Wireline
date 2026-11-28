@@ -28,6 +28,7 @@ const h = vi.hoisted(() => ({
   ownedNumbers: vi.fn(),
   vaultConfigured: vi.fn(),
   inboxesRead: vi.fn(),
+  inboxAvailable: vi.fn(),
   domainIdentity: vi.fn(),
   webhookUrl: vi.fn(),
   fence: vi.fn(),
@@ -167,6 +168,7 @@ vi.mock("../src/lib/agentmail-mail", async (importOriginal) => {
     AGENTMAIL_MANAGED_SCOPE_MARKER: "managed",
     agentMailManagedInboxClientId: actual.agentMailManagedInboxClientId,
     agentmailGrantedScopes: h.provider,
+    assertAgentMailInboxAvailable: h.inboxAvailable,
     createAgentMailInbox: h.createInbox,
     ensureAgentMailWebhook: h.provider,
     getAgentMailWebhook: h.provider,
@@ -208,6 +210,7 @@ beforeEach(() => {
   h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
   h.vaultConfigured.mockReturnValue(true);
   h.inboxesRead.mockResolvedValue([]);
+  h.inboxAvailable.mockResolvedValue(undefined);
   h.domainIdentity.mockResolvedValue(undefined);
   h.webhookUrl.mockReturnValue("https://botbound.app/api/webhooks/agentmail/configuration-check");
   vi.stubEnv("AGENTMAIL_API_KEY", "test-only-agentmail-key");
@@ -616,6 +619,29 @@ describe("paid identity admission at queue and provider boundaries", () => {
     expect(h.ownedNumbers).toHaveBeenCalledTimes(2);
     expect(h.provider).toHaveBeenCalledTimes(2);
     expect(h.lines).toEqual([{ agentId: "oldest" }]);
+  });
+  // On 2026-11-27 the provider's organization was full. The address had
+  // already been saved for the Bot, so its owner saw an email address that
+  // was never created.
+  it("reserves no address when the email provider has no free inbox, and keeps the phone line", async () => {
+    h.target = "oldest";
+    h.phoneProvision.mockImplementation(async () => {
+      h.lines = [{ agentId: "oldest" }];
+      return { ok: true, phoneNumber: "+12025550123", reused: false };
+    });
+    h.inboxAvailable.mockRejectedValue(
+      new Error("AgentMail has no free inboxes for this organization (15 of 15)."),
+    );
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      "no free inboxes",
+    );
+    // The line was secured first and is kept for the retry.
+    expect(h.phoneProvision).toHaveBeenCalledTimes(1);
+    expect(h.lines).toEqual([{ agentId: "oldest" }]);
+    // Nothing was reserved, encrypted or created.
+    expect(h.inboxAvailable).toHaveBeenCalledTimes(1);
+    expect(h.provider).not.toHaveBeenCalled();
+    expect(h.createInbox).not.toHaveBeenCalled();
   });
   it("still admits the eligible Bot to the managed-identity path", async () => {
     h.target = "oldest";

@@ -10,6 +10,7 @@ import {
   agentMailManagedInboxClientId,
   agentmailLocalPart,
   agentmailGrantedScopes,
+  assertAgentMailInboxAvailable,
   deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
   getAgentMailWebhook,
@@ -191,6 +192,8 @@ async function createManagedInboxAttempt(input: {
       body = null;
     }
   }
+  // A full organization answers 403 too: say so instead of blaming the key.
+  if (response.status === 403) await assertAgentMailInboxAvailable(input.apiKey);
   if (response.status === 401 || response.status === 403) {
     throw new AgentMailConnectError(
       "BotBound managed email credentials were rejected by AgentMail.",
@@ -480,6 +483,19 @@ router.post(
           agent.name || "Bot",
           agentId,
         )}@${requiredDomain}`;
+        // A new mailbox needs a free inbox. Refuse before the address is
+        // reserved: a reserved address the provider then refuses is shown to
+        // its owner as the Bot's email while nothing receives mail there.
+        try {
+          await assertAgentMailInboxAvailable(apiKey);
+        } catch (err) {
+          log.warn("Managed Bot mailbox provisioning failed", {
+            userId,
+            agentId,
+            error: getErrorMessage(err),
+          });
+          throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+        }
         const connected = await upsertOwnedEmailAccount({
           userId,
           agentId,

@@ -60,6 +60,25 @@ export class AgentMailConnectError extends Error {
   }
 }
 
+/**
+ * The organization holds as many inboxes as its plan allows. AgentMail answers
+ * the next create with 403, the status it also uses for a refused key, so this
+ * is told apart by reading the organization.
+ */
+export class AgentMailCapacityError extends AgentMailConnectError {
+  readonly used: number;
+  readonly limit: number;
+
+  constructor(used: number, limit: number) {
+    super(
+      `AgentMail has no free inboxes for this organization (${used} of ${limit}). Raise the plan's inbox limit or remove unused inboxes.`,
+    );
+    this.name = "AgentMailCapacityError";
+    this.used = used;
+    this.limit = limit;
+  }
+}
+
 export type AgentMailInbox = { inboxId: string; email: string };
 export type AgentMailAccountForManagedErasure = {
   provider: string | null;
@@ -193,6 +212,50 @@ function assertAgentMailStatus(status: number, message: string): void {
     throw new AgentMailConnectError("That AgentMail API key was rejected.");
   }
   if (status < 200 || status >= 300) throw new AgentMailConnectError(message);
+}
+
+export type AgentMailInboxCapacity = { used: number; limit: number };
+
+/**
+ * How many inboxes the organization holds and how many its plan allows.
+ * `null` when AgentMail does not say, so a caller carries on and lets the
+ * create itself decide.
+ */
+export async function readAgentMailInboxCapacity(
+  credential: string,
+  request: AgentMailJsonRequester = agentMailJson,
+): Promise<AgentMailInboxCapacity | null> {
+  const { status, body } = await request(credential, "/organizations");
+  if (status < 200 || status >= 300) return null;
+  const organization = asRecord(body);
+  const used = organization?.inbox_count;
+  const limit = organization?.inbox_limit;
+  if (
+    typeof used !== "number" ||
+    typeof limit !== "number" ||
+    !Number.isInteger(used) ||
+    !Number.isInteger(limit) ||
+    used < 0 ||
+    limit <= 0
+  )
+    return null;
+  return { used, limit };
+}
+
+/**
+ * Refuses when the organization has no inbox left. A full organization was
+ * reported as "That AgentMail API key was rejected.", which sent the operator
+ * to the key while every new paid Bot went without an email address. An
+ * unreadable organization is not a refusal.
+ */
+export async function assertAgentMailInboxAvailable(
+  credential: string,
+  request: AgentMailJsonRequester = agentMailJson,
+): Promise<void> {
+  const capacity = await readAgentMailInboxCapacity(credential, request).catch(() => null);
+  if (capacity && capacity.used >= capacity.limit) {
+    throw new AgentMailCapacityError(capacity.used, capacity.limit);
+  }
 }
 
 export async function listAgentMailInboxes(
@@ -473,6 +536,7 @@ export async function createAgentMailInbox(
       ...(options.metadata ? { metadata: options.metadata } : {}),
     }),
   });
+  if (status === 403) await assertAgentMailInboxAvailable(credential);
   assertAgentMailStatus(
     status,
     options.domain
