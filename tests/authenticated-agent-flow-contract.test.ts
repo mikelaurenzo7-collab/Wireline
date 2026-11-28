@@ -188,7 +188,7 @@ describe("authenticated Bot flow", () => {
     expect(boOnboarding).toMatch(
       /isPersonalStarter\(\s*params\.get\("template"\),\s*getStoredSignupIntent\(\)\?\.preferredTemplateId,?\s*\)/,
     );
-    expect(boOnboarding).toContain("name: FIRST_BOT_NAME,");
+    expect(boOnboarding).toContain("name: DEFAULT_BOT_NAME,");
     expect(boOnboarding).toContain("is_business_agent: !personal,");
     expect(boOnboarding).not.toMatch(
       /BOT_ROLE_TEMPLATES|Bot role starters|Choose one personal job/,
@@ -208,14 +208,16 @@ describe("authenticated Bot flow", () => {
     expect(boOnboarding).not.toContain("What should it handle first?");
   });
 
-  it("meets Bo in a resumable four-question conversation that ends on Hear, Voice, Number, Chat", () => {
+  it("meets Bo in a resumable conversation that ends on Hear, Voice, Number, Chat", () => {
     const boOnboarding = read("src/components/onboarding/BoOnboarding.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
     const boState = read("src/lib/bo-onboarding.ts");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
 
     // Bo is created once per account; another tab that asks too gets the same Bot.
-    expect(copy).toContain('export const FIRST_BOT_NAME = "Bo";');
+    // The name is bot-name.ts's, the one every create path and Set Up share.
+    expect(read("src/lib/bot-name.ts")).toContain('export const DEFAULT_BOT_NAME = "Bo";');
+    expect(copy).not.toContain("FIRST_BOT_NAME");
     expect(boOnboarding).toContain("only_if_none: true,");
     // The conversation is the only create surface, so it owns the whole
     // handoff the create dialog and the post-create guide used to split.
@@ -229,8 +231,9 @@ describe("authenticated Bot flow", () => {
     expect(boState).toContain("export function writeBoOnboarding");
     expect(boState).toContain("export function clearBoOnboarding");
     expect(studioHome).toContain("agents.some((agent) => agent.id === onboarding?.agentId)");
+    expect(boState).toContain('? ["name", "about", "website", "questions", "checks"]');
     expect(boOnboarding).toContain(
-      'const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;',
+      "writeBoOnboarding(userId, { agentId: id, step: steps[0]!, asksName });",
     );
     // It ends on the four next steps: rehearse, voice, a number, and chat.
     expect(boOnboarding).toContain("finish(`/studio?agent=${id}&workroom=test`)");

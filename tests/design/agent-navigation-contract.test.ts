@@ -128,16 +128,17 @@ describe("authenticated Bot navigation contract", () => {
   });
 
   it("makes Bo's first conversation brief-first, posture-neutral, and free of provider complexity", () => {
-    // Bo asks about the business first; there is no role gallery to start from.
+    // Bo asks about the business first (its name, when the workspace has none);
+    // there is no role gallery to start from.
     expect(firstRun).toContain(
-      'const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;',
+      "const steps = useMemo(() => boQuestionSteps(asksName), [asksName]);",
     );
     expect(firstRun).not.toContain("Start from a Role");
     expect(firstRun).not.toContain("BOT_ROLE_TEMPLATES");
     expect(firstRun).not.toContain('aria-label="Bot role starters"');
     // Creating Bo sends only its name, starting posture, and time zone: no number, voice, or face.
     expect(firstRun).toMatch(
-      /body: JSON\.stringify\(\{\s*name: FIRST_BOT_NAME,\s*only_if_none: true,\s*is_business_agent: !personal,\s*timezone: Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone,\s*\}\)/,
+      /body: JSON\.stringify\(\{\s*name: DEFAULT_BOT_NAME,\s*only_if_none: true,\s*is_business_agent: !personal,\s*timezone: Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone,\s*\}\)/,
     );
     expect(firstRun).toContain("&section=setup#voice");
     expect(firstRun).not.toMatch(

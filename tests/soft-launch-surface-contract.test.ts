@@ -39,10 +39,10 @@ describe("soft launch surfaces", () => {
     const copy = read("src/lib/wireline-onboarding-copy.ts");
     // Bo asks one thing at a time, and the first answer is the owner's own
     // description of the business.
-    expect(bo).toContain(
-      'const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;',
+    expect(read("src/lib/bo-onboarding.ts")).toContain(
+      ': ["about", "website", "questions", "checks"];',
     );
-    expect(bo).toContain('step === "about" ? "About my business: "');
+    expect(bo).toContain("About my business: `");
     for (const source of [bo, copy]) {
       expect(source).not.toContain("Answers and calls, plus email and a computer.");
       expect(source).not.toContain("SMS is coming soon");

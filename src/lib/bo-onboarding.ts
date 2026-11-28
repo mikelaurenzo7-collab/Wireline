@@ -2,15 +2,48 @@
  * Bo's first conversation: state that survives a reload, and the small text
  * helpers its answers need. The component (BoOnboarding) owns the requests.
  *
- * Only the Bot id, the step, and the owner's one-line business description
- * (which the web lookup needs after a reload) are kept, in this tab's session
- * storage under the signed-in account. Finishing clears them.
+ * Only the Bot id, the step, whether this conversation asks for the business
+ * name, and the owner's one-line business description (which the web lookup
+ * needs after a reload) are kept, in this tab's session storage under the
+ * signed-in account. Finishing clears them.
  */
 import { PLAYBOOK_LIMITS } from "./agent-playbook";
 
-export const BO_ONBOARDING_STEPS = ["about", "website", "questions", "checks", "done"] as const;
+export const BO_ONBOARDING_STEPS = [
+  "name",
+  "about",
+  "website",
+  "questions",
+  "checks",
+  "done",
+] as const;
 export type BoOnboardingStep = (typeof BO_ONBOARDING_STEPS)[number];
-export type BoOnboardingState = { agentId: string; step: BoOnboardingStep; business?: string };
+export type BoOnboardingState = {
+  agentId: string;
+  step: BoOnboardingStep;
+  business?: string;
+  /** Set when the conversation opened by asking for the business name. */
+  asksName?: boolean;
+};
+
+/**
+ * The questions, in order; "done" is the hand-off. The business name comes
+ * first when the workspace has none, because callers hear it in Bo's first
+ * sentence; a personal assistant has no business to name.
+ */
+export function boQuestionSteps(asksName: boolean): readonly BoOnboardingStep[] {
+  return asksName
+    ? ["name", "about", "website", "questions", "checks"]
+    : ["about", "website", "questions", "checks"];
+}
+
+/** The company profile holds a business name of at most this many characters. */
+export const BO_BUSINESS_NAME_MAX_CHARS = 120;
+
+/** A business name as the company profile stores it: one line, single spaces. */
+export function cleanBusinessName(raw: string): string {
+  return raw.replace(/\s+/g, " ").trim().slice(0, BO_BUSINESS_NAME_MAX_CHARS).trim();
+}
 
 const STATE_PREFIX = "wireline:bo-onboarding:v1:";
 /** The web lookup's own limit on how the business is described. */
@@ -39,6 +72,7 @@ export function readBoOnboarding(userId: string | null | undefined): BoOnboardin
       ...(typeof parsed.business === "string"
         ? { business: parsed.business.slice(0, BO_BUSINESS_MAX_CHARS) }
         : {}),
+      ...(typeof parsed.asksName === "boolean" ? { asksName: parsed.asksName } : {}),
     };
   } catch {
     return null;

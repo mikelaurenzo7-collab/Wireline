@@ -116,7 +116,7 @@ describe("restored launch regression guards", () => {
 
     // The web create path is Bo's onboarding: always the one Bot, named Bo, and
     // taught from the owner's own answers rather than a starter's role.
-    expect(bo).toContain("name: FIRST_BOT_NAME,");
+    expect(bo).toContain("name: DEFAULT_BOT_NAME,");
     expect(bo).toContain("only_if_none: true,");
     expect(bo).not.toContain("accountType");
     expect(bo).toContain('workspace_model: "one_workspace"');

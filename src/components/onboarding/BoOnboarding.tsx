@@ -7,13 +7,18 @@ import { StatusNotice } from "../molecules";
 import BotMark from "../BotMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAgents, type WorkspaceAgentSummary } from "../../contexts/AgentsContext";
+import { useBranding } from "../../contexts/BrandingContext";
 import { useChannelEntitlements } from "../../hooks/useChannelEntitlements";
 import { authFetch, safeJson } from "../../lib/api";
 import { isBotMarkKey } from "../../lib/bot-mark";
+import { DEFAULT_BOT_NAME } from "../../lib/bot-name";
 import { bootstrapManagedBotIdentity } from "../../lib/bot-identity-bootstrap";
 import {
   BO_ANSWER_MAX_CHARS,
   BO_BUSINESS_MAX_CHARS,
+  BO_BUSINESS_NAME_MAX_CHARS,
+  boQuestionSteps,
+  cleanBusinessName,
   clearBoOnboarding,
   isPersonalStarter,
   mergeCheckFirst,
@@ -31,27 +36,16 @@ import {
   extractionBodyPersistedSomething,
   type TrainingExtractionBody,
 } from "../../lib/training-extraction-result";
-import { BO_ONBOARDING_COPY as COPY, FIRST_BOT_NAME } from "../../lib/wireline-onboarding-copy";
+import { BO_ONBOARDING_COPY as COPY } from "../../lib/wireline-onboarding-copy";
 
 type Source = { title?: string; uri?: string };
 type Line = { id: number; from: "bo" | "owner"; text: string; sources?: Source[] };
 /** The website step has three moments: ask for the link, offer a lookup, confirm it. */
 type WebsitePhase = "link" | "lookupOffer" | "lookupConfirm";
 
-/** The four questions, in order; "done" is the hand-off. */
-const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;
-
-function questionFor(step: BoOnboardingStep): string {
-  if (step === "about") return COPY.about.question;
-  if (step === "website") return COPY.website.question;
-  if (step === "questions") return COPY.questions.question;
-  if (step === "checks") return COPY.checks.question;
-  return COPY.done.message;
-}
-
-function nextStep(step: BoOnboardingStep): BoOnboardingStep {
-  const index = QUESTION_STEPS.indexOf(step as (typeof QUESTION_STEPS)[number]);
-  return index >= 0 && index < QUESTION_STEPS.length - 1 ? QUESTION_STEPS[index + 1]! : "done";
+function nextStep(step: BoOnboardingStep, steps: readonly BoOnboardingStep[]): BoOnboardingStep {
+  const index = steps.indexOf(step);
+  return index >= 0 && index < steps.length - 1 ? steps[index + 1]! : "done";
 }
 
 function sourceLabel(source: Source): string {
@@ -73,14 +67,17 @@ function errorText(body: unknown, fallback: string): string {
  * Bo's first conversation. Every account has one Bot, Bo, and an account that
  * opens the Workspace without one meets Bo here: Bo is created first (the
  * server returns the existing Bot instead when another tab got there first),
- * then asks four questions whose answers go to Knowledge, and ends on the
- * three things to do next. It replaces the old template picker, the empty
- * "Create Your Bot" screen and the post-create setup guide.
+ * asks for the business name when the workspace has none (saved to the
+ * company profile, because callers hear it when Bo answers), then four
+ * questions whose answers go to Knowledge, and ends on what to do next. It
+ * replaces the old template picker, the create dialog, the empty "Create Your
+ * Bot" screen and the post-create setup guide.
  */
 export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: string }) {
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const { agents, loading, degraded, rememberCreatedAgent, refresh } = useAgents();
+  const { branding, updateBranding } = useBranding();
   const access = useChannelEntitlements();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -92,13 +89,29 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
     // Read once per account: the roster is loaded before this view mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+  // A personal assistant has no business to name. A conversation that
+  // continues keeps the Bot it already made; a new one follows the link.
+  const [personal] = useState(() =>
+    stored
+      ? agents.find((agent) => agent.id === stored.agentId)?.is_business_agent === false
+      : isPersonalStarter(params.get("template"), getStoredSignupIntent()?.preferredTemplateId),
+  );
+  // Decided once, so the step count does not change under the owner.
+  const [asksName] = useState(
+    () => stored?.asksName ?? (!stored && !personal && !branding.business_name.trim()),
+  );
+  const steps = useMemo(() => boQuestionSteps(asksName), [asksName]);
   const [agentId, setAgentId] = useState(stored?.agentId ?? "");
-  const [step, setStep] = useState<BoOnboardingStep>(stored?.step ?? "about");
+  const [step, setStep] = useState<BoOnboardingStep>(stored?.step ?? steps[0]!);
   const [business, setBusiness] = useState(stored?.business ?? "");
+  // What the business is called: typed here, or already on the company profile.
+  const [businessName, setBusinessName] = useState(() => branding.business_name.trim());
+  const bot = agents.find((agent) => agent.id === agentId);
+  const botName = bot?.name || DEFAULT_BOT_NAME;
   const [websitePhase, setWebsitePhase] = useState<WebsitePhase>("link");
   const [lookup, setLookup] = useState<{ answer: string; sources: Source[] } | null>(null);
   const [lines, setLines] = useState<Line[]>(() => [
-    { id: 0, from: "bo", text: questionFor(stored?.step ?? "about") },
+    { id: 0, from: "bo", text: questionFor(stored?.step ?? steps[0]!) },
   ]);
   const [draft, setDraft] = useState(stored ? "" : initialAbout.slice(0, BO_ANSWER_MAX_CHARS));
   const [busy, setBusy] = useState<string | null>(null);
@@ -109,9 +122,34 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
   const creating = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null);
   const transcriptRef = useRef<HTMLElement | null>(null);
-  const bot = agents.find((agent) => agent.id === agentId);
-  const botName = bot?.name || FIRST_BOT_NAME;
-  const stepNumber = QUESTION_STEPS.indexOf(step as (typeof QUESTION_STEPS)[number]) + 1;
+  const stepNumber = steps.indexOf(step) + 1;
+
+  function questionFor(at: BoOnboardingStep, knownName = businessName): string {
+    const ask =
+      at === "name"
+        ? COPY.name.question
+        : at === "about"
+          ? knownName
+            ? COPY.about.followUp(knownName)
+            : COPY.about.question
+          : at === "website"
+            ? COPY.website.question
+            : at === "questions"
+              ? COPY.questions.question
+              : at === "checks"
+                ? COPY.checks.question
+                : COPY.done.message;
+    // The first question is where Bo introduces itself.
+    return at === steps[0] ? `${COPY.intro(botName)} ${ask}` : ask;
+  }
+
+  // The profile can finish loading after the conversation opened.
+  useEffect(() => {
+    const saved = branding.business_name.trim();
+    if (!saved) return;
+    setBusinessName((current) => current || saved);
+    if (step === "name") setDraft((current) => current || saved);
+  }, [branding.business_name, step]);
 
   useEffect(() => {
     mounted.current = true;
@@ -136,16 +174,12 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
     if (!userId || creating.current) return;
     creating.current = true;
     setCreateFailed(false);
-    const personal = isPersonalStarter(
-      params.get("template"),
-      getStoredSignupIntent()?.preferredTemplateId,
-    );
     try {
       const response = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: FIRST_BOT_NAME,
+          name: DEFAULT_BOT_NAME,
           only_if_none: true,
           is_business_agent: !personal,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -164,11 +198,11 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
       const id = body.id;
       // Stored before the roster learns about Bo, so the Workspace keeps
       // showing this conversation instead of an empty chat.
-      writeBoOnboarding(userId, { agentId: id, step: "about" });
+      writeBoOnboarding(userId, { agentId: id, step: steps[0]!, asksName });
       setAgentId(id);
       rememberCreatedAgent({
         id,
-        name: typeof body.name === "string" && body.name ? body.name : FIRST_BOT_NAME,
+        name: typeof body.name === "string" && body.name ? body.name : DEFAULT_BOT_NAME,
         mark_key: isBotMarkKey(body.mark_key) ? body.mark_key : null,
         channel: body.channel ?? "voice",
         is_business_agent:
@@ -191,19 +225,19 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
     } finally {
       creating.current = false;
     }
-  }, [current, params, refresh, rememberCreatedAgent, userId]);
+  }, [asksName, current, personal, refresh, rememberCreatedAgent, steps, userId]);
 
   useEffect(() => {
     if (!userId || loading || degraded || agentId) return;
     // Another tab may have met Bo already; continue with that Bot.
     const existing = agents[0];
     if (existing) {
-      writeBoOnboarding(userId, { agentId: existing.id, step });
+      writeBoOnboarding(userId, { agentId: existing.id, step, asksName });
       setAgentId(existing.id);
       return;
     }
     void createBo();
-  }, [agentId, agents, createBo, degraded, loading, step, userId]);
+  }, [agentId, agents, asksName, createBo, degraded, loading, step, userId]);
 
   useEffect(() => {
     const node = transcriptRef.current;
@@ -214,8 +248,8 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
     if (!busy) composerRef.current?.focus({ preventScroll: true });
   }, [busy, step, websitePhase]);
 
-  function advance(from: BoOnboardingStep, keepBusiness = business) {
-    const to = nextStep(from);
+  function advance(from: BoOnboardingStep, keepBusiness = business, knownName = businessName) {
+    const to = nextStep(from, steps);
     emitProductEvent({
       event: "post_create_wizard_step_completed",
       agentId,
@@ -229,9 +263,10 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
     writeBoOnboarding(userId, {
       agentId,
       step: to,
+      asksName,
       ...(keepBusiness ? { business: keepBusiness } : {}),
     });
-    say("bo", questionFor(to));
+    say("bo", questionFor(to, knownName));
   }
 
   /** Save the owner's words to Knowledge through the training extractor. */
@@ -282,6 +317,10 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
       readWebsite(answer);
       return;
     }
+    if (step === "name") {
+      saveBusinessName(answer);
+      return;
+    }
     const sent = say("owner", answer);
     void run(COPY.saving, async () => {
       try {
@@ -293,7 +332,9 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
           return;
         }
         const prefix =
-          step === "about" ? "About my business: " : "What customers ask, with my answers: ";
+          step === "about"
+            ? `${businessName ? `Business name: ${businessName}.\n` : ""}About my business: `
+            : "What customers ask, with my answers: ";
         const reply = await teach(
           `${prefix}${answer}`,
           step === "about" ? "onboarding_about" : "onboarding_questions",
@@ -318,6 +359,31 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
         unsay(sent);
         throw reason;
       }
+    });
+  }
+
+  /** The company profile is the one place the business name lives. */
+  function saveBusinessName(raw: string) {
+    const name = cleanBusinessName(raw);
+    if (!name) return;
+    say("owner", name);
+    void run(COPY.saving, async () => {
+      let saved = false;
+      try {
+        const response = await authFetch("/api/company-identity", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ business_name: name }),
+        });
+        saved = response.ok;
+      } catch {
+        saved = false;
+      }
+      if (!current()) return;
+      if (saved) updateBranding({ business_name: name });
+      setBusinessName(name);
+      say("bo", saved ? COPY.name.saved(name) : COPY.name.notSaved);
+      advance("name", business, name);
     });
   }
 
@@ -381,7 +447,7 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
 
   function noWebsite() {
     say("owner", COPY.website.none);
-    if (!business) {
+    if (!business && !businessName) {
       // Without a description to search for, a lookup cannot find the right business.
       say("bo", COPY.skipped);
       advance("website");
@@ -400,7 +466,12 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ business }),
+          body: JSON.stringify({
+            business: [businessName, business]
+              .filter(Boolean)
+              .join(". ")
+              .slice(0, BO_BUSINESS_MAX_CHARS),
+          }),
         },
       );
       const body = (await safeJson(response)) as {
@@ -447,7 +518,7 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
 
   function skip() {
     say("owner", COPY.skip);
-    say("bo", COPY.skipped);
+    say("bo", step === "name" ? COPY.name.skipped : COPY.skipped);
     advance(step);
   }
 
@@ -476,7 +547,7 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
               </h1>
               {stepNumber > 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  {COPY.stepLabel(stepNumber, QUESTION_STEPS.length)}
+                  {COPY.stepLabel(stepNumber, steps.length)}
                 </p>
               ) : null}
             </div>
@@ -615,7 +686,23 @@ export default function BoOnboarding({ initialAbout = "" }: { initialAbout?: str
             </div>
           ) : (
             <form onSubmit={submitAnswer} className="space-y-2">
-              {step === "website" ? (
+              {step === "name" ? (
+                <>
+                  <label htmlFor="bo-onboarding-name" className="sr-only">
+                    Your business name
+                  </label>
+                  <Input
+                    id="bo-onboarding-name"
+                    ref={composerRef as Ref<HTMLInputElement>}
+                    autoComplete="organization"
+                    value={draft}
+                    maxLength={BO_BUSINESS_NAME_MAX_CHARS}
+                    disabled={!ready || Boolean(busy)}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder={COPY.name.placeholder}
+                  />
+                </>
+              ) : step === "website" ? (
                 <>
                   <label htmlFor="bo-onboarding-website" className="sr-only">
                     Website address

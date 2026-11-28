@@ -46,7 +46,7 @@ describe("orchestration spine contract", () => {
     const bo = read("src/components/onboarding/BoOnboarding.tsx");
     const state = read("src/lib/bo-onboarding.ts");
 
-    expect(bo).toContain('writeBoOnboarding(userId, { agentId: id, step: "about" });');
+    expect(bo).toContain("writeBoOnboarding(userId, { agentId: id, step: steps[0]!, asksName });");
     expect(state).toContain('"wireline:bo-onboarding:v1:"');
     expect(studioHome).toContain("readBoOnboarding(user?.id)");
     expect(bo).toContain("useChannelEntitlements()");

@@ -1555,7 +1555,8 @@ test("an account without a paid plan sees one clear upgrade path", async ({ page
   });
   await page.goto("/computer");
   await expect(page.getByText("Give Your Bot Its Own Computer")).toBeVisible();
-  await expect(page.getByRole("link", { name: "See Plans" })).toHaveAttribute(
+  // Every place a plan is offered uses the same words and the same link.
+  await expect(page.getByRole("link", { name: "Choose a Plan" })).toHaveAttribute(
     "href",
     "/settings/billing",
   );

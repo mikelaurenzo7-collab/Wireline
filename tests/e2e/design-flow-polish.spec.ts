@@ -89,11 +89,11 @@ for (const width of [320, 390, 1440]) {
     await mockWorkspace(page, { emptyRoster: true });
     await page.goto("/studio");
     const log = page.getByRole("log", { name: "Conversation with Bo" });
-    await expect(log).toContainText("What's your business called, and what do you do?");
+    await expect(log).toContainText("First, what's your business called?");
     // One Bot, no templates: nothing to choose before answering.
     await expect(page.getByText(/Start from a Role|What should it handle first/)).toHaveCount(0);
-    const answer = page.getByRole("textbox", { name: "Your answer to Bo" });
-    const supplied = "We repair appliances and only book after checking the customer's ZIP code.";
+    const answer = page.getByRole("textbox", { name: "Your business name" });
+    const supplied = "Rivera's Appliance Repair & Same-Day Service of Greater Austin";
     await answer.fill(supplied);
     await expect(answer).toHaveValue(supplied);
     await expect(page.getByRole("button", { name: "Send", exact: true })).toBeInViewport();
@@ -303,28 +303,26 @@ test("Bo's first conversation stays usable at 320px with enlarged text", async (
     document.documentElement.style.setProperty("font-size", "32px", "important"),
   );
   const log = page.getByRole("log", { name: "Conversation with Bo" });
-  await expect(log).toContainText("What's your business called");
+  await expect(log).toContainText("what's your business called?");
   await page.evaluate(() => document.fonts.ready);
-  const answer = page.getByRole("textbox", { name: "Your answer to Bo" });
-  await answer.fill("Answer repair questions and book a visit.");
+  const answer = page.getByRole("textbox", { name: "Your business name" });
+  await answer.fill("Rivera's Appliance Repair");
   await expect(page.getByRole("button", { name: "Send", exact: true })).toBeInViewport();
   expect(
-    await page
-      .locator("[data-bo-onboarding]")
-      .evaluate((element) =>
-        [element, ...element.querySelectorAll("div, h1, button, textarea, label, p")]
-          .filter(
-            (item) =>
-              item.clientWidth > 0 &&
-              item.scrollWidth > item.clientWidth + 1 &&
-              getComputedStyle(item).overflowX === "visible",
-          )
-          .map((item) => ({
-            tag: item.tagName,
-            width: item.clientWidth,
-            scroll: item.scrollWidth,
-          })),
-      ),
+    await page.locator("[data-bo-onboarding]").evaluate((element) =>
+      [element, ...element.querySelectorAll("div, h1, button, input, textarea, label, p")]
+        .filter(
+          (item) =>
+            item.clientWidth > 0 &&
+            item.scrollWidth > item.clientWidth + 1 &&
+            getComputedStyle(item).overflowX === "visible",
+        )
+        .map((item) => ({
+          tag: item.tagName,
+          width: item.clientWidth,
+          scroll: item.scrollWidth,
+        })),
+    ),
   ).toEqual([]);
 });
 
@@ -332,10 +330,10 @@ test("Bo says plainly when it could not be set up and tries again on request", a
   await mockWorkspace(page, { emptyRoster: true, failCreates: 1 });
   await page.goto("/studio");
   await expect(page.getByText("Bo Isn't Ready Yet", { exact: true })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Your answer to Bo" })).toBeDisabled();
+  await expect(page.getByRole("textbox", { name: "Your business name" })).toBeDisabled();
   await page.getByRole("button", { name: "Try Again", exact: true }).click();
   await expect(page.getByText("Bo Isn't Ready Yet", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("textbox", { name: "Your answer to Bo" })).toBeEnabled();
+  await expect(page.getByRole("textbox", { name: "Your business name" })).toBeEnabled();
 });
 
 test("password reset names and focuses the invalid field and permits reviewing both entries", async ({

@@ -64,8 +64,10 @@ describe("activation path contract", () => {
     const state = read("src/lib/bo-onboarding.ts");
     const billing = read("src/pages/BillingSettings.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
-    expect(state).toContain(
-      'export const BO_ONBOARDING_STEPS = ["about", "website", "questions", "checks", "done"] as const;',
+    // The business name first (when the workspace has none), then the four
+    // questions, then the hand-off.
+    expect(state).toMatch(
+      /export const BO_ONBOARDING_STEPS = \[\s*"name",\s*"about",\s*"website",\s*"questions",\s*"checks",\s*"done",?\s*\] as const;/,
     );
     // A reload continues at the same question for the same Bot.
     expect(onboarding).toContain("writeBoOnboarding(userId, {");

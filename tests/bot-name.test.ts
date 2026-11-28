@@ -67,11 +67,11 @@ describe("the name every Bot starts with", () => {
     const bo = read("src/components/onboarding/BoOnboarding.tsx");
     // The Bot is created only when the account has none; the server checks
     // under its lock and hands back the existing Bot instead.
-    expect(bo).toContain("name: FIRST_BOT_NAME,");
+    expect(bo).toContain("name: DEFAULT_BOT_NAME,");
     expect(bo).toContain("only_if_none: true,");
     // The roster shows the name the server answered with.
     expect(bo).toContain(
-      'name: typeof body.name === "string" && body.name ? body.name : FIRST_BOT_NAME,',
+      'name: typeof body.name === "string" && body.name ? body.name : DEFAULT_BOT_NAME,',
     );
     expect(bo).not.toContain("e.g. Nora or Alex");
   });

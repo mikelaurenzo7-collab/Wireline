@@ -1,10 +1,11 @@
 /**
  * First-run copy, Account Holder-facing and BotBound-native.
  *
- * Every account has one Bot, Bo. An account that opens the Workspace without a
- * Bot gets Bo, and Bo's first conversation is the onboarding: four questions
- * whose answers go to Knowledge, then the three things to do next. Public
- * marketing uses capability and outcome copy, without a setup sequence.
+ * Every account has one Bot, Bo (DEFAULT_BOT_NAME in bot-name.ts). An account
+ * that opens the Workspace without a Bot gets Bo, and Bo's first conversation
+ * is the onboarding: the business name, then four questions whose answers go to
+ * Knowledge, then the things to do next. Public marketing uses capability and
+ * outcome copy, without a setup sequence.
  */
 
 export const ACTIVATION_NUDGE_COPY = {
@@ -13,17 +14,25 @@ export const ACTIVATION_NUDGE_COPY = {
   cta: "Call your Bot",
 } as const;
 
-/** The name every account's Bot starts with. The owner can rename it in Set Up. */
-export const FIRST_BOT_NAME = "Bo";
-
 /** Bo's first conversation, one question at a time. */
 export const BO_ONBOARDING_COPY = {
   stepLabel: (step: number, total: number) => `Step ${step} of ${total}`,
   finishLater: "Finish Later",
   gettingReady: "Getting ready…",
+  /** Said before the first question. */
+  intro: (botName: string) => `Hi, I'm ${botName}. I'll answer your calls, texts, and email.`,
+  name: {
+    question: "First, what's your business called?",
+    placeholder: "For example: Rivera Plumbing",
+    saved: (business: string) =>
+      `Nice to meet you, ${business}. Callers will hear that name when I answer.`,
+    notSaved: "I couldn't save your business name just now. You can add it later in Settings.",
+    skipped: "No problem. You can add your business name later in Settings.",
+  },
   about: {
-    question:
-      "Hi, I'm Bo. I'll answer your calls, texts, and email. What's your business called, and what do you do?",
+    question: "What's your business called, and what do you do?",
+    followUp: (business: string) =>
+      `What does ${business} do, and where? Tell me your services, the area you serve, and your hours.`,
     placeholder: "For example: Rivera Plumbing. We fix leaks and water heaters in Austin.",
     unclear:
       "I couldn't pick out the details. Try a sentence like “Rivera Plumbing fixes leaks and water heaters in Austin.”",
@@ -66,7 +75,7 @@ export const BO_ONBOARDING_COPY = {
   saving: "Saving…",
   done: {
     message:
-      "That's a great start. Everything I learned is in Knowledge, and you can keep teaching me right here in chat.",
+      "That's a great start. Everything I learned is in Knowledge, and you can keep teaching me right here in chat. You can rename me any time in Set Up.",
     hear: "Hear Me",
     voice: "Pick My Voice",
     number: "Get a Number",

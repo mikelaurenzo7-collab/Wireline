@@ -9,9 +9,7 @@ describe("Bo's first conversation flow contract", () => {
   const studioHome = read("src/pages/AgentStudioHome.tsx");
 
   it("keeps creation in one in-page conversation that opens on the business, without a role gallery", () => {
-    expect(create).toContain(
-      'const QUESTION_STEPS = ["about", "website", "questions", "checks"] as const;',
-    );
+    expect(create).toContain("const steps = useMemo(() => boQuestionSteps(asksName), [asksName]);");
     // A ?brief= link or a browser-extension capture becomes Bo's first answer.
     expect(create).toContain("initialAbout.slice(0, BO_ANSWER_MAX_CHARS)");
     expect(studioHome).toMatch(

@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   BO_BUSINESS_MAX_CHARS,
+  BO_BUSINESS_NAME_MAX_CHARS,
+  boQuestionSteps,
+  cleanBusinessName,
   clearBoOnboarding,
   isPersonalStarter,
   mergeCheckFirst,
@@ -13,7 +16,8 @@ import {
   writeBoOnboarding,
 } from "../src/lib/bo-onboarding";
 import { PLAYBOOK_LIMITS } from "../src/lib/agent-playbook";
-import { BO_ONBOARDING_COPY, FIRST_BOT_NAME } from "../src/lib/wireline-onboarding-copy";
+import { DEFAULT_BOT_NAME } from "../src/lib/bot-name";
+import { BO_ONBOARDING_COPY } from "../src/lib/wireline-onboarding-copy";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -58,6 +62,29 @@ describe("Bo's first conversation: state", () => {
     expect(readBoOnboarding("owner-a")?.business).toHaveLength(BO_BUSINESS_MAX_CHARS);
     sessionStorage.setItem("wireline:bo-onboarding:v1:owner-a", "{not json");
     expect(readBoOnboarding("owner-a")).toBeNull();
+  });
+});
+
+describe("Bo's first conversation: the business name", () => {
+  it("asks for the business name first only when this conversation needs it", () => {
+    expect(boQuestionSteps(true)).toEqual(["name", "about", "website", "questions", "checks"]);
+    expect(boQuestionSteps(false)).toEqual(["about", "website", "questions", "checks"]);
+  });
+
+  it("keeps a business name on one line, within the company profile's limit", () => {
+    expect(cleanBusinessName("  Rivera \n  Plumbing ")).toBe("Rivera Plumbing");
+    expect(cleanBusinessName("x".repeat(300))).toHaveLength(BO_BUSINESS_NAME_MAX_CHARS);
+    expect(cleanBusinessName("   ")).toBe("");
+  });
+
+  it("remembers whether the conversation asked for the name across a reload", () => {
+    writeBoOnboarding("owner-a", { agentId: "bo", step: "about", asksName: true });
+    expect(readBoOnboarding("owner-a")).toEqual({ agentId: "bo", step: "about", asksName: true });
+    sessionStorage.setItem(
+      "wireline:bo-onboarding:v1:owner-a",
+      JSON.stringify({ agentId: "bo", step: "name", asksName: "yes" }),
+    );
+    expect(readBoOnboarding("owner-a")).toEqual({ agentId: "bo", step: "name" });
   });
 });
 
@@ -108,8 +135,9 @@ describe("Bo's first conversation: answers", () => {
 describe("Bo's first conversation: product contract", () => {
   const onboarding = read("src/components/onboarding/BoOnboarding.tsx");
 
-  it("creates Bo once, asks four questions, and saves through existing routes", () => {
-    expect(FIRST_BOT_NAME).toBe("Bo");
+  it("creates Bo once, asks its questions, and saves through existing routes", () => {
+    expect(DEFAULT_BOT_NAME).toBe("Bo");
+    expect(onboarding).toContain("name: DEFAULT_BOT_NAME,");
     expect(onboarding).toContain("only_if_none: true");
     expect(onboarding).toContain('authFetch("/api/train/extract"');
     expect(onboarding).toContain("/website`");
@@ -117,7 +145,9 @@ describe("Bo's first conversation: product contract", () => {
     expect(onboarding).toContain("/playbook`");
     expect(onboarding).toContain("mergeCheckFirst(saved, items)");
     for (const question of [
+      BO_ONBOARDING_COPY.name.question,
       BO_ONBOARDING_COPY.about.question,
+      BO_ONBOARDING_COPY.about.followUp("Rivera Plumbing"),
       BO_ONBOARDING_COPY.website.question,
       BO_ONBOARDING_COPY.questions.question,
       BO_ONBOARDING_COPY.checks.question,
@@ -141,6 +171,31 @@ describe("Bo's first conversation: product contract", () => {
     expect(lookUpBody).not.toContain("teach(");
     const confirm = onboarding.slice(onboarding.indexOf("function confirmLookup("));
     expect(confirm.indexOf("if (!yes || !lookup)")).toBeLessThan(confirm.indexOf("teach("));
+  });
+
+  it("saves the business name to the company profile, and tells Knowledge with the first answer", () => {
+    // Asked once per conversation: never for a personal assistant, never when
+    // the workspace already has a name.
+    expect(onboarding).toContain(
+      "() => stored?.asksName ?? (!stored && !personal && !branding.business_name.trim()),",
+    );
+    const save = onboarding.slice(onboarding.indexOf("function saveBusinessName("));
+    const body = save.slice(0, save.indexOf("async function saveChecks("));
+    expect(body).toContain('authFetch("/api/company-identity"');
+    expect(body).toContain("JSON.stringify({ business_name: name })");
+    // The workspace's profile only learns a name the server confirmed.
+    expect(body).toContain("if (saved) updateBranding({ business_name: name });");
+    expect(body).toContain("saved ? COPY.name.saved(name) : COPY.name.notSaved");
+    expect(body.indexOf("if (!current()) return;")).toBeLessThan(body.indexOf("updateBranding("));
+    expect(onboarding).toContain(
+      '`${businessName ? `Business name: ${businessName}.\\n` : ""}About my business: `',
+    );
+    // The web lookup searches for the name and the description together.
+    expect(onboarding).toContain("business: [businessName, business]");
+    // Bo introduces itself by name before the first question, and the hand-off
+    // says the name can change.
+    expect(onboarding).toContain("at === steps[0] ? `${COPY.intro(botName)} ${ask}` : ask");
+    expect(BO_ONBOARDING_COPY.done.message).toContain("You can rename me any time in Set Up.");
   });
 
   it("reports nothing for a reply that lands after the owner signed out", () => {

@@ -4,12 +4,16 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 /**
  * Bo's first conversation, end to end with every endpoint mocked: an account
- * without a Bot meets Bo, answers four questions, and leaves with the three
- * next steps. No account, database, provider, or payment traffic runs.
+ * without a Bot meets Bo, names the business, answers four questions, and
+ * leaves with the next steps. No account, database, provider, or payment
+ * traffic runs.
  */
 type Recorded = { path: string; method: string; body: unknown };
 
-async function mockFirstRun(page: Page, options: { lookupFound?: boolean } = {}) {
+async function mockFirstRun(
+  page: Page,
+  options: { lookupFound?: boolean; businessNameSaves?: boolean } = {},
+) {
   const calls: Recorded[] = [];
   let bots: Array<Record<string, unknown>> = [];
   await page.route("**/api/**", async (route) => {
@@ -74,6 +78,10 @@ async function mockFirstRun(page: Page, options: { lookupFound?: boolean } = {})
         },
       });
     if (path.endsWith("/playbook")) return route.fulfill({ json: { success: true } });
+    if (path === "/api/company-identity" && method === "POST")
+      return options.businessNameSaves === false
+        ? route.fulfill({ status: 503, json: { error: "Unavailable" } })
+        : route.fulfill({ json: { business_name: "Rivera Plumbing" } });
     if (path.endsWith("/managed-identity"))
       return route.fulfill({ status: 402, json: { code: "ACTIVATION_REQUIRED" } });
     if (path === "/api/billing/status")
@@ -111,8 +119,9 @@ for (const width of [390, 1280]) {
     await page.goto("/studio");
 
     const log = page.getByRole("log", { name: "Conversation with Bo" });
-    await expect(log).toContainText("What's your business called, and what do you do?");
-    await expect(page.getByText("Step 1 of 4", { exact: true })).toBeVisible();
+    await expect(log).toContainText("Hi, I'm Bo.");
+    await expect(log).toContainText("First, what's your business called?");
+    await expect(page.getByText("Step 1 of 5", { exact: true })).toBeVisible();
     await expect(page.getByText(/What should it handle first|Front Desk|Sales Rep/)).toHaveCount(0);
     const created = calls.find((call) => call.path === "/api/agents" && call.method === "POST");
     expect(created?.body).toMatchObject({
@@ -122,10 +131,26 @@ for (const width of [390, 1280]) {
     });
     await proof(page, info, `about-${width}`);
 
+    // Callers hear the name, so it goes to the company profile, not Knowledge.
+    await page.getByRole("textbox", { name: "Your business name" }).fill("  Rivera   Plumbing ");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(log).toContainText("Nice to meet you, Rivera Plumbing.");
+    await expect(log).toContainText("What does Rivera Plumbing do, and where?");
+    await expect(page.getByText("Step 2 of 5", { exact: true })).toBeVisible();
+    expect(
+      calls
+        .filter((call) => call.path === "/api/company-identity" && call.method === "POST")
+        .map((call) => call.body),
+    ).toEqual([{ business_name: "Rivera Plumbing" }]);
+
     const answer = page.getByRole("textbox", { name: "Your answer to Bo" });
-    await answer.fill("Rivera Plumbing. We fix leaks and water heaters in Austin.");
+    await answer.fill("We fix leaks and water heaters in Austin.");
     await page.getByRole("button", { name: "Send" }).click();
     await expect(log).toContainText("Got it. Saved 2 facts.");
+    const about = calls.find((call) => call.path === "/api/train/extract");
+    expect(String((about?.body as { message?: string }).message)).toBe(
+      "Business name: Rivera Plumbing.\nAbout my business: We fix leaks and water heaters in Austin.",
+    );
     await expect(log).toContainText("Do you have a website?");
 
     await page.getByRole("button", { name: "I Don't Have One" }).click();
@@ -136,6 +161,10 @@ for (const width of [390, 1280]) {
       "href",
       "https://rivera.example/",
     );
+    const lookup = calls.find((call) => call.path.endsWith("/web-lookup"));
+    expect(lookup?.body).toEqual({
+      business: "Rivera Plumbing. We fix leaks and water heaters in Austin.",
+    });
     // Nothing from the web reaches Knowledge before the owner confirms it.
     expect(
       calls.filter((call) => call.path === "/api/train/extract").map((call) => call.body),
@@ -173,9 +202,15 @@ for (const width of [390, 1280]) {
 }
 
 test("says so plainly when Bo cannot find the business online", async ({ page }) => {
-  await mockFirstRun(page, { lookupFound: false });
+  await mockFirstRun(page, { lookupFound: false, businessNameSaves: false });
   await page.goto("/studio");
-  await page.getByRole("textbox", { name: "Your answer to Bo" }).fill("Rivera Plumbing, Austin.");
+  // A name the profile could not take still carries the conversation.
+  await page.getByRole("textbox", { name: "Your business name" }).fill("Rivera Plumbing");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("log", { name: "Conversation with Bo" })).toContainText(
+    "I couldn't save your business name just now.",
+  );
+  await page.getByRole("textbox", { name: "Your answer to Bo" }).fill("Plumbing in Austin.");
   await page.getByRole("button", { name: "Send" }).click();
   await page.getByRole("button", { name: "I Don't Have One" }).click();
   await page.getByRole("button", { name: "Look Me Up" }).click();

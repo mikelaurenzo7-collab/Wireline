@@ -50,6 +50,9 @@ vi.mock("react-router", () => ({
   useSearchParams: () => [new URLSearchParams(), vi.fn()],
 }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "owner" } }) }));
+vi.mock("../src/contexts/BrandingContext", () => ({
+  useBranding: () => ({ branding: { business_name: "Rivera Plumbing" }, updateBranding: vi.fn() }),
+}));
 vi.mock("../src/contexts/AgentsContext", () => ({
   useAgents: () => ({
     agents: [{ id: "bot", name: "Bo", mark_key: null, channel: "voice" }],

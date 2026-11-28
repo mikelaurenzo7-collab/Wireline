@@ -117,7 +117,7 @@ for (const selectedPlan of [false, true]) {
     // Everyone meets Bo first; nobody is asked to pay at sign-up.
     await expect(page).toHaveURL(selectedPlan ? /\/studio\?template=front-desk$/ : /\/studio$/);
     await expect(page.getByRole("log", { name: "Conversation with Bo" })).toContainText(
-      "What's your business called",
+      "what's your business called?",
     );
     expect(createRequests).toEqual([
       expect.objectContaining({ name: "Bo", only_if_none: true, is_business_agent: true }),
