@@ -16,7 +16,8 @@ import {
   clonedMediaOrigin,
 } from "./cloned-media-config";
 import { connectXaiCarrierAudio } from "./xai-carrier-audio";
-import { ElevenLabsMediaSession } from "./elevenlabs-media-session";
+import { ElevenLabsMediaSession, type SpeechStream } from "./elevenlabs-media-session";
+import { addSample, percentile } from "./openai-sip-turn-timing";
 import { clonedSpeechStreams, clonedStockVoice } from "./cloned-speech-stream";
 import { voiceWorkerServiceSecret } from "./openai-sip-worker-config";
 import { VOICE_WORKER_AUTH_HEADER } from "./openai-sip-worker-dispatch";
@@ -183,6 +184,29 @@ export function createClonedMediaSession(input: {
   let synthesisSequence = 0;
   const catalogVoice = input.voice ? null : input.catalogVoice;
   const speechProvider = catalogVoice?.provider ?? "elevenlabs";
+  // Where a reply's time goes on this path. A cloned or library voice answers
+  // about a second slower than a built-in one; these say which step holds it:
+  // the model reaching a first clause, the checks before each synthesis, or
+  // the speech engine's first audio. Logged once, when the call ends.
+  const timing = {
+    firstClauseMs: [] as number[],
+    firstClauseChars: [] as number[],
+    voiceCheckMs: [] as number[],
+    spendMs: [] as number[],
+    speechFirstByteMs: [] as number[],
+  };
+  const timed = (speak: SpeechStream): SpeechStream =>
+    async function* (text, signal, context) {
+      const started = performance.now();
+      let waiting = true;
+      for await (const chunk of speak(text, signal, context)) {
+        if (waiting && chunk.length) {
+          waiting = false;
+          addSample(timing.speechFirstByteMs, performance.now() - started);
+        }
+        yield chunk;
+      }
+    };
   const speech = clonedSpeechStreams({
     voiceId: input.voice?.voiceId ?? catalogVoice?.id ?? "",
     catalogVoice: Boolean(catalogVoice),
@@ -194,6 +218,7 @@ export function createClonedMediaSession(input: {
     openAIKey,
     stockVoice: clonedStockVoice(input.voice?.gender ?? catalogVoice?.gender ?? null),
     reserve: async (provider, text) => {
+      const checkStarted = performance.now();
       if (
         provider === "elevenlabs" &&
         input.voice &&
@@ -208,6 +233,8 @@ export function createClonedMediaSession(input: {
         !(await phoneCatalogService.resolve({ [PHONE_CATALOG_VOICE_KEY]: catalogVoice }))
       )
         throw new Error("Catalog phone voice is no longer available");
+      const spendStarted = performance.now();
+      addSample(timing.voiceCheckMs, spendStarted - checkStarted);
       // Conservative character-based reservation, separate from the Realtime
       // reasoning/input-audio reservation. Attempts retain their debit when
       // the provider outcome is ambiguous; cancellation never refunds work.
@@ -233,6 +260,7 @@ export function createClonedMediaSession(input: {
       });
       if (!reservation.reserved) throw new Error("Speech spend admission refused");
       await commitPlatformCostReservation(reservation.reservation);
+      addSample(timing.spendMs, performance.now() - spendStarted);
     },
   });
   const cloneId = input.voice?.cloneId;
@@ -243,7 +271,12 @@ export function createClonedMediaSession(input: {
     initialStock: catalogVoice
       ? !(speechProvider === "cartesia" ? cartesiaKey : elevenLabsKey)
       : input.voice?.engine !== "elevenlabs" || !elevenLabsKey,
-    ...speech,
+    cloneSpeech: timed(speech.cloneSpeech),
+    stockSpeech: timed(speech.stockSpeech),
+    onFirstClause: (sinceResponseMs, characters) => {
+      addSample(timing.firstClauseMs, sinceResponseMs);
+      addSample(timing.firstClauseChars, characters);
+    },
     onClonePlayed: async () => {
       if (played || !cloneId) return;
       played = true;
@@ -260,6 +293,25 @@ export function createClonedMediaSession(input: {
           catalogProvider: catalogVoice?.provider,
         },
       ),
+  });
+  session.once("close", () => {
+    if (!timing.speechFirstByteMs.length) return;
+    log.info("Cloned phone voice reply timing", {
+      callId: input.callId,
+      voice: catalogVoice ? "catalog" : "clone",
+      speechProvider,
+      replies: timing.firstClauseMs.length,
+      syntheses: timing.speechFirstByteMs.length,
+      firstClauseP50Ms: percentile(timing.firstClauseMs, 0.5),
+      firstClauseP95Ms: percentile(timing.firstClauseMs, 0.95),
+      firstClauseCharsP50: percentile(timing.firstClauseChars, 0.5),
+      voiceCheckP50Ms: percentile(timing.voiceCheckMs, 0.5),
+      spendP50Ms: percentile(timing.spendMs, 0.5),
+      spendP95Ms: percentile(timing.spendMs, 0.95),
+      // From asking for speech to its first audio, the two checks included.
+      speechFirstByteP50Ms: percentile(timing.speechFirstByteMs, 0.5),
+      speechFirstByteP95Ms: percentile(timing.speechFirstByteMs, 0.95),
+    });
   });
   for (const frame of entry.earlyFrames) entry.carrier.emit("message", frame);
   entry.earlyFrames = [];

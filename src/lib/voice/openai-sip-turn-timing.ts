@@ -7,13 +7,13 @@ type PendingTurn = {
 
 const MAX_SAMPLES = 256;
 
-function addSample(samples: number[], value: number) {
+export function addSample(samples: number[], value: number) {
   if (!Number.isFinite(value) || value < 0) return;
   if (samples.length === MAX_SAMPLES) samples.shift();
   samples.push(Math.round(value));
 }
 
-function percentile(samples: number[], fraction: number): number | null {
+export function percentile(samples: number[], fraction: number): number | null {
   if (!samples.length) return null;
   const sorted = [...samples].sort((a, b) => a - b);
   return sorted[Math.ceil((sorted.length - 1) * fraction)];
