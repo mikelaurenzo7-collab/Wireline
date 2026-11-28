@@ -15,11 +15,10 @@ import AppointmentDialog from "../components/AppointmentDialog";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
+import { resolveAppPageSubTabRoute } from "../lib/page-sub-tabs";
 
-const CALENDAR_TABS = [
-  { id: "agenda", label: "Schedule" },
-  { id: "availability", label: "Availability" },
-];
+/** Calendar's tabs have one definition, in page-sub-tabs. */
+const CALENDAR_TABS = resolveAppPageSubTabRoute("/calendar")!.tabs;
 
 export default function CalendarPage() {
   const [params, setParams] = useSearchParams();

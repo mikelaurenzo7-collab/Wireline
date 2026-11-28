@@ -106,7 +106,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     // and "Bot" name the same place ("Bot, Workspace" to assistive tech).
     shortLabel: "Bot",
     eyebrow: "Build",
-    description: "Set up your Bot, try it, and give it work.",
+    description: "Talk to your Bot: teach it, try it, and give it work.",
     icon: "Bot",
     matches: ["/agents", "/overview", "/workspace"],
     desktop: { group: "work", order: 10 },
@@ -183,7 +183,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     title: "Knowledge",
     label: "Knowledge",
     eyebrow: "Build",
-    description: "Ground your Bot in trusted business information.",
+    description: "Everything your Bot knows: facts, rules, documents, and notes about you.",
     icon: "GraduationCap",
     desktop: { group: "manage", order: 5 },
     mobile: { placement: "primary", order: 40 },
@@ -329,19 +329,27 @@ export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");
  * used daily. Insights is a glance surface and groups in More with the
  * calendar, connections, and settings.
  */
+export const MOBILE_MORE_NAV: ShellNavItem[] = byMobilePlacement("more");
+
+/** "Calendar, People, Insights, Connections, and Settings": always what More holds. */
+function listLabels(items: readonly ShellNavItem[]): string {
+  const labels = items.map((item) => item.label);
+  return labels.length > 1
+    ? `${labels.slice(0, -1).join(", ")}, and ${labels.at(-1)}.`
+    : `${labels[0] ?? ""}.`;
+}
+
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   // Canonical primary owner begins with href: "/studio".
   ...byMobilePlacement("primary"),
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Insights, Calendar, Connections, and Settings.",
+    description: listLabels(MOBILE_MORE_NAV),
     icon: "MoreHorizontal",
     section: "System",
   },
 ];
-
-export const MOBILE_MORE_NAV: ShellNavItem[] = byMobilePlacement("more");
 
 export const MOBILE_MORE_GROUPS = (["Build", "Operate", "System"] as const)
   .map((label) => ({

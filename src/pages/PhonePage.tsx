@@ -19,26 +19,16 @@ import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../components/ChannelAccessNotice";
 import {
   OUTBOUND_VIEW_TABS,
+  normalizeAppPageSubTabParam,
   resolveAppPageSecondaryTabId,
   resolveAppPageSubTabId,
+  resolveAppPageSubTabRoute,
 } from "../lib/page-sub-tabs";
 
 // Call performance lives in Insights with every other channel; Calls owns the
-// call log, outbound work, and the lines themselves.
-const PHONE_TABS = [
-  { id: "logs", label: "History" },
-  { id: "outbound", label: "Outbound" },
-  { id: "lines", label: "Lines" },
-  { id: "settings", label: "Settings" },
-] as const;
-
-/** Readable + legacy ?tab= values from links and emails (ids renamed to
- *  match their labels 2026-10-26; the old internal ids keep resolving). */
-const PHONE_TAB_ALIASES: Record<string, string> = {
-  setup: "lines",
-  reports: "settings",
-  history: "logs",
-};
+// call log, outbound work, and the lines themselves. Its tabs and their old
+// ?tab= aliases have one definition, in page-sub-tabs.
+const PHONE_ROUTE = resolveAppPageSubTabRoute("/phone")!;
 
 export default function PhonePage() {
   const { user } = useAuth();
@@ -50,19 +40,12 @@ export default function PhonePage() {
     degraded: agentsDegraded,
     refresh: refreshAgents,
   } = useAgents();
-  const rawTabParam = searchParams.get("tab");
-  const tabParam = (rawTabParam && PHONE_TAB_ALIASES[rawTabParam.toLowerCase()]) || rawTabParam;
+  const tabParam = normalizeAppPageSubTabParam(PHONE_ROUTE, searchParams.get("tab"));
   const legacyOutboundView = OUTBOUND_VIEW_TABS.some((tab) => tab.id === tabParam)
     ? tabParam
     : null;
   const primaryTab = resolveAppPageSubTabId(
-    {
-      pathname: "/phone",
-      tabs: [...PHONE_TABS],
-      defaultTab: "logs",
-      ariaLabel: "Call sections",
-      layoutIdPrefix: "phone-section",
-    },
+    PHONE_ROUTE,
     legacyOutboundView ? "outbound" : tabParam,
   );
   const outboundView = resolveAppPageSecondaryTabId(
@@ -132,7 +115,7 @@ export default function PhonePage() {
 
   // Bookmarks to the retired Calls › Analytics tab open Insights Totals —
   // the surviving performance view (the duplicated Calls view was cut).
-  if (rawTabParam === "analytics") {
+  if (tabParam === "analytics") {
     return <Navigate to="/insights?tab=performance" replace />;
   }
   const agentLabels = buildAgentOptionLabels(agents);
@@ -179,7 +162,7 @@ export default function PhonePage() {
               className="gap-2.5 sm:items-center px-3 pt-2 sm:px-6"
               primary={
                 <WorkspaceTabStrip
-                  tabs={[...PHONE_TABS]}
+                  tabs={PHONE_ROUTE.tabs}
                   activeId={primaryTab}
                   onSelect={setPrimaryTab}
                   ariaLabel="Call sections"

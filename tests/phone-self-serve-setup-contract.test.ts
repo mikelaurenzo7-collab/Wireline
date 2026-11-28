@@ -7,13 +7,18 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("self-service calling setup", () => {
   it("makes call history the primary Calls entry and keeps line setup secondary", () => {
     const phonePage = read("src/pages/PhonePage.tsx");
+    // Calls draws its tabs from the one definition every link resolves against.
+    const tabs = read("src/lib/page-sub-tabs.ts");
+    const calls = tabs.slice(tabs.indexOf('pathname: "/phone"'));
 
-    expect(phonePage).toContain('{ id: "logs", label: "History" }');
-    expect(phonePage).toContain('defaultTab: "logs"');
+    expect(phonePage).toContain('const PHONE_ROUTE = resolveAppPageSubTabRoute("/phone")!;');
+    expect(phonePage).toContain("tabs={PHONE_ROUTE.tabs}");
+    expect(calls).toMatch(/^pathname: "\/phone",\s*defaultTab: "logs",/);
+    expect(calls).toMatch(
+      /\{ id: "logs", label: "History"[\s\S]*?id: "outbound",\s*label: "Outbound"[\s\S]*?\{ id: "lines", label: "Lines"/,
+    );
     expect(phonePage).toContain('primaryTab === "logs"');
     expect(phonePage).toContain("<PhoneCallHistoryPanel");
-    expect(phonePage).toContain('{ id: "outbound", label: "Outbound" }');
-    expect(phonePage).toContain('{ id: "lines", label: "Lines" }');
     expect(phonePage).toContain('primaryTab === "lines"');
     expect(phonePage).toMatch(/<PhoneSetupPanel\s+initialAgentId=\{activeAgentId\}/);
     expect(phonePage).toContain('voiceEnabled={access.includes("voice")}');
@@ -31,7 +36,7 @@ describe("self-service calling setup", () => {
     expect(history).toContain('action: { label: "Add a Line", to: setupHref }');
     expect(history).toContain('label: "Rehearse"');
     expect(history).toContain('"/studio"');
-    expect(history).toContain('`/studio?agent=${encodeURIComponent(agentId)}&workroom=test`');
+    expect(history).toContain("`/studio?agent=${encodeURIComponent(agentId)}&workroom=test`");
     expect(history).toContain('title: agentId ? "No Calls for This Bot" : "No Calls Yet"');
     expect(history).toContain('action: { label: "New Call", onClick: () => setShowDial(true) }');
     expect(history).not.toContain('title: "Call with your Bot"');

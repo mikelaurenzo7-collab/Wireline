@@ -41,9 +41,9 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     defaultTab: "logs",
     ariaLabel: "Call sections",
     layoutIdPrefix: "phone-section",
+    // The one list of Calls tabs, in the order the page shows them.
     tabs: [
       { id: "logs", label: "History", icon: History },
-      { id: "settings", label: "Settings", icon: Settings },
       {
         id: "outbound",
         label: "Outbound",
@@ -52,6 +52,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
         icon: PhoneOutgoing,
       },
       { id: "lines", label: "Lines", icon: Phone },
+      { id: "settings", label: "Settings", icon: Settings },
     ],
   },
   {
@@ -60,7 +61,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     ariaLabel: "Calendar sections",
     layoutIdPrefix: "calendar-section",
     tabs: [
-      { id: "agenda", label: "Calendar", icon: Calendar },
+      { id: "agenda", label: "Schedule", icon: Calendar },
       { id: "availability", label: "Availability", icon: CalendarClock },
     ],
   },
@@ -113,7 +114,7 @@ export function resolveAppPageSubTabRoute(pathname: string): AppPageSubTabRoute 
 const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> = {
   // Renamed 2026-10-26 (IA-3): tab ids now match their labels; the internal
   // ids below keep resolving so old links, emails, and bookmarks land right.
-  "/phone": { setup: "lines", reports: "settings" },
+  "/phone": { setup: "lines", reports: "settings", history: "logs" },
   "/insights": { revenue: "sources" },
 };
 
